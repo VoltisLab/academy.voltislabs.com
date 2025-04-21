@@ -1,10 +1,13 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist_Mono, Maven_Pro } from "next/font/google";
 import "./globals.css";
+import Header from "@/components/Header";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+// Fonts
+const mavenPro = Maven_Pro({
+  variable: "--font-maven",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700"], // include any weights you plan to use
 });
 
 const geistMono = Geist_Mono({
@@ -25,8 +28,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${mavenPro.variable} ${geistMono.variable} font-sans antialiased`}
       >
+        <Header />
         {children}
       </body>
     </html>
