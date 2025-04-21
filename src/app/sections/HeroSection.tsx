@@ -13,7 +13,7 @@ const HeroSection = () => {
           <h1 className="text-4xl md:text-6xl font-bold leading-tight text-[#230F0F]">
             Learn Any Skill <br /> To Advance Your <br /> Career Path
           </h1>
-          <div className="my-4 w-28 h-1 bg-yellow-400 rounded-full" />
+          <Image alt='underline' src={'/underline.png'} height={10} width={320}/>
           <p className="mt-6 text-[#230F0F] text-[20px] leading-relaxed">
             Want to improve your work skills? You need to study harder with the help of a great mentor to improve your performance at work.
           </p>

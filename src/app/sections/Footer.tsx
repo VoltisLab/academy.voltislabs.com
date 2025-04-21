@@ -3,22 +3,28 @@ import { Instagram, Twitter, Linkedin, Youtube } from "lucide-react";
 export default function Footer() {
   return (
     <footer className="bg-white text-sm text-gray-600">
-      <div className="max-w-7xl mx-auto px-4 py-12 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-8">
+      <div className="max-w-7xl mx-auto px-4 py-12 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-10">
         {/* Column 1 */}
         <div>
           <h3 className="text-black font-semibold mb-4">Event & Bootcamp</h3>
+          <div className="flex flex-col  md:flex-row gap-8">
           <ul className="space-y-2">
             <li>Web Development</li>
             <li>Mobile Development</li>
             <li>UI Design</li>
             <li>UI Research</li>
             <li>Presentation</li>
-            <li>Comunication</li>
+            
+          </ul>
+          <ul className="space-y-2 ">
+          <li>Comunication</li>
             <li>Video Production</li>
             <li>Digital Marketing</li>
             <li>Branding</li>
           </ul>
         </div>
+          </div>
+         
 
         {/* Column 2 */}
         <div>

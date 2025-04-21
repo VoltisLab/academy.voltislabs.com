@@ -26,8 +26,8 @@ export default function Partners() {
               src={partner.src}
               alt={partner.alt}
               width={100}
-              height={50}
-              className="h-8 w-auto object-contain grayscale hover:grayscale-0 transition duration-300"
+              height={100}
+              className=" w-auto object-contain  transition duration-300"
             />
           ))}
         </div>
