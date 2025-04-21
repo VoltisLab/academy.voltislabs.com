@@ -52,7 +52,7 @@ export default function CourseSection() {
       <div className="max-w-7xl mx-auto px-4">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-[#1C144F]">
+          <h2 className="text-[40px] font-bold text-[#090D2C]">
             Discover Course & Bootcamp
           </h2>
           <button className="text-pink-500 border border-pink-500 px-4 py-2 rounded-full hover:bg-pink-600 hover:text-white transition">
@@ -75,7 +75,7 @@ export default function CourseSection() {
               className={`px-4 py-2 rounded-full font-semibold text-sm transition ${
                 i === 0
                   ? "bg-pink-600 text-white"
-                  : "bg-white text-black hover:bg-pink-100"
+                  : "bg-white border border-[#230F0F33] text-black hover:bg-pink-100"
               }`}
             >
               {cat}

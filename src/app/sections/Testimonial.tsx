@@ -26,7 +26,7 @@ export default function Testimonial() {
             recruitment to teaching and learning administration processes,
           </p>
 
-          <hr className="border-gray-500 mb-4" />
+          <hr className="border-[#DCDCE5] mb-4" />
 
           <div>
             <p className="text-lg font-semibold text-indigo-300">Briana Patton</p>
