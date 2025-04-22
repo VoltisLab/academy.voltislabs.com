@@ -21,9 +21,9 @@ export default function CTASection() {
           <Image
             src="/student.jpg" // You need to extract and place this image here
             alt="Consultation"
-            width={400}
-            height={400}
-            className="object-contain"
+            width={500}
+            height={500}
+            className="object-contain rounded-xl"
           />
         </div>
       </div>
