@@ -69,6 +69,7 @@ export default function CourseSection() {
             "Marketing",
             "Mobile Development",
             "Web Development",
+            "Backend Development"
           ].map((cat, i) => (
             <button
               key={i}

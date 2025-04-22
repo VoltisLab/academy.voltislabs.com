@@ -53,10 +53,18 @@ export default function Footer() {
             </li>
             <li>Follow us on social media</li>
             <li className="flex space-x-4 mt-2 text-blue-600">
-              <Instagram size={20} />
-              <Twitter size={20} />
-              <Linkedin size={20} />
-              <Youtube size={20} />
+              <a href="https://instagram.com/voltislabs" target="_blank" rel="noopener noreferrer">
+                <Instagram size={20} />
+              </a>
+              <a href="https://twitter.com/voltislabs" target="_blank" rel="noopener noreferrer">
+                <Twitter size={20} />
+              </a>
+              <a href="https://linkedin.com/company/voltislabs" target="_blank" rel="noopener noreferrer">
+                <Linkedin size={20} />
+              </a>
+              <a href="https://youtube.com/@voltislabs" target="_blank" rel="noopener noreferrer">
+                <Youtube size={20} />
+              </a>
             </li>
           </ul>
         </div>
