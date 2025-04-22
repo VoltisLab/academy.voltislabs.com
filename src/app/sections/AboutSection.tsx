@@ -26,7 +26,7 @@ export default function AboutSection() {
         {/* Right content */}
         <div className="w-full text-[#230F0F]  lg:w-1/2">
           <h2 className="text-[40px] font-bold text-[#230F0F] leading-snug mb-4">
-            Owlearn helps you Become <br className="hidden sm:block" />
+            Voltis Labs helps you Become <br className="hidden sm:block" />
             Experienced
           </h2>
           <p className="text-[20px] font-medium mb-6">

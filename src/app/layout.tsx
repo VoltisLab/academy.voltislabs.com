@@ -29,7 +29,7 @@ export const metadata: Metadata = {
                 siteName: "Voltis Labs",
                 images: [
                   {
-                    url: "/student.png", 
+                    url: "https://academy.voltislabs.com/student.png", 
                     width: 1200,
                     height: 630,
                     alt: "Voltis Labs Academy",

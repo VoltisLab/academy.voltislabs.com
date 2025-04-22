@@ -6,12 +6,12 @@ const Header = () => {
   return (
     <header className="w-full flex justify-between items-center px-6 md:px-12 py-5 bg-transparent">
       {/* Logo */}
-      <div className="flex items-center space-x-2">
+      <Link href={'/'} className="flex items-center space-x-2">
         <Image  width={8} height={8} alt='vl Academy logo' src={'/logo.svg'} className="w-8 h-8 bg-[#2F3C8C] rounded-md" />
         <span className="text-lg md:text-xl font-semibold text-[#2F3C8C]">
           Voltis Labs Academy
         </span>
-      </div>
+      </Link>
 
       {/* Navigation */}
       <nav className="hidden md:flex items-center space-x-8">
