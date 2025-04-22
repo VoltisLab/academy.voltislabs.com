@@ -11,11 +11,11 @@ const HeroSection = () => {
         {/* Left Side: Texts */}
         <div className="max-w-xl md:pr-10">
           <h1 className="text-4xl md:text-6xl font-bold leading-tight text-[#230F0F]">
-          Gain real world experience <br /> and master  digital skills through <br /> immersive internships 
-          </h1>  
+            Learn Any Skill <br /> To Advance Your <br /> Career Path
+          </h1>
           <Image alt='underline' src={'/underline.png'} height={10} width={320}/>
           <p className="mt-6 text-[#230F0F] text-[20px] leading-relaxed">
-            Want to improve your work skills? You need to study harder with the help of a great mentor to improve your performance at work.
+          Gain real world experience and master  digital skills through immersive internships 
           </p>
 
           {/* CTA + Reviews */}
