@@ -11,7 +11,7 @@ const Header = () => {
   const toggleMenu = () => setIsOpen(!isOpen);
 
   return (
-    <header className="w-full bg-white shadow-sm fixed top-0 left-0 z-50">
+    <header className="w-full bg-white  fixed top-0 left-0 z-50">
       <div className="max-w-7xl mx-auto flex justify-between items-center px-6 md:px-12 py-4">
         {/* Logo */}
         <Link href="/" className="flex items-center space-x-2">
