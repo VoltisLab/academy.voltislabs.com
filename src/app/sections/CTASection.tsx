@@ -19,7 +19,7 @@ export default function CTASection() {
         {/* Right Image */}
         <div className="relative w-full md:w-1/2 flex justify-center">
           <Image
-            src="/student.png" // You need to extract and place this image here
+            src="/student.jpg" // You need to extract and place this image here
             alt="Consultation"
             width={400}
             height={400}

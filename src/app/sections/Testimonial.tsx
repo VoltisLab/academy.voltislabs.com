@@ -9,7 +9,7 @@ const testimonials = [
     image: "/testi.jpg",
     name: "Briana Patton",
     role: "Designer at Salesforce",
-    quote: `Higher education in the era of the industrial revolution 4.0 requires breakthrough learning using digital platforms that answer the challenges of millennial students to study anywhere, anytime and with leading-edge ICT technology. From student recruitment to teaching and learning administration processes.`,
+    quote: `Higher education in the era of the industrial revolution 4.0 requires breakthrough learning using digital platforms that answer the challenges of millennial students to study anywhere`,
   },
   {
     image: "/testi2.png",
