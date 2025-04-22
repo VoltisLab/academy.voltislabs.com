@@ -8,7 +8,7 @@ export default function Testimonial() {
         {/* Left: Image */}
         <div className="relative rounded-xl overflow-hidden shadow-xl shadow-gray-900/40">
           <Image
-            src="/testi.png"
+            src="/testi.jpg"
             alt="Student Testimonial"
             width={500}
             height={400}

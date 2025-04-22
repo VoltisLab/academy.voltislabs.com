@@ -8,10 +8,10 @@ export default function AboutSection() {
         <div className="relative w-full lg:w-1/2">
           <div className="rounded-xl overflow-hidden shadow-lg">
             <Image
-              src="/education.png" // Make sure this image is in `public/about/`
+              src="/education.jpg" // Make sure this image is in `public/about/`
               alt="Educational technology"
               width={600}
-              height={400}
+              height={500}
               className="object-cover w-full h-full"
             />
           </div>
