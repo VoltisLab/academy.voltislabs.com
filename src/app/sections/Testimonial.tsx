@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, ArrowLeft } from "lucide-react";
 import { useState } from "react";
 
 const testimonials = [
@@ -30,6 +30,10 @@ export default function Testimonial() {
 
   const nextTestimonial = () => {
     setIndex((prev) => (prev + 1) % testimonials.length);
+  };
+
+  const prevTestimonial = () => {
+    setIndex((prev) => (prev - 1 + testimonials.length) % testimonials.length);
   };
 
   const { image, name, role, quote } = testimonials[index];
@@ -61,7 +65,13 @@ export default function Testimonial() {
             <p className="text-sm text-gray-500">{role}</p>
           </div>
 
-          <div className="mt-6">
+          <div className="mt-6 flex flex-row gap-5 items-center">
+          <button
+              onClick={prevTestimonial}
+              className="w-12 h-12 cursor-pointer rounded-full border hover:text-white border-[#301111] flex items-center justify-center hover:bg-[gray] transition"
+            >
+              <ArrowLeft className="text-[#301111] hover:text-white " size={20} />
+            </button>
             <button
               onClick={nextTestimonial}
               className="w-12 h-12 cursor-pointer rounded-full border hover:text-white border-[#301111] flex items-center justify-center hover:bg-[gray] transition"
