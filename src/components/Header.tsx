@@ -64,7 +64,6 @@ const Header = () => {
           <Link href="/bootcamp" className="block text-[#331C1C] font-semibold hover:text-pink-600" onClick={toggleMenu}>Bootcamp</Link>
           <Link href="/events" className="block text-[#331C1C] font-semibold hover:text-pink-600" onClick={toggleMenu}>Events</Link>
           <Link href="/articles" className="block text-[#331C1C] font-semibold hover:text-pink-600" onClick={toggleMenu}>Articles</Link>
-          <Link href="/contact" className="block text-[#331C1C] font-semibold hover:text-pink-600" onClick={toggleMenu}>Contact</Link>
           <Link href="/contact">
             <button className="w-full mt-4 border-2 border-pink-500 text-pink-500 font-semibold px-5 py-2 rounded-lg hover:bg-pink-500 hover:text-white transition">
               Contact Us
