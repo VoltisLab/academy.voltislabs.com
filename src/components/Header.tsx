@@ -1,17 +1,21 @@
-// components/Header.tsx
 'use client';
 import Link from 'next/link';
 import React, { useState } from 'react';
 import Image from 'next/image';
 import { FiMenu, FiX } from 'react-icons/fi';
+import SignupModal from "@/components/modals/SignupModal";
 
 const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
 
   const toggleMenu = () => setIsOpen(!isOpen);
+    const [isModalOpen, setIsModalOpen] = useState<boolean>(false)
+    const openModal = () => setIsModalOpen(true)
+    const closeModal = () => setIsModalOpen(false)
 
   return (
-    <header className="w-full bg-white  fixed top-0 left-0 z-50">
+    <div>
+      <header className="w-full bg-white  fixed top-0 left-0 z-50">
       <div className="max-w-7xl mx-auto flex justify-between items-center px-6 md:px-12 py-4">
         {/* Logo */}
         <Link href="/" className="flex items-center space-x-2">
@@ -38,11 +42,11 @@ const Header = () => {
 
         {/* Contact Button (Desktop) */}
         <div className="hidden md:block">
-          <Link href="/contact">
-            <button className="border-2 border-pink-500 text-pink-500 font-semibold px-5 py-2 rounded-lg hover:bg-pink-500 hover:text-white transition">
-              Contact Us
+          
+            <button className="border-2 border-pink-500 text-pink-500 font-semibold px-5 py-2 rounded-lg hover:bg-pink-500 hover:text-white transition" onClick={openModal}>
+          Login/Signup
             </button>
-          </Link>
+       
         </div>
 
         {/* Mobile Menu Toggle */}
@@ -69,6 +73,8 @@ const Header = () => {
         </div>
       )}
     </header>
+    <SignupModal isOpen={isModalOpen} onClose={closeModal}/>
+    </div>
   );
 };
 

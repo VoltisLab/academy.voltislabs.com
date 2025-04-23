@@ -1,4 +1,3 @@
-
 import HeroSection from "./sections/HeroSection";
 import Partners from "./sections/Partners";
 import AboutSection from "./sections/AboutSection";
@@ -9,6 +8,8 @@ import Testimonial from "./sections/Testimonial";
 import CourseSection from "./sections/CourseSection";
 
 export default function Home() {
+
+
   return (
     <main>
       <HeroSection/>
