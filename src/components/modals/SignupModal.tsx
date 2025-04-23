@@ -43,7 +43,7 @@ const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose }) => {
 
   return (
     <div className="fixed inset-0 backdrop-blur-sm bg-opacity-30 flex items-center justify-center z-50">
-      <div ref={modalRef} className="bg-white rounded-xl shadow-lg overflow-hidden w-full max-w-5xl flex border-5 border-white relative">
+      <div ref={modalRef} className="bg-white rounded-[30px] shadow-lg overflow-hidden w-full max-w-5xl flex border-5 border-white relative">
         {/* Left side - Pink section */}
         <div className="bg-gradient-to-b from-[#DC4298] to-[#EAADCF] text-white p-8 w-[37%] relative">
           <div className="mb-4">
@@ -63,7 +63,7 @@ const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose }) => {
          
           {/* 3D elements representation */}
           <div className="relative h-[51%] w-[165%] flex justify-center items-center">
-            <div className="absolute inset-0 -left-32 z-50 -bottom-8">
+            <div className="absolute inset-0 -left-32 z-10 -bottom-8">
               <Image 
                 src={'/auth/authsvg.png'}
                 alt='3D geometric shapes' 
@@ -76,14 +76,14 @@ const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose }) => {
         </div>
         
         {/* Curved edge overlay - Fixed positioning */}
-        <div className="absolute h-full left-[37%] overflow-hidden w-12 -translate-x-6 z-20">
+        <div className="absolute h-full left-[37%] overflow-hidden w-12 -translate-x-6 z-">
           <div className="h-full w-16 rounded-l-[30px] bg-white"></div>
         </div>
        
         {/* Right side - Form */}
         <div className="py-16 px-28 flex-1 relative z-10">
           {/* Language Dropdown */}
-          <div className="absolute top-6 right-16 flex items-center">
+          <div className="absolute top-2 right-4 flex items-center">
             <div className="relative">
               <select 
                 value={language}
@@ -137,12 +137,12 @@ const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose }) => {
           </div>
          
           {/* Improved OR divider with longer lines */}
-          <div className="flex items-center mb-8 w-full justify-center">
+          <div className="flex items-center mb-8 w-full justify-center " >
             <span className="text-gray-500 text-sm font-medium">- OR -</span>
           </div>
          
           {!hasAccount ? (
-            <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
+            <form className="space-y-6 z-20" onSubmit={(e) => e.preventDefault()}>
               <div className="mb-6">
                 <input
                   type="text"

@@ -5,7 +5,7 @@ export default function CourseCard({
   date,
   description,
   image,
-  students,
+  // students,
 }: {
   title: string;
   date: string;
@@ -23,9 +23,6 @@ export default function CourseCard({
           fill
           className="object-cover w-full h-full"
         />
-        <div className="absolute top-2 left-2 bg-white text-xs px-2 py-1 rounded-full flex items-center font-semibold">
-          👤 {students}
-        </div>
       </div>
 
       {/* Content */}
