@@ -63,7 +63,7 @@ const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose }) => {
          
           {/* 3D elements representation */}
           <div className="relative h-[51%] w-[165%] flex justify-center items-center">
-            <div className="absolute inset-0 -left-32 z-10 -bottom-8">
+            <div className={`absolute inset-0 z-10  ${!hasAccount? "-left-32 -bottom-8" : "-left-24 -bottom-6"}`}>
               <Image 
                 src={'/auth/authsvg.png'}
                 alt='3D geometric shapes' 
@@ -209,7 +209,7 @@ const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose }) => {
               </div>
               <button
                 type="submit"
-                className="w-full bg-[#DC4298] text-white py-4 rounded-lg font-medium hover:bg-pink-600 transition-colors"
+                className="w-full bg-[#DC4298] text-white py-4 rounded-lg font-medium hover:bg-pink-600 transition-colors cursor-pointer"
               >
                 Login
               </button>
@@ -217,7 +217,7 @@ const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose }) => {
                 Don&apos;t have an account? {" "}
                 <button
                   type="button"
-                  className="text-[#DC4298] hover:underline font-medium"
+                  className="text-[#DC4298] hover:underline font-medium cursor-pointer"
                   onClick={() => setHasAccount(false)}
                 >
                   Sign up
