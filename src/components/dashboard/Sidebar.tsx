@@ -15,12 +15,12 @@ import {
 const links = [
   { href: "/dashboard/overview", label: "Overview", icon: PiGridFourLight },
   {
-    href: "/dashboard/explore-courses",
+    href: "/dashboard/explore",
     label: "Explore Courses",
     icon: PiMagnifyingGlassLight,
   },
   { href: "/dashboard/my-courses", label: "My Courses", icon: PiVideoLight },
-  { href: "/dashboard/message", label: "Message", icon: PiChatCircleTextLight },
+  { href: "/dashboard/messages", label: "Message", icon: PiChatCircleTextLight },
 ];
 
 export default function Sidebar() {
