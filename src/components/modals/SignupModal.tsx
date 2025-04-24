@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect, useRef, FormEvent } from 'react';
 import Image from 'next/image';
-import { signUp, login } from '@/app/api';
+import { signUp, login } from '@/app/api/auth';
 import { SignUpData, LoginData } from '@/lib/types';
 import { useRouter } from 'next/navigation';
 import { ApolloProvider } from '@apollo/client';
