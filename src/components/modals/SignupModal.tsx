@@ -30,7 +30,7 @@ const SignupModalContent: React.FC<SignupModalProps> = ({ isOpen, onClose }) => 
       if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
         onClose();
       }
-    };
+    }; 
 
     // Add event listener when modal is open
     if (isOpen) {
