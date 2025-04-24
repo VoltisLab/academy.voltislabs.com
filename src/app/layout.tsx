@@ -68,7 +68,7 @@ export default function RootLayout({
         className={`${mavenPro.variable} ${geistMono.variable} ${plusJakarta.variable} font-sans antialiased`}
       >
         <AuthProvider>
-          <Header />
+        
           {children}
         </AuthProvider>
       </body>
