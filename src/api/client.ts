@@ -13,7 +13,7 @@ import { ApiClientOptions, ApiResponse } from "@/lib/types";
     variables?: Record<string, any>,
     options: ApiClientOptions = { includeAuth: true }
   ): Promise<T> => {
-    const API_URL = 'https://api.prelura.com/graphql/';
+    const API_URL = 'http://api.prelura.com/graphql/';
     
     // Validate query string is provided
     if (!query || typeof query !== 'string' || query.trim() === '') {
