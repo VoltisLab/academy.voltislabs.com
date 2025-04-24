@@ -3,7 +3,7 @@ import React from "react";
 interface TitleProp {
   children: string;
   className?: string;
-  props?: any;
+  props?: React.HTMLAttributes<HTMLHeadingElement>;
 }
 
 const Subtitle = ({ children, className, props }: TitleProp) => {

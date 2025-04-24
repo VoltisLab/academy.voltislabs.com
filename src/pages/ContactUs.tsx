@@ -40,11 +40,12 @@ const ContactUs = () => {
       }
     } catch (error) {
       setFormStatus("error");
+      console.log("Error submitting form:", error);
     }
   };
 
   return (
-    <div className="contact-page mt-[10rem] bg-gradient-to-b from-[#DC4298] to-[#DC4298] text-white min-h-screen">
+    <div className="contact-page mt-[3rem] text-[#DC4298] min-h-screen">
       {/* Hero Section */}
       <section id="contact-home" className="">
         <TitleSection
@@ -71,7 +72,7 @@ const ContactUs = () => {
 
           {formStatus === "success" && (
             <motion.div
-              className="text-center text-green-500 mb-6"
+              className="text-center text-[#DC4298] mb-6"
               initial="hidden"
               animate="visible"
               variants={fadeUp}
@@ -83,7 +84,7 @@ const ContactUs = () => {
 
           {formStatus === "error" && (
             <motion.div
-              className="text-center text-red-500 mb-6"
+              className="text-center text-[#DC4298] mb-6"
               initial="hidden"
               animate="visible"
               variants={fadeUp}
@@ -132,7 +133,10 @@ const ContactUs = () => {
 
             {/* Message */}
             <motion.div variants={fadeUp} custom={3}>
-              <label htmlFor="message" className="block text-sm font-medium mb-2">
+              <label
+                htmlFor="message"
+                className="block text-sm font-medium mb-2"
+              >
                 Message
               </label>
               <textarea
@@ -149,7 +153,7 @@ const ContactUs = () => {
             <motion.div className="text-center" variants={fadeUp} custom={4}>
               <button
                 type="submit"
-                className="md:text-[.8rem] text-[.6rem] item-container justify-between cursor-pointer flex items-center gap-2 p-1 border-solid border-white border-[1px] px-4 min-w-[9rem] h-[2rem] rounded-[4px] transition-all duration-300 hover:bg-white hover:text-black"
+                className="md:text-[.8rem] text-[.6rem] item-container justify-between cursor-pointer flex items-center gap-2 p-1 border-solid border-[#DC4298] border-[1px] px-4 min-w-[9rem] h-[2rem] rounded-[4px] transition-all duration-300 hover:bg-[#DC4298] hover:text-white"
               >
                 Send Message
                 <FiArrowRight size={18} />
@@ -173,7 +177,7 @@ const ContactUs = () => {
           >
             <FiMapPin size={40} className="mx-auto mb-4 text-[#fff]" />
             <h3 className="text-xl font-bold mb-2">Our Address</h3>
-            <p className="text-white">London, UK</p>
+            <p className="text-[#DC4298]">London, UK</p>
           </motion.div>
 
           {/* Email */}
@@ -189,7 +193,7 @@ const ContactUs = () => {
             <h3 className="text-xl font-bold mb-2">Email Us</h3>
             <a
               href="mailto:contact@voltislabs.com"
-              className="text-white hover:underline"
+              className="text-[#DC4298] hover:underline"
             >
               contact@voltislabs.com
             </a>
@@ -206,10 +210,7 @@ const ContactUs = () => {
           >
             <FiPhone size={40} className="mx-auto mb-4 text-[#fff]" />
             <h3 className="text-xl font-bold mb-2">Call Us</h3>
-            <a
-              href="tel:+442039479699"
-              className="text-white hover:underline"
-            >
+            <a href="tel:+442039479699" className="text-white hover:underline">
               +442039479699
             </a>
           </motion.div>
