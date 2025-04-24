@@ -1,61 +1,93 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BsStars } from "react-icons/bs";
-import { LuHistory, LuUserRound } from "react-icons/lu";
-import { MdLocationOn } from "react-icons/md";
+import { IoSettingsOutline } from "react-icons/io5";
+import {
+  PiChatCircleTextLight,
+  PiGridFourLight,
+  PiMagnifyingGlassLight,
+  PiSignOutLight,
+  PiVideoLight,
+} from "react-icons/pi";
 
 const links = [
-  { href: "/dashboard/overview", label: "Overview", icon: LuHistory },
+  { href: "/dashboard/overview", label: "Overview", icon: PiGridFourLight },
   {
     href: "/dashboard/explore-courses",
     label: "Explore Courses",
-    icon: LuUserRound,
+    icon: PiMagnifyingGlassLight,
   },
-  { href: "/dashboard/my-courses", label: "My Courses", icon: MdLocationOn },
-  { href: "/dashboard/message", label: "Message", icon: BsStars },
+  { href: "/dashboard/my-courses", label: "My Courses", icon: PiVideoLight },
+  { href: "/dashboard/message", label: "Message", icon: PiChatCircleTextLight },
 ];
 
 export default function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <nav className=" flex divide-y-2 divide-gray-100 shrink-0 rounded-md flex-col w-full md:w-52  lg:w-80">
-      {links.map(({ href, label, icon: Icon }) => {
-        const isActive =
-          pathname === href ||
-          (pathname === "/overview" && href === "/overview/order-history");
+    <aside className="flex p-6 flex-col size-full text-base">
+      {/* Logo */}
+      <Link href={"/"} className="items-center flex gap-2 mb-12">
+        <div className="size-10 relative">
+          <Image
+            src={"/logo.svg"}
+            alt="Logo"
+            fill
+            sizes="(max-width: 768px) 100vw, 128px"
+            className="object-contain"
+            priority
+          />
+        </div>
+        <p className="font-medium leading-[92%] text-[#313273] text-2xl">
+          Voltis Labs
+          <br />
+          Academy
+        </p>
+      </Link>
 
-        return (
-          <div>
-            {/* Logo */}
-            <div></div>
+      <nav className="flex flex-col gap-2.5">
+        {links.map(({ href, label, icon: Icon }) => {
+          const isActive =
+            pathname === href ||
+            (pathname === "/dashboard" && href === "/dashboard/overview");
 
-            {/* NAV  */}
+          return (
             <Link
               key={href}
               href={href}
-              className={`flex md:block items-center justify-between gap-2 px-2 md:px-4 py-4 rounded group ${
+              className={`px-3.5 py-2.5 rounded-md hover:bg-[#ECEBFF] transition group ${
                 isActive
-                  ? "md:bg-gray-100 md:border-l-4 md:border-l-zinc-800 md:font-bold"
-                  : ""
+                  ? "bg-[#ECEBFF] text-[#313273] font-semibold"
+                  : "font-medium"
               }`}
             >
-              <div className="flex items-center gap-2">
-                <Icon className={`size-6 ${isActive ? "" : ""}`} />
-                <span
-                  className={`group-hover:font-[700] font-[400] duration-200 ${
-                    isActive ? "" : ""
-                  }`}
-                >
-                  {label}
-                </span>
+              <div className="flex items-center gap-2 transition group-hover:text-[#313273]">
+                <Icon className={`size-5 ${isActive ? "" : ""}`} />
+                <span className={`${isActive ? "" : ""}`}>{label}</span>
               </div>
             </Link>
-          </div>
-        );
-      })}
-    </nav>
+          );
+        })}
+      </nav>
+
+      {/* Settings logout */}
+      <div className="mt-auto space-y-2.5">
+        <h3 className="text-[#A7A7AA]">Settings</h3>
+
+        <Link
+          href={"/settings"}
+          className="gap-2.5 flex items-center py-2.5 pl-3.5 text-[#525255] "
+        >
+          <IoSettingsOutline />
+          <span>Settings</span>
+        </Link>
+        <button className="gap-2.5 flex items-center py-2.5 pl-3.5 text-[#F43F5E] cursor-pointer">
+          <PiSignOutLight />
+          <span>Logout</span>
+        </button>
+      </div>
+    </aside>
   );
 }
