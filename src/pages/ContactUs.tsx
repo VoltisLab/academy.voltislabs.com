@@ -40,6 +40,7 @@ const ContactUs = () => {
       }
     } catch (error) {
       setFormStatus("error");
+      console.log("Error submitting form:", error);
     }
   };
 
@@ -132,7 +133,10 @@ const ContactUs = () => {
 
             {/* Message */}
             <motion.div variants={fadeUp} custom={3}>
-              <label htmlFor="message" className="block text-sm font-medium mb-2">
+              <label
+                htmlFor="message"
+                className="block text-sm font-medium mb-2"
+              >
                 Message
               </label>
               <textarea
@@ -206,10 +210,7 @@ const ContactUs = () => {
           >
             <FiPhone size={40} className="mx-auto mb-4 text-[#fff]" />
             <h3 className="text-xl font-bold mb-2">Call Us</h3>
-            <a
-              href="tel:+442039479699"
-              className="text-[#DC4298] hover:underline"
-            >
+            <a href="tel:+442039479699" className="text-white hover:underline">
               +442039479699
             </a>
           </motion.div>
