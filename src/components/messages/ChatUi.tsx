@@ -9,7 +9,9 @@ export default function ChatUI() {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<string[]>([]);
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
-  const [selectedItem, setSelectedItem] = useState<any>(null);
+  const [selectedItem, setSelectedItem] = useState<any>({
+    room: "Rich",
+  });
   const handleSend = () => {
     if (!message.trim()) return;
     setMessages((prev) => [...prev, message]);
@@ -23,11 +25,26 @@ export default function ChatUI() {
     }
   };
 
-  const chatRooms=[
+  const chatRooms = [
     {
-      room: 'Rich'  
-    }
-  ]
+      room: "Rich",
+    },
+    {
+      room: "Mike",
+    },
+    {
+      room: "Vm",
+    },
+    {
+      room: "Yellow",
+    },
+    {
+      room: "Violet",
+    },
+    {
+      room: "Jenny",
+    },
+  ];
 
   return (
     <div className="flex h-screen bg-white text-black">
@@ -40,9 +57,9 @@ export default function ChatUI() {
         />
         <div className="flex items-center justify-between px-4 py-2">
           <TabComponent tabs={["All", "Unread", "Starred"]}>
-            {[...Array(6)].map((_, i) => (
+            {chatRooms.map((item, i) => (
               <ChatSidebarItem
-                item={selectedItem}
+                item={item}
                 setSelectedItem={setSelectedItem}
                 setSelectedIndex={setSelectedIndex}
                 selectedIndex={selectedIndex}
@@ -50,9 +67,9 @@ export default function ChatUI() {
                 index={i}
               />
             ))}
-            {[...Array(6)].map((_, i) => (
+            {chatRooms.map((item, i) => (
               <ChatSidebarItem
-                item={selectedItem}
+                item={item}
                 setSelectedItem={setSelectedItem}
                 setSelectedIndex={setSelectedIndex}
                 selectedIndex={selectedIndex}
@@ -60,9 +77,9 @@ export default function ChatUI() {
                 index={i}
               />
             ))}
-            {[...Array(6)].map((_, i) => (
+            {chatRooms.map((item, i) => (
               <ChatSidebarItem
-                item={selectedItem}
+                item={item}
                 setSelectedItem={setSelectedItem}
                 setSelectedIndex={setSelectedIndex}
                 selectedIndex={selectedIndex}
@@ -85,7 +102,7 @@ export default function ChatUI() {
             className="rounded-full"
           />
           <div>
-            <p className="font-semibold">X_AE_A-13b</p>
+            <p className="font-semibold">{selectedItem?.room}</p>
             <p className="text-xs text-gray-500">Last seen 7h ago</p>
           </div>
         </div>
@@ -93,9 +110,6 @@ export default function ChatUI() {
         {/* Messages */}
         <div className="flex-1 px-6 py-4 overflow-y-auto bg-white">
           <div className="text-center text-gray-400 text-xs mb-4">25 April</div>
-          <div className="text-xs text-gray-500 mb-2">
-            You viewed X_AE_A-13b <span className="ml-2">12:25 ✓✓</span>
-          </div>
 
           {messages.map((msg, index) => (
             <div key={index} className="flex justify-end mb-2">

@@ -20,7 +20,7 @@ export default function CourseDetailScreen() {
           />
           <div className="px-5 space-y-10 mt-10">
             <AnimationCourseCard />
-            <TabComponent>
+            <TabComponent tabs={["Description", "Assignment", "Tools", "Review"]}>
               <DescriptionComponent />
               <div>Assignment content goes here...</div>
               <div>Tools content goes here...</div>
