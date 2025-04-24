@@ -1,13 +1,5 @@
-interface ApiClientOptions {
-    includeAuth?: boolean;
-    credentials?: RequestCredentials;
-  }
-  
-  export interface ApiResponse<T> {
-    data?: T;
-    errors?: Array<{ message: string }>;
-  }
-  
+import { ApiClientOptions, ApiResponse } from "@/lib/types";
+ 
   /**
    * GraphQL API client to handle requests
    * @param query - GraphQL query or mutation
@@ -21,7 +13,7 @@ interface ApiClientOptions {
     variables?: Record<string, any>,
     options: ApiClientOptions = { includeAuth: true }
   ): Promise<T> => {
-    const API_URL = 'http://api.prelura.com/graphql/';
+    const API_URL = 'https://api.prelura.com/graphql/';
     
     // Validate query string is provided
     if (!query || typeof query !== 'string' || query.trim() === '') {
@@ -48,8 +40,7 @@ interface ApiClientOptions {
           query,
           variables,
         }),
-        credentials: options.credentials || 'include', // Include cookies in the request
-        mode: 'cors', // Explicitly set CORS mode
+        credentials: options.credentials || 'same-origin', 
       });
   
       if (!response.ok) {

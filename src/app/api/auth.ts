@@ -1,54 +1,6 @@
-// app/api/auth.ts
 import { LoginData, LoginResponse, SignUpData, SignUpResponse } from '@/lib/types';
-import { gql } from '@apollo/client';
 import { apolloClient } from '@/lib/apollo-client';
-
-// GraphQL mutation for user registration
-const REGISTER_MUTATION = gql`
-  mutation Register(
-    $email: String!, 
-    $firstName: String!, 
-    $lastName: String!, 
-    $password1: String!, 
-    $password2: String!, 
-    $username: String!
-  ) {
-    register(
-      email: $email,
-      firstName: $firstName,
-      lastName: $lastName,
-      password1: $password1,
-      password2: $password2,
-      username: $username
-    ) {
-      error
-      success
-      refreshToken
-      token
-    }
-  }
-`;
-
-// GraphQL mutation for user login
-const LOGIN_MUTATION = gql`
-  mutation Login($email: String!, $password: String!) {
-    login(email: $email, password: $password) {
-      errors
-      refreshToken
-      success
-      token
-      user {
-        verified
-        username
-        lastName
-        isVerified
-        firstName
-        email
-        id
-      }
-    }
-  }
-`;
+import { LOGIN_MUTATION, REGISTER_MUTATION } from './mutations';
 
 /**
  * Sign up a new user using Apollo Client
@@ -78,7 +30,7 @@ export const signUp = async (userData: SignUpData): Promise<SignUpResponse> => {
     });
 
     if (errors) {
-      throw new Error(errors[0].message);
+      console.log(errors)
     }
 
     // Store tokens on successful registration

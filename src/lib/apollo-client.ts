@@ -4,8 +4,8 @@ import { onError } from '@apollo/client/link/error';
 
 // Create an http link
 const httpLink = createHttpLink({
-  uri: 'http://api.prelura.com/graphql/',
-  credentials: 'include', // This is equivalent to including credentials in fetch
+  uri: 'https://api.prelura.com/graphql/',
+  credentials: 'same-origin', 
 });
 
 // Error handling link for Apollo - handles network and GraphQL errors
@@ -13,7 +13,7 @@ const errorLink = onError(({ graphQLErrors, networkError }) => {
   // Handle GraphQL errors
   if (graphQLErrors) {
     graphQLErrors.forEach(({ message, locations, path }) => 
-      console.error(
+      console.log(
         `[GraphQL error]: Message: ${message}, Location: ${locations}, Path: ${path}`
       )
     );
@@ -21,10 +21,10 @@ const errorLink = onError(({ graphQLErrors, networkError }) => {
 
   // Handle network errors, including CORS
   if (networkError) {
-    console.error(`[Network error]: ${networkError}`);
+    console.log(`[Network error]: ${networkError}`);
     // Check if it's a CORS error
     if (networkError.message.includes('CORS')) {
-      console.error('CORS error detected. Check server configuration.');
+      console.log('CORS error detected. Check server configuration.');
     }
   }
 });

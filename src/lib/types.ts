@@ -46,4 +46,14 @@ export interface SignUpData {
       email: string;
       id: string;
     }
+  
     
+    export interface ApiClientOptions {
+        includeAuth?: boolean;
+        credentials?: RequestCredentials;
+      }
+      
+      export interface ApiResponse<T> {
+        data?: T;
+        errors?: Array<{ message: string }>;
+      }
