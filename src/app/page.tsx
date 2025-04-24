@@ -6,20 +6,20 @@ import GraduateCompanies from "./sections/GraduateCompanies";
 import Footer from "./sections/Footer";
 import Testimonial from "./sections/Testimonial";
 import CourseSection from "./sections/CourseSection";
+import Header from "@/components/Header";
 
 export default function Home() {
-
-
   return (
     <main>
-      <HeroSection/>
-      <Partners/>
-      <AboutSection/>
-      <CTASection/>
-      <CourseSection/>
-      <GraduateCompanies/>
-      <Testimonial/>
-      <Footer/>
+      <Header />
+      <HeroSection />
+      <Partners />
+      <AboutSection />
+      <CTASection />
+      <CourseSection />
+      <GraduateCompanies />
+      <Testimonial />
+      <Footer />
     </main>
   );
 }

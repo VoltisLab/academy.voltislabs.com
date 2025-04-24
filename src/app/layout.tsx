@@ -56,7 +56,6 @@ export default function RootLayout({
       <body
         className={`${mavenPro.variable} ${geistMono.variable} font-sans antialiased`}
       >
-        <Header />
         {children}
       </body>
     </html>
