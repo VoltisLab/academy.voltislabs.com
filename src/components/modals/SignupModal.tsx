@@ -1,20 +1,28 @@
 'use client'
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, FormEvent } from 'react';
 import Image from 'next/image';
+import { signUp, login } from '@/app/api/auth';
+import { SignUpData, LoginData } from '@/lib/types';
+import { useRouter } from 'next/navigation';
+import { ApolloProvider } from '@apollo/client';
+import { apolloClient } from '@/lib/apollo-client';
 
 interface SignupModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose }) => {
+const SignupModalContent: React.FC<SignupModalProps> = ({ isOpen, onClose }) => {
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [fullName, setFullName] = useState<string>('');
   const [hasAccount, setHasAccount] = useState<boolean>(false);
   const [language, setLanguage] = useState<string>('English (UK)');
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
   
   const modalRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
 
   useEffect(() => {
     // Function to handle outside clicks
@@ -22,7 +30,7 @@ const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose }) => {
       if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
         onClose();
       }
-    };
+    }; 
 
     // Add event listener when modal is open
     if (isOpen) {
@@ -35,10 +43,94 @@ const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose }) => {
     };
   }, [isOpen, onClose]);
 
+  // Reset form state when toggling between login and signup
+  useEffect(() => {
+    setError(null);
+  }, [hasAccount]);
+
   if (!isOpen) return null;
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>, setter: React.Dispatch<React.SetStateAction<string>>) => {
     setter(e.target.value);
+  };
+
+  // Handle signup submission
+  const handleSignup = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!email || !password || !fullName) {
+      setError('All fields are required');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const userData: SignUpData = {
+        fullName,
+        email,
+        password
+      };
+
+      const result = await signUp(userData);
+      
+      if (result.register.success) {
+        // Close modal and redirect
+        onClose();
+        router.push('/dashboard');
+      } else {
+        setError('Registration failed. Please try again.');
+      }
+    } catch (err: any) {
+      // Improved error handling
+      if (err.networkError && err.networkError.statusCode === 0) {
+        setError('Network error. This could be a CORS issue. Please try again later.');
+      } else {
+        setError(err instanceof Error ? err.message : 'An unknown error occurred');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle login submission
+  const handleLogin = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!email || !password) {
+      setError('Email and password are required');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const credentials: LoginData = {
+        email,
+        password
+      };
+
+      const result = await login(credentials);
+      
+      if (result.login.success) {
+        // Close modal and redirect
+        onClose();
+        router.push('/dashboard');
+      } else if (result.login.errors && result.login.errors.length > 0) {
+        setError(result.login.errors[0]);
+      } else {
+        setError('Login failed. Please check your credentials.');
+      }
+    } catch (err: any) {
+      // Improved error handling
+      if (err.networkError && err.networkError.statusCode === 0) {
+        setError('Network error. This could be a CORS issue. Please try again later.');
+      } else {
+        setError(err instanceof Error ? err.message : 'An unknown error occurred');
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -48,7 +140,6 @@ const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose }) => {
         <div className="bg-gradient-to-b from-[#DC4298] to-[#EAADCF] text-white p-8 w-[37%] relative">
           <div className="mb-4">
             <div className="h-8 w-8 bg-white rounded">
-              {/* Logo placeholder */}
               <Image 
                 src={'/auth/logo.png'} 
                 alt='3D geometric shapes' 
@@ -110,7 +201,6 @@ const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose }) => {
           <div className="flex gap-4 mb-8">
             <button className="flex-1 border border-gray-300 rounded-md py-2 font-bold px-3 flex justify-center items-center gap-2 text-[#A1A1A1] text-[12px]">
             <div className="h-6 w-6 bg-white rounded">
-              {/* Logo placeholder */}
               <Image 
                 src={'/auth/google.png'} 
                 alt='3D geometric shapes' 
@@ -123,7 +213,6 @@ const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose }) => {
             </button>
             <button className="flex-1 border border-gray-300 rounded-md py-2 px-3 font-bold flex justify-center items-center gap-2 text-[#A1A1A1] text-[12px]">
               <div className="h-5 w-5 bg-white rounded ">
-              {/* Logo placeholder */}
               <Image 
                 src={'/auth/facebook.png'} 
                 alt='3D geometric shapes' 
@@ -140,9 +229,16 @@ const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose }) => {
           <div className="flex items-center mb-8 w-full justify-center " >
             <span className="text-gray-500 text-sm font-medium">- OR -</span>
           </div>
+
+          {/* Error message display */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-2 rounded-md mb-4 text-sm">
+              {error}
+            </div>
+          )}
          
           {!hasAccount ? (
-            <form className="space-y-6 z-20" onSubmit={(e) => e.preventDefault()}>
+            <form className="space-y-6 z-20" onSubmit={handleSignup}>
               <div className="mb-6">
                 <input
                   type="text"
@@ -150,6 +246,7 @@ const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose }) => {
                   className="w-full px-0 py-2 border-t-0 border-r-0 border-l-0 text-[14px] border-b border-gray-300 focus:border-b-2 focus:border-pink-500 focus:outline-none text-gray-700"
                   value={fullName}
                   onChange={(e) => handleInputChange(e, setFullName)}
+                  required
                 />
               </div>
               <div className="mb-6">
@@ -159,6 +256,7 @@ const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose }) => {
                   className="w-full px-0 py-2 border-t-0 border-r-0 border-l-0 border-b text-[14px] border-gray-300 focus:border-b-2 focus:border-pink-500 focus:outline-none text-gray-700"
                   value={email}
                   onChange={(e) => handleInputChange(e, setEmail)}
+                  required
                 />
               </div>
               <div className="mb-6">
@@ -168,13 +266,15 @@ const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose }) => {
                   className="w-full px-0 py-2 border-t-0 border-r-0 border-l-0 text-[14px] border-b border-gray-300 text-[14px] focus:border-b-2 focus:border-pink-500 focus:outline-none text-gray-700"
                   value={password}
                   onChange={(e) => handleInputChange(e, setPassword)}
+                  required
                 />
               </div>
               <button
                 type="submit"
-                className="w-full bg-[#DC4298] text-white py-4 rounded-lg font-medium hover:bg-pink-600 transition-colors"
+                className={`w-full bg-[#DC4298] text-white py-4 rounded-lg font-medium hover:bg-pink-600 transition-colors ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
+                disabled={loading}
               >
-                Create Account
+                {loading ? 'Creating Account...' : 'Create Account'}
               </button>
               <p className="text-center text-sm text-gray-600 mt-4">
                 Already have an account? {" "}
@@ -182,13 +282,14 @@ const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose }) => {
                   type="button"
                   className="text-[#DC4298] hover:underline font-medium"
                   onClick={() => setHasAccount(true)}
+                  disabled={loading}
                 >
                   Login
                 </button>
               </p>
             </form>
           ) : (
-            <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
+            <form className="space-y-6" onSubmit={handleLogin}>
               <div className="mb-6">
                 <input
                   type="email"
@@ -196,6 +297,7 @@ const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose }) => {
                   className="w-full px-0 py-2 border-t-0 border-r-0 border-l-0 border-b border-gray-300 focus:border-b-2 focus:border-pink-500 focus:outline-none text-gray-700"
                   value={email}
                   onChange={(e) => handleInputChange(e, setEmail)}
+                  required
                 />
               </div>
               <div className="mb-6">
@@ -205,13 +307,15 @@ const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose }) => {
                   className="w-full px-0 py-2 border-t-0 border-r-0 border-l-0 border-b border-gray-300 focus:border-b-2 focus:border-pink-500 focus:outline-none text-gray-700"
                   value={password}
                   onChange={(e) => handleInputChange(e, setPassword)}
+                  required
                 />
               </div>
               <button
                 type="submit"
-                className="w-full bg-[#DC4298] text-white py-4 rounded-lg font-medium hover:bg-pink-600 transition-colors cursor-pointer"
+                className={`w-full bg-[#DC4298] text-white py-4 rounded-lg font-medium hover:bg-pink-600 transition-colors cursor-pointer ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
+                disabled={loading}
               >
-                Login
+                {loading ? 'Logging in...' : 'Login'}
               </button>
               <p className="text-center text-sm text-gray-600 mt-4">
                 Don&apos;t have an account? {" "}
@@ -219,6 +323,7 @@ const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose }) => {
                   type="button"
                   className="text-[#DC4298] hover:underline font-medium cursor-pointer"
                   onClick={() => setHasAccount(false)}
+                  disabled={loading}
                 >
                   Sign up
                 </button>
@@ -228,6 +333,15 @@ const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose }) => {
         </div>
       </div>
     </div>
+  );
+};
+
+// Wrap the component with ApolloProvider
+const SignupModal: React.FC<SignupModalProps> = (props) => {
+  return (
+    <ApolloProvider client={apolloClient}>
+      <SignupModalContent {...props} />
+    </ApolloProvider>
   );
 };
 

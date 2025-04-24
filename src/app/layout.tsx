@@ -6,6 +6,7 @@ import {
 } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/Header";
+import { AuthProvider } from "@/context/AuthContext";
 
 // Fonts
 const mavenPro = Maven_Pro({
@@ -66,7 +67,10 @@ export default function RootLayout({
       <body
         className={`${mavenPro.variable} ${geistMono.variable} ${plusJakarta.variable} font-sans antialiased`}
       >
-        {children}
+        <AuthProvider>
+          <Header />
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );
