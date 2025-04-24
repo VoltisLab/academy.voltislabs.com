@@ -1,5 +1,9 @@
 import type { Metadata } from "next";
-import { Geist_Mono, Maven_Pro } from "next/font/google";
+import {
+  Geist_Mono,
+  Maven_Pro,
+  Plus_Jakarta_Sans,
+} from "next/font/google";
 import "./globals.css";
 import Header from "@/components/Header";
 import { AuthProvider } from "@/context/AuthContext";
@@ -8,12 +12,18 @@ import { AuthProvider } from "@/context/AuthContext";
 const mavenPro = Maven_Pro({
   variable: "--font-maven",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"], // include any weights you plan to use
+  weight: ["400", "500", "600", "700"],
 });
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+});
+
+const plusJakarta = Plus_Jakarta_Sans({
+  variable: "--font-plus-jakarta",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
 });
 
 export const metadata: Metadata = {
@@ -55,7 +65,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${mavenPro.variable} ${geistMono.variable} font-sans antialiased`}
+        className={`${mavenPro.variable} ${geistMono.variable} ${plusJakarta.variable} font-sans antialiased`}
       >
         <AuthProvider>
           <Header />
