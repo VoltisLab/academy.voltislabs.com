@@ -1,19 +1,25 @@
 "use client";
 import Link from "next/link";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { FiMenu, FiX } from "react-icons/fi";
 import SignupModal from "@/components/modals/SignupModal";
 
 const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [userExists, setUserExists] = useState<boolean>(false);
+
+  // Move localStorage access to useEffect
+  useEffect(() => {
+    const userString = localStorage.getItem('user');
+    setUserExists(!!userString);
+  }, []);
 
   const toggleMenu = () => setIsOpen(!isOpen);
-  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => setIsModalOpen(false);
 
-  const userString = localStorage.getItem('user');
   return (
     <div>
       <header className="w-full bg-white fixed top-0 left-0 z-50">
@@ -68,13 +74,13 @@ const Header = () => {
 
           {/* Contact Button (Desktop) */}
           <div className="hidden md:block">
-            {!userString && (
+            {!userExists && (
               <button
-              className="border-2 border-pink-500 text-pink-500 font-semibold px-5 py-2 rounded-lg hover:bg-pink-500 hover:text-white transition"
-              onClick={openModal}
-            >
-              Login/Signup
-            </button>
+                className="border-2 border-pink-500 text-pink-500 font-semibold px-5 py-2 rounded-lg hover:bg-pink-500 hover:text-white transition"
+                onClick={openModal}
+              >
+                Login/Signup
+              </button>
             )}
           </div>
 
