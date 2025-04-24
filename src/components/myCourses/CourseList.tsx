@@ -42,13 +42,31 @@ const courses: Course[] = [
     progress: 20,
     slug: "pm",
   },
+  {
+    id: 5,
+    image: "/courses/graphic.png",
+    tag: "Frontend",
+    title: "Beginner's Guide To Becoming A Professional Frontend Developer",
+    modules: "3/5 Module",
+    progress: 60,
+    slug: "graphic",
+  },
+  {
+    id: 6,
+    image: "/courses/pm.png",
+    tag: "Frontend",
+    title: "Beginner's Guide To Becoming A Professional Frontend Developer",
+    modules: "1/5 Module",
+    progress: 20,
+    slug: "pm",
+  },
 ];
 
-export default function CourseList({ title = "My Courses", card_type = "my-courses" }: { title?: string; card_type: Card_type }) {
+export default function CourseList({ title = "My Courses", card_type = "my-courses",show_filter= true }: { title?: string; card_type: Card_type ,show_filter:boolean}) {
   return (
     <section className="space-y-10">
       <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
-      <CourseFilterBar />
+     {show_filter && <CourseFilterBar />}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {courses.map((course) => (
           <CourseCardDash

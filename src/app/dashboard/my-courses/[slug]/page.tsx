@@ -6,6 +6,7 @@ import TabComponent from "@/components/myCourses/TabComponent";
 import CourseProgressCard from "@/components/myCourses/CourseProgressCard";
 import DescriptionComponent from "@/components/myCourses/DescriptionComponent";
 import CourseHeader from "@/components/myCourses/CourseHeader";
+import CourseList from "@/components/myCourses/CourseList";
 
 export default function CourseDetailScreen() {
   return (
@@ -20,7 +21,9 @@ export default function CourseDetailScreen() {
           />
           <div className="px-5 space-y-10 mt-10">
             <AnimationCourseCard />
-            <TabComponent tabs={["Description", "Assignment", "Tools", "Review"]}>
+            <TabComponent
+              tabs={["Description", "Assignment", "Tools", "Review"]}
+            >
               <DescriptionComponent />
               <div>Assignment content goes here...</div>
               <div>Tools content goes here...</div>
@@ -64,6 +67,7 @@ export default function CourseDetailScreen() {
           />
         </div>
       </div>
+      <CourseList show_filter={false} card_type={"explore"} title="Related Course" />
     </div>
   );
 }

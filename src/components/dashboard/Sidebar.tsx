@@ -10,6 +10,7 @@ import {
   PiMagnifyingGlassLight,
   PiSignOutLight,
   PiVideoLight,
+  PiNotification
 } from "react-icons/pi";
 
 const links = [
@@ -20,7 +21,16 @@ const links = [
     icon: PiMagnifyingGlassLight,
   },
   { href: "/dashboard/my-courses", label: "My Courses", icon: PiVideoLight },
-  { href: "/dashboard/messages", label: "Message", icon: PiChatCircleTextLight },
+  {
+    href: "/dashboard/messages",
+    label: "Message",
+    icon: PiChatCircleTextLight,
+  },
+  {
+    href: "/dashboard/notifications",
+    label: "Notification",
+    icon: PiNotification,
+  },
 ];
 
 export default function Sidebar() {
@@ -77,7 +87,7 @@ export default function Sidebar() {
         <h3 className="text-[#A7A7AA]">Settings</h3>
 
         <Link
-          href={"/settings"}
+          href={"settings"}
           className="gap-2.5 flex items-center py-2.5 pl-3.5 text-[#525255] "
         >
           <IoSettingsOutline />
