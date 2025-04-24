@@ -1,13 +1,5 @@
-interface ApiClientOptions {
-    includeAuth?: boolean;
-    credentials?: RequestCredentials;
-  }
-  
-  export interface ApiResponse<T> {
-    data?: T;
-    errors?: Array<{ message: string }>;
-  }
-  
+import { ApiClientOptions, ApiResponse } from "@/lib/types";
+ 
   /**
    * GraphQL API client to handle requests
    * @param query - GraphQL query or mutation

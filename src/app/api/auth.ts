@@ -1,4 +1,3 @@
-// app/api/auth.ts
 import { LoginData, LoginResponse, SignUpData, SignUpResponse } from '@/lib/types';
 import { gql } from '@apollo/client';
 import { apolloClient } from '@/lib/apollo-client';
