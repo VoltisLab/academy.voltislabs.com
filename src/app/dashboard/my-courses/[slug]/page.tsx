@@ -1,20 +1,16 @@
 "use client";
 import { useState } from "react";
-import Image from "next/image";
-import CourseVideo from "../myCourses/CourseVideo";
-import CourseCard from "../CourseCard";
-import AnimationCourseCard from "../myCourses/AnimationCourseCard";
-import TabComponent from "../myCourses/TabComponent";
-import CourseProgressCard from "../myCourses/CourseProgressCard";
-import DescriptionComponent from "../myCourses/DescriptionComponent";
-// import { Button } from "@/components/ui/button";
-// import { Progress } from "@/components/ui/progress";
+import CourseVideo from "@/components/myCourses/CourseVideo";
+import AnimationCourseCard from "@/components/myCourses/AnimationCourseCard";
+import TabComponent from "@/components/myCourses/TabComponent";
+import CourseProgressCard from "@/components/myCourses/CourseProgressCard";
+import DescriptionComponent from "@/components/myCourses/DescriptionComponent";
+import CourseHeader from "@/components/myCourses/CourseHeader";
 
 export default function CourseDetailScreen() {
-  const [progress, setProgress] = useState(20);
-
   return (
     <div className="max-w-[90rem]  mx-auto px-4 16 py-8">
+      <CourseHeader title="Animation Is the Key of Successful UI/UX Design" />
       <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="col-span-2">
           <CourseVideo
@@ -25,7 +21,7 @@ export default function CourseDetailScreen() {
           <div className="px-5 space-y-10 mt-10">
             <AnimationCourseCard />
             <TabComponent>
-             <DescriptionComponent/>
+              <DescriptionComponent />
               <div>Assignment content goes here...</div>
               <div>Tools content goes here...</div>
               <div>Review content goes here...</div>
@@ -35,6 +31,7 @@ export default function CourseDetailScreen() {
 
         <div className="col-span-1">
           <CourseProgressCard
+            card_type="my-courses"
             title="Animation is the Key of Successful UI/UX Design"
             author="Emerson Siphron"
             rating={4.5}

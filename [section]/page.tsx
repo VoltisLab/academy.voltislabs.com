@@ -5,12 +5,12 @@ import { IoChevronBack } from "react-icons/io5";
 
 // Lazy import components
 const sections = {
-  overview: dynamic(() => import("@/components/dashboard/Overview")),
+  overview: dynamic(() => import("@/app/dashboard/overview/page")),
   "explore-courses": dynamic(
-    () => import("@/components/dashboard/ExploreCourses")
+    () => import("@/app/dashboard/explore/page")
   ),
-  "my-courses": dynamic(() => import("@/components/dashboard/MyCourses")),
-  message: dynamic(() => import("@/components/dashboard/Message")),
+  "my-courses": dynamic(() => import("@/app/dashboard/my-courses/page")),
+  message: dynamic(() => import("@/app/dashboard/messages/page")),
 };
 
 export default async function SectionPage({
