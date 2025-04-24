@@ -15,6 +15,7 @@ export interface SignUpData {
       success: boolean;
       token: string;
       refreshToken: string;
+      errors: string[]
     };
   }
   
@@ -23,7 +24,7 @@ export interface SignUpData {
       success: boolean;
       token: string;
       refreshToken: string;
-      errors?: string[];
+      errors: string[];
       user?: {
         id: string;
         email: string;

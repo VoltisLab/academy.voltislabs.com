@@ -2,11 +2,6 @@ import { LoginData, LoginResponse, SignUpData, SignUpResponse } from '@/lib/type
 import { apolloClient } from '@/lib/apollo-client';
 import { LOGIN_MUTATION, REGISTER_MUTATION } from './mutations';
 
-/**
- * Sign up a new user using Apollo Client
- * @param userData - User data including fullName, email, and password
- * @returns Promise with signup response
- */
 export const signUp = async (userData: SignUpData): Promise<SignUpResponse> => {
   // Split full name into first and last name
   const nameParts = userData.fullName.trim().split(' ');
@@ -46,11 +41,6 @@ export const signUp = async (userData: SignUpData): Promise<SignUpResponse> => {
   }
 };
 
-/**
- * Log in a user using Apollo Client
- * @param credentials - User credentials including email and password
- * @returns Promise with login response
- */
 export const login = async (credentials: LoginData): Promise<LoginResponse> => {
   try {
     const { data, errors } = await apolloClient.mutate({
@@ -67,8 +57,10 @@ export const login = async (credentials: LoginData): Promise<LoginResponse> => {
 
     // Store tokens on successful login
     if (data.login.success && typeof window !== 'undefined') {
+      console.log(data)
       localStorage.setItem('token', data.login.token);
-      localStorage.setItem('refreshToken', data.login.refreshToken);
+      localStorage.setItem('refreshToken', data);
+      localStorage.setItem('user', JSON.stringify(data.login.user));
     }
 
     return data;
@@ -77,3 +69,4 @@ export const login = async (credentials: LoginData): Promise<LoginResponse> => {
     throw error;
   }
 };
+

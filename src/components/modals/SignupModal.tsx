@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useRef, FormEvent } from "react";
 import Image from "next/image";
-import { signUp, login } from "@/app/api/auth";
+import { signUp, login } from "@/api/auth";
 import { SignUpData, LoginData } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import { ApolloProvider } from "@apollo/client";
@@ -10,6 +10,14 @@ import { apolloClient } from "@/lib/apollo-client";
 interface SignupModalProps {
   isOpen: boolean;
   onClose: () => void;
+}
+
+// Define more specific error types
+interface FormErrors {
+  email?: string;
+  password?: string;
+  fullName?: string;
+  general?: string;
 }
 
 const SignupModalContent: React.FC<SignupModalProps> = ({
@@ -22,7 +30,16 @@ const SignupModalContent: React.FC<SignupModalProps> = ({
   const [hasAccount, setHasAccount] = useState<boolean>(false);
   const [language, setLanguage] = useState<string>("English (UK)");
   const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
+  
+  // Replace single error with more specific errors
+  const [errors, setErrors] = useState<FormErrors>({});
+  
+  // Track touched fields for better UX
+  const [touchedFields, setTouchedFields] = useState({
+    email: false,
+    password: false,
+    fullName: false
+  });
 
   const modalRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
@@ -51,28 +68,148 @@ const SignupModalContent: React.FC<SignupModalProps> = ({
 
   // Reset form state when toggling between login and signup
   useEffect(() => {
-    setError(null);
+    setErrors({});
+    setTouchedFields({
+      email: false,
+      password: false,
+      fullName: false
+    });
   }, [hasAccount]);
 
   if (!isOpen) return null;
 
+  // Validate email format
+  const isValidEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  // Validate password strength
+  const validatePassword = (password: string): string | undefined => {
+    if (password.length < 8) {
+      return "Password must be at least 8 characters long";
+    }
+    if (!/[A-Z]/.test(password)) {
+      return "Password must contain at least one uppercase letter";
+    }
+    if (!/[a-z]/.test(password)) {
+      return "Password must contain at least one lowercase letter";
+    }
+    if (!/[0-9]/.test(password)) {
+      return "Password must contain at least one number";
+    }
+    return undefined;
+  };
+
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement>,
-    setter: React.Dispatch<React.SetStateAction<string>>
+    setter: React.Dispatch<React.SetStateAction<string>>,
+    field: keyof FormErrors
   ) => {
-    setter(e.target.value);
+    const value = e.target.value;
+    setter(value);
+    
+    // Mark field as touched
+    setTouchedFields(prev => ({ ...prev, [field]: true }));
+    
+    // Clear field-specific error when user starts typing
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: undefined }));
+    }
+    
+    // Validate on change for better UX
+    validateField(field, value);
+  };
+
+  // Validate individual fields
+  const validateField = (field: keyof FormErrors, value: string) => {
+    const newErrors = { ...errors };
+    
+    switch (field) {
+      case 'email':
+        if (!value) {
+          newErrors.email = "Email is required";
+        } else if (!isValidEmail(value)) {
+          newErrors.email = "Please enter a valid email address";
+        } else {
+          delete newErrors.email;
+        }
+        break;
+        
+      case 'password':
+        if (!value) {
+          newErrors.password = "Password is required";
+        } else {
+          const passwordError = validatePassword(value);
+          if (passwordError) {
+            newErrors.password = passwordError;
+          } else {
+            delete newErrors.password;
+          }
+        }
+        break;
+        
+      case 'fullName':
+        if (!value) {
+          newErrors.fullName = "Full name is required";
+        } else if (value.trim().length < 2) {
+          newErrors.fullName = "Name must be at least 2 characters";
+        } else {
+          delete newErrors.fullName;
+        }
+        break;
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  // Validate all fields before form submission
+  const validateForm = (): boolean => {
+    const newErrors: FormErrors = {};
+    
+    // Mark all fields as touched
+    setTouchedFields({
+      email: true,
+      password: true,
+      fullName: !hasAccount ? true : false
+    });
+    
+    if (!email) {
+      newErrors.email = "Email is required";
+    } else if (!isValidEmail(email)) {
+      newErrors.email = "Please enter a valid email address";
+    }
+    
+    if (!password) {
+      newErrors.password = "Password is required";
+    } else if (!hasAccount) {
+      // Only validate password strength on signup
+      const passwordError = validatePassword(password);
+      if (passwordError) {
+        newErrors.password = passwordError;
+      }
+    }
+    
+    if (!hasAccount && !fullName) {
+      newErrors.fullName = "Full name is required";
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   // Handle signup submission
   const handleSignup = async (e: FormEvent) => {
     e.preventDefault();
-    if (!email || !password || !fullName) {
-      setError("All fields are required");
+    
+    // Validate all fields
+    if (!validateForm()) {
       return;
     }
 
     setLoading(true);
-    setError(null);
+    setErrors({});
 
     try {
       const userData: SignUpData = {
@@ -83,15 +220,40 @@ const SignupModalContent: React.FC<SignupModalProps> = ({
 
       const result = await signUp(userData);
 
-      if (result.register.success) {
+      if (result.register?.success) {
         // Close modal and redirect
         onClose();
         router.push("/dashboard");
       } else {
-        setError("Registration failed. Please try again.");
+        // Handle specific API errors
+        if (result.register?.errors?.length > 0) {
+          // Map API errors to specific fields if possible
+          result.register.errors.forEach(errorMsg => {
+            if (errorMsg.toLowerCase().includes("email")) {
+              setErrors(prev => ({ ...prev, email: errorMsg }));
+            } else if (errorMsg.toLowerCase().includes("password")) {
+              setErrors(prev => ({ ...prev, password: errorMsg }));
+            } else if (errorMsg.toLowerCase().includes("name")) {
+              setErrors(prev => ({ ...prev, fullName: errorMsg }));
+            } else {
+              setErrors(prev => ({ ...prev, general: errorMsg }));
+            }
+          });
+        } else {
+          setErrors({ general: "Registration failed. Please try again." });
+        }
       }
-    } catch (error) {
-      console.log("Error:", error);
+    } catch (error: any) {
+      // Handle network errors or unexpected exceptions
+      console.error("Signup error:", error);
+      
+      if (!navigator.onLine) {
+        setErrors({ general: "Network error. Please check your internet connection." });
+      } else {
+        setErrors({ 
+          general: error.message || "An unexpected error occurred. Please try again later." 
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -100,13 +262,14 @@ const SignupModalContent: React.FC<SignupModalProps> = ({
   // Handle login submission
   const handleLogin = async (e: FormEvent) => {
     e.preventDefault();
-    if (!email || !password) {
-      setError("Email and password are required");
+    
+    // Validate all fields
+    if (!validateForm()) {
       return;
     }
 
     setLoading(true);
-    setError(null);
+    setErrors({});
 
     try {
       const credentials: LoginData = {
@@ -116,20 +279,56 @@ const SignupModalContent: React.FC<SignupModalProps> = ({
 
       const result = await login(credentials);
 
-      if (result.login.success) {
+      if (result.login?.success) {
         // Close modal and redirect
         onClose();
         router.push("/dashboard");
-      } else if (result.login.errors && result.login.errors.length > 0) {
-        setError(result.login.errors[0]);
       } else {
-        setError("Login failed. Please check your credentials.");
+        // Handle specific login errors
+        if (result.login?.errors?.length > 0) {
+          const loginError = result.login.errors[0];
+          
+          // Map common login errors to appropriate fields
+          if (loginError.toLowerCase().includes("email") || loginError.toLowerCase().includes("not found")) {
+            setErrors({ email: loginError });
+          } else if (loginError.toLowerCase().includes("password") || loginError.toLowerCase().includes("incorrect")) {
+            setErrors({ password: loginError });
+          } else {
+            setErrors({ general: loginError });
+          }
+        } else {
+          setErrors({ general: "Invalid email or password. Please try again." });
+        }
       }
-    } catch (error) {
-      console.log("Error:", error);
+    } catch (error: any) {
+      console.error("Login error:", error);
+      
+      // Handle different error scenarios
+      if (!navigator.onLine) {
+        setErrors({ general: "Network error. Please check your internet connection." });
+      } else if (error.message?.includes("rate")) {
+        setErrors({ general: "Too many login attempts. Please try again later." });
+      } else if (error.message?.includes("timeout")) {
+        setErrors({ general: "Server timeout. Please try again later." });
+      } else {
+        setErrors({ 
+          general: error.message || "An unexpected error occurred. Please try again later." 
+        });
+      }
     } finally {
       setLoading(false);
     }
+  };
+
+  // Helper to get input border class based on validation state
+  const getInputClass = (field: keyof FormErrors) => {
+    const baseClass = "w-full px-0 py-2 border-t-0 border-r-0 border-l-0 text-[14px] border-b focus:outline-none text-gray-700";
+    
+    if (touchedFields[field as keyof typeof touchedFields] && errors[field]) {
+      return `${baseClass} border-red-500 focus:border-b-2 focus:border-red-500`;
+    }
+    
+    return `${baseClass} border-gray-300 focus:border-b-2 focus:border-pink-500`;
   };
 
   return (
@@ -225,7 +424,10 @@ const SignupModalContent: React.FC<SignupModalProps> = ({
           </div>
 
           <div className="flex gap-4 mb-8">
-            <button className="flex-1 border border-gray-300 rounded-md py-2 font-bold px-3 flex justify-center items-center gap-2 text-[#A1A1A1] text-[12px]">
+            <button
+              type="button"
+              className="flex-1 border border-gray-300 rounded-md py-2 font-bold px-3 flex justify-center items-center gap-2 text-[#A1A1A1] text-[12px]"
+            >
               <div className="h-6 w-6 bg-white rounded">
                 <Image
                   src={"/auth/google.png"}
@@ -237,7 +439,10 @@ const SignupModalContent: React.FC<SignupModalProps> = ({
               </div>
               Continue with Google
             </button>
-            <button className="flex-1 border border-gray-300 rounded-md py-2 px-3 font-bold flex justify-center items-center gap-2 text-[#A1A1A1] text-[12px]">
+            <button
+              type="button"
+              className="flex-1 border border-gray-300 rounded-md py-2 px-3 font-bold flex justify-center items-center gap-2 text-[#A1A1A1] text-[12px]"
+            >
               <div className="h-5 w-5 bg-white rounded ">
                 <Image
                   src={"/auth/facebook.png"}
@@ -256,10 +461,10 @@ const SignupModalContent: React.FC<SignupModalProps> = ({
             <span className="text-gray-500 text-sm font-medium">- OR -</span>
           </div>
 
-          {/* Error message display */}
-          {error && (
+          {/* General error message display */}
+          {errors.general && (
             <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-2 rounded-md mb-4 text-sm">
-              {error}
+              {errors.general}
             </div>
           )}
 
@@ -269,31 +474,49 @@ const SignupModalContent: React.FC<SignupModalProps> = ({
                 <input
                   type="text"
                   placeholder="Full Name"
-                  className="w-full px-0 py-2 border-t-0 border-r-0 border-l-0 text-[14px] border-b border-gray-300 focus:border-b-2 focus:border-pink-500 focus:outline-none text-gray-700"
+                  className={getInputClass('fullName')}
                   value={fullName}
-                  onChange={(e) => handleInputChange(e, setFullName)}
-                  required
+                  onChange={(e) => handleInputChange(e, setFullName, 'fullName')}
+                  aria-invalid={touchedFields.fullName && Boolean(errors.fullName)}
+                  aria-describedby={errors.fullName ? "fullname-error" : undefined}
                 />
+                {touchedFields.fullName && errors.fullName && (
+                  <p id="fullname-error" className="text-red-500 text-xs mt-1">
+                    {errors.fullName}
+                  </p>
+                )}
               </div>
               <div className="mb-6">
                 <input
                   type="email"
                   placeholder="Email Address"
-                  className="w-full px-0 py-2 border-t-0 border-r-0 border-l-0 border-b text-[14px] border-gray-300 focus:border-b-2 focus:border-pink-500 focus:outline-none text-gray-700"
+                  className={getInputClass('email')}
                   value={email}
-                  onChange={(e) => handleInputChange(e, setEmail)}
-                  required
+                  onChange={(e) => handleInputChange(e, setEmail, 'email')}
+                  aria-invalid={touchedFields.email && Boolean(errors.email)}
+                  aria-describedby={errors.email ? "email-error" : undefined}
                 />
+                {touchedFields.email && errors.email && (
+                  <p id="email-error" className="text-red-500 text-xs mt-1">
+                    {errors.email}
+                  </p>
+                )}
               </div>
               <div className="mb-6">
                 <input
                   type="password"
                   placeholder="Password"
-                  className="w-full px-0 py-2 border-t-0 border-r-0 border-l-0 text-[14px] border-b border-gray-300 text-[14px] focus:border-b-2 focus:border-pink-500 focus:outline-none text-gray-700"
+                  className={getInputClass('password')}
                   value={password}
-                  onChange={(e) => handleInputChange(e, setPassword)}
-                  required
+                  onChange={(e) => handleInputChange(e, setPassword, 'password')}
+                  aria-invalid={touchedFields.password && Boolean(errors.password)}
+                  aria-describedby={errors.password ? "password-error" : undefined}
                 />
+                {touchedFields.password && errors.password && (
+                  <p id="password-error" className="text-red-500 text-xs mt-1">
+                    {errors.password}
+                  </p>
+                )}
               </div>
               <button
                 type="submit"
@@ -322,21 +545,41 @@ const SignupModalContent: React.FC<SignupModalProps> = ({
                 <input
                   type="email"
                   placeholder="Email Address"
-                  className="w-full px-0 py-2 border-t-0 border-r-0 border-l-0 border-b border-gray-300 focus:border-b-2 focus:border-pink-500 focus:outline-none text-gray-700"
+                  className={getInputClass('email')}
                   value={email}
-                  onChange={(e) => handleInputChange(e, setEmail)}
-                  required
+                  onChange={(e) => handleInputChange(e, setEmail, 'email')}
+                  aria-invalid={touchedFields.email && Boolean(errors.email)}
+                  aria-describedby={errors.email ? "email-error" : undefined}
                 />
+                {touchedFields.email && errors.email && (
+                  <p id="email-error" className="text-red-500 text-xs mt-1">
+                    {errors.email}
+                  </p>
+                )}
               </div>
               <div className="mb-6">
                 <input
                   type="password"
                   placeholder="Password"
-                  className="w-full px-0 py-2 border-t-0 border-r-0 border-l-0 border-b border-gray-300 focus:border-b-2 focus:border-pink-500 focus:outline-none text-gray-700"
+                  className={getInputClass('password')}
                   value={password}
-                  onChange={(e) => handleInputChange(e, setPassword)}
-                  required
+                  onChange={(e) => handleInputChange(e, setPassword, 'password')}
+                  aria-invalid={touchedFields.password && Boolean(errors.password)}
+                  aria-describedby={errors.password ? "password-error" : undefined}
                 />
+                {touchedFields.password && errors.password && (
+                  <p id="password-error" className="text-red-500 text-xs mt-1">
+                    {errors.password}
+                  </p>
+                )}
+                <div className="flex justify-end mt-1">
+                  <button
+                    type="button"
+                    className="text-sm text-gray-500 hover:text-pink-500"
+                  >
+                    Forgot Password?
+                  </button>
+                </div>
               </div>
               <button
                 type="submit"

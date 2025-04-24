@@ -13,6 +13,7 @@ const Header = () => {
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => setIsModalOpen(false);
 
+  const userString = localStorage.getItem('user');
   return (
     <div>
       <header className="w-full bg-white fixed top-0 left-0 z-50">
@@ -67,12 +68,14 @@ const Header = () => {
 
           {/* Contact Button (Desktop) */}
           <div className="hidden md:block">
-            <button
+            {!userString && (
+              <button
               className="border-2 border-pink-500 text-pink-500 font-semibold px-5 py-2 rounded-lg hover:bg-pink-500 hover:text-white transition"
               onClick={openModal}
             >
               Login/Signup
             </button>
+            )}
           </div>
 
           {/* Mobile Menu Toggle */}
