@@ -2,7 +2,7 @@
 
 import Sidebar from "@/components/dashboard/Sidebar";
 import { AsideProvider } from "@/context/showAsideContext";
-import { ReactNode } from "react";
+import { ReactNode, Suspense } from "react";
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
@@ -12,7 +12,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <Sidebar />
         </div>
 
-        <div className="flex-1 min-w-0">{children}</div>
+        <div className="flex-1 min-w-0">
+          <Suspense fallback={<p>Loading module...</p>}>{children}</Suspense>
+        </div>
       </div>
     </AsideProvider>
   );
