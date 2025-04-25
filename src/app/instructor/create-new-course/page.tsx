@@ -5,11 +5,13 @@ import { cn } from "@/lib/utils";
 import { BasicInformationForm } from "@/components/instructor/BasicInformationForm";
 import { AdvanceInformationForm } from "@/components/instructor/AdvanceInformation";
 import { Curriculum } from "@/components/instructor/Curriculum";
+import Image from "next/image"; // 👈 Import Image properly
+
 const tabs = [
-  { name: "Basic Information", key: "basic" },
-  { name: "Advanced Information", key: "advanced" },
-  { name: "Curriculum", key: "curriculum" },
-  { name: "Publish Course", key: "publish" },
+  { name: "Basic Information", key: "basic", icon: "/icons/Stack.svg" },
+  { name: "Advanced Information", key: "advanced", icon: "/icons/ClipboardText.svg" },
+  { name: "Curriculum", key: "curriculum", icon: "/icons/MonitorPlay.svg" },
+  { name: "Publish Course", key: "publish", icon: "/icons/PlayCircle.svg" },
 ];
 
 export default function CourseFormTabs() {
@@ -19,19 +21,27 @@ export default function CourseFormTabs() {
     <div className="bg-white max-w-[90rem] mx-auto min-h-screen">
       {/* Tabs */}
       <div className="flex items-center border-b border-gray-200 px-6">
-        {tabs.map((tab, index) => (
+        {tabs.map((tab) => (
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
             className={cn(
-              "relative px-4 py-4 text-sm font-medium text-gray-500 border-b-2 border-transparent hover:text-black transition",
-              activeTab === tab.key &&
-                "text-black border-[#8B5CF6] font-semibold"
+              "relative px-4 py-4 text-sm font-medium text-gray-500 border-b-2 border-transparent hover:text-black transition flex items-center gap-2",
+              activeTab === tab.key && "text-black font-bold border-[#FF6636]"
             )}
           >
-            <div className="flex items-center gap-2">
+            <Image
+              src={tab.icon}
+              alt={tab.name}
+              width={20}
+              height={20}
+              className="object-contain"
+            />
+            <div className="flex items-center gap-1">
               {tab.name}
-              {tab.key === "basic" && <span className="text-green-600 text-xs">7/12</span>}
+              {tab.key === "basic" && (
+                <span className="text-green-600 text-xs">7/12</span>
+              )}
             </div>
           </button>
         ))}
@@ -41,11 +51,9 @@ export default function CourseFormTabs() {
       <div className="p-6">
         {activeTab === "basic" && <BasicInformationForm />}
         {activeTab === "advanced" && <AdvanceInformationForm />}
-        {activeTab === "curriculum" && <Curriculum/>}
+        {activeTab === "curriculum" && <Curriculum />}
         {activeTab === "publish" && <p>Publish Step</p>}
       </div>
     </div>
   );
 }
-
-
