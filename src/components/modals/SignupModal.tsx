@@ -140,9 +140,9 @@ const SignupModalContent: React.FC<SignupModalProps> = ({
          else if (!isValidEmail(value)) {
           newErrors.email = "Please enter a valid email address";
         } 
-        else if (!isAllowedDomain(value)) {
-          newErrors.email = "Sorry, this is an invalid email. Please use an email ending with @voltislab.com or @academy.voltislab.com";
-        } 
+        // else if (!isAllowedDomain(value)) {
+        //   newErrors.email = "Sorry, this is an invalid email. Please use an email ending with @voltislab.com or @academy.voltislab.com";
+        // } 
         else {
           delete newErrors.email;
         }
