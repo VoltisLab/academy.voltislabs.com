@@ -39,8 +39,8 @@ const notifications = {
 
 export default function NotificationScreen() {
   return (
-    <div className="max-w-90rem mx-auto p-6 space-y-8">
-      <h1 className="text-2xl font-bold text-[#1D1D1F]">Notification</h1>
+    <div className="max-w-[90rem] px-4 16 py-8 mx-auto space-y-10">
+      <h1 className="text-2xl font-bold text-gray-900">Notification</h1>
 
       <div>
         <h2 className="text-sm font-semibold text-[#6B7280] mb-2">
