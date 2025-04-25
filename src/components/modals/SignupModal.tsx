@@ -78,17 +78,10 @@ const SignupModalContent: React.FC<SignupModalProps> = ({
 
   if (!isOpen) return null;
 
-  // Validate email format and domain
+  // Validate email format
   const isValidEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
-  };
-
-  // Check if email belongs to allowed domains
-  const isAllowedDomain = (email: string): boolean => {
-    const allowedDomains = ['voltislab.com', 'academy.voltislab.com'];
-    const domain = email.split('@')[1]?.toLowerCase();
-    return allowedDomains.includes(domain);
   };
 
   // Validate password strength
@@ -136,8 +129,7 @@ const SignupModalContent: React.FC<SignupModalProps> = ({
       case 'email':
         if (!value) {
           newErrors.email = "Email is required";
-        }
-         else if (!isValidEmail(value)) {
+        } else if (!isValidEmail(value)) {
           newErrors.email = "Please enter a valid email address";
         } 
         // else if (!isAllowedDomain(value)) {
@@ -189,12 +181,9 @@ const SignupModalContent: React.FC<SignupModalProps> = ({
     
     if (!email) {
       newErrors.email = "Email is required";
-    } 
-    // else if (!isValidEmail(email)) {
-    //   newErrors.email = "Please enter a valid email address";
-    // } else if (!isAllowedDomain(email)) {
-    //   newErrors.email = "Sorry, this is an invalid email. Please use an email ending with @voltislab.com or @academy.voltislab.com";
-    // }
+    } else if (!isValidEmail(email)) {
+      newErrors.email = "Please enter a valid email address";
+    }
     
     if (!password) {
       newErrors.password = "Password is required";
@@ -346,30 +335,6 @@ const SignupModalContent: React.FC<SignupModalProps> = ({
     return `${baseClass} border-gray-300 focus:border-b-2 focus:border-pink-500`;
   };
 
-  // Enhanced error message for email domains
-  const renderEmailError = () => {
-    if (!touchedFields.email || !errors.email) return null;
-    
-    if (errors.email.includes("invalid email")) {
-      return (
-        <div className="text-red-500 text-xs mt-1">
-          <p id="email-error" className="mb-1">{errors.email}</p>
-          <p className="text-gray-600">Examples of valid emails:</p>
-          <ul className="text-gray-600 pl-4 list-disc">
-            <li>yourname@voltislab.com</li>
-            <li>yourname@academy.voltislab.com</li>
-          </ul>
-        </div>
-      );
-    }
-    
-    return (
-      <p id="email-error" className="text-red-500 text-xs mt-1">
-        {errors.email}
-      </p>
-    );
-  };
-
   return (
     <div className="fixed inset-0 backdrop-blur-sm bg-opacity-30 flex items-center justify-center z-50">
       <div
@@ -390,9 +355,9 @@ const SignupModalContent: React.FC<SignupModalProps> = ({
             </div>
           </div>
           <h2 className="text-3xl font-bold mb-2">
-            Welcome to
+            3D Models of
             <br />
-            Voltis Labs University
+            Abstract Digital Art
           </h2>
           <p className="text-sm mb-12">
             Make your design looks more attractive with 3D abstract geometric
@@ -535,7 +500,11 @@ const SignupModalContent: React.FC<SignupModalProps> = ({
                   aria-invalid={touchedFields.email && Boolean(errors.email)}
                   aria-describedby={errors.email ? "email-error" : undefined}
                 />
-                {renderEmailError()}
+                {touchedFields.email && errors.email && (
+                  <p id="email-error" className="text-red-500 text-xs mt-1">
+                    {errors.email}
+                  </p>
+                )}
               </div>
               <div className="mb-6">
                 <input
@@ -586,7 +555,11 @@ const SignupModalContent: React.FC<SignupModalProps> = ({
                   aria-invalid={touchedFields.email && Boolean(errors.email)}
                   aria-describedby={errors.email ? "email-error" : undefined}
                 />
-                {renderEmailError()}
+                {touchedFields.email && errors.email && (
+                  <p id="email-error" className="text-red-500 text-xs mt-1">
+                    {errors.email}
+                  </p>
+                )}
               </div>
               <div className="mb-6">
                 <input
