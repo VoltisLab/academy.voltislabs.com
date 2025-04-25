@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import { BasicInformationForm } from "@/components/instructor/BasicInformationForm";
 import { AdvanceInformationForm } from "@/components/instructor/AdvanceInformation";
 import { Curriculum } from "@/components/instructor/Curriculum";
-import Image from "next/image"; // 👈 Import Image properly
+import Image from "next/image";
 
 const tabs = [
   { name: "Basic Information", key: "basic", icon: "/icons/Stack.svg" },
@@ -14,7 +14,7 @@ const tabs = [
   { name: "Publish Course", key: "publish", icon: "/icons/PlayCircle.svg" },
 ];
 
-export default function CourseFormTabs() {
+export default  function CourseFormTabs() {
   const [activeTab, setActiveTab] = useState("basic");
 
   return (
@@ -51,7 +51,7 @@ export default function CourseFormTabs() {
       <div className="p-6">
         {activeTab === "basic" && <BasicInformationForm />}
         {activeTab === "advanced" && <AdvanceInformationForm />}
-        {/* {activeTab === "curriculum" && <Curriculum />} */}
+        {activeTab === "curriculum" && <Curriculum />}
         {activeTab === "publish" && <p>Publish Step</p>}
       </div>
     </div>
