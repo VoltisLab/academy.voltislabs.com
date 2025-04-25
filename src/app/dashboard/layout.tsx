@@ -1,20 +1,21 @@
 "use client";
 
 import Sidebar from "@/components/dashboard/Sidebar";
-import Link from "next/link";
+import { AsideProvider } from "@/context/showAsideContext";
 import { ReactNode, Suspense } from "react";
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="flex w-full min-h-screen">
-      <div className="max-w-[264px] w-full shadow-2xl hidden md:flex flex-col text-xl">
-        <Sidebar />
-      </div>
-      <div className="flex-1 w-full">
-         <Suspense fallback={<p>Loading module...</p>}>
-        {children}
-        </Suspense>
+    <AsideProvider>
+      <div className="flex min-h-screen flex-col md:flex-row">
+        <div className="md:max-w-[185px] lg:max-w-[220] xl:max-w-[264px] w-full shadow-xl">
+          <Sidebar />
         </div>
-    </div>
+
+        <div className="flex-1 min-w-0">
+          <Suspense fallback={<p>Loading module...</p>}>{children}</Suspense>
+        </div>
+      </div>
+    </AsideProvider>
   );
 }
