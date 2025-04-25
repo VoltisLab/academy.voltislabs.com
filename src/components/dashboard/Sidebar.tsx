@@ -1,8 +1,10 @@
 "use client";
 
+import { useAside } from "@/context/showAsideContext";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { FaHamburger } from "react-icons/fa";
 import { IoSettingsOutline } from "react-icons/io5";
 import {
   PiChatCircleTextLight,
@@ -24,12 +26,13 @@ const links = [
 ];
 
 export default function Sidebar() {
+  const { toggleAside } = useAside();
   const pathname = usePathname();
 
   return (
-    <aside className="flex p-6 flex-col size-full text-base">
+    <aside className="mx-auto md:items-stretch items-center justify-between md:justify-normal flex p-4 md:px-2 xl:p-6 md:flex-col w-full md:w-[264px] text-base md:fixed md:h-screen left-0 top-0">
       {/* Logo */}
-      <Link href={"/"} className="items-center flex gap-2 mb-12">
+      <Link href={"/"} className="items-center flex gap-2 md:mb-12">
         <div className="size-10 relative">
           <Image
             src={"/logo.svg"}
@@ -47,7 +50,9 @@ export default function Sidebar() {
         </p>
       </Link>
 
-      <nav className="flex flex-col gap-2.5">
+      <FaHamburger className="block md:hidden" onClick={() => toggleAside()} />
+
+      <nav className="flex-col gap-2.5 hidden md:flex">
         {links.map(({ href, label, icon: Icon }) => {
           const isActive =
             pathname === href ||
@@ -73,7 +78,7 @@ export default function Sidebar() {
       </nav>
 
       {/* Settings logout */}
-      <div className="mt-auto space-y-2.5">
+      <div className="mt-auto space-y-2.5 hidden md:block">
         <h3 className="text-[#A7A7AA]">Settings</h3>
 
         <Link
