@@ -2,7 +2,7 @@
 
 import Sidebar from "@/components/dashboard/Sidebar";
 import Link from "next/link";
-import { ReactNode } from "react";
+import { ReactNode, Suspense } from "react";
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
@@ -10,7 +10,11 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <div className="max-w-[264px] w-full shadow-2xl hidden md:flex flex-col text-xl">
         <Sidebar />
       </div>
-      <div className="flex-1 w-full">{children}</div>
+      <div className="flex-1 w-full">
+         <Suspense fallback={<p>Loading module...</p>}>
+        {children}
+        </Suspense>
+        </div>
     </div>
   );
 }

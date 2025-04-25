@@ -6,13 +6,14 @@ import { usePathname } from "next/navigation";
 import { IoSettingsOutline } from "react-icons/io5";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { useRouter } from 'next/navigation';
+import { useRouter } from "next/navigation";
 import {
   PiChatCircleTextLight,
   PiGridFourLight,
   PiMagnifyingGlassLight,
   PiSignOutLight,
   PiVideoLight,
+  PiNotification,
 } from "react-icons/pi";
 import LogoutModal from "../modals/LogoutModal";
 
@@ -24,7 +25,16 @@ const links = [
     icon: PiMagnifyingGlassLight,
   },
   { href: "/dashboard/my-courses", label: "My Courses", icon: PiVideoLight },
-  { href: "/dashboard/messages", label: "Message", icon: PiChatCircleTextLight },
+  {
+    href: "/dashboard/messages",
+    label: "Message",
+    icon: PiChatCircleTextLight,
+  },
+  {
+    href: "/dashboard/notifications",
+    label: "Notification",
+    icon: PiNotification,
+  },
 ];
 export interface UserData {
   id: string;
@@ -33,7 +43,7 @@ export interface UserData {
   lastName: string;
   username: string;
   verified: boolean;
-  isVerified: boolean; 
+  isVerified: boolean;
 }
 
 export default function Sidebar() {
@@ -45,7 +55,7 @@ export default function Sidebar() {
 
   useEffect(() => {
     // Client-side only code
-    const userString = localStorage.getItem('user');
+    const userString = localStorage.getItem("user");
     if (userString) {
       const userData = JSON.parse(userString);
       setUser(userData);
@@ -54,9 +64,9 @@ export default function Sidebar() {
 
   const handleLogout = () => {
     logout();
-    console.log('User logged out');
+    console.log("User logged out");
     setIsLogoutModalOpen(false);
-    router.push('/');
+    router.push("/");
   };
 
   return (
@@ -111,14 +121,14 @@ export default function Sidebar() {
           <h3 className="text-[#A7A7AA]">Settings</h3>
 
           <Link
-            href={"/settings"}
+            href={"/dashboard/settings"}
             className="gap-2.5 flex items-center py-2.5 pl-3.5 text-[#525255] "
           >
             <IoSettingsOutline />
             <span>Settings</span>
           </Link>
-          <button 
-            className="gap-2.5 flex items-center py-2.5 pl-3.5 text-[#F43F5E] cursor-pointer" 
+          <button
+            className="gap-2.5 flex items-center py-2.5 pl-3.5 text-[#F43F5E] cursor-pointer"
             onClick={() => setIsLogoutModalOpen(true)}
           >
             <PiSignOutLight />
@@ -130,7 +140,7 @@ export default function Sidebar() {
         isOpen={isLogoutModalOpen}
         onClose={() => setIsLogoutModalOpen(false)}
         onLogout={handleLogout}
-        userName={`${user?.firstName || ''} ${user?.lastName || ''}`}
+        userName={`${user?.firstName || ""} ${user?.lastName || ""}`}
       />
     </div>
   );
