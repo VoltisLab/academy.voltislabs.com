@@ -23,7 +23,7 @@ export default function CourseProgressCard({
   title,
   author,
   rating,
-  card_type="my-courses",
+  card_type = "my-courses",
   avatarUrl,
   completedModules,
   totalModules,
@@ -32,9 +32,8 @@ export default function CourseProgressCard({
   const progress = Math.floor((completedModules / totalModules) * 100);
 
   return (
-    <div className="bg-white rounded-2xl  p-8 max-w-96 text-gray-900 font-sans">
+    <div className="bg-white hidden md:block rounded-2xl  p-8 max-w-96 text-gray-900 font-sans">
       <h2 className="text-xl font-bold leading-snug mb-3">{title}</h2>
-
       <div className="flex items-center gap-3 mb-4">
         <Image
           src={avatarUrl}
@@ -56,8 +55,11 @@ export default function CourseProgressCard({
           style={{ width: `${progress}%` }}
         ></div>
       </div>
-      <div className="text-xs text-gray-500 mb-4">
-        {completedModules}/{totalModules} Module &nbsp;&nbsp;&nbsp; {progress}%
+      <div className="text-xs flex justify-between my-5 text-gray-500 mb-4">
+        <span>
+          {completedModules}/{totalModules} Module &nbsp;&nbsp;&nbsp;{" "}
+        </span>
+        <span>{progress}%</span>
       </div>
 
       <div className="text-sm font-medium mb-2">
@@ -101,7 +103,7 @@ export default function CourseProgressCard({
             <button className="flex-1 cursor-pointer border border-gray-300 text-gray-700 text-sm rounded-lg py-4 hover:bg-gray-100 transition">
               Give Review
             </button>
-            <button className="flex-1 cursor-pointer bg-[#ABABAB] text-white text-sm rounded-lg py-4 hover:bg-gray-700 transition">
+            <button className="flex-1  bg-[#ABABAB] text-white text-sm rounded-lg py-4 hover:bg-gray-700 transition">
               Next Module
             </button>
           </>
