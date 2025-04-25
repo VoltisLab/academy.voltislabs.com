@@ -2,7 +2,6 @@
 
 import { useState, useRef, useEffect } from "react";
 import { Plus, Trash2, Edit3, Menu, ChevronDown, Check } from "lucide-react";
-import VideoUploadModal from "../modals/VideoUploadModal";
 import UploadModal from "../modals/VideoUploadModal";
 
 const CONTENT_OPTIONS = [
@@ -41,27 +40,26 @@ export default function CourseSectionsBuilder() {
     setOpen(true);
   };
   const contentDropdownRef = useRef<HTMLDivElement | null>(null);
+  
+useEffect(() => {
+  if (typeof window === "undefined") return;
 
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (
-        contentDropdownRef.current &&
-        !contentDropdownRef.current.contains(e.target as Node)
-      ) {
-        setOpenContent(null);
-      }
-    };
-
-    if (openContent) {
-      document.addEventListener("mousedown", handleClickOutside);
-    } else {
-      document.removeEventListener("mousedown", handleClickOutside);
+  const handleClickOutside = (e: MouseEvent) => {
+    if (
+      contentDropdownRef.current &&
+      !contentDropdownRef.current.contains(e.target as Node)
+    ) {
+      setOpenContent(null);
     }
+  };
 
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [openContent]);
+  document.addEventListener("mousedown", handleClickOutside);
+
+  return () => {
+    document.removeEventListener("mousedown", handleClickOutside);
+  };
+}, [openContent]);
+
 
   useEffect(() => {
     sections.forEach((section, sIndex) => {
