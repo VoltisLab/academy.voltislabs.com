@@ -70,8 +70,8 @@ export default function Sidebar() {
   };
 
   return (
-    <div className="h-screen flex flex-col">
-      <aside className="flex flex-col h-full p-6 overflow-y-auto">
+    <div className="h-screen">
+      <aside className="fixed h-full p-6 overflow-y-auto flex flex-col w-[280px]">
         {/* Logo */}
         <Link href={"/"} className="items-center flex gap-2 mb-12">
           <div className="size-10 relative">
@@ -84,7 +84,7 @@ export default function Sidebar() {
               priority
             />
           </div>
-          <p className="font-medium leading-[92%] text-[#313273] text-2xl">
+          <p className="font-medium leading-[92%] text-[#313273] text-[23px]">
             Voltis Labs
             <br />
             Academy
@@ -101,7 +101,7 @@ export default function Sidebar() {
               <Link
                 key={href}
                 href={href}
-                className={`px-3.5 py-2.5 rounded-md hover:bg-[#ECEBFF] transition group ${
+                className={`px-2.5 py-2.5 rounded-md hover:bg-[#ECEBFF] transition group ${
                   isActive
                     ? "bg-[#ECEBFF] text-[#313273] font-semibold"
                     : "font-medium"
@@ -109,7 +109,7 @@ export default function Sidebar() {
               >
                 <div className="flex items-center gap-2 transition group-hover:text-[#313273]">
                   <Icon className={`size-5 ${isActive ? "" : ""}`} />
-                  <span className={`${isActive ? "" : ""}`}>{label}</span>
+                  <span className={`${isActive ? "" : ""} text-sm`}>{label}</span>
                 </div>
               </Link>
             );
