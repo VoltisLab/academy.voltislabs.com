@@ -6,56 +6,71 @@ import { useMemo } from "react";
 import CarouselButton, {
   usePrevNextButtons,
 } from "./EmblaCarouselArrowButtons";
+import { Course } from "@/components/myCourses/types";
+import CourseCardDash from "@/components/myCourses/CourseCardDash";
 
 // Constants for carousel options and review data
 const CAROUSEL_OPTIONS: EmblaOptionsType = {
   dragFree: true,
-  slidesToScroll: 1,
+  slidesToScroll: "auto",
 };
 
-const slides = [
+const courses: Course[] = [
   {
-    image: "/images/newin.webp",
-    name: "Beachwear from £8",
-    link: "/categories/beachwear",
+    id: 1,
+    image: "/courses/backend.png",
+    tag: "Frontend",
+    title: "Beginner's Guide To Becoming A Professional Frontend Developer",
+    modules: "3/5 Module",
+    progress: 60,
+    slug: "backend",
   },
   {
-    image: "/images/dresses.webp",
-    name: "Dresses 30% off",
-    link: "/categories/dresses",
+    id: 2,
+    image: "/courses/frontend.png",
+    tag: "Frontend",
+    title: "Beginner's Guide To Becoming A Professional Frontend Developer",
+    modules: "1/5 Module",
+    progress: 20,
+    slug: "frontend",
   },
   {
-    image: "/images/swim.webp",
-    name: "Swim 30% off",
-    link: "/categories/swim",
+    id: 3,
+    image: "/courses/graphic.png",
+    tag: "Frontend",
+    title: "Beginner's Guide To Becoming A Professional Frontend Developer",
+    modules: "3/5 Module",
+    progress: 60,
+    slug: "graphic",
   },
   {
-    image: "/images/dsgn.webp",
-    name: "Co-ords from £10",
-    link: "/categories/co-ords",
+    id: 4,
+    image: "/courses/pm.png",
+    tag: "Frontend",
+    title: "Beginner's Guide To Becoming A Professional Frontend Developer",
+    modules: "1/5 Module",
+    progress: 20,
+    slug: "pm",
   },
   {
-    image: "/images/tops.webp",
-    name: "Tops £10 and under",
-    link: "/categories/tops",
+    id: 5,
+    image: "/courses/graphic.png",
+    tag: "Frontend",
+    title: "Beginner's Guide To Becoming A Professional Frontend Developer",
+    modules: "3/5 Module",
+    progress: 60,
+    slug: "graphic",
   },
   {
-    image: "/images/swim.webp",
-    name: "Swim 30% off",
-    link: "/categories/swim",
-  },
-  {
-    image: "/images/dsgn.webp",
-    name: "Co-ords from £10",
-    link: "/categories/co-ords",
-  },
-  {
-    image: "/images/tops.webp",
-    name: "Tops £10 and under",
-    link: "/categories/tops",
+    id: 6,
+    image: "/courses/pm.png",
+    tag: "Frontend",
+    title: "Beginner's Guide To Becoming A Professional Frontend Developer",
+    modules: "1/5 Module",
+    progress: 20,
+    slug: "pm",
   },
 ];
-
 // Main Reviews component
 export default function ContinueWatching() {
   // Memoizing the carousel options to avoid re-creation on every render
@@ -98,13 +113,13 @@ export default function ContinueWatching() {
         <div ref={emblaRef} className="overflow-hidden">
           {/* Flex container for the displayed categories */}
           <div className="flex gap-4.5">
-            {slides.map((slide, idx) => (
-              <div
-                key={idx}
-                className="h-[258px] w-[31.5%] shrink-0 shadow bg-white"
-              >
-                Lorem ipsum dolor sit, amet consectetur adipisicing elit.
-                Voluptatem vero, nisi hic soluta fugiat error ad magnam rerum
+            {courses.map((course, idx) => (
+              <div key={idx} className="w-[252px] shrink-0 ">
+                <CourseCardDash
+                  key={course.id}
+                  course={course}
+                  card_type={"my-courses"}
+                />
               </div>
             ))}
           </div>

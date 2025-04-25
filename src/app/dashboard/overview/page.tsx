@@ -5,19 +5,21 @@ import { CgMoreVertical } from "react-icons/cg";
 import {
   IoChevronBack,
   IoChevronForward,
+  IoCloseOutline,
   IoNotificationsOutline,
   IoPlayOutline,
 } from "react-icons/io5";
 import { MdOutlineDirectionsTransitFilled, MdStar } from "react-icons/md";
 import { PiMagnifyingGlassLight, PiVideoBold } from "react-icons/pi";
-import ContinueWatching from "./carousel/ContinueWatching";
 import Link from "next/link";
 import Image from "next/image";
 import { CiUser } from "react-icons/ci";
 import { TiDocumentText } from "react-icons/ti";
 import { FaRegClock } from "react-icons/fa6";
-import { useAside } from "@/context/showAsideContext";
 import { FaHamburger } from "react-icons/fa";
+import { useAside } from "@/context/showAsideContext";
+import ContinueWatching from "@/components/dashboard/carousel/ContinueWatching";
+import YourMentor from "@/components/dashboard/carousel/YourMentor";
 
 const videos = [
   {
@@ -78,11 +80,11 @@ const TABLE_DATA = [
 export default function Overview() {
   const { showAside, toggleAside } = useAside();
   return (
-    <div className="flex min-h-screen overflow-hidden relative">
+    <div className="flex min-h-screen overflow-hidden min-w-0 relative">
       {/* Main */}
-      <div className="flex-1 min-w-0 md:flex-4/6 px-8 py-5 bg-[#EFEFF2] space-y-6">
+      <div className="flex-1 min-w-0 md:flex-3/5 xl:flex-4/6 px-4 xl:px-8 py-5 bg-[#EFEFF2] space-y-6">
         {/* Search bar */}
-        <div className="bg-[#FDFDFD] px-4 gap-2 py-3.5 rounded-xl border border-[#EFEFF2] flex items-center w-3/5">
+        <div className="bg-[#FDFDFD] px-4 gap-2 py-3.5 rounded-xl border border-[#EFEFF2] flex items-center w-full xl:w-3/5">
           <input
             type="text"
             placeholder="Search your course here...."
@@ -122,7 +124,7 @@ export default function Overview() {
                 <PiVideoBold />
               </div>
 
-              <div className="text-xs gap-2 mr-auto md:mr-0">
+              <div className="text-xs gap-2 mr-auto lg:mr-0">
                 <p>
                   {video.watched}/{video.total} watched
                 </p>
@@ -147,7 +149,11 @@ export default function Overview() {
             </Link>
           </div>
 
-          <div className="px-6 py-2 bg-white rounded">
+          <div className="block xl:hidden">
+            <YourMentor />
+          </div>
+
+          <div className="px-6 py-2 bg-white rounded hidden xl:block">
             {/* table */}
             <table className="w-full table-auto">
               <thead>
@@ -169,11 +175,11 @@ export default function Overview() {
                     <td className="py-3 flex items-center gap-2">
                       <div className="size-6 relative">
                         <Image
-                          src={"/logo.svg"}
+                          src={"/guy.jpg"}
                           alt="Logo"
                           fill
                           sizes="(max-width: 768px) 100vw, 128px"
-                          className="object-contain rounded-full"
+                          className="object-cover rounded-full"
                         />
                       </div>
                       <div>
@@ -201,7 +207,7 @@ export default function Overview() {
                     {/* Actions */}
                     <td className="py-3">
                       <button className="text-[10px] bg-[#3366CC33] rounded-[8px] px-3 py-1 text-[#3366CC]">
-                        {item.action}
+                        Show details
                       </button>
                     </td>
                   </tr>
@@ -214,10 +220,18 @@ export default function Overview() {
 
       {/* Aside  */}
       <div
-        className={`bg-white min-h-screen md:flex-2/6 fixed md:static top-0 right-0 w-full md:w-auto transform overflow-y-auto transition-transform duration-300 z-50 px-6 py-8 ${
+        className={`bg-white h-screen md:h-auto md:min-h-screen md:flex-2/5 xl:flex-2/6 fixed md:static top-0 right-0 max-w-[400px] sm:max-w-none min-w-0 sm:w-5/6 md:w-auto transform overflow-y-auto transition-transform duration-300 z-50 px-6 py-8  ${
           showAside ? "translate-x-0" : "translate-x-full"
         } md:translate-x-0`}
       >
+        <div
+          className=" block md:hidden size-[40px] rounded-full bg-[#313273] p-1 ml-auto mb-5 cursor-pointer"
+          onClick={() => toggleAside()}
+        >
+          <div className="bg-[#ECEBFF] rounded-full size-full flex justify-center items-center ">
+            <IoCloseOutline className="text-2xl" />{" "}
+          </div>
+        </div>
         {/* User image  */}
         <div className="bg-[#CCCCCC]/30 size-[100px] rounded-full flex justify-center items-center relative overflow-hidden mx-auto shadow">
           <div className="size-[100px] rounded-[100px] absolute -top-[20%] -right-[20%] z-10 bg-[#313273]"></div>
@@ -225,20 +239,15 @@ export default function Overview() {
           <div className="bg-white flex justify-center items-center rounded-full size-22 relative z-20 ">
             <div className="size-[72px] relative">
               <Image
-                src={"/logo.svg"}
+                src={"/guy.jpg"}
                 alt="Logo"
                 fill
                 sizes="(max-width: 768px) 100vw, 128px"
-                className="object-contain rounded-full"
+                className="object-cover rounded-full"
               />
             </div>
           </div>
         </div>
-
-        <FaHamburger
-          className="absolute top-6 right-6 block md:hidden"
-          onClick={() => toggleAside()}
-        />
 
         {/* name  */}
         <div className="space-y-1.5 text-center font-medium my-4">
@@ -258,7 +267,7 @@ export default function Overview() {
           </div>
         </div>
 
-        {/* Video */}
+        {/* Today */}
         <div className="space-y-5 mt-9">
           {/* head  */}
           <div className="flex items-center justify-between">
@@ -273,7 +282,7 @@ export default function Overview() {
           {/* video  */}
           <div className="h-[150px] w-full relative">
             <Image
-              src={"/logo.svg"}
+              src={"/today.jpg"}
               alt="Logo"
               fill
               sizes="(max-width: 768px) 100vw, 128px"
@@ -300,7 +309,7 @@ export default function Overview() {
               <p className="text-sm text-[#9C9CA4]">Alfredo Rhiel Madsen</p>
               <div className="size-7.5 relative">
                 <Image
-                  src={"/logo.svg"}
+                  src={"/guy.jpg"}
                   alt="Logo"
                   fill
                   sizes="(max-width: 768px) 100vw, 128px"
@@ -310,20 +319,67 @@ export default function Overview() {
             </div>
 
             {/* icons  */}
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center flex-wrap">
               {" "}
-              <div className="flex gap-2 items-center">
-                <CiUser className="text-[#9C9CA4]" /> <p>500 Student</p>
+              <div className="flex gap-0.5 lg:gap-2 items-center">
+                <CiUser className="text-[#9C9CA4]" />{" "}
+                <p className="w-max">500 Student</p>
               </div>
               <div className="flex gap-2 items-center">
-                <TiDocumentText className="text-[#9C9CA4]" /> <p>3 modules</p>
+                <TiDocumentText className="text-[#9C9CA4]" />{" "}
+                <p className="w-max">3 modules</p>
               </div>
               <div className="flex gap-2 items-center">
-                <FaRegClock className="text-[#9C9CA4]" /> <p>1hr 30min</p>
+                <FaRegClock className="text-[#9C9CA4]" />{" "}
+                <p className="w-max">1hr 30min</p>
               </div>
             </div>
+          </div>
+          {/* Modules */}
+          <div>
+            {/* table heading */}
+            <div className="flex justify-between items-center mb-5">
+              <h2 className="font-bold">5 Modules</h2>
+              <p className="text-[#9C9CA4] text-sm">0/5 Done</p>
+            </div>
 
-            {/* Modules */}
+            {/* Table data */}
+            <div className="space-y-5 font-medium text-sm">
+              <div className="flex justify-between items-center mb-5">
+                <p className="flex items-center gap-2">
+                  <span className="bg-[#F5F5F7] size-7 flex items-center justify-center shadow rounded-lg">
+                    1
+                  </span>
+                  <span className="text-[#9C9CA4]">Introduction</span>
+                </p>
+
+                <p className="text-[#9C9CA4]">10:00</p>
+              </div>
+              <div className="flex justify-between items-center mb-5">
+                <p className="flex items-center gap-2">
+                  <span className="bg-[#F5F5F7] size-7 flex items-center justify-center shadow rounded-lg">
+                    2
+                  </span>
+                  <span className="text-[#9C9CA4]">Introduction</span>
+                </p>
+
+                <p className="text-[#9C9CA4]">10:00</p>
+              </div>
+              <div className="flex justify-between items-center mb-5">
+                <p className="flex items-center gap-2">
+                  <span className="bg-[#F5F5F7] size-7 flex items-center justify-center shadow rounded-lg">
+                    3
+                  </span>
+                  <span className="text-[#9C9CA4]">Introduction</span>
+                </p>
+
+                <p className="text-[#9C9CA4]">10:00</p>
+              </div>
+
+              <button className="text-white text-sm py-3.5 w-full bg-[#313273] rounded-xl">
+                Go to detail
+              </button>
+            </div>
           </div>
         </div>
       </div>
