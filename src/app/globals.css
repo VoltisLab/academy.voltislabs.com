@@ -3,8 +3,13 @@
 :root {
   --font-sans: var(--font-maven);
   --font-mono: var(--font-geist-mono);
+  --font-jakarta: var(--font-plus-jakarta);
 }
 
 body {
   font-family: var(--font-sans);
+}
+
+.jakarta {
+  font-family: var(--font-jakarta)
 }
