@@ -36,7 +36,7 @@ const customStyles = `
 const links = [
   { href: "/dashboard/overview", label: "Overview", icon: PiGridFourLight },
   {
-    href: "/dashboard/explore-courses",
+    href: "/dashboard/explore",
     label: "Explore Courses",
     icon: PiMagnifyingGlassLight,
   },
