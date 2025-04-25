@@ -41,24 +41,25 @@ export default function CourseSectionsBuilder() {
   };
   const contentDropdownRef = useRef<HTMLDivElement | null>(null);
   
-useEffect(() => {
-  if (typeof window === "undefined") return;
+// useEffect(() => {
+//   if (
+//     typeof document === "undefined" || // <- ADD THIS GUARD
+//     !openContent
+//   ) return;
 
-  const handleClickOutside = (e: MouseEvent) => {
-    if (
-      contentDropdownRef.current &&
-      !contentDropdownRef.current.contains(e.target as Node)
-    ) {
-      setOpenContent(null);
-    }
-  };
+//   const handleClickOutside = (e: MouseEvent) => {
+//     if (
+//       contentDropdownRef.current &&
+//       !contentDropdownRef.current.contains(e.target as Node)
+//     ) {
+//       setOpenContent(null);
+//     }
+//   };
 
-  document.addEventListener("mousedown", handleClickOutside);
+//   document.addEventListener("mousedown", handleClickOutside);
+//   return () => document.removeEventListener("mousedown", handleClickOutside);
+// }, [openContent]);
 
-  return () => {
-    document.removeEventListener("mousedown", handleClickOutside);
-  };
-}, [openContent]);
 
 
   useEffect(() => {
