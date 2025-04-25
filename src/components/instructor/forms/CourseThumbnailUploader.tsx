@@ -19,7 +19,7 @@ export default function CourseThumbnailUploader() {
   return (
     <div className="flex items-start gap-8">
       {/* Left - Image Placeholder or Preview */}
-      <div className="w-[200px] h-[150px] bg-gray-100 border border-gray-300 rounded-md flex items-center justify-center overflow-hidden">
+      <div className="w-[340px] h-[150px] bg-gray-100 border border-gray-300 rounded-md flex items-center justify-center overflow-hidden">
         {preview ? (
           <img src={preview} alt="Thumbnail Preview" className="object-cover w-full h-full" />
         ) : (
