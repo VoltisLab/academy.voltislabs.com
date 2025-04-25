@@ -5,7 +5,6 @@ import {
   Plus_Jakarta_Sans,
 } from "next/font/google";
 import "./globals.css";
-import Header from "@/components/Header";
 import { AuthProvider } from "@/context/AuthContext";
 
 // Fonts
