@@ -1,25 +1,26 @@
 "use client";
 
+import { useAside } from "@/context/showAsideContext";
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { FaHamburger } from "react-icons/fa";
 import { IoSettingsOutline } from "react-icons/io5";
-import { useState, useEffect } from "react";
-import { useAuth } from "@/context/AuthContext";
-import { useRouter } from "next/navigation";
 import {
+  PiCaretDown,
+  PiCaretUp,
   PiChatCircleTextLight,
   PiGridFourLight,
   PiMagnifyingGlassLight,
   PiSignOutLight,
   PiVideoLight,
-  PiNotification,
-  PiCaretDown,
-  PiCaretUp,
 } from "react-icons/pi";
+
 import { sideBarDropdown } from "@/lib/SidebarData";
 import LogoutModal from "../modals/LogoutModal";
 import { Category, CategoryItem, UserData } from "@/lib/types";
+import { useEffect, useState } from "react";
+import { useAuth } from "@/context/AuthContext";
 
 // Add this to your global CSS or as a style tag in the component
 const customStyles = `
@@ -32,28 +33,19 @@ const customStyles = `
     box-shadow: 0 0 0 2px rgba(49, 50, 115, 0.2);
   }
 `;
-
 const links = [
   { href: "/dashboard/overview", label: "Overview", icon: PiGridFourLight },
   {
-    href: "/dashboard/explore",
+    href: "/dashboard/explore-courses",
     label: "Explore Courses",
     icon: PiMagnifyingGlassLight,
   },
   { href: "/dashboard/my-courses", label: "My Courses", icon: PiVideoLight },
-  {
-    href: "/dashboard/messages",
-    label: "Message",
-    icon: PiChatCircleTextLight,
-  },
-  {
-    href: "/dashboard/notifications",
-    label: "Notification",
-    icon: PiNotification,
-  },
+  { href: "/dashboard/message", label: "Message", icon: PiChatCircleTextLight },
 ];
 
 export default function Sidebar() {
+
   const pathname = usePathname() || "/";
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const { logout } = useAuth();
@@ -306,118 +298,94 @@ export default function Sidebar() {
 
   // Determine if we need to render the full sidebar or the filtered view
   const isFilterView = pathname === "/dashboard/explore" || pathname.includes("/dashboard/my-courses");
+  const { toggleAside } = useAside();
 
   return (
-    <>
-      {/* Add the custom style tag */}
-      <style jsx global>{customStyles}</style>
-      
-      <div className="h-screen">
-        <aside className="fixed h-full p-6 overflow-y-auto flex flex-col w-[280px] bg-white">
-          {/* Logo */}
-          <Link href={"/"} className="items-center flex gap-2 mb-12">
-            <div className="size-10 relative">
+    <aside className="flex p-4 px-4 md:px-2 xl:p-6 flex-col w-full md:w-[185px] lg:w-[220px] xl:w-[264px] text-base md:fixed md:h-screen left-0 top-0">
+      {/* Logo */}
+      <div className="mb-4 md:mb-12 flex items-center justify-between">
+        {" "}
+        <Link href={"/"} className="items-center flex gap-2">
+          <div className="size-10 relative">
+            <Image
+              src={"/logo.svg"}
+              alt="Logo"
+              fill
+              sizes="(max-width: 768px) 100vw, 128px"
+              className="object-contain"
+              priority
+            />
+          </div>
+          <p className="font-medium leading-[92%] text-[#313273] text-2xl">
+            Voltis Labs
+            <br />
+            Academy
+          </p>
+        </Link>
+        {/* User / open aside */}
+        <div
+          className="flex md:hidden cursor-pointer bg-[#CCCCCC]/30 size-[42px] rounded-full  justify-center items-center relative overflow-hidden shadow "
+          onClick={() => toggleAside()}
+        >
+          <div className="size-[42px] rounded-full absolute -top-[20%] -right-[20%] z-10 bg-[#313273]"></div>
+
+          <div className="bg-white flex justify-center items-center rounded-full size-9.5 relative z-20 ">
+            <div className="size-7.5 relative">
               <Image
-                src={"/logo.svg"}
+                src={"/guy.jpg"}
                 alt="Logo"
                 fill
                 sizes="(max-width: 768px) 100vw, 128px"
-                className="object-contain"
-                priority
+                className="object-cover rounded-full"
               />
             </div>
-            <p className="font-medium leading-[92%] text-[#313273] text-[23px]">
-              Voltis Labs
-              <br />
-              Academy
-            </p>
-          </Link>
-
-          {/* If in filter view, show categories instead of navigation */}
-          {isFilterView ? (
-            <div className="flex flex-col gap-2 overflow-y-auto pb-16">
-              {/* Main navigation for filter view */}
-              <Link
-                href={"/dashboard/overview"}
-                className="px-3 py-2.5 rounded-md hover:bg-[#ECEBFF] transition group"
-              >
-                <div className="flex items-center gap-2 transition group-hover:text-[#313273]">
-                  <PiGridFourLight className="size-5" />
-                  <span className="text-sm">Overview</span>
-                </div>
-              </Link>
-              
-              <Link
-                href={"/dashboard/explore"}
-                className={`px-3 py-2.5 rounded-md ${
-                  pathname === "/dashboard/explore" ? "bg-[#ECEBFF] text-[#313273] font-semibold" : ""
-                } hover:bg-[#ECEBFF] transition group`}
-              >
-                <div className="flex items-center gap-2 transition group-hover:text-[#313273]">
-                  <PiMagnifyingGlassLight className="size-5" />
-                  <span className="text-sm">Explore Courses</span>
-                </div>
-              </Link>
-              
-              {/* Categories */}
-              <div className="mt-4 space-y-3">
-                {categories.map(category => renderCategory(category))}
-              </div>
-            </div>
-          ) : (
-            <nav className="flex flex-col gap-2.5">
-              {links.map(({ href, label, icon: Icon }) => {
-                const isActive =
-                  pathname === href ||
-                  (pathname === "/dashboard" && href === "/dashboard/overview");
-
-                return (
-                  <Link
-                    key={href}
-                    href={href}
-                    className={`px-3 py-2.5 rounded-md hover:bg-[#ECEBFF] transition group ${
-                      isActive
-                        ? "bg-[#ECEBFF] text-[#313273] font-semibold"
-                        : "font-medium"
-                    }`}
-                  >
-                    <div className="flex items-center gap-2 transition group-hover:text-[#313273]">
-                      <Icon className="size-5" />
-                      <span className="text-sm">{label}</span>
-                    </div>
-                  </Link>
-                );
-              })}
-            </nav>
-          )}
-
-          {/* Settings logout - This will stick to the bottom with mt-auto */}
-          <div className="mt-auto pt-6 space-y-2.5">
-            <h3 className="text-[#A7A7AA] text-[14px]">SETTINGS</h3>
-
-            <Link
-              href={"/dashboard/settings"}
-              className="gap-2.5 flex items-center py-2.5 pl-3.5 text-[#525255] "
-            >
-              <IoSettingsOutline />
-              <span>Settings</span>
-            </Link>
-            <button
-              className="gap-2.5 flex items-center py-2.5 pl-3.5 text-[#F43F5E] cursor-pointer"
-              onClick={() => setIsLogoutModalOpen(true)}
-            >
-              <PiSignOutLight />
-              <span>Logout</span>
-            </button>
           </div>
-        </aside>
-        <LogoutModal
-          isOpen={isLogoutModalOpen}
-          onClose={() => setIsLogoutModalOpen(false)}
-          onLogout={handleLogout}
-          userName={`${user?.firstName || ""} ${user?.lastName || ""}`}
-        />
+        </div>
       </div>
-    </>
+
+      <nav className="flex-row md:flex-col gap-1 md:gap-2.5 flex justify-between md:justify-normal">
+        {links.map(({ href, label, icon: Icon }) => {
+          const isActive =
+            pathname === href ||
+            (pathname === "/dashboard" && href === "/dashboard/overview");
+
+          return (
+            <Link
+              key={href}
+              href={href}
+              className={`px-1.5 py-1 md:px-3.5 md:py-2.5 rounded-md hover:bg-[#ECEBFF] transition group ${
+                isActive
+                  ? "bg-[#ECEBFF] text-[#313273] font-semibold"
+                  : "font-medium"
+              }`}
+            >
+              <div className="flex items-center text-center justify-center md:justify-normal md:text-start flex-col md:flex-row gap-2 transition group-hover:text-[#313273]">
+                <Icon className={`size-4 md:size-5 ${isActive ? "" : ""}`} />
+                <span className={`text-xs md:text-base ${isActive ? "" : ""}`}>
+                  {label}
+                </span>
+              </div>
+            </Link>
+          );
+        })}
+      </nav>
+
+      {/* Settings logout */}
+      <div className="mt-auto space-y-2.5 hidden md:block">
+        <h3 className="text-[#A7A7AA]">Settings</h3>
+
+        <Link
+          href={"/settings"}
+          className="gap-2.5 flex items-center py-2.5 pl-3.5 text-[#525255] "
+        >
+          <IoSettingsOutline />
+          <span>Settings</span>
+        </Link>
+        <button className="gap-2.5 flex items-center py-2.5 pl-3.5 text-[#F43F5E] cursor-pointer">
+          <PiSignOutLight />
+          <span>Logout</span>
+        </button>
+      </div>
+    </aside>
   );
 }

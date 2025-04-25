@@ -1,4 +1,4 @@
-import { Search, Filter, SlidersVertical, LayoutGrid } from "lucide-react";
+import { Search, Filter, BarChart2, LayoutGrid } from "lucide-react";
 
 export default function CourseFilterBar() {
   return (
@@ -16,13 +16,13 @@ export default function CourseFilterBar() {
 
         {/* Category Filters */}
         <div className="flex items-center gap-3 text-sm text-gray-600 whitespace-nowrap">
-        <button className="flex items-center gap-1 border rounded-xl border-[#313273] py-2 px-3">
-            <LayoutGrid className="w-4 h-4" />
-            <span className="text-[#313273] font-medium">Categories</span>
+          <button className="flex items-center gap-1">
+            <BarChart2 className="w-4 h-4" />
+            <span>Category</span>
           </button>
-          <button className="flex items-center gap-1 border rounded-xl border-[#313273] py-2 px-3">
-            <SlidersVertical className="w-4 h-4" />
-            <span className="text-[#313273] font-medium">Filter</span>
+          <button className="flex items-center gap-1">
+            <LayoutGrid className="w-4 h-4" />
+            <span>Category</span>
           </button>
         </div>
 
