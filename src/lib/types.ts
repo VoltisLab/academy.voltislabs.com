@@ -58,3 +58,34 @@ export interface SignUpData {
         data?: T;
         errors?: Array<{ message: string }>;
       }
+// Define the structure for category items with checkboxes
+export interface CategoryItem {
+  id: string;
+  label: string;
+  count: number;
+  checked?: boolean;
+}
+
+// Define the base Category interface
+export interface BaseCategory {
+  id: string;
+  title: string;
+  icon?: React.ElementType;
+  isCollapsible?: boolean;
+  isOpen?: boolean;
+}
+
+// Define recursive Category type that can contain items or nested categories
+export interface Category extends BaseCategory {
+  items?: (CategoryItem | Category)[];
+}
+
+export interface UserData {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  username: string;
+  verified: boolean;
+  isVerified: boolean;
+}

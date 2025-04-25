@@ -1,8 +1,5 @@
-import Image from "next/image";
 import CourseFilterBar from "./CourseFilterBar";
-import CourseCard from "../CourseCard";
 import { Card_type, Course } from "./types";
-import { Import } from "lucide-react";
 import CourseCardDash from "./CourseCardDash";
 
 const courses: Course[] = [
