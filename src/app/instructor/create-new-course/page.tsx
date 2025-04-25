@@ -51,7 +51,7 @@ export default function CourseFormTabs() {
       <div className="p-6">
         {activeTab === "basic" && <BasicInformationForm />}
         {activeTab === "advanced" && <AdvanceInformationForm />}
-        {activeTab === "curriculum" && <Curriculum />}
+        {/* {activeTab === "curriculum" && <Curriculum />} */}
         {activeTab === "publish" && <p>Publish Step</p>}
       </div>
     </div>
