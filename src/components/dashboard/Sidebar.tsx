@@ -787,117 +787,123 @@ export default function Sidebar() {
       </style>
 
       <div className="h-screen">
-        <aside className="flex p-4 px-4 md:px-2 xl:p-6 flex-col w-full md:w-[185px] lg:w-[220px] xl:w-[264px] text-base md:fixed md:h-screen left-0 top-0">
-          <div className="flex flex-col">
-            {/* Logo */}
-            <div className="flex items-center justify-between mb-6">
-              <Link href={"/"} className="items-center flex gap-2">
-                <div className="size-10 relative">
-                  <Image
-                    src={"/logo.svg"}
-                    alt="Logo"
-                    fill
-                    sizes="(max-width: 768px) 100vw, 128px"
-                    className="object-contain"
-                    priority
-                  />
-                </div>
-                <p className="font-medium leading-[92%] text-[#313273] text-2xl">
-                  Voltis Labs
-                  <br />
-                  Academy
-                </p>
-              </Link>
-
-              {/* User / open aside */}
-              <div
-                className="flex md:hidden cursor-pointer bg-[#CCCCCC]/30 size-[42px] rounded-full  justify-center items-center relative overflow-hidden shadow "
-                onClick={() => toggleAside()}
-              >
-                <div className="size-[42px] rounded-full absolute -top-[20%] -right-[20%] z-10 bg-[#313273]"></div>
-
-                <div className="bg-white flex justify-center items-center rounded-full size-9.5 relative z-20 ">
-                  <div className="size-7.5 relative">
+        <aside className="flex flex-col w-full md:w-[185px] lg:w-[220px] xl:w-[264px] text-base md:fixed md:h-screen left-0 top-0">
+          {/* Main content container with proper spacing and fixed height */}
+          <div className="flex flex-col h-full">
+            {/* Top section with padding */}
+            <div className="p-4 px-4 md:px-2 xl:p-6">
+              {/* Logo */}
+              <div className="flex items-center justify-between mb-6">
+                <Link href={"/"} className="items-center flex gap-2">
+                  <div className="size-10 relative">
                     <Image
-                      src={"/guy.jpg"}
+                      src={"/logo.svg"}
                       alt="Logo"
                       fill
                       sizes="(max-width: 768px) 100vw, 128px"
-                      className="object-cover rounded-full"
+                      className="object-contain"
+                      priority
                     />
                   </div>
+                  <p className="font-medium leading-[92%] text-[#313273] text-2xl">
+                    Voltis Labs
+                    <br />
+                    Academy
+                  </p>
+                </Link>
+
+                {/* User / open aside */}
+                <div
+                  className="flex md:hidden cursor-pointer bg-[#CCCCCC]/30 size-[42px] rounded-full justify-center items-center relative overflow-hidden shadow"
+                  onClick={() => toggleAside()}
+                >
+                  <div className="size-[42px] rounded-full absolute -top-[20%] -right-[20%] z-10 bg-[#313273]"></div>
+
+                  <div className="bg-white flex justify-center items-center rounded-full size-9.5 relative z-20">
+                    <div className="size-7.5 relative">
+                      <Image
+                        src={"/guy.jpg"}
+                        alt="Logo"
+                        fill
+                        sizes="(max-width: 768px) 100vw, 128px"
+                        className="object-cover rounded-full"
+                      />
+                    </div>
+                  </div>
                 </div>
+              </div>
+
+              {/* Content area with overflow control */}
+              <div className="flex-grow overflow-y-auto">
+                {/* If in filter view, show categories instead of navigation */}
+                {isFilterView ? (
+                  <div className="flex flex-col gap-2">
+                    {/* Main navigation for filter view */}
+                    <Link
+                      href={"/dashboard/overview"}
+                      className="px-3 py-2.5 rounded-md hover:bg-[#ECEBFF] transition group"
+                    >
+                      <div className="flex items-center gap-2 transition group-hover:text-[#313273]">
+                        <PiGridFourLight className="size-5" />
+                        <span className="text-sm">Overview</span>
+                      </div>
+                    </Link>
+
+                    <Link
+                      href={"/dashboard/explore"}
+                      className={`px-3 py-2.5 rounded-md ${
+                        pathname === "/dashboard/explore"
+                          ? "bg-[#ECEBFF] text-[#313273] font-semibold"
+                          : ""
+                      } hover:bg-[#ECEBFF] transition group`}
+                    >
+                      <div className="flex items-center gap-2 transition group-hover:text-[#313273]">
+                        <PiMagnifyingGlassLight className="size-5" />
+                        <span className="text-sm">Explore Courses</span>
+                      </div>
+                    </Link>
+
+                    {/* Categories */}
+                    <div className="mt-4 space-y-3">
+                      {categories.map((category) => renderCategory(category))}
+                    </div>
+                  </div>
+                ) : (
+                  <nav className="flex flex-col gap-2.5">
+                    {links.map(({ href, label, icon: Icon }) => {
+                      const isActive =
+                        pathname === href ||
+                        (pathname === "/dashboard" &&
+                          href === "/dashboard/overview");
+
+                      return (
+                        <Link
+                          key={href}
+                          href={href}
+                          className={`px-3 py-2.5 rounded-md hover:bg-[#ECEBFF] transition group ${
+                            isActive
+                              ? "bg-[#ECEBFF] text-[#313273] font-semibold"
+                              : "font-medium"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2 transition group-hover:text-[#313273]">
+                            <Icon className="size-5" />
+                            <span className="text-sm">{label}</span>
+                          </div>
+                        </Link>
+                      );
+                    })}
+                  </nav>
+                )}
               </div>
             </div>
 
-            {/* If in filter view, show categories instead of navigation */}
-            {isFilterView ? (
-              <div className="flex flex-col gap-2 overflow-y-auto pb-16">
-                {/* Main navigation for filter view */}
-                <Link
-                  href={"/dashboard/overview"}
-                  className="px-3 py-2.5 rounded-md hover:bg-[#ECEBFF] transition group"
-                >
-                  <div className="flex items-center gap-2 transition group-hover:text-[#313273]">
-                    <PiGridFourLight className="size-5" />
-                    <span className="text-sm">Overview</span>
-                  </div>
-                </Link>
-
-                <Link
-                  href={"/dashboard/explore"}
-                  className={`px-3 py-2.5 rounded-md ${
-                    pathname === "/dashboard/explore"
-                      ? "bg-[#ECEBFF] text-[#313273] font-semibold"
-                      : ""
-                  } hover:bg-[#ECEBFF] transition group`}
-                >
-                  <div className="flex items-center gap-2 transition group-hover:text-[#313273]">
-                    <PiMagnifyingGlassLight className="size-5" />
-                    <span className="text-sm">Explore Courses</span>
-                  </div>
-                </Link>
-
-                {/* Categories */}
-                <div className="mt-4 space-y-3">
-                  {categories.map((category) => renderCategory(category))}
-                </div>
-              </div>
-            ) : (
-              <nav className="flex flex-col gap-2.5">
-                {links.map(({ href, label, icon: Icon }) => {
-                  const isActive =
-                    pathname === href ||
-                    (pathname === "/dashboard" &&
-                      href === "/dashboard/overview");
-
-                  return (
-                    <Link
-                      key={href}
-                      href={href}
-                      className={`px-3 py-2.5 rounded-md hover:bg-[#ECEBFF] transition group ${
-                        isActive
-                          ? "bg-[#ECEBFF] text-[#313273] font-semibold"
-                          : "font-medium"
-                      }`}
-                    >
-                      <div className="flex items-center gap-2 transition group-hover:text-[#313273]">
-                        <Icon className="size-5" />
-                        <span className="text-sm">{label}</span>
-                      </div>
-                    </Link>
-                  );
-                })}
-              </nav>
-            )}
-
-            {/* Settings logout - This will stick to the bottom with mt-auto */}
-            <div className="mt-auto pt-6 space-y-2.5">
-              <h3 className="text-[#A7A7AA] text-[14px]">SETTINGS</h3>
-
+            {/* Settings and logout section - absolutely positioned at bottom */}
+            <div className="p-4 px-4 md:px-2 xl:px-6 mt-auto border-t border-gray-100">
+              <h3 className="text-[#A7A7AA] text-[14px] mb-2.5">SETTINGS</h3>
               <Link
                 href={"/dashboard/settings"}
-                className="gap-2.5 flex items-center py-2.5 pl-3.5 text-[#525255] "
+                className="gap-2.5 flex items-center py-2.5 pl-3.5 text-[#525255]"
               >
                 <IoSettingsOutline />
                 <span>Settings</span>
