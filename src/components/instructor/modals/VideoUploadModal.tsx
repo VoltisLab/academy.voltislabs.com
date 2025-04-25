@@ -146,14 +146,17 @@ export default function UploadModal({ onClose, type, title }: UploadModalProps) 
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-40  flex items-center justify-center">
-      <div className="bg-white w-full max-w-xl rounded-md p-6 relative">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-semibold">{title}</h2>
-          <button onClick={onClose}><X className="w-5 h-5 text-gray-500" /></button>
-        </div>
-        {renderBody()}
-      </div>
+   <div className="fixed inset-0 z-50 flex items-center justify-center  backdrop-blur-sm">
+  <div className="bg-white shadow-md w-full max-w-xl rounded-md p-6 relative">
+    <div className="flex justify-between items-center mb-4">
+      <h2 className="text-lg font-semibold">{title}</h2>
+      <button onClick={onClose}>
+        <X className="w-5 h-5 text-gray-500" />
+      </button>
     </div>
+    {renderBody()}
+  </div>
+</div>
+
   );
 }

@@ -8,12 +8,12 @@ export function AdvanceInformationForm() {
   return (
     <section className="space-y-10">
       <FormHeader />
-     <MediaUploadForm/>
-     <CourseDescriptionEditor/>
-     <CourseObjectivesInput title="tt"/>
-      <FormFooterButtons/>
+      <MediaUploadForm />
+      <CourseDescriptionEditor />
+      <CourseObjectivesInput title="What you will teach in this course" />
+      <CourseObjectivesInput title="Target Audience" />
+      <CourseObjectivesInput title="Course requirements" />
+      <FormFooterButtons />
     </section>
-      
-  
   );
 }
