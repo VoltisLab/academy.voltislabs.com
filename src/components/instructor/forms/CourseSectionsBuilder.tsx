@@ -168,7 +168,7 @@ export default function CourseSectionsBuilder() {
               <span>Section 0{sectionIndex + 1}:</span>
               {section.editing ? (
                 <input
-                  ref={(el) => (sectionRefs.current[sectionIndex] = el)}
+                  ref={(el:any) => (sectionRefs.current[sectionIndex] = el)}
                   type="text"
                   value={section.name}
                   onChange={(e) =>
