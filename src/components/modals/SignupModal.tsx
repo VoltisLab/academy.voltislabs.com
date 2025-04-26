@@ -226,8 +226,8 @@ const SignupModalContent: React.FC<SignupModalProps> = ({
 
       if (result.register?.success) {
         // Close modal and redirect
-        onClose();
         router.push("/dashboard");
+        onClose();
       } else {
         // Handle specific API errors
         if (result.register?.errors?.length > 0) {
