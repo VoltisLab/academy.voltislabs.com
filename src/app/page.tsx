@@ -7,11 +7,12 @@ import Footer from "./sections/Footer";
 import Testimonial from "./sections/Testimonial";
 import CourseSection from "./sections/CourseSection";
 import Header from "@/components/Header";
-
+import HeroSlider from "@/components/hero/HeroSlider";
 export default function Home() {
   return (
     <main>
       <Header />
+      <HeroSlider />
       <HeroSection />
       <Partners />
       <AboutSection />

@@ -1,4 +1,5 @@
 import { ApiClientOptions, ApiResponse } from "@/lib/types";
+import Cookies from "js-cookie";
  
   /**
    * GraphQL API client to handle requests
@@ -27,7 +28,7 @@ import { ApiClientOptions, ApiResponse } from "@/lib/types";
       
       // Add authentication token if includeAuth is true
       if (options.includeAuth !== false && typeof window !== 'undefined') {
-        const token = localStorage.getItem('token');
+        const token = Cookies.get('auth_token');
         if (token) {
           headers['Authorization'] = `Bearer ${token}`;
         }

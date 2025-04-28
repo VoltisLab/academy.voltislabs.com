@@ -557,7 +557,7 @@ export default function Sidebar() {
                         pathname === "/dashboard/explore"
                           ? "bg-[#313273] text-white font-semibold"
                           : ""
-                      } hover:bg-[#313273] text-white transition group`}
+                      } hover:bg-[#313273]  transition group`}
                     >
                       <div className="flex items-center gap-2 transition ">
                         <PiMagnifyingGlassLight className="size-5" style={{fill: "white"}} />
