@@ -22,6 +22,8 @@ import { sideBarDropdown } from "@/lib/SidebarData";
 import LogoutModal from "../modals/LogoutModal";
 import { Category, CategoryItem, UserData } from "@/lib/types";
 import { useAside } from "@/context/showAsideContext";
+import { logout } from "@/api/auth";
+import { getCurrentUser } from "@/api/auth";
 
 // Add this to your global CSS or as a style tag in the component
 const customStyles = `
@@ -67,7 +69,6 @@ const links = [
 export default function Sidebar() {
   const pathname = usePathname() || "/";
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
-  const { logout } = useAuth();
   const router = useRouter();
   const [user, setUser] = useState<UserData | null>(null);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
@@ -77,7 +78,7 @@ export default function Sidebar() {
 
   useEffect(() => {
     // Client-side only code
-    const userString = localStorage.getItem("user");
+    const userString = getCurrentUser()
     if (userString) {
       const userData = JSON.parse(userString);
       setUser(userData);

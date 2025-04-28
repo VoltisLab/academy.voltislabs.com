@@ -6,12 +6,12 @@ import { useAuth } from "@/context/AuthContext";
 import { FiMenu, FiX } from "react-icons/fi";
 import SignupModal from "@/components/modals/SignupModal";
 import { getCurrentUser } from "@/api/auth";
+import { logout } from "@/api/auth";
 
 const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [userExists, setUserExists] = useState<boolean>(false);
-  const {logout} = useAuth()
 
   // Move localStorage access to useEffect
   useEffect(() => {
