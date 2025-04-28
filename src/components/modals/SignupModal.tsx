@@ -126,9 +126,9 @@ const SignupModalContent: React.FC<SignupModalProps> = ({
   // Handle sending verification code
   const handleSendCode = async () => {
     // Validate email first
-    if (!validateField('email', email)) {
-      return;
-    }
+    // if (!validateField('email', email)) {
+    //   return;
+    // }
 
     setSendingCode(true);
     
@@ -181,15 +181,15 @@ const SignupModalContent: React.FC<SignupModalProps> = ({
         if (!value) {
           newErrors.email = "Email is required";
         } 
-        else if (!isValidEmail(value)) {
-          newErrors.email = "Please enter a valid email address";
-        } 
-        else if (!isAllowedDomain(value)) {
-          newErrors.email = "Sorry, this is an invalid email. Please use an email ending with @voltislab.com or @academy.voltislab.com";
-        } 
-        else {
-          delete newErrors.email;
-        }
+        // else if (!isValidEmail(value)) {
+        //   newErrors.email = "Please enter a valid email address";
+        // } 
+        // else if (!isAllowedDomain(value)) {
+        //   newErrors.email = "Sorry, this is an invalid email. Please use an email ending with @voltislab.com or @academy.voltislab.com";
+        // } 
+        // else {
+        //   delete newErrors.email;
+        // }
         break;
         
       case 'password':
