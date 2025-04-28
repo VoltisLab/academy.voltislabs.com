@@ -2,6 +2,7 @@
 'use client'; // Mark as client component
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 
 export default function VoltisLoader() {
   const [progress, setProgress] = useState(0);
@@ -25,6 +26,15 @@ export default function VoltisLoader() {
           className="absolute inset-0 border-4 border-t-indigo-600 border-r-pink-500 border-b-indigo-600 border-l-pink-500 rounded-full animate-spin"
           style={{ animationDuration: '1s' }}
         ></div>
+        <div className="absolute inset-0 flex items-center justify-center animate-spin" style={{ animationDuration: '2s' }}>
+          <Image 
+            src="/logo.svg" 
+            alt="Logo" 
+            width={50} 
+            height={50} 
+            className="rounded-full"
+          />
+        </div>
       </div>
       
       <div className="w-64 h-2 bg-gray-200 rounded-full mt-6 overflow-hidden">
