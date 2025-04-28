@@ -7,17 +7,18 @@ import { FiMenu, FiX } from "react-icons/fi";
 import SignupModal from "@/components/modals/SignupModal";
 import { getCurrentUser } from "@/api/auth";
 import { logout } from "@/api/auth";
+import { LoginResponse } from "@/lib/types";
 
 const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
-  const [userExists, setUserExists] = useState<boolean>(false);
+  const [userExists, setUserExists] = useState<LoginResponse>();
 
   // Move localStorage access to useEffect
   useEffect(() => {
     const userString = getCurrentUser()
     console.log(userString)
-    setUserExists(!!userString);
+    setUserExists(userString);
   }, []);
 
   const toggleMenu = () => setIsOpen(!isOpen);
@@ -75,7 +76,7 @@ const Header = () => {
             </Link>
             {userExists && (
               <Link
-              href="/dashboard"
+              href={userExists?.login?.user?.isInstructor? "/instructor" : "/dashboard"}
               className="text-[#331C1C] font-semibold hover:text-pink-600 transition"
             >
               Dashboard
