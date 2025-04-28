@@ -49,9 +49,7 @@ const customStyles = `
 const links = [
   { href: "/dashboard/overview", label: "Overview", icon: PiGridFourLight },
   {
-    href: "/dashboard/explore",
-    label: "Explore Courses",
-    icon: PiMagnifyingGlassLight,
+    href: "/dashboard/explore",label: "Explore Courses",icon: PiMagnifyingGlassLight,
   },
   { href: "/dashboard/my-courses", label: "My Courses", icon: PiVideoLight },
   {
@@ -544,9 +542,9 @@ export default function Sidebar() {
                     {/* Main navigation for filter view */}
                     <Link
                       href={"/dashboard/overview"}
-                      className="px-3 py-2.5 rounded-md hover:bg-[#ECEBFF] transition group"
+                      className="px-3 py-2.5 rounded-md hover:bg-[#313273] hover:text-white transition group"
                     >
-                      <div className="flex items-center gap-2 transition group-hover:text-[#313273]">
+                      <div className="flex items-center gap-2 transition ">
                         <PiGridFourLight className="size-5" />
                         <span className="text-sm">Overview</span>
                       </div>
@@ -556,12 +554,12 @@ export default function Sidebar() {
                       href={"/dashboard/explore"}
                       className={`px-3 py-2.5 rounded-md ${
                         pathname === "/dashboard/explore"
-                          ? "bg-[#ECEBFF] text-[#313273] font-semibold"
+                          ? "bg-[#313273] text-white font-semibold"
                           : ""
-                      } hover:bg-[#ECEBFF] transition group`}
+                      } hover:bg-[#313273] text-white transition group`}
                     >
-                      <div className="flex items-center gap-2 transition group-hover:text-[#313273]">
-                        <PiMagnifyingGlassLight className="size-5" />
+                      <div className="flex items-center gap-2 transition ">
+                        <PiMagnifyingGlassLight className="size-5" style={{fill: "white"}} />
                         <span className="text-sm">Explore Courses</span>
                       </div>
                     </Link>
@@ -583,13 +581,13 @@ export default function Sidebar() {
                         <Link
                           key={href}
                           href={href}
-                          className={`px-3 py-2.5 rounded-md hover:bg-[#ECEBFF] transition group ${
+                          className={`px-3 py-2.5 rounded-md hover:bg-[#313273] hover:text-white transition group ${
                             isActive
-                              ? "bg-[#ECEBFF] text-[#313273] font-semibold"
+                              ? "bg-[#313273] text-white font-semibold"
                               : "font-medium"
                           }`}
                         >
-                          <div className="flex items-center gap-2 transition group-hover:text-[#313273]">
+                          <div className="flex items-center gap-2 transition">
                             <Icon className="size-5" />
                             <span className="text-sm">{label}</span>
                           </div>

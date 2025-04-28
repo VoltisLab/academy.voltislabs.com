@@ -7,7 +7,8 @@ export const REGISTER_MUTATION = gql`
     $lastName: String!, 
     $password1: String!, 
     $password2: String!, 
-    $username: String!
+    $username: String!,
+    $otpCode: String!
   ) {
     register(
       email: $email,
@@ -15,7 +16,8 @@ export const REGISTER_MUTATION = gql`
       lastName: $lastName,
       password1: $password1,
       password2: $password2,
-      username: $username
+      username: $username,
+      otpCode: $otpCode
     ) {
       errors
       success
@@ -42,6 +44,23 @@ export const LOGIN_MUTATION = gql`
         email
         id
       }
+    }
+  }
+`;
+
+export const SEND_VERIFICATION_EMAIL_MUTATION = gql`
+  mutation SendVerificationEmail($email: String!) {
+    sendVerificationEmail(email: $email) {
+      message
+      success
+    }
+  }
+`;
+
+export const VERIFY_TOKEN_MUTATION = gql`
+  mutation VerifyToken($token: String!) {
+    verifyToken(token: $token) {
+      payload
     }
   }
 `;

@@ -1,24 +1,13 @@
 "use client";
 import { useState, useEffect, useRef, FormEvent } from "react";
 import Image from "next/image";
-import { signUp, login } from "@/api/auth";
-import { SignUpData, LoginData } from "@/lib/types";
+import { signUp, login, sendVerificationCode } from "@/api/auth"; // Added sendVerificationCode import
+import { SignUpData, LoginData, FormErrors } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import { ApolloProvider } from "@apollo/client";
 import { apolloClient } from "@/lib/apollo-client";
-
-interface SignupModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-}
-
-// Define more specific error types
-interface FormErrors {
-  email?: string;
-  password?: string;
-  fullName?: string;
-  general?: string;
-}
+import { isAllowedDomain, isValidEmail, SignupModalProps, validatePassword } from "@/lib/utils";
+import Link from "next/link";
 
 const SignupModalContent: React.FC<SignupModalProps> = ({
   isOpen,
@@ -27,9 +16,14 @@ const SignupModalContent: React.FC<SignupModalProps> = ({
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [fullName, setFullName] = useState<string>("");
+  const [otpCode, setOtpCode] = useState<string>("");
   const [hasAccount, setHasAccount] = useState<boolean>(false);
   const [language, setLanguage] = useState<string>("English (UK)");
   const [loading, setLoading] = useState<boolean>(false);
+  const [codeSent, setCodeSent] = useState<boolean>(false);
+  const [sendingCode, setSendingCode] = useState<boolean>(false);
+  const [codeExpiry, setCodeExpiry] = useState<Date | null>(null);
+  const [timeLeft, setTimeLeft] = useState<number>(0);
   
   // Replace single error with more specific errors
   const [errors, setErrors] = useState<FormErrors>({});
@@ -38,7 +32,8 @@ const SignupModalContent: React.FC<SignupModalProps> = ({
   const [touchedFields, setTouchedFields] = useState({
     email: false,
     password: false,
-    fullName: false
+    fullName: false,
+    otpCode: false
   });
 
   const modalRef = useRef<HTMLDivElement>(null);
@@ -72,34 +67,34 @@ const SignupModalContent: React.FC<SignupModalProps> = ({
     setTouchedFields({
       email: false,
       password: false,
-      fullName: false
+      fullName: false,
+      otpCode: false
     });
+    setCodeSent(false);
+    setOtpCode("");
   }, [hasAccount]);
 
+  // Timer for OTP expiration
+  useEffect(() => {
+    if (!codeExpiry) return;
+    
+    const timer = setInterval(() => {
+      const now = new Date();
+      const diff = codeExpiry.getTime() - now.getTime();
+      
+      if (diff <= 0) {
+        setTimeLeft(0);
+        setCodeSent(false);
+        clearInterval(timer);
+      } else {
+        setTimeLeft(Math.floor(diff / 1000));
+      }
+    }, 1000);
+    
+    return () => clearInterval(timer);
+  }, [codeExpiry]);
+
   if (!isOpen) return null;
-
-  // Validate email format
-  const isValidEmail = (email: string): boolean => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
-
-  // Validate password strength
-  const validatePassword = (password: string): string | undefined => {
-    if (password.length < 8) {
-      return "Password must be at least 8 characters long";
-    }
-    if (!/[A-Z]/.test(password)) {
-      return "Password must contain at least one uppercase letter";
-    }
-    if (!/[a-z]/.test(password)) {
-      return "Password must contain at least one lowercase letter";
-    }
-    if (!/[0-9]/.test(password)) {
-      return "Password must contain at least one number";
-    }
-    return undefined;
-  };
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement>,
@@ -121,6 +116,55 @@ const SignupModalContent: React.FC<SignupModalProps> = ({
     validateField(field, value);
   };
 
+  // Handle sending verification code
+  const handleSendCode = async () => {
+    // Validate email first
+    // if (!validateField('email', email)) {
+    //   return;
+    // }
+
+    setSendingCode(true);
+    
+    try {
+      const result = await sendVerificationCode(email);
+
+      console.log(result)
+      
+      if (result.success) {
+        setCodeSent(true);
+        // Set expiry time to 5 minutes from now
+        const expiry = new Date();
+        expiry.setMinutes(expiry.getMinutes() + 5);
+        setCodeExpiry(expiry);
+        setTimeLeft(300); // 5 minutes in seconds
+        
+        // Show success message
+        setErrors(prev => ({ ...prev, emailVerification: "Verification code sent successfully. Code expires in 5 minutes." }));
+      } else {
+        // Handle error
+        setErrors(prev => ({ 
+          ...prev, 
+          emailVerification: result.error || "Failed to send verification code. Please try again." 
+        }));
+      }
+    } catch (error: any) {
+      console.error("Error sending verification code:", error);
+      setErrors(prev => ({ 
+        ...prev, 
+        emailVerification: error.message || "Failed to send verification code. You may have reached the rate limit (3 requests per hour)." 
+      }));
+    } finally {
+      setSendingCode(false);
+    }
+  };
+
+  // Format seconds to mm:ss
+  const formatTimeLeft = (seconds: number): string => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+  };
+
   // Validate individual fields
   const validateField = (field: keyof FormErrors, value: string) => {
     const newErrors = { ...errors };
@@ -129,15 +173,16 @@ const SignupModalContent: React.FC<SignupModalProps> = ({
       case 'email':
         if (!value) {
           newErrors.email = "Email is required";
-        } else if (!isValidEmail(value)) {
-          newErrors.email = "Please enter a valid email address";
         } 
+        // else if (!isValidEmail(value)) {
+        //   newErrors.email = "Please enter a valid email address";
+        // } 
         // else if (!isAllowedDomain(value)) {
         //   newErrors.email = "Sorry, this is an invalid email. Please use an email ending with @voltislab.com or @academy.voltislab.com";
         // } 
-        else {
-          delete newErrors.email;
-        }
+        // else {
+        //   delete newErrors.email;
+        // }
         break;
         
       case 'password':
@@ -162,6 +207,16 @@ const SignupModalContent: React.FC<SignupModalProps> = ({
           delete newErrors.fullName;
         }
         break;
+
+      case 'otpCode':
+        if (!value) {
+          newErrors.otpCode = "Verification code is required";
+        } else if (value.trim().length < 4) {
+          newErrors.otpCode = "Invalid verification code";
+        } else {
+          delete newErrors.otpCode;
+        }
+        break;
     }
     
     setErrors(newErrors);
@@ -176,7 +231,8 @@ const SignupModalContent: React.FC<SignupModalProps> = ({
     setTouchedFields({
       email: true,
       password: true,
-      fullName: !hasAccount ? true : false
+      fullName: !hasAccount ? true : false,
+      otpCode: !hasAccount ? true : false
     });
     
     if (!email) {
@@ -197,6 +253,10 @@ const SignupModalContent: React.FC<SignupModalProps> = ({
     
     if (!hasAccount && !fullName) {
       newErrors.fullName = "Full name is required";
+    }
+
+    if (!hasAccount && !otpCode) {
+      newErrors.otpCode = "Verification code is required";
     }
     
     setErrors(newErrors);
@@ -220,14 +280,16 @@ const SignupModalContent: React.FC<SignupModalProps> = ({
         fullName,
         email,
         password,
+        otpCode,
       };
+
+      localStorage.setItem("email", email);
 
       const result = await signUp(userData);
 
       if (result.register?.success) {
-        // Close modal and redirect
-        router.push("/dashboard");
-        onClose();
+        // Show the login screen
+        setHasAccount(true);
       } else {
         // Handle specific API errors
         if (result.register?.errors?.length > 0) {
@@ -239,6 +301,8 @@ const SignupModalContent: React.FC<SignupModalProps> = ({
               setErrors(prev => ({ ...prev, password: errorMsg }));
             } else if (errorMsg.toLowerCase().includes("name")) {
               setErrors(prev => ({ ...prev, fullName: errorMsg }));
+            } else if (errorMsg.toLowerCase().includes("code") || errorMsg.toLowerCase().includes("otp")) {
+              setErrors(prev => ({ ...prev, otpCode: errorMsg }));
             } else {
               setErrors(prev => ({ ...prev, general: errorMsg }));
             }
@@ -284,9 +348,8 @@ const SignupModalContent: React.FC<SignupModalProps> = ({
       const result = await login(credentials);
 
       if (result.login?.success) {
-        // Close modal and redirect
-        onClose();
-        router.push("/dashboard");
+        onClose()
+        router.push("/dashboard")
       } else {
         // Handle specific login errors
         if (result.login?.errors?.length > 0) {
@@ -336,13 +399,14 @@ const SignupModalContent: React.FC<SignupModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 backdrop-blur-sm bg-opacity-30 flex items-center justify-center z-50">
-      <div
-        ref={modalRef}
-        className="bg-white rounded-[30px] shadow-lg overflow-hidden w-full max-w-5xl flex border-5 border-white relative"
-      >
-        {/* Left side - Pink section */}
-        <div className="bg-gradient-to-b from-[#DC4298] to-[#EAADCF] text-white p-8 w-[37%] relative">
+    <>
+      <div className="fixed inset-0 backdrop-blur-sm bg-opacity-30 flex items-center justify-center z-50">
+        <div
+          ref={modalRef}
+          className="bg-white rounded-[30px] shadow-lg overflow-hidden w-full max-w-5xl flex flex-col md:flex-row border-5 border-white relative"
+        >
+          {/* Left side - Pink section */}
+          <div className="bg-gradient-to-b from-[#DC4298] to-[#EAADCF] text-white p-8 md:w-[37%] w-full relative md:block hidden">
           <div className="mb-4">
             <div className="h-8 w-8 bg-white rounded">
               <Image
@@ -354,21 +418,20 @@ const SignupModalContent: React.FC<SignupModalProps> = ({
               />
             </div>
           </div>
-          <h2 className="text-3xl font-bold mb-2">
-            3D Models of
+          <h2 className="xl:text-3xl text-xl font-bold mb-2">
+            Welcome to 
             <br />
-            Abstract Digital Art
+            Voltis Labs University
           </h2>
           <p className="text-sm mb-12">
-            Make your design looks more attractive with 3D abstract geometric
-            digital art.
+            Begin your journey into a world of endless possibilities exploring our courses
           </p>
 
           {/* 3D elements representation */}
-          <div className="relative h-[51%] w-[165%] flex justify-center items-center">
+          <div className="relative xl:h-[51%] h-[40%] xl:w-[165%] w-[135%]  flex justify-center items-center">
             <div
               className={`absolute inset-0 z-10  ${
-                !hasAccount ? "-left-32 -bottom-8" : "-left-24 -bottom-6"
+                !hasAccount ? "xl:-left-32 xl:-bottom-8" : "xl:-left-24 xl-bottom-6"
               }`}
             >
               <Image
@@ -383,19 +446,19 @@ const SignupModalContent: React.FC<SignupModalProps> = ({
         </div>
 
         {/* Curved edge overlay - Fixed positioning */}
-        <div className="absolute h-full left-[37%] overflow-hidden w-12 -translate-x-6 z-">
+        <div className="absolute h-full left-[37%] overflow-hidden w-12 -translate-x-6 md:block hidden">
           <div className="h-full w-16 rounded-l-[30px] bg-white"></div>
         </div>
 
         {/* Right side - Form */}
-        <div className="py-16 px-28 flex-1 relative z-10">
+        <div className="xl:py-16 md:px-10 xl:px-28 px-5 flex-1 relative z-10">
           {/* Language Dropdown */}
           <div className="absolute top-2 right-4 flex items-center">
             <div className="relative">
               <select
                 value={language}
                 onChange={(e) => setLanguage(e.target.value)}
-                className="appearance-none bg-transparent text-gray-400 pr-8 py-1 cursor-pointer text-sm font-medium"
+                className="appearance-none bg-transparent text-gray-400 pr-8 py-1 cursor-pointer text-[12px] md:text-sm font-medium"
               >
                 <option value="English (UK)">English (UK)</option>
                 <option value="French">French</option>
@@ -421,16 +484,21 @@ const SignupModalContent: React.FC<SignupModalProps> = ({
             </div>
           </div>
 
-          <div className="mb-10">
-            <h2 className="text-3xl font-bold text-left text-[#525252]">
+          <div className="mb-10 flex flex-row justify-between items-center xl:mt-0 mt-10">
+            <h2 className="md:text-3xl text-xl font-bold text-left text-[#525252]">
               Welcome!
             </h2>
+            <Link href={"/instructor"}>
+            <h2 className="text-sm font-medium text-[#DC4298] hover:duration-700 hover:scale-110 underline">
+              Login as instructor
+            </h2>
+            </Link>
           </div>
 
           <div className="flex gap-4 mb-8">
             <button
               type="button"
-              className="flex-1 border border-gray-300 rounded-md py-2 font-bold px-3 flex justify-center items-center gap-2 text-[#A1A1A1] text-[12px]"
+              className="flex-1 border border-gray-300 rounded-md py-1 xl:py-2 font-bold px-1 md:px-3 flex justify-center items-center md:gap-2 gap-1 text-[#A1A1A1] text-[10px] xl:text-[12px]"
             >
               <div className="h-6 w-6 bg-white rounded">
                 <Image
@@ -445,7 +513,7 @@ const SignupModalContent: React.FC<SignupModalProps> = ({
             </button>
             <button
               type="button"
-              className="flex-1 border border-gray-300 rounded-md py-2 px-3 font-bold flex justify-center items-center gap-2 text-[#A1A1A1] text-[12px]"
+              className="flex-1 border border-gray-300 rounded-md py-1 xl:py-2 font-bold px-1 md:px-3 flex justify-center items-center md:gap-2 gap-1 text-[#A1A1A1] text-[10px] xl:text-[12px]"
             >
               <div className="h-5 w-5 bg-white rounded ">
                 <Image
@@ -460,156 +528,209 @@ const SignupModalContent: React.FC<SignupModalProps> = ({
             </button>
           </div>
 
-          {/* Improved OR divider with longer lines */}
-          <div className="flex items-center mb-8 w-full justify-center ">
-            <span className="text-gray-500 text-sm font-medium">- OR -</span>
-          </div>
-
-          {/* General error message display */}
-          {errors.general && (
-            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-2 rounded-md mb-4 text-sm">
-              {errors.general}
+            {/* Improved OR divider with longer lines */}
+            <div className="flex items-center mb-8 w-full justify-center ">
+              <span className="text-gray-500 text-sm font-medium">- OR -</span>
             </div>
-          )}
 
-          {!hasAccount ? (
-            <form className="space-y-6 z-20" onSubmit={handleSignup}>
-              <div className="mb-6">
-                <input
-                  type="text"
-                  placeholder="Full Name"
-                  className={getInputClass('fullName')}
-                  value={fullName}
-                  onChange={(e) => handleInputChange(e, setFullName, 'fullName')}
-                  aria-invalid={touchedFields.fullName && Boolean(errors.fullName)}
-                  aria-describedby={errors.fullName ? "fullname-error" : undefined}
-                />
-                {touchedFields.fullName && errors.fullName && (
-                  <p id="fullname-error" className="text-red-500 text-xs mt-1">
-                    {errors.fullName}
-                  </p>
-                )}
+            {/* General error message display */}
+            {errors.general && (
+              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-2 rounded-md mb-4 text-sm">
+                {errors.general}
               </div>
-              <div className="mb-6">
-                <input
-                  type="email"
-                  placeholder="Email Address"
-                  className={getInputClass('email')}
-                  value={email}
-                  onChange={(e) => handleInputChange(e, setEmail, 'email')}
-                  aria-invalid={touchedFields.email && Boolean(errors.email)}
-                  aria-describedby={errors.email ? "email-error" : undefined}
-                />
+            )}
+
+            {!hasAccount ? (
+              <form className="space-y-6 z-20" onSubmit={handleSignup}>
+                <div className="mb-6">
+                  <input
+                    type="text"
+                    placeholder="Full Name"
+                    className={getInputClass('fullName')}
+                    value={fullName}
+                    onChange={(e) => handleInputChange(e, setFullName, 'fullName')}
+                    aria-invalid={touchedFields.fullName && Boolean(errors.fullName)}
+                    aria-describedby={errors.fullName ? "fullname-error" : undefined}
+                  />
+                  {touchedFields.fullName && errors.fullName && (
+                    <p id="fullname-error" className="text-red-500 text-xs mt-1">
+                      {errors.fullName}
+                    </p>
+                  )}
+                </div>
+                <div className="mb-6 relative">
+                <div className="flex items-center relative">
+                  <input
+                    type="email"
+                    placeholder="Email Address"
+                    className={getInputClass('email')}
+                    value={email}
+                    onChange={(e) => handleInputChange(e, setEmail, 'email')}
+                    aria-invalid={touchedFields.email && Boolean(errors.email)}
+                    aria-describedby={errors.email ? "email-error" : undefined}
+                  />
+                  <div className="absolute right-0 bottom-2">
+                    <button
+                      type="button"
+                      className={`text-sm font-medium px-3 py-1 rounded
+                        ${codeSent 
+                          ? "text-gray-500 cursor-not-allowed"
+                          : "text-[#DC4298] hover:text-pink-700"
+                        }
+                        ${!isValidEmail(email) ? "opacity-50 cursor-not-allowed" : ""}
+                        ${sendingCode ? "opacity-50 cursor-wait" : ""}
+                      `}
+                      onClick={handleSendCode}
+                      disabled={codeSent || !isValidEmail(email) || sendingCode}
+                    >
+                      {sendingCode 
+                        ? "Sending..." 
+                        : codeSent 
+                          ? `Resend (${formatTimeLeft(timeLeft)})` 
+                          : "Send Code"}
+                    </button>
+                  </div>
+                </div>
                 {touchedFields.email && errors.email && (
                   <p id="email-error" className="text-red-500 text-xs mt-1">
                     {errors.email}
                   </p>
                 )}
-              </div>
-              <div className="mb-6">
-                <input
-                  type="password"
-                  placeholder="Password"
-                  className={getInputClass('password')}
-                  value={password}
-                  onChange={(e) => handleInputChange(e, setPassword, 'password')}
-                  aria-invalid={touchedFields.password && Boolean(errors.password)}
-                  aria-describedby={errors.password ? "password-error" : undefined}
-                />
-                {touchedFields.password && errors.password && (
-                  <p id="password-error" className="text-red-500 text-xs mt-1">
-                    {errors.password}
+                {errors.emailVerification && (
+                  <p className={`text-xs mt-1 ${errors.emailVerification.includes('success') ? 'text-green-500' : 'text-red-500'}`}>
+                    {errors.emailVerification}
                   </p>
                 )}
               </div>
-              <button
-                type="submit"
-                className={`w-full bg-[#DC4298] text-white py-4 rounded-lg font-medium hover:bg-pink-600 transition-colors ${
-                  loading ? "opacity-70 cursor-not-allowed" : ""
-                }`}
-                disabled={loading}
-              >
-                {loading ? "Creating Account..." : "Create Account"}
-              </button>
-              <p className="text-center text-sm text-gray-600 mt-4">
-                Already have an account?{" "}
+                
+                {/* OTP Code field - only shown after code is sent */}
+                {codeSent && (
+                  <div className="mb-6">
+                    <input
+                      type="text"
+                      placeholder="Verification Code"
+                      className={getInputClass('otpCode')}
+                      value={otpCode}
+                      onChange={(e) => handleInputChange(e, setOtpCode, 'otpCode')}
+                      aria-invalid={touchedFields.otpCode && Boolean(errors.otpCode)}
+                      aria-describedby={errors.otpCode ? "otp-error" : undefined}
+                    />
+                    {touchedFields.otpCode && errors.otpCode && (
+                      <p id="otp-error" className="text-red-500 text-xs mt-1">
+                        {errors.otpCode}
+                      </p>
+                    )}
+                    <p className="text-gray-500 text-xs mt-1">
+                      Code expires in {formatTimeLeft(timeLeft)}
+                    </p>
+                  </div>
+                )}
+                
+                <div className="mb-6">
+                  <input
+                    type="password"
+                    placeholder="Password"
+                    className={getInputClass('password')}
+                    value={password}
+                    onChange={(e) => handleInputChange(e, setPassword, 'password')}
+                    aria-invalid={touchedFields.password && Boolean(errors.password)}
+                    aria-describedby={errors.password ? "password-error" : undefined}
+                  />
+                  {touchedFields.password && errors.password && (
+                    <p id="password-error" className="text-red-500 text-xs mt-1">
+                      {errors.password}
+                    </p>
+                  )}
+                </div>
                 <button
-                  type="button"
-                  className="text-[#DC4298] hover:underline font-medium"
-                  onClick={() => setHasAccount(true)}
-                  disabled={loading}
+                  type="submit"
+                  className={`w-full bg-[#DC4298] text-white py-4 rounded-lg font-medium hover:bg-pink-600 transition-colors ${
+                    loading ? "opacity-70 cursor-not-allowed" : ""
+                  }`}
+                  disabled={loading || !codeSent}
                 >
-                  Login
+                  {loading ? "Creating Account..." : "Create Account"}
                 </button>
-              </p>
-            </form>
-          ) : (
-            <form className="space-y-6" onSubmit={handleLogin}>
-              <div className="mb-6">
-                <input
-                  type="email"
-                  placeholder="Email Address"
-                  className={getInputClass('email')}
-                  value={email}
-                  onChange={(e) => handleInputChange(e, setEmail, 'email')}
-                  aria-invalid={touchedFields.email && Boolean(errors.email)}
-                  aria-describedby={errors.email ? "email-error" : undefined}
-                />
-                {touchedFields.email && errors.email && (
-                  <p id="email-error" className="text-red-500 text-xs mt-1">
-                    {errors.email}
-                  </p>
-                )}
-              </div>
-              <div className="mb-6">
-                <input
-                  type="password"
-                  placeholder="Password"
-                  className={getInputClass('password')}
-                  value={password}
-                  onChange={(e) => handleInputChange(e, setPassword, 'password')}
-                  aria-invalid={touchedFields.password && Boolean(errors.password)}
-                  aria-describedby={errors.password ? "password-error" : undefined}
-                />
-                {touchedFields.password && errors.password && (
-                  <p id="password-error" className="text-red-500 text-xs mt-1">
-                    {errors.password}
-                  </p>
-                )}
-                <div className="flex justify-end mt-1">
+                <p className="text-center text-sm text-gray-600 mt-4">
+                  Already have an account?{" "}
                   <button
                     type="button"
-                    className="text-sm text-gray-500 hover:text-pink-500"
+                    className="text-[#DC4298] hover:underline font-medium"
+                    onClick={() => setHasAccount(true)}
+                    disabled={loading}
                   >
-                    Forgot Password?
+                    Login
                   </button>
+                </p>
+              </form>
+            ) : (
+              <form className="space-y-6" onSubmit={handleLogin}>
+                <div className="mb-6">
+                  <input
+                    type="email"
+                    placeholder="Email Address"
+                    className={getInputClass('email')}
+                    value={email}
+                    onChange={(e) => handleInputChange(e, setEmail, 'email')}
+                    aria-invalid={touchedFields.email && Boolean(errors.email)}
+                    aria-describedby={errors.email ? "email-error" : undefined}
+                  />
+                  {touchedFields.email && errors.email && (
+                    <p id="email-error" className="text-red-500 text-xs mt-1">
+                      {errors.email}
+                    </p>
+                  )}
                 </div>
-              </div>
-              <button
-                type="submit"
-                className={`w-full bg-[#DC4298] text-white py-4 rounded-lg font-medium hover:bg-pink-600 transition-colors cursor-pointer ${
-                  loading ? "opacity-70 cursor-not-allowed" : ""
-                }`}
-                disabled={loading}
-              >
-                {loading ? "Logging in..." : "Login"}
-              </button>
-              <p className="text-center text-sm text-gray-600 mt-4">
-                Don&apos;t have an account?{" "}
+                <div className="mb-6">
+                  <input
+                    type="password"
+                    placeholder="Password"
+                    className={getInputClass('password')}
+                    value={password}
+                    onChange={(e) => handleInputChange(e, setPassword, 'password')}
+                    aria-invalid={touchedFields.password && Boolean(errors.password)}
+                    aria-describedby={errors.password ? "password-error" : undefined}
+                  />
+                  {touchedFields.password && errors.password && (
+                    <p id="password-error" className="text-red-500 text-xs mt-1">
+                      {errors.password}
+                    </p>
+                  )}
+                  <div className="flex justify-end mt-1">
+                    <button
+                      type="button"
+                      className="text-sm text-gray-500 hover:text-pink-500"
+                    >
+                      Forgot Password?
+                    </button>
+                  </div>
+                </div>
                 <button
-                  type="button"
-                  className="text-[#DC4298] hover:underline font-medium cursor-pointer"
-                  onClick={() => setHasAccount(false)}
+                  type="submit"
+                  className={`w-full bg-[#DC4298] text-white py-4 rounded-lg font-medium hover:bg-pink-600 transition-colors cursor-pointer ${
+                    loading ? "opacity-70 cursor-not-allowed" : ""
+                  }`}
                   disabled={loading}
                 >
-                  Sign up
+                  {loading ? "Logging in..." : "Login"}
                 </button>
-              </p>
-            </form>
-          )}
+                <p className="text-center text-sm text-gray-600 mt-4">
+                  Don&apos;t have an account?{" "}
+                  <button
+                    type="button"
+                    className="text-[#DC4298] hover:underline font-medium cursor-pointer"
+                    onClick={() => setHasAccount(false)}
+                    disabled={loading}
+                  >
+                    Sign up
+                  </button>
+                </p>
+              </form>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 

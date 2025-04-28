@@ -5,7 +5,7 @@ import Link from "next/link";
 
 export default function CourseCardDash({ course,card_type }: {card_type: Card_type, course: Course }) {
   return (
-    <Link href={`${card_type}/${course.slug}`} key={course.id} className="bg-white rounded-2xl shadow-lg p-2">
+    <Link href={`${card_type}/${course.slug}`} key={course.id} className=" rounded-2xl shadow-lg p-2">
       <div className="relative w-full h-40 rounded-xl overflow-hidden">
         <Image
           src={course.image}

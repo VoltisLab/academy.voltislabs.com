@@ -3,6 +3,7 @@ export interface SignUpData {
     fullName: string;
     email: string;
     password: string;
+    otpCode: String;
   }
   
   export interface LoginData {
@@ -88,4 +89,14 @@ export interface UserData {
   username: string;
   verified: boolean;
   isVerified: boolean;
+}
+
+// Define more specific error types
+export interface FormErrors {
+  email?: string;
+  password?: string;
+  fullName?: string;
+  otpCode?: string;
+  general?: string;
+  emailVerification?: string; // Added this property
 }
