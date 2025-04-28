@@ -288,9 +288,8 @@ const SignupModalContent: React.FC<SignupModalProps> = ({
         email,
         password,
         otpCode,
+        isInstructor,
       };
-
-      localStorage.setItem("email", email);
 
       const result = await signUp(userData);
 
@@ -353,11 +352,12 @@ const SignupModalContent: React.FC<SignupModalProps> = ({
       };
 
       const result = await login(credentials);
+      console.log(result)
 
       if (result.login?.success) {
         onClose();
         // Redirect based on user type
-        router.push(isInstructor ? "/instructor" : "/dashboard");
+        router.push(result?.login?.user?.isInstructor ? "/instructor" : "/dashboard");
       } else {
         // Handle specific login errors
         if (result.login?.errors?.length > 0) {

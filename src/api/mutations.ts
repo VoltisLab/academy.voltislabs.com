@@ -9,6 +9,7 @@ export const REGISTER_MUTATION = gql`
     $password2: String!, 
     $username: String!,
     $otpCode: String!
+    $isInstructor: Boolean!
   ) {
     register(
       email: $email,
@@ -17,7 +18,8 @@ export const REGISTER_MUTATION = gql`
       password1: $password1,
       password2: $password2,
       username: $username,
-      otpCode: $otpCode
+      otpCode: $otpCode,
+      isInstructor: $isInstructor,
     ) {
       errors
       success
@@ -36,12 +38,12 @@ export const LOGIN_MUTATION = gql`
       success
       token
       user {
-        verified
         username
         lastName
         isVerified
         firstName
         email
+        isInstructor
         id
       }
     }
