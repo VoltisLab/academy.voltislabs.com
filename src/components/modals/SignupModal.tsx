@@ -8,6 +8,8 @@ import { ApolloProvider } from "@apollo/client";
 import { apolloClient } from "@/lib/apollo-client";
 import { isAllowedDomain, isValidEmail, SignupModalProps, validatePassword } from "@/lib/utils";
 import Link from "next/link";
+import { usePageLoading } from "@/hooks/UsePageLoading";
+
 
 const SignupModalContent: React.FC<SignupModalProps> = ({
   isOpen,
@@ -24,6 +26,7 @@ const SignupModalContent: React.FC<SignupModalProps> = ({
   const [sendingCode, setSendingCode] = useState<boolean>(false);
   const [codeExpiry, setCodeExpiry] = useState<Date | null>(null);
   const [timeLeft, setTimeLeft] = useState<number>(0);
+  const { withLoading } = usePageLoading();
   // New state to track if user is in instructor or student mode
   const [isInstructor, setIsInstructor] = useState<boolean>(false);
   
@@ -134,8 +137,6 @@ const SignupModalContent: React.FC<SignupModalProps> = ({
     
     try {
       const result = await sendVerificationCode(email);
-
-      console.log(result)
       
       if (result.success) {
         setCodeSent(true);
@@ -355,7 +356,7 @@ const SignupModalContent: React.FC<SignupModalProps> = ({
       console.log(result)
 
       if (result.login?.success) {
-        onClose();
+        // onClose();
         // Redirect based on user type
         router.push(result?.login?.user?.isInstructor ? "/instructor" : "/dashboard");
       } else {
