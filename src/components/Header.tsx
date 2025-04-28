@@ -5,16 +5,18 @@ import Image from "next/image";
 import { useAuth } from "@/context/AuthContext";
 import { FiMenu, FiX } from "react-icons/fi";
 import SignupModal from "@/components/modals/SignupModal";
+import { getCurrentUser } from "@/api/auth";
+import { logout } from "@/api/auth";
 
 const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [userExists, setUserExists] = useState<boolean>(false);
-  const {logout} = useAuth()
 
   // Move localStorage access to useEffect
   useEffect(() => {
-    const userString = localStorage.getItem('user');
+    const userString = getCurrentUser()
+    console.log(userString)
     setUserExists(!!userString);
   }, []);
 
@@ -57,13 +59,7 @@ const Header = () => {
               href="/bootcamp"
               className="text-[#331C1C] font-semibold hover:text-pink-600 transition"
             >
-              Bootcamp
-            </Link>
-            <Link
-              href="/events"
-              className="text-[#331C1C] font-semibold hover:text-pink-600 transition"
-            >
-              Events
+              Programmes
             </Link>
             <Link
               href="/articles"
@@ -75,7 +71,7 @@ const Header = () => {
               href="/contact"
               className="text-[#331C1C] font-semibold hover:text-pink-600 transition"
             >
-              Contact
+              About Us
             </Link>
             {userExists && (
               <Link

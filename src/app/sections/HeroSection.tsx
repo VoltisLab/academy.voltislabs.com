@@ -20,8 +20,8 @@ const HeroSection = () => {
 
           {/* CTA + Reviews */}
           <div className="block md:flex items-center mt-8 space-x-6">
-            <button className="bg-pink-600 hover:bg-pink-700 transition text-white font-semibold px-6 py-3 rounded-md">
-              Explore Path
+            <button className="bg-pink-600 hover:bg-pink-700 transition text-white font-semibold px-3 py-3 rounded-md">
+              View Programmes
             </button>
             <div className="flex md:mt-0 mt-5 items-center space-x-2">
               {/* Avatars */}

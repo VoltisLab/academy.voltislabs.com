@@ -4,7 +4,7 @@ import { onError } from '@apollo/client/link/error';
 
 // Create an http link
 const httpLink = createHttpLink({
-  uri: 'https://api.prelura.com/graphql/',
+  uri: 'https://uat-api.vmodel.app/vla/graphql/',
   credentials: 'same-origin', 
 });
 

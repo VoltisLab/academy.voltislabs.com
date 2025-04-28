@@ -11,7 +11,7 @@ const companies = [
   { name: "Intuit", src: "/companies/intuit.png" },
   { name: "Google", src: "/companies/google.png" },
   { name: "Paychex", src: "/companies/paychex.png" },
-//   { name: "Salesforce", src: "/companies/salesforce.png" },
+  // { name: "Voltis Labs", src: "/logo.svg" },
 //   { name: "SAP", src: "/companies/sap.png" },
 //   { name: "Segment", src: "/companies/segment.png" },
 //   { name: "ServiceNow", src: "/companies/servicenow.png" },
