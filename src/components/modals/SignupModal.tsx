@@ -24,6 +24,8 @@ const SignupModalContent: React.FC<SignupModalProps> = ({
   const [sendingCode, setSendingCode] = useState<boolean>(false);
   const [codeExpiry, setCodeExpiry] = useState<Date | null>(null);
   const [timeLeft, setTimeLeft] = useState<number>(0);
+  // New state to track if user is in instructor or student mode
+  const [isInstructor, setIsInstructor] = useState<boolean>(false);
   
   // Replace single error with more specific errors
   const [errors, setErrors] = useState<FormErrors>({});
@@ -94,6 +96,11 @@ const SignupModalContent: React.FC<SignupModalProps> = ({
     return () => clearInterval(timer);
   }, [codeExpiry]);
 
+  // Toggle between instructor and student mode
+  const toggleUserType = () => {
+    setIsInstructor(!isInstructor);
+  };
+
   if (!isOpen) return null;
 
   const handleInputChange = (
@@ -119,9 +126,9 @@ const SignupModalContent: React.FC<SignupModalProps> = ({
   // Handle sending verification code
   const handleSendCode = async () => {
     // Validate email first
-    // if (!validateField('email', email)) {
-    //   return;
-    // }
+    if (!validateField('email', email)) {
+      return;
+    }
 
     setSendingCode(true);
     
@@ -174,15 +181,15 @@ const SignupModalContent: React.FC<SignupModalProps> = ({
         if (!value) {
           newErrors.email = "Email is required";
         } 
-        // else if (!isValidEmail(value)) {
-        //   newErrors.email = "Please enter a valid email address";
-        // } 
-        // else if (!isAllowedDomain(value)) {
-        //   newErrors.email = "Sorry, this is an invalid email. Please use an email ending with @voltislab.com or @academy.voltislab.com";
-        // } 
-        // else {
-        //   delete newErrors.email;
-        // }
+        else if (!isValidEmail(value)) {
+          newErrors.email = "Please enter a valid email address";
+        } 
+        else if (!isAllowedDomain(value)) {
+          newErrors.email = "Sorry, this is an invalid email. Please use an email ending with @voltislab.com or @academy.voltislab.com";
+        } 
+        else {
+          delete newErrors.email;
+        }
         break;
         
       case 'password':
@@ -348,8 +355,9 @@ const SignupModalContent: React.FC<SignupModalProps> = ({
       const result = await login(credentials);
 
       if (result.login?.success) {
-        onClose()
-        router.push("/dashboard")
+        onClose();
+        // Redirect based on user type
+        router.push(isInstructor ? "/instructor" : "/dashboard");
       } else {
         // Handle specific login errors
         if (result.login?.errors?.length > 0) {
@@ -486,13 +494,16 @@ const SignupModalContent: React.FC<SignupModalProps> = ({
 
           <div className="mb-10 flex flex-row justify-between items-center xl:mt-0 mt-10">
             <h2 className="md:text-3xl text-xl font-bold text-left text-[#525252]">
-              Welcome!
+              {!hasAccount ? (isInstructor ? "Instructor Signup" : "Student Signup") : 
+                           (isInstructor ? "Instructor Login" : "Student Login")}
             </h2>
-            <Link href={"/instructor"}>
-            <h2 className="text-sm font-medium text-[#DC4298] hover:duration-700 hover:scale-110 underline">
-              Login as instructor
-            </h2>
-            </Link>
+            <button 
+              className="text-sm font-bold bg-[#DC4298] px-2 py-1 rounded-md text-white hover:duration-700 hover:scale-110"
+              onClick={toggleUserType}
+            >
+              {!hasAccount ? (isInstructor ? "Student Signup" : "Instructor Signup") : 
+                           (isInstructor ? "Student Login" : "Instructor Login")}
+            </button>
           </div>
 
           <div className="flex gap-4 mb-8">
