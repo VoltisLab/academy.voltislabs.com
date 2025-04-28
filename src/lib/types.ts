@@ -4,6 +4,7 @@ export interface SignUpData {
     email: string;
     password: string;
     otpCode: String;
+    isInstructor: boolean;
   }
   
   export interface LoginData {
@@ -34,6 +35,7 @@ export interface SignUpData {
         username: string;
         isVerified: boolean;
         verified: boolean;
+        isInstructor: boolean;
       };
     };
   }

@@ -80,7 +80,7 @@ export default function Sidebar() {
     // Client-side only code
     const userString = getCurrentUser()
     if (userString) {
-      const userData = JSON.parse(userString);
+      const userData = userString
       setUser(userData);
     }
   }, []);
