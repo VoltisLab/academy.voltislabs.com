@@ -72,6 +72,12 @@ const Header = () => {
               href="/contact"
               className="text-[#331C1C] font-semibold hover:text-pink-600 transition"
             >
+              Contact Us
+            </Link>
+            <Link
+              href="/aboutus"
+              className="text-[#331C1C] font-semibold hover:text-pink-600 transition"
+            >
               About Us
             </Link>
             {userExists && (

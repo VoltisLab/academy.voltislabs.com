@@ -11,11 +11,11 @@ const HeroSection = () => {
         {/* Left Side: Texts */}
         <div className="max-w-xl md:pr-10">
           <h1 className="text-4xl md:text-6xl font-bold leading-tight text-[#230F0F]">
-            Learn Any Skill <br /> To Advance Your <br /> Career Path
+          Learn by <br /> Building the Future
           </h1>
           <Image alt='underline' src={'/underline.png'} height={10} width={320}/>
           <p className="mt-6 text-[#230F0F] text-[20px] leading-relaxed">
-          Gain real world experience and master  digital skills through immersive internships 
+          Join Voltis Labs Academy - where ambitious creators, developers, and innovators build real-world skills by working on real-world projects.
           </p>
 
           {/* CTA + Reviews */}

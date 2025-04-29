@@ -26,14 +26,11 @@ export default function AboutSection() {
         {/* Right content */}
         <div className="w-full text-[#230F0F]  lg:w-1/2">
           <h2 className="text-[40px] font-bold text-[#230F0F] leading-snug mb-4">
-            Voltis Labs help you Become <br className="hidden sm:block" />
-            Experienced
+            Why Voltis Labs<br className="hidden sm:block" />
           </h2>
           <p className="text-[20px] font-medium mb-6">
-            Voltis Labs Academy provides internship opportunities for students, graduates,
-            universities and individual professionals. It allows users to create courses,
-            and provides an integrated learning management system. Its offerings include
-            digital course tools, study materials, IT infrastructure and other operations.
+          Voltis Labs Academy is not just another online course platform. We prepare the next generation of builders through hands-on learning, mentorship, and direct internship opportunities inside real Voltis Labs projects.
+Whether you’re a developer, designer, marketer, or future product leader - you’ll gain experience that matters.
           </p>
           <button className="bg-[#E733A1] hover:bg-[#c92789] text-white font-semibold py-3 px-6 rounded-lg transition">
             Apply Now
