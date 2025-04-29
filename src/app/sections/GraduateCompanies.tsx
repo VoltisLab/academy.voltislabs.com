@@ -10,7 +10,7 @@ const companies = [
   { name: "FreshBooks", src: "/companies/freshbooks.png" },
   { name: "HelpScout", src: "/companies/helpscout.png" },
   { name: "HubSpot", src: "/companies/hubspot.png" },
-  { name: "Intuit", src: "/companies/intuit.png" },
+  { name: "Voltis Labs", src: "/companies/voltis.png" },
   { name: "Google", src: "/companies/google.png" },
   { name: "Paychex", src: "/companies/paychex.png" },
 ];
