@@ -6,6 +6,7 @@ import { AuthProvider } from "@/context/AuthContext";
 import { AsideProvider } from "@/context/showAsideContext";
 import { LoadingProvider } from "@/context/LoadingContext";
 import ClientLoaderWrapper from "@/components/loader/ClientLoaderWrapper";
+import Footer from "./sections/Footer";
 
 // Fonts
 const mavenPro = Maven_Pro({
@@ -66,10 +67,17 @@ export default function RootLayout({
       <body
         className={`${mavenPro.variable} ${geistMono.variable} ${plusJakarta.variable} font-sans antialiased`}
       >
+
         <AuthProvider>
           <LoadingProvider>
             <AsideProvider>
-              <ClientLoaderWrapper>{children}</ClientLoaderWrapper>
+              <ClientLoaderWrapper>
+              <Header />
+                <main>
+                {children}
+                </main>
+                <Footer />
+              </ClientLoaderWrapper>
             </AsideProvider>
           </LoadingProvider>
         </AuthProvider>

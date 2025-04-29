@@ -11,7 +11,6 @@ import HeroSlider from "@/components/hero/HeroSlider";
 export default function Home() {
   return (
     <main>
-      <Header />
       <HeroSlider />
       <HeroSection />
       <Partners />
@@ -20,7 +19,6 @@ export default function Home() {
       <CourseSection />
       <GraduateCompanies />
       <Testimonial />
-      <Footer />
     </main>
   );
 }
