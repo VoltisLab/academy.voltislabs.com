@@ -1,6 +1,7 @@
 import { ApolloClient, InMemoryCache, createHttpLink, from } from '@apollo/client';
 import { setContext } from '@apollo/client/link/context';
 import { onError } from '@apollo/client/link/error';
+import Cookies from 'js-cookie';
 
 // Create an http link
 const httpLink = createHttpLink({
@@ -30,9 +31,14 @@ const errorLink = onError(({ graphQLErrors, networkError }) => {
 });
 
 // Auth link to add the token to the header
-const authLink = setContext((_, { headers }) => {
-  // Get the authentication token from local storage if it exists
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+const authLink = setContext((_, { headers, includeAuth = true }) => {
+  // Skip adding auth if includeAuth is explicitly set to false
+  if (includeAuth === false) {
+    return { headers };
+  }
+  
+  // Get the authentication token from cookies if it exists
+  const token = Cookies.get('auth_token');
   
   // Return the headers to the context so httpLink can read them
   return {

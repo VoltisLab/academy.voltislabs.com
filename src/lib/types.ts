@@ -1,3 +1,5 @@
+import { CourseLevelEnum, DurationUnitEnum, LanguageEnum } from "./utils";
+
 // If you don't have this already, make sure these types are defined:
 export interface SignUpData {
     fullName: string;
@@ -102,3 +104,56 @@ export interface FormErrors {
   general?: string;
   emailVerification?: string; // Added this property
 }
+
+
+// Define types for form data and options
+export interface FormData {
+  title: string;
+  subtitle: string;
+  categoryId: string;
+  subCategoryId: string;
+  topic: string;
+  language: string;
+  subtitleLanguage: string;
+  courseLevel: string;
+  durationValue: string;
+  durationUnit: DurationUnitEnum;
+  description: string;
+}
+
+export interface OptionType {
+  value: string;
+  label: string;
+}
+
+export interface CategoryOption {
+  value: number;
+  label: string;
+}
+
+export interface DurationInput {
+  value: number;
+  unit: DurationUnitEnum;
+}
+
+// Types for GraphQL mutation
+export interface CreateCourseBasicInfoVariables {
+  title: string;
+  subtitle?: string;
+  categoryId: number;
+  subCategoryId: number;
+  topic: string;
+  language: LanguageEnum;
+  subtitleLanguage?: LanguageEnum | null;
+  courseLevel: CourseLevelEnum;
+  duration: DurationInput;
+  description?: string;
+}
+
+export interface CreateCourseBasicInfoResponse {
+  createCourseBasicInfo: {
+    message: string;
+    success: boolean;
+  };
+}
+
