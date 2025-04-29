@@ -8,19 +8,19 @@ const slides = [
     id: 1,
     image: '/hero/hero1.png',
     title: 'DESIGN',
-    description: 'It is a long established fact that a reader will be distracted by the readable content of a page when looking at its layout. The point of using Lorem Ipsum.',
+    description: 'Design isn’t just how it looks - it’s how it works. At Voltis Labs Academy, we champion design that solves problems, inspires users, and shapes the future.',
   },
   {
     id: 2,
     image: '/hero/hero2.png',
-    title: 'MOTION',
-    description: 'It is a long established fact that a reader will be distracted by the readable content of a page when looking at its layout. The point of using Lorem Ipsum.',
+    title: 'BUILD',
+    description: 'We don’t just learn - we build. At Voltis Labs Academy, you turn ideas into real products, real experiences, and real impact.',
   },
   {
     id: 3,
     image: '/hero/hero3.png',
-    title: 'ENGINE',
-    description: 'It is a long established fact that a reader will be distracted by the readable content of a page when looking at its layout. The point of using Lorem Ipsum.',
+    title: 'INNOVATE',
+    description: 'Innovation is the fuel of the future. At Voltis Labs Academy, you’ll go beyond building - you’ll invent, disrupt, and redefine what’s possible.',
   },
 ];
 
@@ -87,7 +87,7 @@ export default function HeroSlider() {
               {slides[currentSlide].description}
             </p>
             <button className="flex items-center space-x-2 border border-white px-4 py-2 rounded-full hover:bg-white/10 transition-colors">
-              <span>Take A Look</span>
+              <span>View Courses</span>
             </button>
           </div>
         </div>

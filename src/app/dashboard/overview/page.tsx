@@ -16,7 +16,6 @@ import Image from "next/image";
 import { CiUser } from "react-icons/ci";
 import { TiDocumentText } from "react-icons/ti";
 import { FaRegClock } from "react-icons/fa6";
-import { FaHamburger } from "react-icons/fa";
 import { useAside } from "@/context/showAsideContext";
 import ContinueWatching from "@/components/dashboard/carousel/ContinueWatching";
 import YourMentor from "@/components/dashboard/carousel/YourMentor";
@@ -80,9 +79,9 @@ const TABLE_DATA = [
 export default function Overview() {
   const { showAside, toggleAside } = useAside();
   return (
-    <div className="flex min-h-screen overflow-hidden min-w-0 relative">
+    <div className="flex min-h-screen w-full overflow-hidden relative">
       {/* Main */}
-      <div className="flex-1 min-w-0 md:flex-3/5 xl:flex-4/6 px-4 xl:px-8 py-5 bg-[#EFEFF2] space-y-6">
+      <div className="flex-1 xl:max-w-[67%] max-w-full px-4 xl:px-8 py-5 bg-[#EFEFF2] space-y-6">
         {/* Search bar */}
         <div className="bg-[#FDFDFD] px-4 gap-2 py-3.5 rounded-xl border border-[#EFEFF2] flex items-center w-full xl:w-3/5">
           <input
@@ -142,7 +141,7 @@ export default function Overview() {
         {/* Your mentor */}
         <div>
           <div className="mb-2 flex justify-between items-center ">
-            <h2 className="text-[#202020] font-semibold">Your Mentor</h2>{" "}
+            <h2 className="text-[#202020] font-semibold">Your Mentor</h2>
             {/* Carousel buttons */}
             <Link href={"#"} className="underline text-xs text-blue-500">
               See All
@@ -153,83 +152,85 @@ export default function Overview() {
             <YourMentor />
           </div>
 
-          <div className="px-6 py-2 bg-white rounded hidden xl:block">
+          <div className="px-6 py-2 bg-white rounded hidden xl:block overflow-x-auto">
             {/* table */}
-            <table className="w-full table-auto">
-              <thead>
-                <tr>
-                  {TABLE_HEADINGS.map((heading, index) => (
-                    <th
-                      key={index}
-                      className="text-[10px] font-semibold text-[#202020] text-left py-2"
-                    >
-                      {heading}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="">
-                {TABLE_DATA.map((item, index) => (
-                  <tr key={index} className="">
-                    {/* Instructor & Date */}
-                    <td className="py-3 flex items-center gap-2">
-                      <div className="size-6 relative">
-                        <Image
-                          src={"/guy.jpg"}
-                          alt="Logo"
-                          fill
-                          sizes="(max-width: 768px) 100vw, 128px"
-                          className="object-cover rounded-full"
-                        />
-                      </div>
-                      <div>
-                        <div className="text-sm font-medium text-[#202020]">
-                          {item.instructor}
-                        </div>
-                        <div className="text-[12px] text-[#5F5F5F]">
-                          {item.date}
-                        </div>
-                      </div>
-                    </td>
-
-                    {/* Course Type */}
-                    <td className="py-3">
-                      <button className="inline-block text-[10px] bg-[#ECEBFF] text-[#313273] rounded-[8px] px-3 py-1">
-                        {item.courseType}
-                      </button>
-                    </td>
-
-                    {/* Course Title */}
-                    <td className="py-3 text-[12px] text-[#202020]">
-                      {item.courseTitle}
-                    </td>
-
-                    {/* Actions */}
-                    <td className="py-3">
-                      <button className="text-[10px] bg-[#3366CC33] rounded-[8px] px-3 py-1 text-[#3366CC]">
-                        Show details
-                      </button>
-                    </td>
+            <div className="min-w-full">
+              <table className="w-full table-auto">
+                <thead>
+                  <tr>
+                    {TABLE_HEADINGS.map((heading, index) => (
+                      <th
+                        key={index}
+                        className="text-[10px] font-semibold text-[#202020] text-left py-2"
+                      >
+                        {heading}
+                      </th>
+                    ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="">
+                  {TABLE_DATA.map((item, index) => (
+                    <tr key={index} className="">
+                      {/* Instructor & Date */}
+                      <td className="py-3 flex items-center gap-2">
+                        <div className="size-6 relative">
+                          <Image
+                            src={"/guy.jpg"}
+                            alt="Logo"
+                            fill
+                            sizes="(max-width: 768px) 100vw, 128px"
+                            className="object-cover rounded-full"
+                          />
+                        </div>
+                        <div>
+                          <div className="text-sm font-medium text-[#202020]">
+                            {item.instructor}
+                          </div>
+                          <div className="text-[12px] text-[#5F5F5F]">
+                            {item.date}
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* Course Type */}
+                      <td className="py-3">
+                        <button className="inline-block text-[10px] bg-[#ECEBFF] text-[#313273] rounded-[8px] px-3 py-1">
+                          {item.courseType}
+                        </button>
+                      </td>
+
+                      {/* Course Title */}
+                      <td className="py-3 text-[12px] text-[#202020]">
+                        {item.courseTitle}
+                      </td>
+
+                      {/* Actions */}
+                      <td className="py-3">
+                        <button className="text-[10px] bg-[#3366CC33] rounded-[8px] px-3 py-1 text-[#3366CC]">
+                          Show details
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Aside  */}
       <div
-        className={`bg-white h-screen md:h-auto md:min-h-screen md:flex-2/5 xl:flex-2/6 fixed md:static top-0 right-0 max-w-[400px] sm:max-w-none min-w-0 sm:w-5/6 md:w-auto transform overflow-y-auto transition-transform duration-300 z-50 px-6 py-8  ${
+        className={`bg-white h-screen px-6 py-8 fixed md:sticky top-0 right-0 w-full transform overflow-y-auto transition-transform duration-300 ${
           showAside ? "translate-x-0" : "translate-x-full"
         } md:translate-x-0`}
       >
         <div
-          className=" block md:hidden size-[40px] rounded-full bg-[#313273] p-1 ml-auto mb-5 cursor-pointer"
+          className="block md:hidden size-[40px] rounded-full bg-[#313273] p-1 ml-auto mb-5 cursor-pointer"
           onClick={() => toggleAside()}
         >
           <div className="bg-[#ECEBFF] rounded-full size-full flex justify-center items-center ">
-            <IoCloseOutline className="text-2xl" />{" "}
+            <IoCloseOutline className="text-2xl" />
           </div>
         </div>
         {/* User image  */}
@@ -251,19 +252,19 @@ export default function Overview() {
 
         {/* name  */}
         <div className="space-y-1.5 text-center font-medium my-4">
-          <h1 className="text-[#202020]  text-base">Good Morning Prashant</h1>
-          <p className="text-[#7E7E7E]">
+          <h1 className="text-[#202020] text-base">Good Morning Prashant</h1>
+          <p className="text-[#7E7E7E] text-sm">
             continue your journey and achieve Your Target
           </p>
         </div>
 
         {/* Icons  */}
         <div className="flex gap-4 mx-auto">
-          <div className="ml-auto size-10 flex justify-center items-center  border border-[#7E7E7E] rounded-full">
-            <IoNotificationsOutline />{" "}
+          <div className="ml-auto size-10 flex justify-center items-center border border-[#7E7E7E] rounded-full">
+            <IoNotificationsOutline />
           </div>
-          <div className="mr-auto size-10 flex justify-center items-center  border border-[#7E7E7E] rounded-full">
-            <MdOutlineDirectionsTransitFilled />{" "}
+          <div className="mr-auto size-10 flex justify-center items-center border border-[#7E7E7E] rounded-full">
+            <MdOutlineDirectionsTransitFilled />
           </div>
         </div>
 
@@ -290,9 +291,9 @@ export default function Overview() {
             />
 
             <div className="px-2.5 py-1.5 bg-white shadow rounded-lg absolute bottom-5 left-4 flex items-center gap-2">
-              <span>Beginner</span>{" "}
+              <span>Beginner</span>
               <div className="flex items-end gap-1">
-                <p className="bg-green-500 h-[5px] w-[3px] rounded-lg"></p>{" "}
+                <p className="bg-green-500 h-[5px] w-[3px] rounded-lg"></p>
                 <p className="bg-[#DFDFDF] h-2 w-[3px] rounded-lg"></p>
                 <p className="bg-[#DFDFDF] h-2.5 w-[3px] rounded-lg"></p>
               </div>
@@ -320,17 +321,16 @@ export default function Overview() {
 
             {/* icons  */}
             <div className="flex justify-between items-center flex-wrap">
-              {" "}
               <div className="flex gap-0.5 lg:gap-2 items-center">
-                <CiUser className="text-[#9C9CA4]" />{" "}
+                <CiUser className="text-[#9C9CA4]" />
                 <p className="w-max">500 Student</p>
               </div>
               <div className="flex gap-2 items-center">
-                <TiDocumentText className="text-[#9C9CA4]" />{" "}
+                <TiDocumentText className="text-[#9C9CA4]" />
                 <p className="w-max">3 modules</p>
               </div>
               <div className="flex gap-2 items-center">
-                <FaRegClock className="text-[#9C9CA4]" />{" "}
+                <FaRegClock className="text-[#9C9CA4]" />
                 <p className="w-max">1hr 30min</p>
               </div>
             </div>
