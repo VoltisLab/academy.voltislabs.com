@@ -63,12 +63,6 @@ const Header = () => {
               Programmes
             </Link>
             <Link
-              href="/articles"
-              className="text-[#331C1C] font-semibold hover:text-pink-600 transition"
-            >
-              Articles
-            </Link>
-            <Link
               href="/contact"
               className="text-[#331C1C] font-semibold hover:text-pink-600 transition"
             >
@@ -93,7 +87,7 @@ const Header = () => {
           {/* Contact Button (Desktop) */}
           <div className="hidden md:block">
               <button
-                className="border-2 border-pink-500 text-pink-500 font-semibold px-5 py-2 rounded-lg hover:bg-pink-500 hover:text-white transition"
+                className="border-2 border-[#313273] text-[#313273] font-semibold px-5 py-2 rounded-lg hover:bg-[#313273] hover:text-white transition"
                 onClick={userExists? handleLogout : openModal}
               >
                 {userExists? "Logout" : "Login/Signup"}
@@ -140,7 +134,7 @@ const Header = () => {
               Articles
             </Link>
             <Link href="/contact">
-              <button className="w-full mt-4 border-2 border-pink-500 text-pink-500 font-semibold px-5 py-2 rounded-lg hover:bg-pink-500 hover:text-white transition">
+              <button className="w-full mt-4 border-2 border-[#313273] text-[#313273] font-semibold px-5 py-2 rounded-lg hover:bg-[#313273] hover:text-white transition">
                 Contact Us
               </button>
             </Link>

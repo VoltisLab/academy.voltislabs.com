@@ -59,7 +59,7 @@ export default function Footer() {
               <a href="https://twitter.com/voltislabs" target="_blank" rel="noopener noreferrer">
                 <Twitter size={20} />
               </a>
-              <a href="https://linkedin.com/company/voltislabs" target="_blank" rel="noopener noreferrer">
+              <a href="https://www.linkedin.com/company/voltis-labs-academy/?viewAsMember=true" target="_blank" rel="noopener noreferrer">
                 <Linkedin size={20} />
               </a>
               <a href="https://youtube.com/@voltislabs" target="_blank" rel="noopener noreferrer">
