@@ -9,12 +9,30 @@ import {
   FiAlertCircle 
 } from "react-icons/fi";
 import TitleSection from "@/components/UI/TitleSection";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, Variants } from "framer-motion";
+
+// Define types for the component
+interface FormData {
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+}
+
+type FormStatus = "idle" | "success" | "error";
+type InputState = "idle" | "focus" | "filled";
+
+interface InputStates {
+  name: InputState;
+  email: InputState;
+  subject: InputState;
+  message: InputState;
+}
 
 // Enhanced animations
-const fadeUp = {
+const fadeUp: Variants = {
   hidden: { opacity: 0, y: 40 },
-  visible: (i) => ({
+  visible: (i: number) => ({
     opacity: 1,
     y: 0,
     transition: { 
@@ -25,7 +43,7 @@ const fadeUp = {
   }),
 };
 
-const staggerContainer = {
+const staggerContainer: Variants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
@@ -36,7 +54,7 @@ const staggerContainer = {
   }
 };
 
-const formItemAnim = {
+const formItemAnim: Variants = {
   hidden: { opacity: 0, x: -20 },
   visible: {
     opacity: 1,
@@ -46,27 +64,27 @@ const formItemAnim = {
 };
 
 // Input field status animation
-const inputStatus = {
+const inputStatus: Variants = {
   idle: {},
   focus: { scale: 0.98, boxShadow: "0 0 0 3px rgba(49, 50, 115, 0.2)" },
   filled: { borderColor: "#313273" }
 };
 
-const ContactUs = () => {
-  const [formStatus, setFormStatus] = useState("idle");
-  const [formData, setFormData] = useState({
+const ContactUs: React.FC = () => {
+  const [formStatus, setFormStatus] = useState<FormStatus>("idle");
+  const [formData, setFormData] = useState<FormData>({
     name: "",
     email: "",
     subject: "",
     message: ""
   });
-  const [inputStates, setInputStates] = useState({
+  const [inputStates, setInputStates] = useState<InputStates>({
     name: "idle",
     email: "idle",
     subject: "idle",
     message: "idle"
   });
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   // Reset form status after a delay
   useEffect(() => {
@@ -78,25 +96,25 @@ const ContactUs = () => {
     }
   }, [formStatus]);
 
-  const handleInputChange = (e) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
 
-  const handleInputFocus = (name) => {
+  const handleInputFocus = (name: keyof FormData) => {
     setInputStates({ ...inputStates, [name]: "focus" });
   };
 
-  const handleInputBlur = (name) => {
+  const handleInputBlur = (name: keyof FormData) => {
     setInputStates({ ...inputStates, [name]: formData[name] ? "filled" : "idle" });
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
     
     try {
-      const form = e.target;
+      const form = e.target as HTMLFormElement;
       const formData = new FormData(form);
       
       // Simulated delay to show loading state
@@ -129,7 +147,7 @@ const ContactUs = () => {
   };
 
   return (
-    <div className="contact-page mt-12 text-[#313273] min-h-screen bg-gradient-to-b from-slate-50 to-slate-100">
+    <div className="contact-page text-[#313273] min-h-screen bg-gradient-to-b from-slate-50 to-slate-100">
       {/* Hero Section */}
       <section id="contact-home" className="pt-12">
         <motion.div
@@ -349,8 +367,17 @@ const ContactUs = () => {
               <div className="bg-white text-[#313273] rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-6">
                 <FiMapPin size={28} />
               </div>
-              <h3 className="text-xl font-bold mb-3">Our Address</h3>
-              <p className="text-white text-opacity-80">London, UK</p>
+              <h3 className="text-xl text-[#313273] font-bold mb-3">Our Address</h3>
+              <p className="text-[#313273] text-opacity-80">London, UK</p>
+              <p className="text-[#313273] text-opacity-70 mt-3">
+                Innovation Center, Tech Hub District<br />
+                Suite 403, Innovation Tower<br />
+                London, EC2A 4NE
+              </p>
+              <p className="text-[#313273] text-opacity-70 mt-3">
+                Open Monday-Friday<br />
+                9:00 AM - 6:00 PM
+              </p>
             </motion.div>
 
             {/* Email */}
@@ -367,13 +394,24 @@ const ContactUs = () => {
               <div className="bg-white text-[#313273] rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-6">
                 <FiMail size={28} />
               </div>
-              <h3 className="text-xl font-bold mb-3">Email Us</h3>
+              <h3 className="text-xl text-[#313273] font-bold mb-3">Email Us</h3>
               <a
                 href="mailto:contact@voltislabs.com"
-                className="text-white text-opacity-80 hover:text-opacity-100 transition-colors"
+                className="text-[#313273] text-opacity-80 hover:text-opacity-100 transition-colors"
               >
                 contact@voltislabs.com
               </a>
+              <p className="text-[#313273] text-opacity-70 mt-3">
+                General Inquiries:<br />
+                <span className="text-[#313273] text-opacity-80">info@voltislabs.com</span>
+              </p>
+              <p className="text-[#313273] text-opacity-70 mt-3">
+                Support Team:<br />
+                <span className="text-[#313273] text-opacity-80">support@voltislabs.com</span>
+              </p>
+              <p className="text-[#313273] text-opacity-70 mt-3">
+                We typically respond within 24-48 hours during business days.
+              </p>
             </motion.div>
 
             {/* Phone */}
@@ -387,16 +425,27 @@ const ContactUs = () => {
               whileHover={{ y: -5, boxShadow: "0 10px 30px rgba(0,0,0,0.15)" }}
               transition={{ duration: 0.3 }}
             >
-              <div className="bg-white text-[#313273] rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-6">
+              <div className=" text-[#313273] rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-6">
                 <FiPhone size={28} />
               </div>
-              <h3 className="text-xl font-bold mb-3">Call Us</h3>
+              <h3 className="text-xl text-[#313273]  font-bold mb-3">Call Us</h3>
               <a
                 href="tel:+442039479699"
-                className="text-white text-opacity-80 hover:text-opacity-100 transition-colors"
+                className="text-[#313273] text-opacity-80 hover:text-opacity-100 transition-colors"
               >
                 +44 203 947 9699
               </a>
+              <p className="text-[#313273] text-opacity-70 mt-3">
+                Customer Support:<br />
+                <span className="text-[#313273] text-opacity-80">+44 203 947 9600</span>
+              </p>
+              <p className="text-[#313273] text-opacity-70 mt-3">
+                Technical Assistance:<br />
+                <span className="text-[#313273] text-opacity-80">+44 203 947 9610</span>
+              </p>
+              <p className="text-[#313273] text-opacity-70 mt-3">
+                Available weekdays 9:00 AM - 5:30 PM GMT
+              </p>
             </motion.div>
           </div>
         </div>
