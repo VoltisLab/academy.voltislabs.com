@@ -2,9 +2,10 @@
 
 import Image from "next/image";
 import { ArrowRight, ArrowLeft } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from 'framer-motion';
 
+// Testimonial data
 const testimonials = [
   {
     image: "/testi.jpg",
@@ -26,33 +27,100 @@ const testimonials = [
   },
 ];
 
+// Animated Bubble component
+const AnimatedBubble = ({ size, left, top, delay, duration }: { 
+  size: number, 
+  left: string, 
+  top: string, 
+  delay: number, 
+  duration: number 
+}) => {
+  const bubbleVariants = {
+    animate: {
+      opacity: [0, 0.7, 0.5, 0.2, 0],
+      scale: [0.5, 1, 1.1, 1, 0.9],
+      y: [0, -30, -60, -100, -120],
+      transition: {
+        delay,
+        duration,
+        repeat: Infinity,
+        repeatType: "loop" as const,
+        ease: "easeInOut",
+      }
+    }
+  };
+
+  return (
+    <motion.div
+      className="absolute rounded-full bg-indigo-400/20 backdrop-blur-sm pointer-events-none"
+      style={{
+        width: size,
+        height: size,
+        left,
+        top,
+        zIndex: 1,
+      }}
+      initial={{ opacity: 0, scale: 0.5, y: 0 }}
+      animate="animate"
+      variants={bubbleVariants}
+    />
+  );
+};
+
 export default function Testimonial() {
   const [index, setIndex] = useState(0);
   const [[page, direction], setPage] = useState([0, 0]);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [autoplay, setAutoplay] = useState(true);
+
+  // Generate random bubbles once
+  const bubbles = Array.from({ length: 15 }, (_, i) => ({
+    id: i,
+    size: Math.random() * 50 + 20, // Size between 20px and 70px
+    left: `${Math.random() * 100}%`,
+    top: `${Math.random() * 100}%`,
+    delay: Math.random() * 5,
+    duration: Math.random() * 10 + 10, // Duration between 10s and 20s
+  }));
+
+  // Memoize navigation functions to ensure they don't change on re-renders
+  const nextTestimonial = useCallback(() => {
+    if (isAnimating) return;
+    
+    setIsAnimating(true);
+    setPage(prev => [prev[0] + 1, 1]);
+    setIndex(prev => (prev + 1) % testimonials.length);
+    // Reset autoplay timer on manual navigation
+    setAutoplay(false);
+    setTimeout(() => setAutoplay(true), 6000);
+  }, [isAnimating, testimonials.length]);
+
+  const prevTestimonial = useCallback(() => {
+    if (isAnimating) return;
+    
+    setIsAnimating(true);
+    setPage(prev => [prev[0] - 1, -1]);
+    setIndex(prev => (prev - 1 + testimonials.length) % testimonials.length);
+    // Reset autoplay timer on manual navigation
+    setAutoplay(false);
+    setTimeout(() => setAutoplay(true), 6000);
+  }, [isAnimating, testimonials.length]);
+
+  // Handle animation completion
+  const handleAnimationComplete = useCallback(() => {
+    setIsAnimating(false);
+  }, []);
 
   // Auto-rotation for testimonials
   useEffect(() => {
+    if (!autoplay || isAnimating) return;
+    
     const timer = setTimeout(() => {
-      if (!isAnimating) {
-        nextTestimonial();
-      }
+      nextTestimonial();
     }, 6000);
     
     return () => clearTimeout(timer);
-  }, [index, isAnimating]);
-
-  const nextTestimonial = () => {
-    setIsAnimating(true);
-    setPage([page + 1, 1]);
-    setIndex((prev) => (prev + 1) % testimonials.length);
-  };
-
-  const prevTestimonial = () => {
-    setIsAnimating(true);
-    setPage([page - 1, -1]);
-    setIndex((prev) => (prev - 1 + testimonials.length) % testimonials.length);
-  };
+  }, [index, isAnimating, autoplay, nextTestimonial]);
 
   const variants = {
     enter: (direction: number) => ({
@@ -100,8 +168,27 @@ export default function Testimonial() {
   const { image, name, role, quote } = testimonials[index];
 
   return (
-    <section className="py-16 bg-gradient-to-b from-[#313273] to-indigo-900 text-white overflow-hidden">
-      <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row gap-12 items-center">
+    <section className="py-16 bg-gradient-to-b from-[#313273] to-indigo-900 text-white overflow-hidden relative">
+      {/* Animated Bubbles Background */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {bubbles.map((bubble) => (
+          <AnimatedBubble
+            key={bubble.id}
+            size={bubble.size}
+            left={bubble.left}
+            top={bubble.top}
+            delay={bubble.delay}
+            duration={bubble.duration}
+          />
+        ))}
+        <div className="absolute inset-0 bg-[#313273]/30 backdrop-blur-[2px]" />
+      </div>
+      
+      {/* Glow Effects */}
+      <div className="absolute top-1/4 left-1/4 w-64 h-64 rounded-full bg-indigo-500/20 blur-3xl pointer-events-none" />
+      <div className="absolute bottom-1/4 right-1/4 w-80 h-80 rounded-full bg-purple-500/20 blur-3xl pointer-events-none" />
+
+      <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row gap-12 items-center relative z-10">
         {/* Left: Image with Animation */}
         <motion.div 
           initial={{ opacity: 0, x: -30 }} 
@@ -110,7 +197,7 @@ export default function Testimonial() {
           transition={{ duration: 0.8 }}
           className="relative w-full md:w-1/2 rounded-xl overflow-hidden shadow-xl shadow-indigo-900/40"
         >
-          <AnimatePresence custom={direction} initial={false} onExitComplete={() => setIsAnimating(false)}>
+          <AnimatePresence custom={direction} initial={false} onExitComplete={handleAnimationComplete}>
             <motion.div
               key={page}
               custom={direction}
@@ -138,6 +225,7 @@ export default function Testimonial() {
           
           {/* Image Caption */}
           <motion.div 
+            key={`caption-${index}`}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3, duration: 0.5 }}
@@ -166,7 +254,7 @@ export default function Testimonial() {
           <div className="relative h-40 mb-8">
             <AnimatePresence custom={direction} initial={false}>
               <motion.p
-                key={page}
+                key={`quote-${page}`}
                 custom={direction}
                 variants={variants}
                 initial="enter"
@@ -196,8 +284,11 @@ export default function Testimonial() {
                   key={i}
                   className={`w-2 h-2 rounded-full cursor-pointer ${index === i ? 'bg-indigo-500' : 'bg-gray-600'}`}
                   onClick={() => {
+                    if (isAnimating) return;
                     setPage([i > index ? page + 1 : page - 1, i > index ? 1 : -1]);
                     setIndex(i);
+                    setAutoplay(false);
+                    setTimeout(() => setAutoplay(true), 6000);
                   }}
                   whileHover={{ scale: 1.5 }}
                   transition={{ duration: 0.2 }}
@@ -209,21 +300,19 @@ export default function Testimonial() {
             <div className="flex gap-3">
               <motion.button
                 onClick={prevTestimonial}
-                disabled={isAnimating}
                 variants={buttonVariants}
                 whileHover="hover"
                 whileTap="tap"
-                className="w-10 h-10 rounded-full border border-indigo-500/50 flex items-center justify-center text-indigo-300 transition-colors"
+                className="w-10 h-10 rounded-full border border-indigo-500/50 flex items-center justify-center text-indigo-300 transition-colors z-20"
               >
                 <ArrowLeft size={18} />
               </motion.button>
               <motion.button
                 onClick={nextTestimonial}
-                disabled={isAnimating}
                 variants={buttonVariants}
                 whileHover="hover"
                 whileTap="tap"
-                className="w-10 h-10 rounded-full border border-indigo-500/50 flex items-center justify-center text-indigo-300 transition-colors"
+                className="w-10 h-10 rounded-full border border-indigo-500/50 flex items-center justify-center text-indigo-300 transition-colors z-20"
               >
                 <ArrowRight size={18} />
               </motion.button>
