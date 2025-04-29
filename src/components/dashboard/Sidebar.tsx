@@ -46,6 +46,49 @@ const customStyles = `
       transform: translateX(0);
     }
   }
+  
+  /* Scrollable area for dropdown content */
+  .dropdown-scroll-area {
+    max-height: calc(100vh - 300px);
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #ddd #f5f5f5;
+  }
+  
+  .dropdown-scroll-area::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .dropdown-scroll-area::-webkit-scrollbar-track {
+    background: #f5f5f5;
+    border-radius: 10px;
+  }
+  
+  .dropdown-scroll-area::-webkit-scrollbar-thumb {
+    background: #ddd;
+    border-radius: 10px;
+  }
+  
+  /* Fix for sidebar structure */
+  .sidebar-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+  }
+  
+  .sidebar-content {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .sidebar-nav {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
 `;
 
 const links = [
@@ -488,11 +531,11 @@ export default function Sidebar() {
             }`}
         >
           {/* Main content container with proper spacing and fixed height */}
-          <div className="flex flex-col h-full">
-            {/* Top section with padding */}
-            <div className="p-4 px-4 md:px-2 xl:p-6">
+          <div className="sidebar-container">
+            {/* Top Logo Section */}
+            <div className="p-4 px-4 md:px-2 xl:p-6 pb-2">
               {/* Logo - Hidden on mobile since we show it in the header */}
-              <div className="hidden md:flex items-center justify-between mb-6">
+              <div className="hidden md:flex items-center justify-between mb-2">
                 <Link href={"/"} className="items-center flex gap-2">
                   <div className="size-10 relative">
                     <Image
@@ -534,73 +577,76 @@ export default function Sidebar() {
                   </svg>
                 </button>
               </div>
-
-              {/* Content area with overflow control */}
-              <div className="flex-grow overflow-y-auto">
-                {/* If in filter view, show categories instead of navigation */}
-                {isFilterView ? (
-                  <div className="flex flex-col gap-2">
-                    {/* Main navigation for filter view */}
-                    <Link
-                      href={"/dashboard/overview"}
-                      className="px-3 py-2.5 rounded-md hover:bg-[#313273] hover:text-white transition group"
-                    >
-                      <div className="flex items-center gap-2 transition ">
-                        <PiGridFourLight className="size-5" />
-                        <span className="text-sm">Overview</span>
-                      </div>
-                    </Link>
-
-                    <Link
-                      href={"/dashboard/explore"}
-                      className={`px-3 py-2.5 rounded-md ${
-                        pathname === "/dashboard/explore"
-                          ? "bg-[#313273] text-white font-semibold"
-                          : ""
-                      } hover:bg-[#313273]  transition group`}
-                    >
-                      <div className="flex items-center gap-2 transition ">
-                        <PiMagnifyingGlassLight className="size-5" style={{fill: "white"}} />
-                        <span className="text-sm">Explore Courses</span>
-                      </div>
-                    </Link>
-
-                    {/* Categories */}
-                    <div className="mt-4 space-y-3">
-                      {categories.map((category) => renderCategory(category))}
-                    </div>
-                  </div>
-                ) : (
-                  <nav className="flex flex-col gap-2.5">
-                    {links.map(({ href, label, icon: Icon }) => {
-                      const isActive =
-                        pathname === href ||
-                        (pathname === "/dashboard" &&
-                          href === "/dashboard/overview");
-
-                      return (
-                        <Link
-                          key={href}
-                          href={href}
-                          className={`px-3 py-2.5 rounded-md hover:bg-[#313273] hover:text-white transition group ${
-                            isActive
-                              ? "bg-[#313273] text-white font-semibold"
-                              : "font-medium"
-                          }`}
-                        >
-                          <div className="flex items-center gap-2 transition">
-                            <Icon className="size-5" />
-                            <span className="text-sm">{label}</span>
-                          </div>
-                        </Link>
-                      );
-                    })}
-                  </nav>
-                )}
-              </div>
             </div>
 
-            {/* Settings and logout section - absolutely positioned at bottom */}
+            {/* Middle Content Area - Scrollable */}
+            <div className="sidebar-content px-4 md:px-2 xl:px-6">
+              {/* If in filter view, show categories instead of navigation */}
+              {isFilterView ? (
+                <div className="flex flex-col gap-2 sidebar-nav">
+                  {/* Main navigation for filter view */}
+                  <Link
+                    href={"/dashboard/overview"}
+                    className="px-3 py-2.5 rounded-md hover:bg-[#313273] hover:text-white transition group"
+                  >
+                    <div className="flex items-center gap-2 transition ">
+                      <PiGridFourLight className="size-5" />
+                      <span className="text-sm">Overview</span>
+                    </div>
+                  </Link>
+
+                  <Link
+                    href={"/dashboard/explore"}
+                    className={`px-3 py-2.5 rounded-md ${
+                      pathname === "/dashboard/explore"
+                        ? "bg-[#313273] text-white font-semibold"
+                        : ""
+                    } hover:bg-[#313273] transition group`}
+                  >
+                    <div className="flex items-center gap-2 transition ">
+                      <PiMagnifyingGlassLight 
+                        className="size-5" 
+                        style={pathname === "/dashboard/explore" ? {fill: "white"} : {}}
+                      />
+                      <span className="text-sm">Explore Courses</span>
+                    </div>
+                  </Link>
+
+                  {/* Scrollable Categories Area */}
+                  <div className="dropdown-scroll-area mt-4 space-y-3">
+                    {categories.map((category) => renderCategory(category))}
+                  </div>
+                </div>
+              ) : (
+                <nav className="flex flex-col gap-2.5">
+                  {links.map(({ href, label, icon: Icon }) => {
+                    const isActive =
+                      pathname === href ||
+                      (pathname === "/dashboard" &&
+                        href === "/dashboard/overview");
+
+                    return (
+                      <Link
+                        key={href}
+                        href={href}
+                        className={`px-3 py-2.5 rounded-md hover:bg-[#313273] hover:text-white transition group ${
+                          isActive
+                            ? "bg-[#313273] text-white font-semibold"
+                            : "font-medium"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 transition">
+                          <Icon className="size-5" />
+                          <span className="text-sm">{label}</span>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </nav>
+              )}
+            </div>
+
+            {/* Settings and logout section - fixed at bottom */}
             <div className="p-4 px-4 md:px-2 xl:px-6 mt-auto border-t border-gray-100">
               <h3 className="text-[#A7A7AA] text-[14px] mb-2.5">SETTINGS</h3>
               <Link
@@ -620,6 +666,7 @@ export default function Sidebar() {
             </div>
           </div>
         </aside>
+        
         <LogoutModal
           isOpen={isLogoutModalOpen}
           onClose={() => setIsLogoutModalOpen(false)}
