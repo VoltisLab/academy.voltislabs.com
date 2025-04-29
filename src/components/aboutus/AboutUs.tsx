@@ -133,7 +133,7 @@ export default function AboutPage() {
               variants={fadeIn}
             >
               <p className="text-lg mb-6 text-gray-700">
-                We believe talent is universal, but opportunity is not. That's why we're committed to providing world-class education, mentorship, and hands-on experience — for free — to students who need it most.
+                We believe talent is universal, but opportunity is not. That's why we're committed to providing world-class education, mentorship, and hands-on-experience for free to students who need it most.
               </p>
               <p className="text-lg mb-6 text-gray-700">
                 Our ambition is bold: train 10,000 students and empower them to transform their lives and communities.
