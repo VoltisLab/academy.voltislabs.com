@@ -7,9 +7,6 @@ export function Curriculum() {
     <section className="space-y-10">
       <FormHeader />
       <CourseSectionsBuilder/>
-      <FormFooterButtons/>
     </section>
-      
-  
   );
 }

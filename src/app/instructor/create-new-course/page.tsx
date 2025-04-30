@@ -6,6 +6,7 @@ import { BasicInformationForm } from "@/components/instructor/BasicInformationFo
 import { AdvanceInformationForm } from "@/components/instructor/AdvanceInformation";
 import { Curriculum } from "@/components/instructor/Curriculum";
 import Image from "next/image";
+import FormFooterButtons from "@/components/instructor/common/FormFooterButtons";
 
 const tabs = [
   { name: "Basic Information", key: "basic", icon: "/icons/Stack.svg" },

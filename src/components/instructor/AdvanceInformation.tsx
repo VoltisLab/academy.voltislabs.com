@@ -21,7 +21,6 @@ export function AdvanceInformationForm() {
       <CourseObjectivesInput title="What you will teach in this course" />
       <CourseObjectivesInput title="Target Audience" />
       <CourseObjectivesInput title="Course requirements" />
-      <FormFooterButtons />
     </section>
   );
 }
