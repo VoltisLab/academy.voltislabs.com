@@ -9,8 +9,6 @@ interface BasicInformationFormProps {
   onSaveNext: () => void;
 }
 
-
-
 export const BasicInformationForm = ({ onSaveNext }: BasicInformationFormProps) => {
   // Form state
   const [formData, setFormData] = useState<FormData>({
