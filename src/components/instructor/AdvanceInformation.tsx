@@ -1,12 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { gql } from '@apollo/client';
-import { apolloClient } from '@/lib/apollo-client';
+import dynamic from "next/dynamic";
 import FormFooterButtons from "./common/FormFooterButtons";
 import FormHeader from "./common/FormHeader";
-import dynamic from "next/dynamic";
-import { toast } from "react-hot-toast";
+import { uploadFile } from "@/services/fileUploadService";
 
 // Dynamically import CourseDescriptionEditor with SSR disabled
 const CourseDescriptionEditor = dynamic(() => import("./forms/CourseDescriptionEditor"), {
@@ -15,18 +13,6 @@ const CourseDescriptionEditor = dynamic(() => import("./forms/CourseDescriptionE
 
 import CourseObjectivesInput from "./forms/CourseObjectivesInput";
 import CourseThumbnailUploader from "./forms/CourseThumbnailUploader";
-
-// Fixed the mutation - corrected variable names
-const UPLOAD_FILE = gql`
-  mutation UploadFile($files: [Upload]!, $filetype: FileTypeEnum!) {
-    upload(files: $files, filetype: $filetype) {
-      baseUrl
-      data
-      success
-    }
-  }
-`;
-
 
 interface BasicInformationFormProps {
   onSaveNext: () => void;
@@ -37,64 +23,31 @@ export const AdvanceInformationForm = ({ onSaveNext }: BasicInformationFormProps
   const [courseThumbnailUrl, setCourseThumbnailUrl] = useState<string>("");
   const [secondaryThumbnailUrl, setSecondaryThumbnailUrl] = useState<string>("");
   const [isUploading, setIsUploading] = useState<boolean>(false);
-  const [error, setError] = useState<Error | null>(null);
-
-  // Function to handle file upload
-  const handleFileUpload = async (file: File, setImageUrl: (url: string) => void) => {
+  
+  // Handler for primary thumbnail
+  const handlePrimaryThumbnailUpload = async (file: File) => {
     try {
       setIsUploading(true);
-      setError(null);
-      
-      // Call the mutation with the File object directly and RESOURCE as filetype
-      const { data, errors } = await apolloClient.mutate({
-        mutation: UPLOAD_FILE,
-        variables: {
-          files: [file],  // Wrap file in array
-          filetype: 'RESOURCE'
-        },        
-        context: {
-          includeAuth: true // Include auth token
-        },
-        fetchPolicy: 'no-cache' // Force network request
-      });
-      
-      if (errors) {
-        console.error("GraphQL errors:", errors);
-        throw new Error(errors[0]?.message || "Error uploading file");
-      }
-      
-      if (data?.upload?.success) {
-        // Set the returned URL in state
-        setImageUrl(data.upload.baseUrl);
-        console.log("File uploaded successfully:", data.upload.baseUrl);
-        toast.success("Image uploaded successfully!");
-      } else {
-        console.error("Upload failed:", data);
-        throw new Error("Failed to upload image");
-      }
-    } catch (err) {
-      console.error("Error uploading file:", err);
-      
-      if (err instanceof Error) {
-        setError(err);
-        toast.error(err.message || "Failed to upload image");
-      } else {
-        setError(new Error("An unexpected error occurred"));
-        toast.error("Failed to upload image");
+      const url = await uploadFile(file, 'RESOURCE');
+      if (url) {
+        setCourseThumbnailUrl(url);
       }
     } finally {
       setIsUploading(false);
     }
   };
   
-  // Handler for primary thumbnail
-  const handlePrimaryThumbnailUpload = (file: File) => {
-    handleFileUpload(file, setCourseThumbnailUrl);
-  };
-  
   // Handler for secondary thumbnail
-  const handleSecondaryThumbnailUpload = (file: File) => {
-    handleFileUpload(file, setSecondaryThumbnailUrl);
+  const handleSecondaryThumbnailUpload = async (file: File) => {
+    try {
+      setIsUploading(true);
+      const url = await uploadFile(file, 'RESOURCE');
+      if (url) {
+        setSecondaryThumbnailUrl(url);
+      }
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   return (
@@ -105,16 +58,19 @@ export const AdvanceInformationForm = ({ onSaveNext }: BasicInformationFormProps
         <CourseThumbnailUploader 
           onFileSelect={handlePrimaryThumbnailUpload} 
           isUploading={isUploading} 
+          imageUrl={courseThumbnailUrl}
         />
         <CourseThumbnailUploader 
           onFileSelect={handleSecondaryThumbnailUpload}
           isUploading={isUploading}
+          imageUrl={secondaryThumbnailUrl}
         />
       </div>
       <CourseDescriptionEditor />
       <CourseObjectivesInput title="What you will teach in this course" />
       <CourseObjectivesInput title="Target Audience" />
       <CourseObjectivesInput title="Course requirements" />
+      {/* <FormFooterButtons onNext={onSaveNext} /> */}
     </section>
   );
 }
