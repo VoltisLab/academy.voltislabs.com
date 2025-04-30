@@ -113,26 +113,27 @@ const Header = () => {
               Home
             </Link>
             <Link
-              href="/bootcamp"
+              href="/programmes"
               className="block text-[#331C1C] font-semibold hover:text-pink-600"
               onClick={toggleMenu}
             >
-              Bootcamp
+              Programmes
             </Link>
             <Link
-              href="/events"
+              href="/aboutus"
               className="block text-[#331C1C] font-semibold hover:text-pink-600"
               onClick={toggleMenu}
             >
-              Events
+              About Us
             </Link>
-            <Link
-              href="/articles"
-              className="block text-[#331C1C] font-semibold hover:text-pink-600"
-              onClick={toggleMenu}
+            {userExists && (
+              <Link
+              href={userExists?.login?.user?.isInstructor? "/instructor" : "/dashboard"}
+              className="text-[#331C1C] font-semibold hover:text-pink-600 transition"
             >
-              Articles
+              Dashboard
             </Link>
+            )}
             <Link href="/contact">
               <button className="w-full mt-4 border-2 border-[#313273] text-[#313273] font-semibold px-5 py-2 rounded-lg hover:bg-[#313273] hover:text-white transition">
                 Contact Us

@@ -10,9 +10,6 @@ export const Curriculum = ({ onSaveNext }: BasicInformationFormProps) => {
     <section className="space-y-10">
       <FormHeader />
       <CourseSectionsBuilder/>
-      <FormFooterButtons/>
     </section>
-      
-  
   );
 }
