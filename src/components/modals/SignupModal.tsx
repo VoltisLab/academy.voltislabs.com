@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useRef, FormEvent } from "react";
 import Image from "next/image";
-import { signUp, login, sendVerificationCode } from "@/api/auth"; // Added sendVerificationCode import
+import { signUp, login, sendVerificationCode } from "@/api/auth/auth";
 import { SignUpData, LoginData, FormErrors } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import { ApolloProvider } from "@apollo/client";
@@ -129,9 +129,9 @@ const SignupModalContent: React.FC<SignupModalProps> = ({
   // Handle sending verification code
   const handleSendCode = async () => {
     // Validate email first
-    // if (!validateField('email', email)) {
-    //   return;
-    // }
+    if (!validateField('email', email)) {
+      return;
+    }
 
     setSendingCode(true);
     
@@ -182,15 +182,15 @@ const SignupModalContent: React.FC<SignupModalProps> = ({
         if (!value) {
           newErrors.email = "Email is required";
         } 
-        // else if (!isValidEmail(value)) {
-        //   newErrors.email = "Please enter a valid email address";
-        // } 
-        // else if (!isAllowedDomain(value)) {
-        //   newErrors.email = "Sorry, this is an invalid email. Please use an email ending with @voltislab.com or @academy.voltislab.com";
-        // } 
-        // else {
-        //   delete newErrors.email;
-        // }
+        else if (!isValidEmail(value)) {
+          newErrors.email = "Please enter a valid email address";
+        } 
+        else if (!isAllowedDomain(value)) {
+          newErrors.email = "Sorry, this is an invalid email. Please use an email ending with @voltislab.com or @academy.voltislab.com";
+        } 
+        else {
+          delete newErrors.email;
+        }
         break;
         
       case 'password':
@@ -415,7 +415,7 @@ const SignupModalContent: React.FC<SignupModalProps> = ({
           className="bg-white rounded-[30px] shadow-lg overflow-hidden w-full max-w-5xl flex flex-col md:flex-row border-5 border-white relative"
         >
           {/* Left side - Pink section */}
-          <div className="bg-gradient-to-b from-[#DC4298] to-[#EAADCF] text-white p-8 md:w-[37%] w-full relative md:block hidden">
+          <div className="bg-gradient-to-b from-[#313273] to-[#4B4C8D] text-white p-8 md:w-[37%] w-full relative md:block hidden">
           <div className="mb-4">
             <div className="h-8 w-8 bg-white rounded">
               <Image
@@ -499,7 +499,7 @@ const SignupModalContent: React.FC<SignupModalProps> = ({
                            (isInstructor ? "Instructor Login" : "Student Login")}
             </h2>
             <button 
-              className="text-sm font-bold bg-[#DC4298] px-2 py-1 rounded-md text-white hover:duration-700 hover:scale-110"
+              className="text-sm font-bold bg-[#313273] p-2 shadow-md cursor-pointer rounded-md hover:bg-indigo-800 text-white"
               onClick={toggleUserType}
             >
               {!hasAccount ? (isInstructor ? "Student Signup" : "Instructor Signup") : 
@@ -587,7 +587,7 @@ const SignupModalContent: React.FC<SignupModalProps> = ({
                       className={`text-sm font-medium px-3 py-1 rounded
                         ${codeSent 
                           ? "text-gray-500 cursor-not-allowed"
-                          : "text-[#DC4298] hover:text-pink-700"
+                          : "text-[#313273] hover:text-indigo-900"
                         }
                         ${!isValidEmail(email) ? "opacity-50 cursor-not-allowed" : ""}
                         ${sendingCode ? "opacity-50 cursor-wait" : ""}
@@ -656,7 +656,7 @@ const SignupModalContent: React.FC<SignupModalProps> = ({
                 </div>
                 <button
                   type="submit"
-                  className={`w-full bg-[#DC4298] text-white py-4 rounded-lg font-medium hover:bg-pink-600 transition-colors ${
+                  className={`w-full bg-[#313273] text-white py-4 rounded-lg font-medium hover:bg-indigo-800 transition-colors ${
                     loading ? "opacity-70 cursor-not-allowed" : ""
                   }`}
                   disabled={loading || !codeSent}
@@ -667,7 +667,7 @@ const SignupModalContent: React.FC<SignupModalProps> = ({
                   Already have an account?{" "}
                   <button
                     type="button"
-                    className="text-[#DC4298] hover:underline font-medium"
+                    className="text-indigo-800 hover:underline font-medium"
                     onClick={() => setHasAccount(true)}
                     disabled={loading}
                   >
@@ -711,7 +711,7 @@ const SignupModalContent: React.FC<SignupModalProps> = ({
                   <div className="flex justify-end mt-1">
                     <button
                       type="button"
-                      className="text-sm text-gray-500 hover:text-pink-500"
+                      className="text-sm text-gray-500 hover:text-indigo-800"
                     >
                       Forgot Password?
                     </button>
@@ -719,7 +719,7 @@ const SignupModalContent: React.FC<SignupModalProps> = ({
                 </div>
                 <button
                   type="submit"
-                  className={`w-full bg-[#DC4298] text-white py-4 rounded-lg font-medium hover:bg-pink-600 transition-colors cursor-pointer ${
+                  className={`w-full bg-[#313273] text-white py-4 rounded-lg font-medium hover:bg-indigo-800 transition-colors cursor-pointer ${
                     loading ? "opacity-70 cursor-not-allowed" : ""
                   }`}
                   disabled={loading}
@@ -730,7 +730,7 @@ const SignupModalContent: React.FC<SignupModalProps> = ({
                   Don&apos;t have an account?{" "}
                   <button
                     type="button"
-                    className="text-[#DC4298] hover:underline font-medium cursor-pointer"
+                    className="text-indigo-800 hover:underline font-medium cursor-pointer"
                     onClick={() => setHasAccount(false)}
                     disabled={loading}
                   >

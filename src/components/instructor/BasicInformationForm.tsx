@@ -1,76 +1,15 @@
 import { useState, useEffect, ChangeEvent, FormEvent } from "react";
 import { apolloClient } from "@/lib/apollo-client";
-import { gql } from "@apollo/client";
-import { COURSE_LEVELS, CourseLevelEnum, DurationUnitEnum, LanguageEnum, LANGUAGES } from "@/lib/utils";
-import { OptionType } from "@/lib/types";
+import { COURSE_LEVELS, CourseLevelEnum, DURATION_UNITS, DurationUnitEnum, LanguageEnum, LANGUAGES } from "@/lib/utils";
+import { Category, GetCategoriesResponse, FormData, CreateCourseBasicInfoVariables } from "@/lib/types";
 import Cookies from "js-cookie";
-import { CREATE_COURSE_BASIC_INFO } from "@/api/course/mutation";
-
-// GraphQL Query - Updated to match the actual schema
-export const GET_CATEGORIES = gql`
-  query MyQuery {
-    categories {
-      id
-      name
-    }
-  }
-`;
-
-// GraphQL Mutation
-// Duration unit options
-const DURATION_UNITS: OptionType[] = [
-  { value: DurationUnitEnum.DAY, label: "Day" },
-  { value: DurationUnitEnum.WEEK, label: "Week" },
-  { value: DurationUnitEnum.MONTH, label: "Month" }
-];
-
-// Updated Type definitions
-interface Subcategory {
-  id: string;
-  name: string;
+import { CREATE_COURSE_BASIC_INFO, GET_CATEGORIES } from "@/api/course/mutation";
+import toast from "react-hot-toast";
+interface BasicInformationFormProps {
+  onSaveNext: () => void;
 }
 
-interface Category {
-  id: string;
-  name: string;
-  subcategories: Subcategory[];
-}
-
-interface GetCategoriesResponse {
-  categories: Category[];
-}
-
-interface FormData {
-  title: string;
-  subtitle: string;
-  categoryId: string;
-  subCategoryId: string;
-  topic: string;
-  language: string;
-  subtitleLanguage: string;
-  courseLevel: string;
-  durationValue: string;
-  durationUnit: DurationUnitEnum;
-  description: string;
-}
-
-interface CreateCourseBasicInfoVariables {
-  title: string;
-  subtitle: string;
-  categoryId: number;
-  subCategoryId: number;
-  topic: string;
-  language: LanguageEnum;
-  subtitleLanguage: LanguageEnum;
-  courseLevel: CourseLevelEnum;
-  description: string;
-  duration: {
-    value: number;
-    unit: DurationUnitEnum;
-  };
-}
-
-export function BasicInformationForm() {
+export const BasicInformationForm = ({ onSaveNext }: BasicInformationFormProps) => {
   // Form state
   const [formData, setFormData] = useState<FormData>({
     title: "",
@@ -245,17 +184,14 @@ export function BasicInformationForm() {
       });
   
       if (response?.createCourseBasicInfo?.success) {
-        alert(response.createCourseBasicInfo.message || "Course information saved successfully!");
+        toast.success(response.createCourseBasicInfo.message || "Course information saved successfully!");
         
-        if (saveAndPreview) {
-          // Navigate to preview page or show preview modal
-          console.log("Navigating to preview...");
-        }
+        onSaveNext()
       }
     } catch (err) {
       console.error("Error creating course:", err);
       setError(err instanceof Error ? err : new Error("An unexpected error occurred"));
-      alert(err instanceof Error ? err.message : "Failed to save course information. Please try again.");
+      toast.error(err instanceof Error ? err.message : "Failed to save course information. Please try again.");
     }
   };
 
@@ -479,12 +415,6 @@ export function BasicInformationForm() {
           {loading ? "Saving..." : "Save & Next"}
         </button>
       </div>
-      
-      {error && (
-        <div className="text-red-500 text-sm p-4 bg-red-50 rounded-md">
-          Error: {error.message}
-        </div>
-      )}
     </section>
   );
 }

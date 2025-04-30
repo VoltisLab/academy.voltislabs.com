@@ -3,10 +3,12 @@
 import DashboardNavbar from "@/components/instructor/DashboardNav";
 import Sidebar from "@/components/instructor/Sidebar";
 import { ReactNode, Suspense } from "react";
+import { Toaster } from 'react-hot-toast';
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-screen bg-gray-50 w-full max-w-full">
+       <Toaster position="top-center" reverseOrder={false} />
       {/* Sidebar - fixed width, no overflow */}
       <aside className="hidden md:block w-64 flex-shrink-0 h-screen sticky top-0 shadow-lg">
         <Sidebar />
