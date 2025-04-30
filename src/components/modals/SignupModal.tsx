@@ -185,8 +185,8 @@ const SignupModalContent: React.FC<SignupModalProps> = ({
         else if (!isValidEmail(value)) {
           newErrors.email = "Please enter a valid email address";
         } 
-        else if (!isAllowedDomain(value)) {
-          newErrors.email = "Sorry, this is an invalid email. Please use an email ending with @voltislab.com or @academy.voltislab.com";
+        else if (isInstructor && !isAllowedDomain(value)) {
+          newErrors.email = "Sorry, this is an invalid email. Instructors must use an email ending with @voltislab.com or @academy.voltislab.com";
         } 
         else {
           delete newErrors.email;
@@ -247,6 +247,8 @@ const SignupModalContent: React.FC<SignupModalProps> = ({
       newErrors.email = "Email is required";
     } else if (!isValidEmail(email)) {
       newErrors.email = "Please enter a valid email address";
+    } else if (isInstructor && !isAllowedDomain(email)) {
+      newErrors.email = "Sorry, this is an invalid email. Instructors must use an email ending with @voltislab.com or @academy.voltislab.com";
     }
     
     if (!password) {
