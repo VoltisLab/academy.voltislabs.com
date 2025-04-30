@@ -12,7 +12,12 @@ const CONTENT_OPTIONS = [
   "Lecture Notes",
 ];
 
-export default function CourseSectionsBuilder() {
+interface BasicInformationFormProps {
+  onSaveNext: () => void;
+  courseId?: number;
+}
+
+export default function CourseSectionsBuilder ({ onSaveNext, courseId }: BasicInformationFormProps){
   const [sections, setSections] = useState([
     {
       name: "Section name",
