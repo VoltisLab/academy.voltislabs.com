@@ -1,13 +1,15 @@
 import { useState, useEffect, ChangeEvent, FormEvent } from "react";
 import { apolloClient } from "@/lib/apollo-client";
 import { COURSE_LEVELS, CourseLevelEnum, DURATION_UNITS, DurationUnitEnum, LanguageEnum, LANGUAGES } from "@/lib/utils";
-import { Category, GetCategoriesResponse, FormData, CreateCourseBasicInfoVariables } from "@/lib/types";
+import { CourseCategory, GetCategoriesResponse, FormData, CreateCourseBasicInfoVariables } from "@/lib/types";
 import Cookies from "js-cookie";
 import { CREATE_COURSE_BASIC_INFO, GET_CATEGORIES } from "@/api/course/mutation";
 import toast from "react-hot-toast";
 interface BasicInformationFormProps {
   onSaveNext: () => void;
 }
+
+
 
 export const BasicInformationForm = ({ onSaveNext }: BasicInformationFormProps) => {
   // Form state
@@ -26,7 +28,7 @@ export const BasicInformationForm = ({ onSaveNext }: BasicInformationFormProps) 
   });
   
   // Category state
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [categories, setCategories] = useState<CourseCategory[]>([]);
   const [categoryLoading, setCategoryLoading] = useState<boolean>(true);
   const [categoryError, setCategoryError] = useState<Error | null>(null);
   

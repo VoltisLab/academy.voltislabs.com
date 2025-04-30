@@ -158,8 +158,7 @@ export interface CreateCourseBasicInfoResponse {
     success: boolean;
   };
 }
-
-export interface Category {
+export interface CourseCategory {
   id: string;
   name: string;
   subcategories: Subcategory[];
@@ -171,7 +170,7 @@ interface Subcategory {
 }
 
 export interface GetCategoriesResponse {
-  categories: Category[];
+  categories: CourseCategory[];
 }
 
 export interface UploadResponse {
