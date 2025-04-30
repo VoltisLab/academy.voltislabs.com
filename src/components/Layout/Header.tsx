@@ -5,8 +5,8 @@ import Image from "next/image";
 import { useAuth } from "@/context/AuthContext";
 import { FiMenu, FiX } from "react-icons/fi";
 import SignupModal from "@/components/modals/SignupModal";
-import { getCurrentUser } from "@/api/auth";
-import { logout } from "@/api/auth";
+import { getCurrentUser } from "@/api/auth/auth";
+import { logout } from "@/api/auth/auth";
 import { LoginResponse } from "@/lib/types";
 
 const Header = () => {

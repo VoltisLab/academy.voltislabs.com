@@ -15,8 +15,16 @@ const tabs = [
   { name: "Publish Course", key: "publish", icon: "/icons/PlayCircle.svg" },
 ];
 
-export default  function CourseFormTabs() {
+export default function CourseFormTabs() {
   const [activeTab, setActiveTab] = useState("basic");
+
+  // Function to handle moving to next tab
+  const handleNextTab = () => {
+    const currentIndex = tabs.findIndex(tab => tab.key === activeTab);
+    if (currentIndex < tabs.length - 1) {
+      setActiveTab(tabs[currentIndex + 1].key);
+    }
+  };
 
   return (
     <div className="bg-white max-w-[90rem] mx-auto min-h-screen">
@@ -50,9 +58,9 @@ export default  function CourseFormTabs() {
 
       {/* Tab Content */}
       <div className="p-6">
-        {activeTab === "basic" && <BasicInformationForm />}
-        {activeTab === "advanced" && <AdvanceInformationForm />}
-        {activeTab === "curriculum" && <Curriculum />}
+        {activeTab === "basic" && <BasicInformationForm onSaveNext={handleNextTab} />}
+        {activeTab === "advanced" && <AdvanceInformationForm onSaveNext={handleNextTab} />}
+        {activeTab === "curriculum" && <Curriculum onSaveNext={handleNextTab} />}
         {activeTab === "publish" && <p>Publish Step</p>}
       </div>
     </div>

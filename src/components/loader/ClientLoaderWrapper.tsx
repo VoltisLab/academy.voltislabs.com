@@ -4,8 +4,8 @@ import { usePathname, useSearchParams } from 'next/navigation';
 import { useEffect, Suspense } from 'react';
 import { useLoading } from '@/context/LoadingContext';
 import VoltisLoader from '@/components/loader/loader';
-import Header from '@/components/Header';
-import Footer from '@/app/sections/Footer';
+import Header from '@/components/Layout/Header';
+import Footer from '@/components/Layout/Footer';
 
 // Logic component for managing loading state
 function LoaderLogic({ children }: { children: React.ReactNode }) {

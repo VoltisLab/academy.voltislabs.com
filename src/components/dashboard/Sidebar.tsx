@@ -5,7 +5,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { IoSettingsOutline } from "react-icons/io5";
 import { useState, useEffect } from "react";
-import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import {
   PiChatCircleTextLight,
@@ -22,8 +21,8 @@ import { sideBarDropdown } from "@/lib/SidebarData";
 import LogoutModal from "../modals/LogoutModal";
 import { Category, CategoryItem, UserData } from "@/lib/types";
 import { useAside } from "@/context/showAsideContext";
-import { logout } from "@/api/auth";
-import { getCurrentUser } from "@/api/auth";
+import { logout } from "@/api/auth/auth";
+import { getCurrentUser } from "@/api/auth/auth";
 
 // Add this to your global CSS or as a style tag in the component
 const customStyles = `

@@ -105,22 +105,6 @@ export interface FormErrors {
   emailVerification?: string; // Added this property
 }
 
-
-// Define types for form data and options
-export interface FormData {
-  title: string;
-  subtitle: string;
-  categoryId: string;
-  subCategoryId: string;
-  topic: string;
-  language: string;
-  subtitleLanguage: string;
-  courseLevel: string;
-  durationValue: string;
-  durationUnit: DurationUnitEnum;
-  description: string;
-}
-
 export interface OptionType {
   value: string;
   label: string;
@@ -136,19 +120,37 @@ export interface DurationInput {
   unit: DurationUnitEnum;
 }
 
-// Types for GraphQL mutation
 export interface CreateCourseBasicInfoVariables {
   title: string;
-  subtitle?: string;
+  subtitle: string;
   categoryId: number;
   subCategoryId: number;
   topic: string;
   language: LanguageEnum;
-  subtitleLanguage?: LanguageEnum | null;
+  subtitleLanguage: LanguageEnum;
   courseLevel: CourseLevelEnum;
-  duration: DurationInput;
-  description?: string;
+  description: string;
+  duration: {
+    value: number;
+    unit: DurationUnitEnum;
+  };
 }
+
+export interface FormData {
+  title: string;
+  subtitle: string;
+  categoryId: string;
+  subCategoryId: string;
+  topic: string;
+  language: string;
+  subtitleLanguage: string;
+  courseLevel: string;
+  durationValue: string;
+  durationUnit: DurationUnitEnum;
+  description: string;
+}
+
+
 
 export interface CreateCourseBasicInfoResponse {
   createCourseBasicInfo: {
@@ -156,4 +158,30 @@ export interface CreateCourseBasicInfoResponse {
     success: boolean;
   };
 }
+export interface CourseCategory {
+  id: string;
+  name: string;
+  subcategories: Subcategory[];
+}
 
+interface Subcategory {
+  id: string;
+  name: string;
+}
+
+export interface GetCategoriesResponse {
+  categories: CourseCategory[];
+}
+
+export interface UploadResponse {
+  upload: {
+    baseUrl: string;
+    data: string;
+    success: boolean;
+  };
+}
+
+export interface UploadVariables {
+  files: string;
+  filetype: string;
+}

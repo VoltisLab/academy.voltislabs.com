@@ -1,1 +1,0 @@
-export { apolloClient } from '@/lib/apollo-client';

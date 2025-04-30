@@ -2,7 +2,6 @@ import { LoginData, LoginResponse, SignUpData, SignUpResponse } from '@/lib/type
 import { apolloClient } from '@/lib/apollo-client';
 import { LOGIN_MUTATION, REGISTER_MUTATION, SEND_VERIFICATION_EMAIL_MUTATION, VERIFY_TOKEN_MUTATION } from './mutations';
 import Cookies from 'js-cookie'
-import { AiOutlineConsoleSql } from 'react-icons/ai';
 
 // Helper function to set cookies with a default expiration of 7 days
 const setCookie = (name: string, value: string, days = 7) => {

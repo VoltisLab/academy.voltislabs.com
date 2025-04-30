@@ -31,30 +31,13 @@ export const CREATE_COURSE_BASIC_INFO = gql`
   }
 `;
 
-// Define the GraphQL query to fetch categories and subcategories
+
+// Query to fetch course categories
 export const GET_CATEGORIES = gql`
   query MyQuery {
     categories {
       id
       name
-      subcategories {
-        id
-        name
-      }
     }
   }
 `;
-
-export interface SubCategory {
-  id: number;
-  name: string;
-}
-
-export interface Category {
-  id: number;
-  name: string;
-}
-
-export interface GetCategoriesResponse {
-  categories: Category[];
-}
