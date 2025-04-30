@@ -1,12 +1,12 @@
 "use client"
-import HeroSection from "@/app/sections/HeroSection";
-import Partners from "@/app/sections/Partners";
-import AboutSection from "@/app/sections/AboutSection";
-import CTASection from "@/app/sections/CTASection";
-import GraduateCompanies from "@/app/sections/GraduateCompanies";
-import Testimonial from "@/app/sections/Testimonial";
-import CourseSection from "@/app/sections/CourseSection";
-import HeroSlider from "@/components/hero/HeroSlider";
+import HeroSection from "@/components/home/HeroSection";
+import Partners from "@/components/home/Partners";
+import AboutSection from "@/components/home/AboutSection";
+import CTASection from "@/components/home/CTASection";
+import GraduateCompanies from "@/components/home/GraduateCompanies";
+import Testimonial from "@/components/home/Testimonial";
+import CourseSection from "@/components/home/CourseSection";
+import HeroSlider from "@/components/home/HeroSlider";
 export default function HomePage() {
   return (
     <div>

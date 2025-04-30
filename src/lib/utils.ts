@@ -110,3 +110,9 @@ export const LANGUAGES: OptionType[] = [
   { value: LanguageEnum.SWAHILI, label: "Swahili" },
   { value: LanguageEnum.INDONESIAN, label: "Indonesian" }
 ];
+
+export const DURATION_UNITS: OptionType[] = [
+  { value: DurationUnitEnum.DAY, label: "Day" },
+  { value: DurationUnitEnum.WEEK, label: "Week" },
+  { value: DurationUnitEnum.MONTH, label: "Month" }
+];

@@ -50,6 +50,7 @@ export const LOGIN_MUTATION = gql`
   }
 `;
 
+// GraphQL mutation to send verification email
 export const SEND_VERIFICATION_EMAIL_MUTATION = gql`
   mutation SendVerificationEmail($email: String!) {
     sendVerificationEmail(email: $email) {
@@ -59,6 +60,8 @@ export const SEND_VERIFICATION_EMAIL_MUTATION = gql`
   }
 `;
 
+
+// Graphql mutation to verify token
 export const VERIFY_TOKEN_MUTATION = gql`
   mutation VerifyToken($token: String!) {
     verifyToken(token: $token) {
@@ -66,3 +69,4 @@ export const VERIFY_TOKEN_MUTATION = gql`
     }
   }
 `;
+
