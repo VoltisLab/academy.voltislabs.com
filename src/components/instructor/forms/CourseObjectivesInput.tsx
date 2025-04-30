@@ -1,28 +1,50 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus } from "lucide-react";
 
-export default function CourseObjectivesInput({ title }: { title: string }) {
-  const [objectives, setObjectives] = useState<string[]>(["", "", "", ""]);
+interface CourseObjectivesInputProps {
+  title: string;
+  objectives: string[];
+  onObjectivesChange: (objectives: string[]) => void;
+}
+
+export default function CourseObjectivesInput({ 
+  title, 
+  objectives, 
+  onObjectivesChange 
+}: CourseObjectivesInputProps) {
+  const [localObjectives, setLocalObjectives] = useState<string[]>(objectives);
+
+  // Update local state when props change
+  useEffect(() => {
+    setLocalObjectives(objectives);
+  }, [objectives]);
 
   const handleChange = (index: number, value: string) => {
-    const updated = [...objectives];
+    const updated = [...localObjectives];
     updated[index] = value;
-    setObjectives(updated);
+    setLocalObjectives(updated);
+    
+    // Send data up to parent component
+    onObjectivesChange(updated);
   };
 
   const handleAdd = () => {
-    setObjectives([...objectives, ""]);
+    const updated = [...localObjectives, ""];
+    setLocalObjectives(updated);
+    
+    // Send data up to parent component
+    onObjectivesChange(updated);
   };
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="font-semibold text-gray-800">
-          {title} <span className="text-gray-500">({objectives.length}/8)</span>
+          {title} <span className="text-gray-500">({localObjectives.length}/8)</span>
         </h3>
-        {objectives.length < 8 && (
+        {localObjectives.length < 8 && (
           <button
             onClick={handleAdd}
             className="text-sm text-indigo-600 flex items-center gap-1 hover:underline"
@@ -32,12 +54,12 @@ export default function CourseObjectivesInput({ title }: { title: string }) {
         )}
       </div>
 
-      {objectives.map((obj, i) => (
+      {localObjectives.map((obj, i) => (
         <div key={i} className="space-y-1">
           <p className="text-xs text-gray-400">{String(i + 1).padStart(2, "0")}</p>
           <input
             type="text"
-            placeholder="What you will teach in this course..."
+            placeholder={`Enter ${title.toLowerCase()}...`}
             maxLength={120}
             value={obj}
             onChange={(e) => handleChange(i, e.target.value)}

@@ -17,6 +17,8 @@ const tabs = [
 
 export default function CourseFormTabs() {
   const [activeTab, setActiveTab] = useState("basic");
+  // Add state to store course ID
+  const [courseId, setCourseId] = useState<number | null>(null);
 
   // Function to handle moving to next tab
   const handleNextTab = () => {
@@ -24,6 +26,13 @@ export default function CourseFormTabs() {
     if (currentIndex < tabs.length - 1) {
       setActiveTab(tabs[currentIndex + 1].key);
     }
+  };
+
+  // Function to handle saving courseId and moving to next tab
+  const handleBasicInfoSave = (id: number) => {
+    console.log("Course ID received in parent:", id);
+    setCourseId(id);
+    handleNextTab();
   };
 
   return (
@@ -58,10 +67,25 @@ export default function CourseFormTabs() {
 
       {/* Tab Content */}
       <div className="p-6">
-        {activeTab === "basic" && <BasicInformationForm onSaveNext={handleNextTab} />}
-        {activeTab === "advanced" && <AdvanceInformationForm onSaveNext={handleNextTab} />}
-        {activeTab === "curriculum" && <Curriculum onSaveNext={handleNextTab} />}
-        {activeTab === "publish" && <p>Publish Step</p>}
+        {activeTab === "basic" && <BasicInformationForm onSaveNext={handleBasicInfoSave} />}
+        {activeTab === "advanced" && (
+          <AdvanceInformationForm 
+            onSaveNext={handleNextTab} 
+            courseId={courseId || 0} 
+          />
+        )}
+        {activeTab === "curriculum" && (
+          <Curriculum 
+            onSaveNext={handleNextTab} 
+            courseId={courseId || 0} 
+          />
+        )}
+        {activeTab === "publish" && (
+          <div>
+            <p>Publish Step</p>
+            {courseId && <p className="text-sm text-gray-500">Course ID: {courseId}</p>}
+          </div>
+        )}
       </div>
     </div>
   );
