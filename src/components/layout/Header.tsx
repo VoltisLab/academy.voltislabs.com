@@ -134,11 +134,20 @@ const Header = () => {
               Dashboard
             </Link>
             )}
-            <Link href="/contact">
-              <button className="w-full mt-4 border-2 border-[#313273] text-[#313273] font-semibold px-5 py-2 rounded-lg hover:bg-[#313273] hover:text-white transition">
+              <div className="flex flex-row justify-between mt-10">
+              <Link href="/contact">
+              <button className="w-full border-2 border-[#313273] text-[#313273] font-semibold px-5 py-2 rounded-lg hover:bg-[#313273] hover:text-white transition">
                 Contact Us
               </button>
             </Link>
+              <button
+                className="border-2 border-[#313273] text-[#313273] font-semibold px-5 py-2 rounded-lg hover:bg-[#313273] hover:text-white transition"
+                onClick={userExists? handleLogout : openModal}
+              >
+                {userExists? "Logout" : "Login/Signup"}
+              </button>
+            </div>
+         
           </div>
         )}
       </header>

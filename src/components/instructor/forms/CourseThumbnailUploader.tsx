@@ -1,21 +1,31 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import Image from "next/image";
 import { Upload } from "lucide-react";
 
 interface CourseThumbnailUploaderProps {
   onFileSelect: (file: File) => void;
   isUploading?: boolean;
+  imageUrl?: string; // Add prop to receive image URL from parent
 }
 
 export default function CourseThumbnailUploader({ 
   onFileSelect,
-  isUploading = false
+  isUploading = false,
+  imageUrl = "" // Default to empty string
 }: CourseThumbnailUploaderProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [preview, setPreview] = useState<string>("");
   const [localUploading, setLocalUploading] = useState<boolean>(false);
+
+  // Update preview when imageUrl changes from parent
+  useEffect(() => {
+    if (imageUrl) {
+      setPreview(imageUrl);
+      setLocalUploading(false); // Ensure upload state is reset when URL is received
+    }
+  }, [imageUrl]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -33,10 +43,11 @@ export default function CourseThumbnailUploader({
   };
 
   // Update local uploading state when parent's isUploading changes
-  // This ensures we show correct states when upload completes or fails
-  if (!isUploading && localUploading) {
-    setLocalUploading(false);
-  }
+  useEffect(() => {
+    if (!isUploading && localUploading) {
+      setLocalUploading(false);
+    }
+  }, [isUploading, localUploading]);
 
   return (
     <div className="flex items-start gap-8">
