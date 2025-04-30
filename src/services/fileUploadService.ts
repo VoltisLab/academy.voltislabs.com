@@ -15,7 +15,7 @@ interface UploadResult {
 }
 
 const UPLOAD_FILE = gql`
-  mutation Upload($files: [Upload]!, $filetype: String!) {
+  mutation Upload($files: [Upload]!, $filetype: FileTypeEnum!) {
     upload(files: $files, filetype: $filetype) {
       baseUrl
       data
@@ -52,6 +52,8 @@ export const uploadFile = async (
       toast.error(errors[0]?.message || "Upload failed");
       return null;
     }
+
+    console.log(data)
 
     if (data?.upload?.success) {
       toast.success("File uploaded successfully!");
