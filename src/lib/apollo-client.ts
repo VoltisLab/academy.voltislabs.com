@@ -1,68 +1,51 @@
-import { ApolloClient, InMemoryCache, createHttpLink, from } from '@apollo/client';
+import { ApolloClient, InMemoryCache, from } from '@apollo/client';
 import { setContext } from '@apollo/client/link/context';
 import { onError } from '@apollo/client/link/error';
 import Cookies from 'js-cookie';
+// Use destructuring to get the named export (works with CommonJS style bundling)
+const { createUploadLink } = require('apollo-upload-client');
 
-// Create an http link
-const httpLink = createHttpLink({
+
+// Upload link setup
+const uploadLink = createUploadLink({
   uri: 'https://uat-api.vmodel.app/vla/graphql/',
-  credentials: 'same-origin', 
+  credentials: 'same-origin',
 });
 
-// Error handling link for Apollo - handles network and GraphQL errors
+// Error handling link
 const errorLink = onError(({ graphQLErrors, networkError }) => {
-  // Handle GraphQL errors
   if (graphQLErrors) {
-    graphQLErrors.forEach(({ message, locations, path }) => 
-      console.log(
-        `[GraphQL error]: Message: ${message}, Location: ${locations}, Path: ${path}`
-      )
+    graphQLErrors.forEach(({ message, locations, path }) =>
+      console.log(`[GraphQL error]: Message: ${message}, Location: ${locations}, Path: ${path}`)
     );
   }
-
-  // Handle network errors, including CORS
   if (networkError) {
     console.log(`[Network error]: ${networkError}`);
-    // Check if it's a CORS error
     if (networkError.message.includes('CORS')) {
       console.log('CORS error detected. Check server configuration.');
     }
   }
 });
 
-// Auth link to add the token to the header
+// Auth header setup
 const authLink = setContext((_, { headers, includeAuth = true }) => {
-  // Skip adding auth if includeAuth is explicitly set to false
-  if (includeAuth === false) {
-    return { headers };
-  }
-  
-  // Get the authentication token from cookies if it exists
+  if (includeAuth === false) return { headers };
   const token = Cookies.get('auth_token');
-  
-  // Return the headers to the context so httpLink can read them
   return {
     headers: {
       ...headers,
-      authorization: token ? `Bearer ${token}` : "",
-    }
+      authorization: token ? `Bearer ${token}` : '',
+    },
   };
 });
 
-// Initialize Apollo Client
+// Apollo Client instance
 export const apolloClient = new ApolloClient({
-  link: from([errorLink, authLink, httpLink]),
+  link: from([errorLink, authLink, uploadLink]),
   cache: new InMemoryCache(),
   defaultOptions: {
-    watchQuery: {
-      fetchPolicy: 'network-only',
-    },
-    query: {
-      fetchPolicy: 'network-only',
-      errorPolicy: 'all',
-    },
-    mutate: {
-      errorPolicy: 'all',
-    },
+    watchQuery: { fetchPolicy: 'network-only' },
+    query: { fetchPolicy: 'network-only', errorPolicy: 'all' },
+    mutate: { errorPolicy: 'all' },
   },
 });
