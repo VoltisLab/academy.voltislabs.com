@@ -5,8 +5,9 @@ import { CourseCategory, GetCategoriesResponse, FormData, CreateCourseBasicInfoV
 import Cookies from "js-cookie";
 import { CREATE_COURSE_BASIC_INFO, GET_CATEGORIES } from "@/api/course/mutation";
 import toast from "react-hot-toast";
+
 interface BasicInformationFormProps {
-  onSaveNext: () => void;
+  onSaveNext: (courseId: number) => void;
 }
 
 export const BasicInformationForm = ({ onSaveNext }: BasicInformationFormProps) => {
@@ -181,7 +182,16 @@ export const BasicInformationForm = ({ onSaveNext }: BasicInformationFormProps) 
       if (response?.createCourseBasicInfo?.success) {
         toast.success(response.createCourseBasicInfo.message || "Course information saved successfully!");
         
-        onSaveNext()
+        // Extract course ID and pass it to the parent component
+        const courseId = response.createCourseBasicInfo?.course?.id;
+        console.log(response)
+        if (courseId) {
+          console.log("Course created with ID:", courseId);
+          onSaveNext(courseId); // Pass the course ID to the parent
+        } else {
+          console.error("Course ID not found in response");
+          toast.error("Course created but ID not found. Please refresh and try again.");
+        }
       }
     } catch (err) {
       console.error("Error creating course:", err);
@@ -412,4 +422,4 @@ export const BasicInformationForm = ({ onSaveNext }: BasicInformationFormProps) 
       </div>
     </section>
   );
-}
+};

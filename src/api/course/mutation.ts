@@ -27,6 +27,24 @@ export const CREATE_COURSE_BASIC_INFO = gql`
     ) {
       success
       message
+      course {
+      id
+      language
+      subtitleLanguage
+      title
+      topic
+      createdAt
+      courseLevel
+      description
+      category {
+        id
+        name
+      }
+      subCategory {
+        id
+        name
+      }
+    }
     }
   }
 `;
@@ -38,6 +56,29 @@ export const GET_CATEGORIES = gql`
     categories {
       id
       name
+    }
+  }
+`;
+
+export const UPDATE_COURSE_INFO = gql`
+  mutation UpdateCourseInfo(
+    $courseId: Int!
+    $courseRequirements: [String]!
+    $courseThumbnail: String!
+    $targetAudience: [String]!
+    $teachingPoints: [String]!
+    $description: String
+  ) {
+    updateCourseInfo(
+      courseId: $courseId
+      courseRequirements: $courseRequirements
+      courseThumbnail: $courseThumbnail
+      targetAudience: $targetAudience
+      teachingPoints: $teachingPoints
+      description: $description
+    ) {
+      success
+      message
     }
   }
 `;
