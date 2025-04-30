@@ -60,7 +60,6 @@ export const BasicInformationForm = ({ onSaveNext }: BasicInformationFormProps) 
       
       if (data && data.categories) {
         setCategories(data.categories);
-        console.log("Categories loaded:", data.categories);
       }
     } catch (err) {
       console.error("Error fetching categories:", err);
@@ -94,7 +93,6 @@ export const BasicInformationForm = ({ onSaveNext }: BasicInformationFormProps) 
       
       // Get auth token from cookies (for logging purposes only)
       const authToken = Cookies.get('auth_token');
-      console.log("Using auth token:", authToken ? "Present" : "Missing");
       
       if (!authToken) {
         throw new Error("Authentication token not found. Please login again.");
@@ -163,9 +161,6 @@ export const BasicInformationForm = ({ onSaveNext }: BasicInformationFormProps) 
           !formData.durationValue) {
         throw new Error("Please fill in all required fields");
       }
-      
-      // Log authentication status before making the request
-      console.log("Auth token present:", !!Cookies.get('auth_token'));
       
       const response = await createCourseBasicInfo({
         title: formData.title,
