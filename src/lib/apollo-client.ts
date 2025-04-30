@@ -8,7 +8,7 @@ const { createUploadLink } = require('apollo-upload-client');
 
 // Upload link setup
 const uploadLink = createUploadLink({
-  uri: 'https://uat-api.vmodel.app/vla/graphql/',
+  uri: 'https://uat-api.vmodel.app/vla/graphql/uploads/',
   credentials: 'same-origin',
 });
 
