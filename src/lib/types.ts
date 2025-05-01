@@ -185,3 +185,17 @@ export interface UploadVariables {
   files: string;
   filetype: string;
 }
+
+export interface BasicInformationFormProps {
+  onSaveNext: () => void;
+  courseId?: number;
+}
+
+export interface CourseInfo {
+  courseThumbnail: string;
+  secondaryThumbnail: string;
+  courseDescription: string;
+  teachingPoints: string[];
+  targetAudience: string[];
+  courseRequirements: string[];
+}

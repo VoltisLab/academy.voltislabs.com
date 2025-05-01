@@ -6,29 +6,13 @@ import FormHeader from "./common/FormHeader";
 import { uploadFile } from "@/services/fileUploadService";
 import { useCourseInfoUpdate } from "@/services/useCourseInfoUpdate";
 import { toast } from "react-hot-toast";
-
+import CourseObjectivesInput from "./forms/CourseObjectivesInput";
+import CourseThumbnailUploader from "./forms/CourseThumbnailUploader";
+import { BasicInformationFormProps, CourseInfo } from "@/lib/types";
 // Dynamically import CourseDescriptionEditor with SSR disabled
 const CourseDescriptionEditor = dynamic(() => import("./forms/CourseDescriptionEditor"), {
   ssr: false,
 });
-
-import CourseObjectivesInput from "./forms/CourseObjectivesInput";
-import CourseThumbnailUploader from "./forms/CourseThumbnailUploader";
-
-interface BasicInformationFormProps {
-  onSaveNext: () => void;
-  courseId?: number;
-}
-
-// Define types for course information
-interface CourseInfo {
-  courseThumbnail: string;
-  secondaryThumbnail: string;
-  courseDescription: string;
-  teachingPoints: string[];
-  targetAudience: string[];
-  courseRequirements: string[];
-}
 
 export const AdvanceInformationForm = ({ onSaveNext, courseId}: BasicInformationFormProps) => {
   // State to store all course information
