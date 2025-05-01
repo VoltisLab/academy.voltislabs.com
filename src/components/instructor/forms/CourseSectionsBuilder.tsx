@@ -3,19 +3,15 @@
 import { useState, useRef, useEffect, MouseEvent } from "react";
 import { Plus, Trash2, Edit3, Menu, ChevronDown, Check, Upload, FileText, Video, Type, BookOpen} from "lucide-react";
 import { toast } from "react-hot-toast";
-import { 
-  AttachedFile, 
-  CourseSectionInput, 
-  Video as VideoType 
-} from "@/lib/types";
 import { CONTENT_OPTIONS } from "@/lib/utils";
 import { uploadFile } from "@/services/fileUploadService";
 import { useCourseSectionsUpdate } from "@/services/courseSectionsService";
+import { CourseSectionInput } from "@/lib/types";
 
 // Define component props and state types
 interface BasicInformationFormProps {
   onSaveNext?: () => void;
-  courseId: string | number;
+  courseId: number | undefined;
 }
 
 interface Lecture {
@@ -365,48 +361,45 @@ export default function CourseSectionsBuilder({ onSaveNext, courseId }: BasicInf
   };
 
   // Handle form submission to save course sections
-  const handleSaveCourseSections = async (e?: MouseEvent<HTMLButtonElement>): Promise<void> => {
-    if (e) e.preventDefault();
-    
-    try {
-      // Prepare course sections data according to the GraphQL schema
-      const courseSections: CourseSectionType[] = sections.map(section => ({
-        sectionName: section.name,
-        lectures: section.lectures.map(lecture => ({
-          name: lecture.name,
-          description: lecture.description || "",
-          captions: lecture.captions || "",
-          lectureNotes: lecture.lectureNotes || "",
-          attachedFiles: {
-            action: "ADD",
-            attachedFile: lecture.attachedFiles.map(file => ({ url: file.url }))
-          },
-          videoUrls: {
-            action: "ADD",
-            videos: lecture.videos.map(video => ({ url: video.url }))
-          }
-        }))
-      }));
+const handleSaveCourseSections = async (e?: MouseEvent<HTMLButtonElement>): Promise<void> => {
+  if (e) e.preventDefault();
   
-      const courseIdNumber = typeof courseId === 'string' ? parseInt(courseId, 10) : courseId;
-  
-      // Call the mutation
-      const result = await updateCourseSections({
-        courseId: courseIdNumber,
-        courseSections
-      });
-  
-      if (result.updateCourseInfo.success) {
-        toast.success("Course sections saved successfully!");
-        if (onSaveNext) onSaveNext();
-      } else {
-        toast.error(result.updateCourseInfo.message || "Failed to save course sections");
-      }
-    } catch (error) {
-      console.error("Error saving course sections:", error);
-      toast.error(error instanceof Error ? error.message : "An unexpected error occurred");
+  try {
+    // Prepare course sections data according to the GraphQL schema
+    const courseSections: CourseSectionInput[] = sections.map(section => ({
+      sectionName: section.name,
+      lectures: section.lectures.map(lecture => ({
+        name: lecture.name,
+        description: lecture.description || "",
+        captions: lecture.captions || "",
+        lectureNotes: lecture.lectureNotes || "",
+        attachedFiles: {
+          action: "ADD", // Changed from potential UPDATE to just ADD
+          attachedFile: lecture.attachedFiles.map(file => ({ url: file.url }))
+        },
+        videoUrls: {
+          action: "ADD", // Changed from potential UPDATE to just ADD
+          videos: lecture.videos.map(video => ({ url: video.url }))
+        }
+      }))
+    }));
+
+    const courseIdNumber = typeof courseId === 'string' ? parseInt(courseId, 10) : courseId;
+
+    // Call the mutation
+    const result = await updateCourseSections({courseId: courseIdNumber, courseSections });
+
+    if (result.updateCourseInfo.success) {
+      toast.success("Course sections saved successfully!");
+      if (onSaveNext) onSaveNext();
+    } else {
+      toast.error(result.updateCourseInfo.message || "Failed to save course sections");
     }
-  };
+  } catch (error) {
+    console.error("Error saving course sections:", error);
+    toast.error(error instanceof Error ? error.message : "An unexpected error occurred");
+  }
+};
 
   // Remove content item
   const removeContentItem = (sectionIndex: number, lectureIndex: number, contentType: string, itemIndex?: number): void => {

@@ -318,7 +318,7 @@ export interface CourseSectionInput {
 }
 
 export interface UpdateCourseSectionsVariables {
-  courseId: number;
+  courseId: number | undefined;
   courseSections: CourseSectionInput[];
 }
 
