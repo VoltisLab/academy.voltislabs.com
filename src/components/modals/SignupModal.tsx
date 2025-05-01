@@ -182,15 +182,15 @@ const SignupModalContent: React.FC<SignupModalProps> = ({
         if (!value) {
           newErrors.email = "Email is required";
         } 
-        else if (!isValidEmail(value)) {
-          newErrors.email = "Please enter a valid email address";
-        } 
-        else if (isInstructor && !isAllowedDomain(value)) {
-          newErrors.email = "Sorry, this is an invalid email. Instructors must use an email ending with @voltislab.com or @academy.voltislab.com";
-        } 
-        else {
-          delete newErrors.email;
-        }
+        // else if (!isValidEmail(value)) {
+        //   newErrors.email = "Please enter a valid email address";
+        // } 
+        // else if (isInstructor && !isAllowedDomain(value)) {
+        //   newErrors.email = "Sorry, this is an invalid email. Instructors must use an email ending with @voltislab.com or @academy.voltislab.com";
+        // } 
+        // else {
+        //   delete newErrors.email;
+        // }
         break;
         
       case 'password':
@@ -247,9 +247,10 @@ const SignupModalContent: React.FC<SignupModalProps> = ({
       newErrors.email = "Email is required";
     } else if (!isValidEmail(email)) {
       newErrors.email = "Please enter a valid email address";
-    } else if (isInstructor && !isAllowedDomain(email)) {
-      newErrors.email = "Sorry, this is an invalid email. Instructors must use an email ending with @voltislab.com or @academy.voltislab.com";
-    }
+    } 
+    // else if (isInstructor && !isAllowedDomain(email)) {
+    //   newErrors.email = "Sorry, this is an invalid email. Instructors must use an email ending with @voltislab.com or @academy.voltislab.com";
+    // }
     
     if (!password) {
       newErrors.password = "Password is required";
@@ -497,16 +498,14 @@ const SignupModalContent: React.FC<SignupModalProps> = ({
 
           <div className="mb-10 flex flex-row justify-between items-center xl:mt-0 mt-10">
             <h2 className="md:text-3xl text-xl font-bold text-left text-[#525252]">
-              {!hasAccount ? (isInstructor ? "Instructor Signup" : "Student Signup") : 
-                           (isInstructor ? "Instructor Login" : "Student Login")}
+              {!hasAccount ? (isInstructor ? "Instructor Signup" : "Student Signup") : "Login"}
             </h2>
-            <button 
-              className="text-sm font-bold bg-[#313273] p-2 shadow-md cursor-pointer rounded-md hover:bg-indigo-800 text-white"
-              onClick={toggleUserType}
-            >
-              {!hasAccount ? (isInstructor ? "Student Signup" : "Instructor Signup") : 
-                           (isInstructor ? "Student Login" : "Instructor Login")}
-            </button>
+            {!hasAccount && (
+              <button className="text-sm font-bold bg-[#313273] p-2 shadow-md cursor-pointer rounded-md hover:bg-indigo-800 text-white"
+              onClick={toggleUserType}>
+              {(isInstructor ? "Student Signup" : "Instructor Signup")}
+              </button>
+            )}
           </div>
 
           <div className="flex gap-4 mb-8">

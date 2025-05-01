@@ -82,3 +82,18 @@ export const UPDATE_COURSE_INFO = gql`
     }
   }
 `;
+
+export const UPDATE_COURSE_SECTIONS = gql`
+  mutation UpdateCourseSections(
+    $courseId: Int!
+    $courseSections: [CourseSectionType!]!
+  ) {
+    updateCourseInfo(
+      courseId: $courseId
+      courseSections: $courseSections
+    ) {
+      success
+      message
+    }
+  }
+`;
