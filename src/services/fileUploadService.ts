@@ -2,7 +2,7 @@ import { gql } from '@apollo/client';
 import { apolloClient } from '@/lib/apollo-client';
 import { toast } from 'react-hot-toast';
 
-export type FileTypeEnum = 'RESOURCE' | 'PROFILE' | 'COURSE';
+export type FileTypeEnum = 'RESOURCE' | 'PROFILE_PICTURE' | 'VIDEO';
 
 interface UploadResponse {
   baseUrl: string;
@@ -24,10 +24,7 @@ const UPLOAD_FILE = gql`
   }
 `;
 
-export const uploadFile = async (
-  file: File,
-  filetype: FileTypeEnum = 'RESOURCE'
-): Promise<string | null> => {
+export const uploadFile = async (file: File, filetype: FileTypeEnum): Promise<string | null> => {
   try {
     console.log("Starting file upload:", file.name, "Type:", filetype);
 

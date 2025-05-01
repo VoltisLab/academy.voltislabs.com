@@ -199,3 +199,134 @@ export interface CourseInfo {
   targetAudience: string[];
   courseRequirements: string[];
 }
+
+export interface FileItem {
+  url: string;
+  name: string;
+}
+
+export interface Lecture {
+  name: string;
+  description: string;
+  captions: string;
+  lectureNotes: string;
+  attachedFiles: FileItem[];
+  videos: FileItem[];
+}
+
+export interface Section {
+  name: string;
+  lectures: Lecture[];
+  editing: boolean;
+  lectureEditing: boolean[];
+}
+
+export interface ContentDropdownState {
+  section: number;
+  lecture: number;
+}
+
+export interface ModalConfig {
+  type: string;
+  title: string;
+  sectionIndex: number;
+  lectureIndex: number;
+}
+
+export interface ContentStatus {
+  video: boolean;
+  file: boolean;
+  captions: boolean;
+  description: boolean;
+  notes: boolean;
+}
+
+export interface CourseSectionData {
+  sectionName: string;
+  lectures: {
+    name: string;
+    description: string;
+    captions: string;
+    lectureNotes: string;
+    attachedFiles: {
+      action: string;
+      attachedFile: { url: string }[];
+    };
+    videoUrls: {
+      action: string;
+      videos: { url: string }[];
+    };
+  }[];
+}
+
+export interface UpdateCourseResult {
+  updateCourseInfo: {
+    success: boolean;
+    message: string;
+  };
+}
+
+export interface CourseSectionsBuilderProps {
+  onSaveNext?: () => void;
+  courseId: number;
+}
+
+export interface ContentSummaryProps {
+  lecture: Lecture;
+  sectionIndex: number;
+  lectureIndex: number;
+}
+
+export interface ContentModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  config: ModalConfig;
+}
+
+// types.ts
+export interface AttachedFile {
+  url: string;
+}
+
+export interface Video {
+  url: string;
+  name?: string;
+}
+
+export interface FileOperation {
+  attachedFile: AttachedFile[];
+  action: 'ADD' | 'REMOVE';
+}
+
+export interface VideoOperation {
+  videos: Video[];
+  action: 'ADD' | 'REMOVE';
+}
+
+export interface LectureInput {
+  name: string;
+  description: string;
+  captions: string;
+  lectureNotes: string;
+  attachedFiles: FileOperation;
+  videoUrls: VideoOperation;
+}
+
+export interface CourseSectionInput {
+  sectionName: string;
+  lectures: LectureInput[];
+}
+
+export interface UpdateCourseSectionsVariables {
+  courseId: number;
+  courseSections: CourseSectionInput[];
+}
+
+export interface UpdateCourseSectionsResponse {
+  updateCourseInfo: {
+    success: boolean;
+    message: string;
+  };
+}
+
+// CourseSectionInput GraphQL type corresponds to the TypeScript CourseSectionInput interface

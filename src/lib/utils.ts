@@ -116,3 +116,11 @@ export const DURATION_UNITS: OptionType[] = [
   { value: DurationUnitEnum.WEEK, label: "Week" },
   { value: DurationUnitEnum.MONTH, label: "Month" }
 ];
+
+export const CONTENT_OPTIONS: string[] = [
+  "Video",
+  "Attach File",
+  "Captions",
+  "Description",
+  "Lecture Notes",
+];
