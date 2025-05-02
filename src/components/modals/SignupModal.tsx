@@ -26,6 +26,8 @@ const SignupModalContent: React.FC<SignupModalProps> = ({
   const [sendingCode, setSendingCode] = useState<boolean>(false);
   const [codeExpiry, setCodeExpiry] = useState<Date | null>(null);
   const [timeLeft, setTimeLeft] = useState<number>(0);
+  // Add state for password visibility
+  const [showPassword, setShowPassword] = useState<boolean>(false);
   const { withLoading } = usePageLoading();
   // New state to track if user is in instructor or student mode
   const [isInstructor, setIsInstructor] = useState<boolean>(false);
@@ -77,6 +79,8 @@ const SignupModalContent: React.FC<SignupModalProps> = ({
     });
     setCodeSent(false);
     setOtpCode("");
+    // Reset password visibility when switching forms
+    setShowPassword(false);
   }, [hasAccount]);
 
   // Timer for OTP expiration
@@ -102,6 +106,11 @@ const SignupModalContent: React.FC<SignupModalProps> = ({
   // Toggle between instructor and student mode
   const toggleUserType = () => {
     setIsInstructor(!isInstructor);
+  };
+
+  // Function to toggle password visibility
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
   };
 
   if (!isOpen) return null;
@@ -639,22 +648,38 @@ const SignupModalContent: React.FC<SignupModalProps> = ({
                   </div>
                 )}
                 
-                <div className="mb-6">
-                  <input
-                    type="password"
-                    placeholder="Password"
-                    className={getInputClass('password')}
-                    value={password}
-                    onChange={(e) => handleInputChange(e, setPassword, 'password')}
-                    aria-invalid={touchedFields.password && Boolean(errors.password)}
-                    aria-describedby={errors.password ? "password-error" : undefined}
-                  />
+                {/* Password field with show/hide toggle for signup */}
+                <div className="mb-6 relative">
+                  <div className="relative">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Password"
+                      className={getInputClass('password')}
+                      value={password}
+                      onChange={(e) => handleInputChange(e, setPassword, 'password')}
+                      aria-invalid={touchedFields.password && Boolean(errors.password)}
+                      aria-describedby={errors.password ? "password-error" : undefined}
+                    />
+                    <button
+                      type="button"
+                      onClick={togglePasswordVisibility}
+                      className="absolute right-0 bottom-2 text-gray-500 hover:text-gray-700 focus:outline-none"
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                    >
+                      {showPassword ? (
+                        <span className="text-xs font-medium">Hide</span>
+                      ) : (
+                        <span className="text-xs font-medium">Show</span>
+                      )}
+                    </button>
+                  </div>
                   {touchedFields.password && errors.password && (
                     <p id="password-error" className="text-red-500 text-xs mt-1">
                       {errors.password}
                     </p>
                   )}
                 </div>
+
                 <button
                   type="submit"
                   className={`w-full bg-[#313273] text-white py-4 rounded-lg font-medium hover:bg-indigo-800 transition-colors ${
@@ -694,16 +719,32 @@ const SignupModalContent: React.FC<SignupModalProps> = ({
                     </p>
                   )}
                 </div>
-                <div className="mb-6">
-                  <input
-                    type="password"
-                    placeholder="Password"
-                    className={getInputClass('password')}
-                    value={password}
-                    onChange={(e) => handleInputChange(e, setPassword, 'password')}
-                    aria-invalid={touchedFields.password && Boolean(errors.password)}
-                    aria-describedby={errors.password ? "password-error" : undefined}
-                  />
+                
+                {/* Password field with show/hide toggle for login */}
+                <div className="mb-6 relative">
+                  <div className="relative">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Password"
+                      className={getInputClass('password')}
+                      value={password}
+                      onChange={(e) => handleInputChange(e, setPassword, 'password')}
+                      aria-invalid={touchedFields.password && Boolean(errors.password)}
+                      aria-describedby={errors.password ? "password-error" : undefined}
+                    />
+                    <button
+                      type="button"
+                      onClick={togglePasswordVisibility}
+                      className="absolute right-0 bottom-2 text-gray-500 hover:text-gray-700 focus:outline-none"
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                    >
+                      {showPassword ? (
+                        <span className="text-xs font-medium">Hide</span>
+                      ) : (
+                        <span className="text-xs font-medium">Show</span>
+                      )}
+                    </button>
+                  </div>
                   {touchedFields.password && errors.password && (
                     <p id="password-error" className="text-red-500 text-xs mt-1">
                       {errors.password}
@@ -718,9 +759,10 @@ const SignupModalContent: React.FC<SignupModalProps> = ({
                     </button>
                   </div>
                 </div>
+                
                 <button
                   type="submit"
-                  className={`w-full bg-[#313273] text-white py-4 rounded-lg font-medium hover:bg-indigo-800 transition-colors cursor-pointer ${
+                  className={`w-full bg-[#313273] text-white py-4 rounded-lg font-medium hover:bg-indigo-800 transition-colors ${
                     loading ? "opacity-70 cursor-not-allowed" : ""
                   }`}
                   disabled={loading}
@@ -731,7 +773,7 @@ const SignupModalContent: React.FC<SignupModalProps> = ({
                   Don&apos;t have an account?{" "}
                   <button
                     type="button"
-                    className="text-indigo-800 hover:underline font-medium cursor-pointer"
+                    className="text-indigo-800 hover:underline font-medium"
                     onClick={() => setHasAccount(false)}
                     disabled={loading}
                   >
