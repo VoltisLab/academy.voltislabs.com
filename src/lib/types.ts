@@ -200,19 +200,21 @@ export interface CourseInfo {
   courseRequirements: string[];
 }
 
-export interface FileItem {
-  url: string;
-  name: string;
-}
+export type ContentItemType = 'video' | 'article' | 'quiz' | 'coding-exercise' | 'assignment' | 'practice' | 'role-play'| "video-slide"
 
 export interface Lecture {
-  name: string;
+  title?: string;
+  id: string;
+  name?: string;
   description: string;
   captions: string;
   lectureNotes: string;
-  attachedFiles: FileItem[];
-  videos: FileItem[];
+  attachedFiles: AttachedFile[];
+  videos: Video[];
+  contentType: ContentItemType;
+  isExpanded: boolean
 }
+
 
 export interface Section {
   name: string;
@@ -288,11 +290,6 @@ export interface AttachedFile {
   url: string;
 }
 
-export interface Video {
-  url: string;
-  name?: string;
-}
-
 export interface FileOperation {
   attachedFile: AttachedFile[];
   action: 'ADD' | 'REMOVE';
@@ -301,15 +298,6 @@ export interface FileOperation {
 export interface VideoOperation {
   videos: Video[];
   action: 'ADD' | 'REMOVE';
-}
-
-export interface LectureInput {
-  name: string;
-  description: string;
-  captions: string;
-  lectureNotes: string;
-  attachedFiles: FileOperation;
-  videoUrls: VideoOperation;
 }
 
 export interface CourseSectionInput {
@@ -329,4 +317,78 @@ export interface UpdateCourseSectionsResponse {
   };
 }
 
-// CourseSectionInput GraphQL type corresponds to the TypeScript CourseSectionInput interface
+
+export interface CourseSectionBuilderProps {
+  onSaveNext?: () => void;
+  courseId: number | undefined;
+}
+
+export interface Video {
+  url: string;
+  name: string;
+}
+
+export interface AttachedFile {
+  url: string;
+  name: string;
+}
+
+export interface Section {
+  id: string;
+  name: string;
+  lectures: Lecture[];
+  isExpanded: boolean;
+}
+
+// Input types for API calls
+export interface AttachedFileInput {
+  url: string;
+}
+
+export interface VideoInput {
+  url: string;
+}
+
+export interface AttachedFilesInput {
+  action: "ADD" | "UPDATE" | "REMOVE";
+  attachedFile: AttachedFileInput[];
+}
+
+export interface LectureInput {
+  name: string;
+  description: string;
+  captions: string;
+  lectureNotes: string;
+  attachedFiles: AttachedFilesInput;
+  videoUrls: VideoUrlsInput;
+}
+
+export interface VideoUrlsInput {
+  action: "ADD" | "UPDATE" | "REMOVE";
+  videos: VideoInput[];
+}
+
+export interface CourseSectionInput {
+  sectionName: string;
+  lectures: LectureInput[];
+}
+
+// Enum for content types
+export enum ContentType {
+  VIDEO = "video",
+  FILE = "file",
+  DESCRIPTION = "description",
+  CAPTIONS = "captions",
+  LECTURE_NOTES = "lectureNotes"
+}
+
+// Enum for resource tab types
+export enum ResourceTabType {
+  DOWNLOADABLE_FILE = "downloadable",
+  LIBRARY = "library",
+  EXTERNAL = "external",
+  SOURCE_CODE = "source-code",
+  VIDEO= "video",
+  CAPTIONS = "captions",
+  LECTURE_NOTES = "lecture-notes"
+}

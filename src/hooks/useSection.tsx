@@ -1,0 +1,317 @@
+// hooks/useSections.tsx
+import { useState } from 'react';
+import { Lecture, ContentType, ContentItemType } from '@/lib/types';
+import { generateId } from '@/lib/utils';
+import { toast } from 'react-hot-toast';
+
+interface Section {
+  isExpanded: boolean;
+  id: string;
+  name: string;
+  lectures: Lecture[];
+  editing: boolean;
+  lectureEditing: boolean[];
+  objective?: string; // Added objective field
+}
+
+export const useSections = (initialSections: Section[] ) => {
+  const [sections, setSections] = useState<Section[]>([]);
+
+  // Modified to accept name and objective parameters
+  const addSection = (name: string = "New Section", objective?: string) => {
+    const newSection: Section = {
+      id: generateId(),
+      name: name, // Use the provided name instead of hardcoded "New Section"
+      objective: objective, // Store the objective
+      lectures: [],
+      editing: false,
+      lectureEditing: [],
+      isExpanded: true // Changed to true so users see expanded section after adding
+    };
+    
+    setSections([...sections, newSection]);
+    toast.success("Section added");
+    return newSection.id;
+  };
+
+  // Add a new lecture to a section with custom title
+  const addLecture = (sectionId: string, contentType: ContentItemType, title?: string ): string => {
+    console.log("Adding lecture with title:", title);
+    
+    const newLecture: Lecture = {
+      id: generateId(),
+      name: title,
+      title: title,
+      description: "",
+      captions: "",
+      lectureNotes: "",
+      attachedFiles: [],
+      videos: [],
+      contentType: contentType,
+      isExpanded: true // Set to true so users can immediately see the new lecture
+    };
+  
+    setSections(sections.map(section => {
+      if (section.id === sectionId) {
+        return {
+          ...section,
+          lectures: [...section.lectures, newLecture]
+        };
+      }
+      return section;
+    }));
+  
+    toast.success(`New ${contentType} added`);
+    
+    return newLecture.id;
+  };
+
+  // Delete a section
+  const deleteSection = (sectionId: string) => {
+    if (sections.length === 1) {
+      toast.error("You must have at least one section");
+      return false;
+    }
+    setSections(sections.filter(section => section.id !== sectionId));
+    toast.success("Section deleted");
+    return true;
+  };
+
+  // Delete a lecture
+  const deleteLecture = (sectionId: string, lectureId: string) => {
+    setSections(sections.map(section => {
+      if (section.id === sectionId) {
+        return {
+          ...section,
+          lectures: section.lectures.filter(lecture => lecture.id !== lectureId)
+        };
+      }
+      return section;
+    }));
+    toast.success("Curriculum item deleted");
+  };
+
+  // Toggle section expansion
+  const toggleSectionExpansion = (sectionId: string) => {
+    setSections(sections.map(section => {
+      if (section.id === sectionId) {
+        return {
+          ...section,
+          isExpanded: !section.isExpanded
+        };
+      }
+      return section;
+    }));
+  };
+
+  // Update section name - modified to include objective
+  const updateSectionName = (sectionId: string, newName: string, objective?: string) => {
+    setSections(sections.map(section => {
+      if (section.id === sectionId) {
+        return {
+          ...section,
+          name: newName,
+          objective: objective !== undefined ? objective : section.objective
+        };
+      }
+      return section;
+    }));
+  };
+
+  // Update lecture name
+  const updateLectureName = (sectionId: string, lectureId: string, newName: string) => {
+    setSections(sections.map(section => {
+      if (section.id === sectionId) {
+        return {
+          ...section,
+          lectures: section.lectures.map(lecture => {
+            if (lecture.id === lectureId) {
+              return {
+                ...lecture,
+                name: newName
+              };
+            }
+            return lecture;
+          })
+        };
+      }
+      return section;
+    }));
+  };
+
+  // Move section up or down
+  const moveSection = (sectionId: string, direction: 'up' | 'down') => {
+    const currentIndex = sections.findIndex(section => section.id === sectionId);
+    if (
+      (direction === 'up' && currentIndex === 0) || 
+      (direction === 'down' && currentIndex === sections.length - 1)
+    ) {
+      return; // Can't move further up/down
+    }
+
+    const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+    const newSections = [...sections];
+    const [movedSection] = newSections.splice(currentIndex, 1);
+    newSections.splice(newIndex, 0, movedSection);
+    
+    setSections(newSections);
+  };
+
+  // Move lecture up or down within a section
+  const moveLecture = (sectionId: string, lectureId: string, direction: 'up' | 'down') => {
+    setSections(sections.map(section => {
+      if (section.id === sectionId) {
+        const lectures = [...section.lectures];
+        const currentIndex = lectures.findIndex(lecture => lecture.id === lectureId);
+        
+        if (
+          (direction === 'up' && currentIndex === 0) || 
+          (direction === 'down' && currentIndex === lectures.length - 1)
+        ) {
+          return section; // Can't move further up/down
+        }
+
+        const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+        const [movedLecture] = lectures.splice(currentIndex, 1);
+        lectures.splice(newIndex, 0, movedLecture);
+        
+        return { ...section, lectures };
+      }
+      return section;
+    }));
+  };
+  
+  // Update lecture content (description, captions, notes)
+  const updateLectureContent = (sectionId: string, lectureId: string, contentType: ContentType, value: string) => {
+    setSections(sections.map(section => {
+      if (section.id === sectionId) {
+        return {
+          ...section,
+          lectures: section.lectures.map(lecture => {
+            if (lecture.id === lectureId) {
+              if (contentType === ContentType.CAPTIONS) {
+                return { ...lecture, captions: value };
+              } else if (contentType === ContentType.LECTURE_NOTES) {
+                return { ...lecture, lectureNotes: value };
+              } else if (contentType === ContentType.FILE || contentType === ContentType.VIDEO) {
+                // handle in uploadContent
+                return lecture;
+              }
+            }
+            return lecture;
+          })
+        };
+      }
+      return section;
+    }));
+  };
+  
+  // Save description
+  const saveDescription = (sectionId: string, lectureId: string, description: string) => {
+    setSections(sections.map(section => {
+      if (section.id === sectionId) {
+        return {
+          ...section,
+          lectures: section.lectures.map(lecture => {
+            if (lecture.id === lectureId) {
+              return {
+                ...lecture,
+                description: description
+              };
+            }
+            return lecture;
+          })
+        };
+      }
+      return section;
+    }));
+    
+    toast.success("Description saved");
+  };
+  
+  // Update lecture with uploaded content
+  const updateLectureWithUploadedContent = (
+    sectionId: string, 
+    lectureId: string, 
+    contentType: ContentType, 
+    fileUrl: string, 
+    fileName: string
+  ) => {
+    setSections(sections.map(section => {
+      if (section.id === sectionId) {
+        return {
+          ...section,
+          lectures: section.lectures.map(lecture => {
+            if (lecture.id === lectureId) {
+              if (contentType === ContentType.VIDEO) {
+                return {
+                  ...lecture,
+                  videos: [...lecture.videos, { url: fileUrl, name: fileName }]
+                };
+              } else if (contentType === ContentType.FILE) {
+                return {
+                  ...lecture,
+                  attachedFiles: [...lecture.attachedFiles, { url: fileUrl, name: fileName }]
+                };
+              }
+            }
+            return lecture;
+          })
+        };
+      }
+      return section;
+    }));
+  };
+  
+  // Handle drag-and-drop for lectures
+  const handleLectureDrop = (
+    sourceSectionId: string, 
+    sourceLectureId: string,
+    targetSectionId: string, 
+    targetLectureId?: string
+  ) => {
+    const sourceSection = sections.find(s => s.id === sourceSectionId);
+    const targetSection = sections.find(s => s.id === targetSectionId);
+
+    if (!sourceSection || !targetSection || !sourceLectureId) return;
+    if (sourceSectionId === targetSectionId && sourceLectureId === targetLectureId) return;
+
+    const sourceLecture = sourceSection.lectures.find(l => l.id === sourceLectureId);
+    if (!sourceLecture) return;
+
+    const updatedSourceLectures = sourceSection.lectures.filter(l => l.id !== sourceLectureId);
+    const updatedTargetLectures = [...targetSection.lectures];
+    const targetIndex = targetLectureId
+      ? updatedTargetLectures.findIndex(l => l.id === targetLectureId) + 1
+      : updatedTargetLectures.length;
+
+    updatedTargetLectures.splice(targetIndex, 0, sourceLecture);
+
+    setSections(sections.map(section => {
+      if (section.id === sourceSectionId) {
+        return { ...section, lectures: updatedSourceLectures };
+      }
+      if (section.id === targetSectionId) {
+        return { ...section, lectures: updatedTargetLectures };
+      }
+      return section;
+    }));
+  };
+  
+  return {
+    sections,
+    addSection,
+    addLecture,
+    deleteSection,
+    deleteLecture,
+    toggleSectionExpansion,
+    updateSectionName,
+    updateLectureName,
+    moveSection,
+    moveLecture,
+    updateLectureContent,
+    saveDescription,
+    updateLectureWithUploadedContent,
+    handleLectureDrop
+  };
+};

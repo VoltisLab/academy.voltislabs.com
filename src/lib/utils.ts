@@ -1,4 +1,4 @@
-import { OptionType } from "./types";
+import { Lecture, OptionType, Section } from "./types";
 
 export function cn(
   ...classes: (string | boolean | undefined | null)[]
@@ -124,3 +124,19 @@ export const CONTENT_OPTIONS: string[] = [
   "Description",
   "Lecture Notes",
 ];
+
+export const hasContent = (lecture: Lecture): boolean => {
+    return (
+      lecture.videos.length > 0 ||
+      lecture.attachedFiles.length > 0 ||
+      !!lecture.description.trim() ||
+      !!lecture.captions.trim() ||
+      !!lecture.lectureNotes.trim()
+    );
+  };
+
+  export const generateId = (): string => {
+    return Math.random().toString(36).substring(2, 9);
+  };
+  
+  
