@@ -4,25 +4,27 @@ import {
   Trash2, Edit3, ChevronDown, ChevronUp, Move, Plus
 } from "lucide-react";
 import { Lecture, ContentItemType } from '@/lib/types';
-// Make sure this import path is correct - verify your file name (singular vs plural)
-import { ContentTypeSelector } from './AddLectureButton';
-
-interface Section {
-  id: string;
-  name: string;
-  lectures: Lecture[];
-  isExpanded: boolean;
-}
+// Import the components
+import { ActionButtons } from './ActionButtons';
+import LectureItem from './LectureItem';
+import AssignmentItem from './AssignmentItem';
+import AssignmentForm from './AssignmentForm';
 
 interface SectionItemProps {
-  section: Section;
+  section: {
+    id: string;
+    name: string;
+    lectures: Lecture[];
+    isExpanded: boolean;
+    objective?: string;
+  };
   index: number;
   totalSections: number;
   editingSectionId: string | null;
   setEditingSectionId: (id: string | null) => void;
   editingLectureId: string | null;
   setEditingLectureId: (id: string | null) => void;
-  updateSectionName: (sectionId: string, newName: string) => void;
+  updateSectionName: (sectionId: string, newName: string, objective?: string) => void;
   updateLectureName: (sectionId: string, lectureId: string, newName: string) => void;
   deleteSection: (sectionId: string) => void;
   deleteLecture: (sectionId: string, lectureId: string) => void;
@@ -37,8 +39,7 @@ interface SectionItemProps {
   handleDragStart: (e: React.DragEvent, sectionId: string, lectureId?: string) => void;
   handleDragOver: (e: React.DragEvent) => void;
   handleDrop: (e: React.DragEvent, targetSectionId: string, targetLectureId?: string) => void;
-  // Update the signature to match ContentTypeSelector's onAddContent parameter
-  addLecture: (sectionId: string, contentType?: ContentItemType) => void;
+  addLecture: (sectionId: string, contentType: ContentItemType, title?: string) => string;
   addCurriculumItem: (sectionId: string) => void;
   children?: React.ReactNode;
 }
@@ -71,8 +72,10 @@ export default function SectionItem({
   children
 }: SectionItemProps) {
   const sectionNameInputRef = useRef<HTMLInputElement>(null);
-  // Add state for content type selector
-  const [showContentTypeSelector, setShowContentTypeSelector] = useState<boolean>(false);
+  // State for toggling action buttons
+  const [showActionButtons, setShowActionButtons] = useState<boolean>(false);
+  const [showAssignmentForm, setShowAssignmentForm] = useState<boolean>(false);
+  const [isHovering, setIsHovering] = useState<boolean>(false);
 
   useEffect(() => {
     if (editingSectionId === section.id && sectionNameInputRef.current) {
@@ -85,11 +88,81 @@ export default function SectionItem({
     setEditingSectionId(section.id);
   };
 
-  // Debug when button is clicked
+  // Handler for curriculum button click
   const handleCurriculumButtonClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    console.log("Curriculum button clicked");
-    setShowContentTypeSelector(true);
+    setShowActionButtons(prev => !prev); // Toggle action buttons
+    setShowAssignmentForm(false); // Hide assignment form when toggling action buttons
+  };
+
+  // Handler for adding an assignment
+  const handleAddAssignment = (sectionId: string, title: string) => {
+    // First add the lecture with assignment content type
+    const newLectureId = addLecture(sectionId, 'assignment', title);
+    setShowAssignmentForm(false);
+  };
+
+  // Enhanced lecture adding handler that properly handles title
+  const handleAddLecture = (sectionId: string, contentType: ContentItemType, title?: string) => {
+    console.log("SectionItem handling lecture add:", { sectionId, contentType, title });
+    
+    if (contentType === 'assignment') {
+      setShowAssignmentForm(true);
+    } else {
+      // Make sure to always pass the title parameter to addLecture
+      const lectureId = addLecture(sectionId, contentType, title);
+      console.log("New lecture created with ID:", lectureId);
+    }
+    
+    setShowActionButtons(false);
+  };
+
+  // Render lecture items based on their content type
+  const renderLectureItem = (lecture: Lecture, lectureIndex: number) => {
+    console.log("Rendering lecture:", lecture);
+    
+    if (lecture.contentType === 'assignment') {
+      return (
+        <AssignmentItem
+          key={lecture.id}
+          lecture={lecture}
+          lectureIndex={lectureIndex}
+          totalLectures={section.lectures.length}
+          sectionId={section.id}
+          editingLectureId={editingLectureId}
+          setEditingLectureId={setEditingLectureId}
+          updateLectureName={updateLectureName}
+          deleteLecture={deleteLecture}
+          moveLecture={moveLecture}
+          handleDragStart={handleDragStart}
+          handleDragOver={handleDragOver}
+          handleDrop={handleDrop}
+        />
+      );
+    }
+    
+    return (
+      <LectureItem
+        key={lecture.id}
+        lecture={lecture}
+        lectureIndex={lectureIndex}
+        totalLectures={section.lectures.length}
+        sectionId={section.id}
+        editingLectureId={editingLectureId}
+        setEditingLectureId={setEditingLectureId}
+        updateLectureName={updateLectureName}
+        deleteLecture={deleteLecture}
+        moveLecture={moveLecture}
+        toggleContentSection={toggleContentSection}
+        toggleAddResourceModal={toggleAddResourceModal}
+        toggleDescriptionEditor={toggleDescriptionEditor}
+        activeContentSection={activeContentSection}
+        isDragging={isDragging}
+        handleDragStart={handleDragStart}
+        handleDragOver={handleDragOver}
+        handleDrop={handleDrop}
+      />
+    );
   };
 
   return (
@@ -99,7 +172,10 @@ export default function SectionItem({
       onDragStart={(e) => handleDragStart(e, section.id)}
       onDragOver={handleDragOver}
       onDrop={(e) => handleDrop(e, section.id)}
+      onMouseEnter={() => setIsHovering(true)}
+      onMouseLeave={() => setIsHovering(false)}
     >
+      {/* Section header - with hover state for buttons */}
       <div 
         className="flex justify-between items-center p-3 bg-gray-50 cursor-pointer"
         onClick={() => toggleSectionExpansion(section.id)}
@@ -111,13 +187,13 @@ export default function SectionItem({
               ref={sectionNameInputRef}
               type="text"
               value={section.name}
-              onChange={(e) => updateSectionName(section.id, e.target.value)}
+              onChange={(e) => updateSectionName(section.id, e.target.value, section.objective)}
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   setEditingSectionId(null);
                 }
               }}
-              className="border-gray-300 focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border rounded-md px-2 py-1"
+              className="border-gray-300 focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border rounded-md px-2 py-1 section-edit"
               onClick={(e) => e.stopPropagation()}
             />
           ) : (
@@ -125,21 +201,27 @@ export default function SectionItem({
           )}
         </div>
         <div className="flex items-center space-x-2">
-          <button
-            onClick={(e) => startEditingSection(e)}
-            className="text-gray-500 hover:text-gray-700 p-1"
-          >
-            <Edit3 className="w-4 h-4" />
-          </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              deleteSection(section.id);
-            }}
-            className="text-gray-500 hover:text-red-600 p-1"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
+          {/* Edit and Delete buttons only visible on hover */}
+          {isHovering && (
+            <>
+              <button
+                onClick={(e) => startEditingSection(e)}
+                className="text-gray-500 hover:text-gray-700 p-1"
+              >
+                <Edit3 className="w-4 h-4" />
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  deleteSection(section.id);
+                }}
+                className="text-gray-500 hover:text-red-600 p-1"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </>
+          )}
+          {/* Up/Down buttons and expansion chevron (always visible) */}
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -169,10 +251,25 @@ export default function SectionItem({
       </div>
       
       {section.isExpanded && (
-        <div className="p-4 bg-gray-50 relative">      
-          {/* This will render any additional children */}
+        <div className="p-4 bg-gray-50 relative">
+          {/* Render lectures and assignments */}
+          {section.lectures.map((lecture: Lecture, lectureIndex: number) => {
+            return renderLectureItem(lecture, lectureIndex);
+          })}
+          
+          {/* Assignment Form */}
+          {showAssignmentForm && (
+            <AssignmentForm
+              sectionId={section.id}
+              onAddAssignment={handleAddAssignment}
+              onCancel={() => setShowAssignmentForm(false)}
+            />
+          )}
+          
+          {/* Render any additional children */}
           {children}
           
+          {/* Curriculum item button */}
           <button 
             onClick={handleCurriculumButtonClick}
             className="mt-3 flex items-center text-indigo-600 border border-indigo-200 hover:border-indigo-300 px-3 py-2 rounded-md text-sm font-medium"
@@ -180,23 +277,19 @@ export default function SectionItem({
             <Plus className="w-4 h-4 mr-2" /> Curriculum item
           </button>
           
-          {/* Content type selector with debug output */}
-          {showContentTypeSelector && (
-            <>
-              <div className="text-xs text-gray-500 mb-2">(Content selector is visible)</div>
-              <ContentTypeSelector 
+          {/* Show action buttons when toggled */}
+          {showActionButtons && (
+            <div className="mt-3">
+              <ActionButtons
                 sectionId={section.id}
-                onClose={() => {
-                  console.log("Closing content selector");
-                  setShowContentTypeSelector(false);
-                }}
-                onAddContent={(sectionId, contentType) => {
-                  console.log("Adding content:", sectionId, contentType);
-                  addLecture(sectionId, contentType);
-                  setShowContentTypeSelector(false);
+                onAddLecture={handleAddLecture}
+                onShowTypeSelector={() => {
+                  // For the lecture button - directly add a video lecture
+                  addLecture(section.id, 'video');
+                  setShowActionButtons(false);
                 }}
               />
-            </>
+            </div>
           )}
         </div>
       )}

@@ -139,26 +139,4 @@ export const hasContent = (lecture: Lecture): boolean => {
     return Math.random().toString(36).substring(2, 9);
   };
   
-  export const sectionObject: Section = {
-    id: generateId(),
-    name: "New Section",
-    lectures: [
-      {
-        id: generateId(),
-        name: "Welcome to this section",
-        description: "",
-        captions: "",
-        lectureNotes: "",
-        attachedFiles: [],
-        videos: [],
-        title: "",
-        contentType: "video",
-        isExpanded: false
-      }
-    ],
-    isExpanded: true,
-    editing: false,
-    lectureEditing: []
-  };
-  
   

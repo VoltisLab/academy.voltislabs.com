@@ -1,24 +1,101 @@
 // components/CourseBuilder.tsx
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
-import { X } from 'lucide-react';
-import { ContentType, ResourceTabType, Section } from '@/lib/types';
+import { X, Plus } from 'lucide-react';
+import { ContentType, ResourceTabType, Section, CourseSectionInput, LectureInput } from '@/lib/types';
 import { useSections } from '@/hooks/useSection';
 import { useFileUpload } from '@/hooks/useFileUpload';
 import { useModal } from '@/hooks/useModal';
 import { ContentTypeSelector } from '../ContentTypeSelector';
 import { ActionButtons } from '../ActionButtons';
 import SectionItem from '../SectionItem';
-import AddSectionButton from '../AddSectionButtons';
 import AddResourceModal from '../AddResourceModal';
 import DescriptionEditorModal from '../DescriptionEditorModal';
 import { useCourseSectionsUpdate } from '@/services/courseSectionsService';
-import { sectionObject } from '@/lib/utils';
 
 interface CourseBuilderProps {
   onSaveNext?: () => void;
   courseId: number | undefined;
 }
+
+// Simple section form (not a modal)
+const SectionForm: React.FC<{
+  onAddSection: (title: string, objective: string) => void;
+  onCancel: () => void;
+}> = ({ onAddSection, onCancel }) => {
+  const [title, setTitle] = useState('');
+  const [objective, setObjective] = useState('');
+  
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (title.trim()) {
+      onAddSection(title, objective);
+    }
+  };
+  
+  return (
+    <div className="bg-white rounded-lg overflow-hidden border border-gray-200 mb-4">
+      <div className="flex justify-between items-center p-3 bg-gray-50">
+        <h3 className="font-semibold">New Section:</h3>
+        <button onClick={onCancel} className="text-gray-500 hover:text-gray-700">
+          <X className="w-5 h-5" />
+        </button>
+      </div>
+      
+      <div className="p-4">
+        <form onSubmit={handleSubmit}>
+          <div className="mb-4">
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Enter a Title"
+              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              maxLength={80}
+              required
+            />
+            <div className="text-right text-xs text-gray-500 mt-1">
+              {title.length}/80
+            </div>
+          </div>
+          
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              What will students be able to do at the end of this section?
+            </label>
+            <textarea
+              value={objective}
+              onChange={(e) => setObjective(e.target.value)}
+              placeholder="Enter a Learning Objective"
+              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              rows={3}
+              maxLength={200}
+            />
+            <div className="text-right text-xs text-gray-500 mt-1">
+              {objective.length}/200
+            </div>
+          </div>
+          
+          <div className="flex justify-end space-x-3">
+            <button
+              type="button"
+              onClick={onCancel}
+              className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            >
+              Add Section
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
 
 const CourseBuilder: React.FC<CourseBuilderProps> = ({ 
   onSaveNext, 
@@ -30,6 +107,7 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
   const [currentDescription, setCurrentDescription] = useState<string>("");
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [activeResourceTab, setActiveResourceTab] = useState<ResourceTabType>(ResourceTabType.DOWNLOADABLE_FILE);
+  const [showSectionForm, setShowSectionForm] = useState<boolean>(false);
   
   const { 
     sections, 
@@ -46,7 +124,7 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
     saveDescription: saveSectionDescription,
     updateLectureWithUploadedContent,
     handleLectureDrop
-  } = useSections([sectionObject]);
+  } = useSections([]);
   
   const contentSectionModal = useModal();
   const resourceModal = useModal();
@@ -67,7 +145,8 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
   
   useEffect(() => {
     const handleClickOutside = (e: globalThis.MouseEvent) => {
-      const target = e.target as Node;
+      // Fix for the closest method by casting to Element instead of Node
+      const target = e.target as Element;
       if (editingSectionId && !target.closest('.section-edit')) {
         setEditingSectionId(null);
       }
@@ -122,14 +201,22 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
     }
   };
 
+  // Handle adding new section with title and objective
+  const handleAddSection = (title: string, objective: string) => {
+    addSection(title, objective);
+    setShowSectionForm(false);
+  };
+
   const handleSaveCourseSections = async (e?: React.MouseEvent<HTMLButtonElement>) => {
     if (e) e.preventDefault();
     
     try {
-      const courseSections = sections.map(section => ({
-        sectionName: section.name,
-        lectures: section.lectures.map(lecture => ({
-          name: lecture.name,
+      // Map sections to match CourseSectionInput type
+      const courseSections: CourseSectionInput[] = sections.map(section => {
+        // Map lectures to match LectureInput type
+        const lectures: LectureInput[] = section.lectures.map(lecture => ({
+          // Ensure name is always a string, never undefined
+          name: lecture.name ?? lecture.title ?? "",
           description: lecture.description || "",
           captions: lecture.captions || "",
           lectureNotes: lecture.lectureNotes || "",
@@ -142,8 +229,13 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
             action: "ADD",
             videos: lecture.videos.map(video => ({ url: video.url }))
           }
-        }))
-      }));
+        }));
+        
+        return {
+          sectionName: section.name,
+          lectures: lectures
+        };
+      });
 
       const courseIdNumber = typeof courseId === 'string' ? parseInt(courseId, 10) : courseId;
       const result = await updateCourseSections({courseId: courseIdNumber, courseSections});
@@ -165,6 +257,14 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
       <div className="mb-6 flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-900">Course Curriculum Builder</h1>
         <div className="space-x-3">
+        <button
+            type="button"
+            onClick={handleSaveCourseSections}
+            disabled={mutationLoading}
+            className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-gray-600 bg-gray-200 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          >
+            {mutationLoading ? 'Saving...' : 'Save as Draft'}
+          </button>
           <button
             type="button"
             onClick={handleSaveCourseSections}
@@ -197,68 +297,65 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
             Create your course curriculum by adding sections and curriculum items. Drag to reorder.
           </p>
           
-{sections.map((section, index) => (
-  <SectionItem
-    key={section.id}
-    section={section}
-    index={index}
-    totalSections={sections.length}
-    editingSectionId={editingSectionId}
-    setEditingSectionId={setEditingSectionId}
-    updateSectionName={updateSectionName}
-    deleteSection={deleteSection}
-    moveSection={moveSection}
-    toggleSectionExpansion={toggleSectionExpansion}
-    isDragging={isDragging}
-    handleDragStart={handleDragStart}
-    handleDragOver={handleDragOver}
-    handleDrop={handleDrop}
-    addLecture={addLecture} // This function needs to accept ContentItemType
-    editingLectureId={editingLectureId}
-    setEditingLectureId={setEditingLectureId}
-    updateLectureName={updateLectureName}
-    deleteLecture={deleteLecture}
-    moveLecture={moveLecture}
-    toggleContentSection={contentSectionModal.toggle}
-    toggleAddResourceModal={resourceModal.toggle}
-    toggleDescriptionEditor={toggleDescriptionEditor}
-    activeContentSection={contentSectionModal.activeSection}
-    addCurriculumItem={() => setShowContentTypeSelector(true)} // This line might need to be updated
-  />
-))}
+          {/* Render sections */}
+          {sections.map((section, index) => (
+            <SectionItem
+              key={section.id}
+              section={section}
+              index={index}
+              totalSections={sections.length}
+              editingSectionId={editingSectionId}
+              setEditingSectionId={setEditingSectionId}
+              updateSectionName={updateSectionName}
+              deleteSection={deleteSection}
+              moveSection={moveSection}
+              toggleSectionExpansion={toggleSectionExpansion}
+              isDragging={isDragging}
+              handleDragStart={handleDragStart}
+              handleDragOver={handleDragOver}
+              handleDrop={handleDrop}
+              addLecture={addLecture}
+              editingLectureId={editingLectureId}
+              setEditingLectureId={setEditingLectureId}
+              updateLectureName={updateLectureName}
+              deleteLecture={deleteLecture}
+              moveLecture={moveLecture}
+              toggleContentSection={contentSectionModal.toggle}
+              toggleAddResourceModal={resourceModal.toggle}
+              toggleDescriptionEditor={toggleDescriptionEditor}
+              activeContentSection={contentSectionModal.activeSection}
+              addCurriculumItem={() => setShowContentTypeSelector(true)}
+            />
+          ))}
           
-          <AddSectionButton addSection={addSection} />
+          {/* Section Form (non-modal, appears directly in the UI) */}
+          {showSectionForm && (
+            <SectionForm
+              onAddSection={handleAddSection}
+              onCancel={() => setShowSectionForm(false)}
+            />
+          )}
+          
+          {/* Add Section Button */}
+          <div className="flex mt-6">
+            <button
+              onClick={() => setShowSectionForm(true)}
+              className="inline-flex items-center px-4 py-2 border border-gray-300 text-indigo-600 bg-white rounded-md text-sm font-medium"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Section
+            </button>
+          </div>
           
           {showContentTypeSelector && (
             <div className="absolute z-10 left-0 mt-2">
               <ContentTypeSelector 
-                sectionId={sections[sections.length - 1].id} 
+                sectionId={sections.length > 0 ? sections[sections.length - 1].id : ''} 
                 onSelect={addLecture}
                 onClose={() => setShowContentTypeSelector(false)}
               />
             </div>
           )}
-        </div>
-        
-        {/* Bottom action bar */}
-        <div className="bg-gray-50 px-4 py-3 sm:px-6 flex justify-between">
-          <div></div>
-          <div className="flex space-x-3">
-            <button
-              type="button"
-              className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-            >
-              Save Draft
-            </button>
-            <button
-              type="button"
-              onClick={handleSaveCourseSections}
-              disabled={mutationLoading}
-              className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-            >
-              {mutationLoading ? 'Saving...' : 'Save and Continue'}
-            </button>
-          </div>
         </div>
       </div>
       
@@ -307,7 +404,7 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
         />
       )}
     </div>
-  )
-}
+  );
+};
 
 export default CourseBuilder;

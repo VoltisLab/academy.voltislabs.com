@@ -1,3 +1,4 @@
+// First, update your AddSectionButton.tsx to accept the addSection function directly:
 "use client";
 import React from 'react';
 import { Plus } from "lucide-react";
@@ -9,11 +10,11 @@ interface AddSectionButtonProps {
 export default function AddSectionButton({ addSection }: AddSectionButtonProps) {
   return (
     <button
-      onClick={addSection}
-      className="flex items-center justify-center w-full p-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50 hover:text-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 mt-4"
+      onClick={addSection} // Call the addSection function directly
+      className="flex items-center gap-2 py-2 px-4 text-sm text-indigo-600 font-medium border border-gray-200 rounded-md hover:bg-gray-50"
     >
-      <Plus className="w-5 h-5 mr-2" />
-      <span className="font-medium">Add Section</span>
+      <Plus className="w-4 h-4" />
+      <span>Section</span>
     </button>
   );
 }

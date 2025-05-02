@@ -200,12 +200,12 @@ export interface CourseInfo {
   courseRequirements: string[];
 }
 
-export type ContentItemType = 'video' | 'article' | 'quiz' | 'coding-exercise' | 'assignment' | 'practice' | 'role-play';
+export type ContentItemType = 'video' | 'article' | 'quiz' | 'coding-exercise' | 'assignment' | 'practice' | 'role-play'| "video-slide"
 
 export interface Lecture {
-  title: string;
+  title?: string;
   id: string;
-  name: string;
+  name?: string;
   description: string;
   captions: string;
   lectureNotes: string;

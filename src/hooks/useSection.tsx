@@ -1,62 +1,56 @@
 // hooks/useSections.tsx
 import { useState } from 'react';
-import {  Lecture, ContentType, ContentItemType } from '@/lib/types';
-import { generateId, sectionObject } from '@/lib/utils';
+import { Lecture, ContentType, ContentItemType } from '@/lib/types';
+import { generateId } from '@/lib/utils';
 import { toast } from 'react-hot-toast';
-interface Section {
-    isExpanded: boolean;
-    id:string;
-    name: string;
-    lectures: Lecture[];
-    editing: boolean;
-    lectureEditing: boolean[];
-  }
-export const useSections = (initialSections: Section[] = [sectionObject]) => {
-  const [sections, setSections] = useState<Section[]>(initialSections);
 
-  // Add a new section
-  const addSection = () => {
+interface Section {
+  isExpanded: boolean;
+  id: string;
+  name: string;
+  lectures: Lecture[];
+  editing: boolean;
+  lectureEditing: boolean[];
+  objective?: string; // Added objective field
+}
+
+export const useSections = (initialSections: Section[] ) => {
+  const [sections, setSections] = useState<Section[]>([]);
+
+  // Modified to accept name and objective parameters
+  const addSection = (name: string = "New Section", objective?: string) => {
     const newSection: Section = {
-        id: generateId(),
-        name: "New Section",
-        lectures: [],
-        editing: false,
-        lectureEditing: [],
-        isExpanded: false
+      id: generateId(),
+      name: name, // Use the provided name instead of hardcoded "New Section"
+      objective: objective, // Store the objective
+      lectures: [],
+      editing: false,
+      lectureEditing: [],
+      isExpanded: true // Changed to true so users see expanded section after adding
     };
     
     setSections([...sections, newSection]);
+    toast.success("Section added");
     return newSection.id;
   };
 
-  // Add a new lecture to a section
-  const addLecture = (sectionId: string, contentType: ContentItemType = 'video') => {
-    const getLectureName = () => {
-      switch(contentType) {
-        case 'video': return "New Lecture";
-        case 'article': return "New Article";
-        case 'quiz': return "New Quiz";
-        case 'coding-exercise': return "New Coding Exercise";
-        case 'assignment': return "New Assignment";
-        case 'practice': return "New Practice";
-        case 'role-play': return "New Role Play";
-        default: return "New Item";
-      }
-    };
-
-    const newLecture: Lecture = {
-        id: generateId(),
-        name: getLectureName(),
-        title: "",
-        description: "",
-        captions: "",
-        lectureNotes: "",
-        attachedFiles: [],
-        videos: [],
-        contentType: contentType,
-        isExpanded: false
-    };
+  // Add a new lecture to a section with custom title
+  const addLecture = (sectionId: string, contentType: ContentItemType, title?: string ): string => {
+    console.log("Adding lecture with title:", title);
     
+    const newLecture: Lecture = {
+      id: generateId(),
+      name: title,
+      title: title,
+      description: "",
+      captions: "",
+      lectureNotes: "",
+      attachedFiles: [],
+      videos: [],
+      contentType: contentType,
+      isExpanded: true // Set to true so users can immediately see the new lecture
+    };
+  
     setSections(sections.map(section => {
       if (section.id === sectionId) {
         return {
@@ -66,6 +60,8 @@ export const useSections = (initialSections: Section[] = [sectionObject]) => {
       }
       return section;
     }));
+  
+    toast.success(`New ${contentType} added`);
     
     return newLecture.id;
   };
@@ -108,13 +104,14 @@ export const useSections = (initialSections: Section[] = [sectionObject]) => {
     }));
   };
 
-  // Update section name
-  const updateSectionName = (sectionId: string, newName: string) => {
+  // Update section name - modified to include objective
+  const updateSectionName = (sectionId: string, newName: string, objective?: string) => {
     setSections(sections.map(section => {
       if (section.id === sectionId) {
         return {
           ...section,
-          name: newName
+          name: newName,
+          objective: objective !== undefined ? objective : section.objective
         };
       }
       return section;
