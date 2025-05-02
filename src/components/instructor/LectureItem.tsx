@@ -4,6 +4,64 @@ import { ContentItemType, Lecture, ContentType } from '@/lib/types';
 import { 
   Plus, Trash2, Edit3, ChevronDown, ChevronUp, Move, Search, X, FileText, Upload, Library
 } from "lucide-react";
+import dynamic from 'next/dynamic';
+const ReactQuill = dynamic(() => import('react-quill-new'), { 
+  ssr: false,
+  loading: () => <p>Loading editor...</p>
+});
+
+// Define the toolbar modules for React Quill
+const quillModules = {
+  toolbar: [
+    [{ 'header': [1, 2, 3, false] }],
+    ['bold', 'italic', 'underline', 'strike'],
+    [{'list': 'ordered'}, {'list': 'bullet'}],
+    ['link', 'image', 'code-block'],
+    ['clean']
+  ],
+};
+
+const quillFormats = [
+  'header',
+  'bold', 'italic', 'underline', 'strike',
+  'list', 'bullet',
+  'link', 'image', 'code-block'
+];
+
+// React Quill styles
+import 'react-quill-new/dist/quill.snow.css';
+// Tab interfaces
+interface TabInterface {
+  label: string;
+  key: string;
+}
+
+
+// Content interfaces for different content types
+interface VideoContent {
+  uploadTab: {
+    selectedFile: File | null;
+  };
+  libraryTab: {
+    searchQuery: string;
+    selectedVideo: string | null;
+  };
+  activeTab: string;
+}
+
+interface VideoSlideContent {
+  video: {
+    selectedFile: File | null;
+  };
+  presentation: {
+    selectedFile: File | null;
+  };
+  step: number;
+}
+
+interface ArticleContent {
+  text: string;
+}
 
 interface LectureItemProps {
   lecture: Lecture;
@@ -50,13 +108,32 @@ export default function LectureItem({
 }: LectureItemProps) {
   const lectureNameInputRef = useRef<HTMLInputElement>(null);
   const [showContentTypeSelector, setShowContentTypeSelector] = useState(false);
-  const [isHovering, setIsHovering] = useState(false);
+  
+  // Active content type state
   const [activeContentType, setActiveContentType] = useState<ContentItemType | null>(null);
+  
+  // States for different content types
+  const [videoContent, setVideoContent] = useState<VideoContent>({
+    uploadTab: { selectedFile: null },
+    libraryTab: { searchQuery: '', selectedVideo: null },
+    activeTab: 'uploadVideo'
+  });
+  
+  const [videoSlideContent, setVideoSlideContent] = useState<VideoSlideContent>({
+    video: { selectedFile: null },
+    presentation: { selectedFile: null },
+    step: 1
+  });
+  
+  const [articleContent, setArticleContent] = useState<ArticleContent>({
+    text: ''
+  });
 
-  // Debug information for the lecture prop
-  useEffect(() => {
-    console.log("LectureItem rendered with lecture:", lecture);
-  }, [lecture]);
+  // Video tab options
+  const videoTabs: TabInterface[] = [
+    { label: 'Upload Video', key: 'uploadVideo' },
+    { label: 'Add from library', key: 'addFromLibrary' }
+  ];
 
   useEffect(() => {
     if (editingLectureId === lecture.id && lectureNameInputRef.current) {
@@ -72,7 +149,7 @@ export default function LectureItem({
   // Determine lecture type label based on contentType
   const getLectureTypeLabel = () => {
     switch (lecture.contentType) {
-      case 'video': return 'Curriculum';
+      case 'video': return 'Lecture';
       case 'article': return 'Article';
       case 'quiz': return 'Quiz';
       case 'coding-exercise': return 'Coding Exercise';
@@ -81,6 +158,78 @@ export default function LectureItem({
       case 'role-play': return 'Role Play';
       default: return 'Item';
     }
+  };
+
+  // Handler for content type selection
+  const handleContentTypeSelect = (contentType: ContentItemType) => {
+    setActiveContentType(contentType);
+    setShowContentTypeSelector(false);
+    
+    // Initialize the appropriate content state based on selection
+    if (contentType === 'video') {
+      setVideoContent({
+        uploadTab: { selectedFile: null },
+        libraryTab: { searchQuery: '', selectedVideo: null },
+        activeTab: 'uploadVideo'
+      });
+    } else if (contentType === 'video-slide' as ContentItemType) {
+      setVideoSlideContent({
+        video: { selectedFile: null },
+        presentation: { selectedFile: null },
+        step: 1
+      });
+    } else if (contentType === 'article') {
+      setArticleContent({ text: '' });
+    }
+  };
+  
+  // Handle video file selection
+  const handleVideoFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files.length > 0) {
+      setVideoContent({
+        ...videoContent,
+        uploadTab: { selectedFile: event.target.files[0] }
+      });
+    }
+  };
+  
+  // Handle video slide file selections
+  const handleVideoSlideFileSelect = (type: 'video' | 'presentation', event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files.length > 0) {
+      if (type === 'video') {
+        setVideoSlideContent({
+          ...videoSlideContent,
+          video: { selectedFile: event.target.files[0] }
+        });
+      } else {
+        setVideoSlideContent({
+          ...videoSlideContent,
+          presentation: { selectedFile: event.target.files[0] }
+        });
+      }
+    }
+  };
+  
+  // Handle video slide step navigation
+  const handleVideoSlideStepChange = (step: number) => {
+    setVideoSlideContent({
+      ...videoSlideContent,
+      step
+    });
+  };
+  
+  // Handle article text changes
+  const handleArticleTextChange = (text: string) => {
+    setArticleContent({
+      text
+    });
+  };
+  
+  // Handle search in library tab
+  const handleSearchLibrary = (event: React.FormEvent) => {
+    event.preventDefault();
+    // Implement search functionality here
+    console.log("Searching for:", videoContent.libraryTab.searchQuery);
   };
 
   const isExpanded = activeContentSection?.sectionId === sectionId && 
@@ -94,12 +243,328 @@ export default function LectureItem({
     }
   }, [isExpanded]);
 
-  // Handle key press when editing lecture name
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      setEditingLectureId(null);
-    } else if (e.key === 'Escape') {
-      setEditingLectureId(null);
+  // Helper to render the content based on activeContentType
+  const renderContent = () => {
+    if (!activeContentType) return null;
+
+    switch (activeContentType) {
+      case 'video':
+        return (
+          <div className="border border-gray-300 rounded-md">
+            <div className="flex items-center justify-between px-4 py-2 border-b border-gray-300">
+              <div className="flex-1">
+                <h3 className="text-lg font-medium">Add Video</h3>
+              </div>
+              <button 
+                onClick={() => setActiveContentType(null)} 
+                className="text-gray-500 hover:text-gray-700"
+                aria-label="Close"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="p-4">
+              <div className="border-b border-gray-300">
+                <div className="flex">
+                  {videoTabs.map(tab => (
+                    <button
+                      key={tab.key}
+                      className={`py-2 px-4 text-sm font-medium ${videoContent.activeTab === tab.key 
+                        ? 'border-b-2 border-indigo-600 text-indigo-600' 
+                        : 'text-gray-500 hover:text-gray-700'}`}
+                      onClick={() => setVideoContent({ ...videoContent, activeTab: tab.key })}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              
+              {videoContent.activeTab === 'uploadVideo' ? (
+                <div className="py-4">
+                  <div className="flex items-center justify-between p-4 border border-gray-300 rounded-md">
+                    <div className="flex-1">
+                      {videoContent.uploadTab.selectedFile ? (
+                        <span>{videoContent.uploadTab.selectedFile.name}</span>
+                      ) : (
+                        <span>No file selected</span>
+                      )}
+                    </div>
+                    <label className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 cursor-pointer">
+                      <input
+                        type="file"
+                        accept="video/*"
+                        onChange={handleVideoFileSelect}
+                        className="hidden"
+                      />
+                      Select Video
+                    </label>
+                  </div>
+                  <p className="mt-2 text-xs text-gray-500">
+                    Note: All files should be at least 720p and less than 4.0 GB.
+                  </p>
+                </div>
+              ) : (
+                <div className="py-4">
+                  <form onSubmit={handleSearchLibrary} className="mb-4">
+                    <div className="flex gap-2">
+                      <div className="flex-1 relative">
+                        <input 
+                          type="text" 
+                          placeholder="Search files by name"
+                          value={videoContent.libraryTab.searchQuery}
+                          onChange={(e) => setVideoContent({
+                            ...videoContent, 
+                            libraryTab: { ...videoContent.libraryTab, searchQuery: e.target.value }
+                          })}
+                          className="w-full py-2 px-3 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                        />
+                      </div>
+                      <button
+                        type="submit"
+                        className="p-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
+                      >
+                        <Search className="w-5 h-5" />
+                      </button>
+                    </div>
+                  </form>
+                  
+                  <div className="border border-gray-300 rounded-md">
+                    <div className="grid grid-cols-4 gap-4 p-3 border-b border-gray-300 bg-gray-50 text-sm font-medium">
+                      <div>Filename</div>
+                      <div>Type</div>
+                      <div>Status</div>
+                      <div className="flex items-center gap-1">
+                        Date <ChevronDown className="w-4 h-4" />
+                      </div>
+                    </div>
+                    <div className="p-4 text-center text-gray-500">
+                      No results found.
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+        
+      case 'video-slide' as ContentItemType:
+        return (
+          <div className="border border-gray-300 rounded-md">
+            <div className="flex items-center justify-between px-4 py-2 border-b border-gray-300">
+              <div className="flex-1">
+                <h3 className="text-lg font-medium">Add Video & Slide Mashup</h3>
+              </div>
+              <button 
+                onClick={() => setActiveContentType(null)} 
+                className="text-gray-500 hover:text-gray-700"
+                aria-label="Close"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="p-4">
+              <div className="mb-6">
+                <div className="flex items-center">
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center font-medium ${
+                    videoSlideContent.step >= 1 ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-700'
+                  }`}>
+                    1
+                  </div>
+                  <span className="ml-2 font-medium">Pick a Video</span>
+                </div>
+                
+                <div className="mt-4">
+                  <div className="flex items-center justify-between p-4 border border-gray-300 rounded-md">
+                    <div className="flex-1">
+                      {videoSlideContent.video.selectedFile ? (
+                        <span>{videoSlideContent.video.selectedFile.name}</span>
+                      ) : (
+                        <span>No file selected</span>
+                      )}
+                    </div>
+                    <label className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 cursor-pointer">
+                      <input
+                        type="file"
+                        accept="video/*"
+                        onChange={(e) => handleVideoSlideFileSelect('video', e)}
+                        className="hidden"
+                      />
+                      Select Video
+                    </label>
+                  </div>
+                  <p className="mt-2 text-xs text-gray-500">
+                    Note: All files should be at least 720p and less than 4.0 GB.
+                  </p>
+                </div>
+              </div>
+              
+              <div className="mb-6">
+                <div className="flex items-center">
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center font-medium ${
+                    videoSlideContent.step >= 2 ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-700'
+                  }`}>
+                    2
+                  </div>
+                  <span className="ml-2 font-medium">Pick a Presentation</span>
+                </div>
+                
+                <div className="mt-4">
+                  <div className="flex items-center justify-between p-4 border border-gray-300 rounded-md">
+                    <div className="flex-1">
+                      {videoSlideContent.presentation.selectedFile ? (
+                        <span>{videoSlideContent.presentation.selectedFile.name}</span>
+                      ) : (
+                        <span>No file selected</span>
+                      )}
+                    </div>
+                    <label className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 cursor-pointer">
+                      <input
+                        type="file"
+                        accept=".pdf"
+                        onChange={(e) => handleVideoSlideFileSelect('presentation', e)}
+                        className="hidden"
+                      />
+                      Select PDF
+                    </label>
+                  </div>
+                  <p className="mt-2 text-xs text-gray-500">
+                    Note: A presentation means slides (e.g. PowerPoint, Keynote). Slides are a great way to combine text and visuals to explain concepts in an effective and efficient way. Use meaningful graphics and clearly legible text!
+                  </p>
+                </div>
+              </div>
+              
+              <div className="mb-6">
+                <div className="flex items-center">
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center font-medium ${
+                    videoSlideContent.step >= 3 ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-700'
+                  }`}>
+                    3
+                  </div>
+                  <span className="ml-2 font-medium">Synchronize Video & Presentation</span>
+                </div>
+                
+                <div className="mt-4 p-6 border border-gray-300 rounded-md border-dashed text-center text-gray-500">
+                  Please pick a video & presentation first
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+        
+        case 'article':
+          return (
+            <div className="border border-gray-300 rounded-md">
+              <div className="flex items-center justify-between px-4 py-2 border-b border-gray-300">
+                <div className="flex-1">
+                  <h3 className="text-lg font-medium">Add Article</h3>
+                </div>
+                <button 
+                  onClick={() => setActiveContentType(null)} 
+                  className="text-gray-500 hover:text-gray-700"
+                  aria-label="Close"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              
+              <div className="p-4">
+                <div className="mb-2">
+                  <label className="block text-sm font-medium text-gray-700">Text</label>
+                </div>
+                
+                <div className="border border-gray-300 rounded-md">
+                  <ReactQuill
+                    value={articleContent.text}
+                    onChange={(value) => handleArticleTextChange(value)}
+                    modules={quillModules}
+                    formats={quillFormats}
+                    theme="snow"
+                    placeholder="Start writing your article content here..."
+                    className="bg-white rounded-b-md"
+                  />
+                </div>
+                
+                <div className="mt-6 flex justify-end">
+                  <button className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none">
+                    Save
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        return (
+          <div className="border border-gray-300 rounded-md">
+            <div className="flex items-center justify-between px-4 py-2 border-b border-gray-300">
+              <div className="flex-1">
+                <h3 className="text-lg font-medium">Add Article</h3>
+              </div>
+              <button 
+                onClick={() => setActiveContentType(null)} 
+                className="text-gray-500 hover:text-gray-700"
+                aria-label="Close"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="p-4">
+              <div className="mb-2">
+                <label className="block text-sm font-medium text-gray-700">Text</label>
+              </div>
+              
+              <div className="border border-gray-300 rounded-md">
+                <div className="flex items-center px-3 py-2 bg-white border-b border-gray-300">
+                  <button className="px-2 py-1 text-gray-600 hover:text-gray-900">
+                    <span className="font-medium">Styles</span>
+                    <ChevronDown className="inline-block ml-1 w-4 h-4" />
+                  </button>
+                  <button className="px-2 py-1 text-gray-600 hover:text-gray-900 font-bold">B</button>
+                  <button className="px-2 py-1 text-gray-600 hover:text-gray-900 italic">I</button>
+                  <button className="px-2 py-1 text-gray-600 hover:text-gray-900">
+                    <i className="fas fa-list-ul"></i>
+                  </button>
+                  <button className="px-2 py-1 text-gray-600 hover:text-gray-900">
+                    <i className="fas fa-list-ol"></i>
+                  </button>
+                  <button className="px-2 py-1 text-gray-600 hover:text-gray-900">
+                    <i className="fas fa-link"></i>
+                  </button>
+                  <button className="px-2 py-1 text-gray-600 hover:text-gray-900">
+                    <i className="fas fa-image"></i>
+                  </button>
+                  <button className="px-2 py-1 text-gray-600 hover:text-gray-900">
+                    <i className="fas fa-code"></i>
+                  </button>
+                  
+                  <div className="ml-auto">
+                    <button className="text-sm text-indigo-600 hover:text-indigo-700">
+                      Edit HTML
+                    </button>
+                  </div>
+                </div>
+                
+                <textarea
+                  className="w-full p-4 min-h-[150px] outline-none"
+                  value={articleContent.text}
+                  onChange={(e) => handleArticleTextChange(e.target.value)}
+                  placeholder="Start writing your article content here..."
+                ></textarea>
+              </div>
+              
+              <div className="mt-4 flex justify-end">
+                <button className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none">
+                  Save
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+        
+      default:
+        return null;
     }
   };
 
@@ -110,8 +575,6 @@ export default function LectureItem({
       onDragStart={(e) => handleDragStart(e, sectionId, lecture.id)}
       onDragOver={handleDragOver}
       onDrop={(e) => handleDrop(e, sectionId, lecture.id)}
-      onMouseEnter={() => setIsHovering(true)}
-      onMouseLeave={() => setIsHovering(false)}
     >
       <div className="flex items-center p-3">
         <div className="flex-1 flex items-center">
@@ -122,42 +585,37 @@ export default function LectureItem({
               type="text"
               value={lecture.name}
               onChange={(e) => updateLectureName(sectionId, lecture.id, e.target.value)}
-              onKeyDown={handleKeyDown}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  setEditingLectureId(null);
+                }
+              }}
               className="border-gray-300 focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border rounded-md px-2 py-1"
               onClick={(e) => e.stopPropagation()}
-              autoFocus
             />
           ) : (
-            <div className="flex items-center">
-              <span>
-                {getLectureTypeLabel()} {lectureIndex + 1}: {lecture.name}
-              </span>
-              {isHovering && (
-                <div className="ml-2 flex items-center space-x-1">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      startEditingLecture(e);
-                    }}
-                    className="p-1 text-gray-400 hover:text-gray-600"
-                  >
-                    <Edit3 className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      deleteLecture(sectionId, lecture.id);
-                    }}
-                    className="p-1 text-gray-400 hover:text-red-600"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              )}
-            </div>
+            <div>{getLectureTypeLabel()} {lectureIndex + 1}: {lecture.name}</div>
           )}
         </div>
         <div className="flex items-center space-x-1">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              startEditingLecture(e);
+            }}
+            className="p-1 text-gray-400 hover:text-gray-600"
+          >
+            <Edit3 className="w-4 h-4" />
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              deleteLecture(sectionId, lecture.id);
+            }}
+            className="p-1 text-gray-400 hover:text-red-600"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -236,7 +694,7 @@ export default function LectureItem({
               
               <div className="grid grid-cols-3 gap-4">
                 <button 
-                  onClick={() => setActiveContentType('video')}
+                  onClick={() => handleContentTypeSelect('video')}
                   className="flex flex-col items-center p-3 border border-gray-300 rounded-md hover:bg-gray-50"
                 >
                   <div className="w-12 h-12 bg-gray-100 rounded-md mb-2 flex items-center justify-center">
@@ -246,7 +704,7 @@ export default function LectureItem({
                 </button>
                 
                 <button 
-                  onClick={() => setActiveContentType('video-slide' as ContentItemType)}
+                  onClick={() => handleContentTypeSelect('video-slide' as ContentItemType)}
                   className="flex flex-col items-center p-3 border border-gray-300 rounded-md hover:bg-gray-50"
                 >
                   <div className="w-12 h-12 bg-gray-100 rounded-md mb-2 flex items-center justify-center">
@@ -256,7 +714,7 @@ export default function LectureItem({
                 </button>
                 
                 <button 
-                  onClick={() => setActiveContentType('article')}
+                  onClick={() => handleContentTypeSelect('article')}
                   className="flex flex-col items-center p-3 border border-gray-300 rounded-md hover:bg-gray-50"
                 >
                   <div className="w-12 h-12 bg-gray-100 rounded-md mb-2 flex items-center justify-center">
@@ -267,6 +725,8 @@ export default function LectureItem({
               </div>
             </div>
           )}
+          
+          {activeContentType && renderContent()}
           
           {!showContentTypeSelector && !activeContentType && (
             <>
