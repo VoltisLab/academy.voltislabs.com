@@ -318,7 +318,7 @@ export default function LectureItem({
                             ...videoContent, 
                             libraryTab: { ...videoContent.libraryTab, searchQuery: e.target.value }
                           })}
-                          className="w-full py-2 px-3 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                          className="w-1/2 justify-end py-2 px-3 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                         />
                       </div>
                       <button
@@ -470,99 +470,27 @@ export default function LectureItem({
                 </button>
               </div>
               
-              <div className="p-4">
-                <div className="mb-2">
-                  <label className="block text-sm font-medium text-gray-700">Text</label>
-                </div>
+              <div className="">
+                           
+                <ReactQuill
+  value={articleContent.text}
+  onChange={(value) => handleArticleTextChange(value)}
+  modules={quillModules}
+  formats={quillFormats}
+  theme="snow"
+  placeholder="Start writing your article content here..."
+  className="bg-white rounded-b-md" 
+  style={{ height: '150px' }} // Set your desired height here
+/>
                 
-                <div className="border border-gray-300 rounded-md">
-                  <ReactQuill
-                    value={articleContent.text}
-                    onChange={(value) => handleArticleTextChange(value)}
-                    modules={quillModules}
-                    formats={quillFormats}
-                    theme="snow"
-                    placeholder="Start writing your article content here..."
-                    className="bg-white rounded-b-md"
-                  />
-                </div>
-                
-                <div className="mt-6 flex justify-end">
-                  <button className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none">
+                <div className="mt-16 flex justify-end m-2">
+                  <button className="inline-flex items-center px-4 py-2  border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none">
                     Save
                   </button>
                 </div>
               </div>
             </div>
           );
-        return (
-          <div className="border border-gray-300 rounded-md">
-            <div className="flex items-center justify-between px-4 py-2 border-b border-gray-300">
-              <div className="flex-1">
-                <h3 className="text-lg font-medium">Add Article</h3>
-              </div>
-              <button 
-                onClick={() => setActiveContentType(null)} 
-                className="text-gray-500 hover:text-gray-700"
-                aria-label="Close"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            
-            <div className="p-4">
-              <div className="mb-2">
-                <label className="block text-sm font-medium text-gray-700">Text</label>
-              </div>
-              
-              <div className="border border-gray-300 rounded-md">
-                <div className="flex items-center px-3 py-2 bg-white border-b border-gray-300">
-                  <button className="px-2 py-1 text-gray-600 hover:text-gray-900">
-                    <span className="font-medium">Styles</span>
-                    <ChevronDown className="inline-block ml-1 w-4 h-4" />
-                  </button>
-                  <button className="px-2 py-1 text-gray-600 hover:text-gray-900 font-bold">B</button>
-                  <button className="px-2 py-1 text-gray-600 hover:text-gray-900 italic">I</button>
-                  <button className="px-2 py-1 text-gray-600 hover:text-gray-900">
-                    <i className="fas fa-list-ul"></i>
-                  </button>
-                  <button className="px-2 py-1 text-gray-600 hover:text-gray-900">
-                    <i className="fas fa-list-ol"></i>
-                  </button>
-                  <button className="px-2 py-1 text-gray-600 hover:text-gray-900">
-                    <i className="fas fa-link"></i>
-                  </button>
-                  <button className="px-2 py-1 text-gray-600 hover:text-gray-900">
-                    <i className="fas fa-image"></i>
-                  </button>
-                  <button className="px-2 py-1 text-gray-600 hover:text-gray-900">
-                    <i className="fas fa-code"></i>
-                  </button>
-                  
-                  <div className="ml-auto">
-                    <button className="text-sm text-indigo-600 hover:text-indigo-700">
-                      Edit HTML
-                    </button>
-                  </div>
-                </div>
-                
-                <textarea
-                  className="w-full p-4 min-h-[150px] outline-none"
-                  value={articleContent.text}
-                  onChange={(e) => handleArticleTextChange(e.target.value)}
-                  placeholder="Start writing your article content here..."
-                ></textarea>
-              </div>
-              
-              <div className="mt-4 flex justify-end">
-                <button className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none">
-                  Save
-                </button>
-              </div>
-            </div>
-          </div>
-        );
-        
       default:
         return null;
     }
