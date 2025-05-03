@@ -213,6 +213,19 @@ export interface Lecture {
   videos: Video[];
   contentType: ContentItemType;
   isExpanded: boolean
+  questions?: Array<Question>;
+}
+
+export interface Question {
+  id: string;
+  text: string;
+  answers: Array<{
+    text: string;
+    explanation: string;
+  }>;
+  correctAnswerIndex: number;
+  relatedLecture?: string;
+  type: string;
 }
 
 

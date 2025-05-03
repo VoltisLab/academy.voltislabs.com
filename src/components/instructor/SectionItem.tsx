@@ -9,6 +9,8 @@ import { ActionButtons } from './ActionButtons';
 import LectureItem from './LectureItem';
 import AssignmentItem from './AssignmentItem';
 import AssignmentForm from './AssignmentForm';
+import QuizForm from './QuizForm';
+import QuizItem from './QuizItem';
 
 interface SectionItemProps {
   section: {
@@ -37,11 +39,21 @@ interface SectionItemProps {
   activeContentSection: {sectionId: string, lectureId: string} | null;
   isDragging: boolean;
   handleDragStart: (e: React.DragEvent, sectionId: string, lectureId?: string) => void;
+  handleDragEnd?: () => void;
   handleDragOver: (e: React.DragEvent) => void;
+  handleDragLeave?: () => void;
   handleDrop: (e: React.DragEvent, targetSectionId: string, targetLectureId?: string) => void;
   addLecture: (sectionId: string, contentType: ContentItemType, title?: string) => string;
   addCurriculumItem: (sectionId: string) => void;
+  updateQuizQuestions?: (sectionId: string, quizId: string, questions: any[]) => void;
   children?: React.ReactNode;
+  // Props for enhanced drag and drop
+  draggedSection?: string | null;
+  draggedLecture?: string | null;
+  dragTarget?: {
+    sectionId: string | null;
+    lectureId: string | null;
+  };
 }
 
 export default function SectionItem({
@@ -65,16 +77,23 @@ export default function SectionItem({
   activeContentSection,
   isDragging,
   handleDragStart,
+  handleDragEnd,
   handleDragOver,
+  handleDragLeave,
   handleDrop,
   addLecture,
   addCurriculumItem,
-  children
+  updateQuizQuestions,
+  children,
+  draggedSection,
+  draggedLecture,
+  dragTarget
 }: SectionItemProps) {
   const sectionNameInputRef = useRef<HTMLInputElement>(null);
   // State for toggling action buttons
   const [showActionButtons, setShowActionButtons] = useState<boolean>(false);
   const [showAssignmentForm, setShowAssignmentForm] = useState<boolean>(false);
+  const [showQuizForm, setShowQuizForm] = useState<boolean>(false);
   const [isHovering, setIsHovering] = useState<boolean>(false);
 
   useEffect(() => {
@@ -93,6 +112,7 @@ export default function SectionItem({
     e.stopPropagation();
     setShowActionButtons(prev => !prev); // Toggle action buttons
     setShowAssignmentForm(false); // Hide assignment form when toggling action buttons
+    setShowQuizForm(false); // Hide quiz form when toggling action buttons
   };
 
   // Handler for adding an assignment
@@ -102,12 +122,23 @@ export default function SectionItem({
     setShowAssignmentForm(false);
   };
 
+  // Handler for adding a quiz
+  const handleAddQuiz = (sectionId: string, title: string, description: string) => {
+    // First add the lecture with quiz content type
+    const newLectureId = addLecture(sectionId, 'quiz', title);
+    setShowQuizForm(false);
+  };
+
   // Enhanced lecture adding handler that properly handles title
   const handleAddLecture = (sectionId: string, contentType: ContentItemType, title?: string) => {
     console.log("SectionItem handling lecture add:", { sectionId, contentType, title });
     
     if (contentType === 'assignment') {
       setShowAssignmentForm(true);
+      setShowQuizForm(false);
+    } else if (contentType === 'quiz') {
+      setShowQuizForm(true);
+      setShowAssignmentForm(false);
     } else {
       // Make sure to always pass the title parameter to addLecture
       const lectureId = addLecture(sectionId, contentType, title);
@@ -137,6 +168,38 @@ export default function SectionItem({
           handleDragStart={handleDragStart}
           handleDragOver={handleDragOver}
           handleDrop={handleDrop}
+          isDragging={isDragging}
+          handleDragEnd={handleDragEnd}
+          handleDragLeave={handleDragLeave}
+          draggedLecture={draggedLecture}
+          dragTarget={dragTarget}
+        />
+      );
+    }
+    
+    if (lecture.contentType === 'quiz') {
+      return (
+        <QuizItem
+          key={lecture.id}
+          lecture={lecture}
+          lectureIndex={lectureIndex}
+          totalLectures={section.lectures.length}
+          sectionId={section.id}
+          editingLectureId={editingLectureId}
+          setEditingLectureId={setEditingLectureId}
+          updateLectureName={updateLectureName}
+          deleteLecture={deleteLecture}
+          moveLecture={moveLecture}
+          handleDragStart={handleDragStart}
+          handleDragOver={handleDragOver}
+          handleDrop={handleDrop}
+          toggleContentSection={toggleContentSection}
+          updateQuizQuestions={updateQuizQuestions}
+          isDragging={isDragging}
+          handleDragEnd={handleDragEnd}
+          handleDragLeave={handleDragLeave}
+          draggedLecture={draggedLecture}
+          dragTarget={dragTarget}
         />
       );
     }
@@ -161,16 +224,26 @@ export default function SectionItem({
         handleDragStart={handleDragStart}
         handleDragOver={handleDragOver}
         handleDrop={handleDrop}
+        handleDragEnd={handleDragEnd}
+        handleDragLeave={handleDragLeave}
+        draggedLecture={draggedLecture}
+        dragTarget={dragTarget}
       />
     );
-  };
+  };  
 
   return (
     <div 
-      className="mb-4 border rounded-lg overflow-hidden bg-white"
-      draggable
+      className={`mb-4 border rounded-lg overflow-hidden bg-white ${
+        draggedSection === section.id ? 'opacity-50' : ''
+      } ${
+        dragTarget?.sectionId === section.id && !dragTarget?.lectureId ? 'border-2 border-indigo-500' : ''
+      }`}
+      draggable={true}
       onDragStart={(e) => handleDragStart(e, section.id)}
-      onDragOver={handleDragOver}
+      onDragEnd={handleDragEnd}
+      onDragOver={(e) => handleDragOver(e)}
+      onDragLeave={handleDragLeave}
       onDrop={(e) => handleDrop(e, section.id)}
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
@@ -263,6 +336,15 @@ export default function SectionItem({
               sectionId={section.id}
               onAddAssignment={handleAddAssignment}
               onCancel={() => setShowAssignmentForm(false)}
+            />
+          )}
+          
+          {/* Quiz Form */}
+          {showQuizForm && (
+            <QuizForm
+              sectionId={section.id}
+              onAddQuiz={handleAddQuiz}
+              onCancel={() => setShowQuizForm(false)}
             />
           )}
           
