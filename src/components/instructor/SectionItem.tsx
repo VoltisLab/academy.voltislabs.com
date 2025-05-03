@@ -1,8 +1,6 @@
 "use client";
 import React, { useRef, useEffect, useState } from 'react';
-import { 
-  Trash2, Edit3, ChevronDown, ChevronUp, Move, Plus
-} from "lucide-react";
+import { Trash2, Edit3, ChevronDown, ChevronUp, Move, Plus} from "lucide-react";
 import { Lecture, ContentItemType } from '@/lib/types';
 // Import the components
 import { ActionButtons } from './ActionButtons';
@@ -11,6 +9,8 @@ import AssignmentItem from './AssignmentItem';
 import AssignmentForm from './AssignmentForm';
 import QuizForm from './QuizForm';
 import QuizItem from './QuizItem';
+import CodingExerciseForm from './CodingExcerciseForm';
+import CodingExerciseItem from './CodingExcerciseItem';
 
 interface SectionItemProps {
   section: {
@@ -95,6 +95,7 @@ export default function SectionItem({
   const [showAssignmentForm, setShowAssignmentForm] = useState<boolean>(false);
   const [showQuizForm, setShowQuizForm] = useState<boolean>(false);
   const [isHovering, setIsHovering] = useState<boolean>(false);
+  const [showCodingExerciseForm, setShowCodingExerciseForm] = useState<boolean>(false);
 
   useEffect(() => {
     if (editingSectionId === section.id && sectionNameInputRef.current) {
@@ -129,6 +130,12 @@ export default function SectionItem({
     setShowQuizForm(false);
   };
 
+  // Add handler for adding a coding exercise
+  const handleAddCodingExercise = (sectionId: string, title: string) => {
+    // Add the lecture with coding-exercise content type
+    const newLectureId = addLecture(sectionId, 'coding-exercise', title);
+    setShowCodingExerciseForm(false);
+  };
   // Enhanced lecture adding handler that properly handles title
   const handleAddLecture = (sectionId: string, contentType: ContentItemType, title?: string) => {
     console.log("SectionItem handling lecture add:", { sectionId, contentType, title });
@@ -136,9 +143,15 @@ export default function SectionItem({
     if (contentType === 'assignment') {
       setShowAssignmentForm(true);
       setShowQuizForm(false);
+      setShowCodingExerciseForm(false);
     } else if (contentType === 'quiz') {
       setShowQuizForm(true);
       setShowAssignmentForm(false);
+      setShowCodingExerciseForm(false);
+    } else if (contentType === 'coding-exercise') {
+      setShowCodingExerciseForm(true);
+      setShowAssignmentForm(false);
+      setShowQuizForm(false);
     } else {
       // Make sure to always pass the title parameter to addLecture
       const lectureId = addLecture(sectionId, contentType, title);
@@ -155,6 +168,31 @@ export default function SectionItem({
     if (lecture.contentType === 'assignment') {
       return (
         <AssignmentItem
+          key={lecture.id}
+          lecture={lecture}
+          lectureIndex={lectureIndex}
+          totalLectures={section.lectures.length}
+          sectionId={section.id}
+          editingLectureId={editingLectureId}
+          setEditingLectureId={setEditingLectureId}
+          updateLectureName={updateLectureName}
+          deleteLecture={deleteLecture}
+          moveLecture={moveLecture}
+          handleDragStart={handleDragStart}
+          handleDragOver={handleDragOver}
+          handleDrop={handleDrop}
+          isDragging={isDragging}
+          handleDragEnd={handleDragEnd}
+          handleDragLeave={handleDragLeave}
+          draggedLecture={draggedLecture}
+          dragTarget={dragTarget}
+        />
+      );
+    }
+
+    if (lecture.contentType === 'coding-exercise') {
+      return (
+        <CodingExerciseItem
           key={lecture.id}
           lecture={lecture}
           lectureIndex={lectureIndex}
@@ -338,6 +376,14 @@ export default function SectionItem({
               onCancel={() => setShowAssignmentForm(false)}
             />
           )}
+
+          {showCodingExerciseForm && (
+          <CodingExerciseForm
+            sectionId={section.id}
+            onAddCodingExercise={handleAddCodingExercise}
+            onCancel={() => setShowCodingExerciseForm(false)}
+          />
+        )}
           
           {/* Quiz Form */}
           {showQuizForm && (
