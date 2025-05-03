@@ -36,7 +36,7 @@ export default function CourseFormTabs() {
   };
 
   return (
-    <div className="bg-white max-w-[90rem] mx-auto min-h-screen">
+    <div className="bg-white max-w-[90rem] xl:mx-auto min-h-screen">
       {/* Tabs */}
       <div className="flex items-center border-b border-gray-200 px-6">
         {tabs.map((tab) => (
@@ -66,7 +66,7 @@ export default function CourseFormTabs() {
       </div>
 
       {/* Tab Content */}
-      <div className="p-6">
+      <div className="xl:p-6 p-2">
         {activeTab === "basic" && <BasicInformationForm onSaveNext={handleBasicInfoSave} />}
         {activeTab === "advanced" && (
           <AdvanceInformationForm 
