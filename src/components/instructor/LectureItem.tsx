@@ -73,15 +73,21 @@ interface LectureItemProps {
   updateLectureName: (sectionId: string, lectureId: string, newName: string) => void;
   deleteLecture: (sectionId: string, lectureId: string) => void;
   moveLecture: (sectionId: string, lectureId: string, direction: 'up' | 'down') => void;
-  toggleContentSection: (sectionId: string, lectureId: string) => void;
-  toggleAddResourceModal: (sectionId: string, lectureId: string) => void;
-  toggleDescriptionEditor: (sectionId: string, lectureId: string, currentText: string) => void;
-  activeContentSection: {sectionId: string, lectureId: string} | null;
+  toggleContentSection?: (sectionId: string, lectureId: string) => void;
+  toggleAddResourceModal?: (sectionId: string, lectureId: string) => void;
+  toggleDescriptionEditor?: (sectionId: string, lectureId: string, currentText: string) => void;
+  activeContentSection?: {sectionId: string, lectureId: string} | null;
   isDragging: boolean;
   handleDragStart: (e: React.DragEvent, sectionId: string, lectureId?: string) => void;
   handleDragOver: (e: React.DragEvent) => void;
   handleDrop: (e: React.DragEvent, targetSectionId: string, targetLectureId?: string) => void;
-  addLecture?: (sectionId: string, contentType: ContentItemType) => string;
+  handleDragEnd?: () => void;
+  handleDragLeave?: () => void;
+  draggedLecture?: string | null;
+  dragTarget?: {
+    sectionId: string | null;
+    lectureId: string | null;
+  };
   children?: React.ReactNode;
 }
 
@@ -103,7 +109,10 @@ export default function LectureItem({
   handleDragStart,
   handleDragOver,
   handleDrop,
-  addLecture,
+  handleDragEnd,
+  handleDragLeave,
+  draggedLecture,
+  dragTarget,
   children
 }: LectureItemProps) {
   const lectureNameInputRef = useRef<HTMLInputElement>(null);
@@ -473,15 +482,15 @@ export default function LectureItem({
               <div className="">
                            
                 <ReactQuill
-  value={articleContent.text}
-  onChange={(value) => handleArticleTextChange(value)}
-  modules={quillModules}
-  formats={quillFormats}
-  theme="snow"
-  placeholder="Start writing your article content here..."
-  className="bg-white rounded-b-md" 
-  style={{ height: '150px' }} // Set your desired height here
-/>
+                  value={articleContent.text}
+                  onChange={(value) => handleArticleTextChange(value)}
+                  modules={quillModules}
+                  formats={quillFormats}
+                  theme="snow"
+                  placeholder="Start writing your article content here..."
+                  className="bg-white rounded-b-md" 
+                  style={{ height: '150px' }} // Set your desired height here
+                  />
                 
                 <div className="mt-16 flex justify-end m-2">
                   <button className="inline-flex items-center px-4 py-2  border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none">
@@ -498,10 +507,20 @@ export default function LectureItem({
 
   return (
     <div 
-      className="mb-3 bg-white rounded-lg border border-gray-300"
-      draggable
+      className={`mb-3 bg-white rounded-lg border border-gray-300 ${
+        draggedLecture === lecture.id ? 'opacity-50' : ''
+      } ${
+        dragTarget?.lectureId === lecture.id ? 'border-2 border-indigo-500' : ''
+      }`}
+      draggable={true}
       onDragStart={(e) => handleDragStart(e, sectionId, lecture.id)}
-      onDragOver={handleDragOver}
+      onDragEnd={handleDragEnd}
+      onDragOver={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        handleDragOver(e);
+      }}
+      onDragLeave={handleDragLeave}
       onDrop={(e) => handleDrop(e, sectionId, lecture.id)}
     >
       <div className="flex items-center p-3">
@@ -567,12 +586,15 @@ export default function LectureItem({
           <button 
             onClick={(e) => {
               e.stopPropagation();
-              toggleContentSection(sectionId, lecture.id);
-              if (!isExpanded) {
-                setShowContentTypeSelector(true);
-              } else {
-                setShowContentTypeSelector(false);
-                setActiveContentType(null);
+              // Check if toggleContentSection exists before calling it
+              if (toggleContentSection) {
+                toggleContentSection(sectionId, lecture.id);
+                if (!isExpanded) {
+                  setShowContentTypeSelector(true);
+                } else {
+                  setShowContentTypeSelector(false);
+                  setActiveContentType(null);
+                }
               }
             }}
             className="text-indigo-600 font-medium px-3 py-1 rounded-md hover:bg-indigo-50 flex items-center"
@@ -583,10 +605,13 @@ export default function LectureItem({
             className="p-1 text-gray-400 hover:text-gray-600"
             onClick={(e) => {
               e.stopPropagation();
-              toggleContentSection(sectionId, lecture.id);
-              if (isExpanded) {
-                setShowContentTypeSelector(false);
-                setActiveContentType(null);
+              // Check if toggleContentSection exists before calling it
+              if (toggleContentSection) {
+                toggleContentSection(sectionId, lecture.id);
+                if (isExpanded) {
+                  setShowContentTypeSelector(false);
+                  setActiveContentType(null);
+                }
               }
             }}
           >
@@ -643,8 +668,7 @@ export default function LectureItem({
                 
                 <button 
                   onClick={() => handleContentTypeSelect('article')}
-                  className="flex flex-col items-center p-3 border border-gray-300 rounded-md hover:bg-gray-50"
-                >
+                  className="flex flex-col items-center p-3 border border-gray-300 rounded-md hover:bg-gray-50">
                   <div className="w-12 h-12 bg-gray-100 rounded-md mb-2 flex items-center justify-center">
                     <span className="text-gray-400">📄</span>
                   </div>
@@ -660,7 +684,12 @@ export default function LectureItem({
             <>
               {/* Description button */}
               <button
-                onClick={() => toggleDescriptionEditor(sectionId, lecture.id, lecture.description || "")}
+                onClick={() => {
+                  // Check if toggleDescriptionEditor exists before calling it
+                  if (toggleDescriptionEditor) {
+                    toggleDescriptionEditor(sectionId, lecture.id, lecture.description || "");
+                  }
+                }}
                 className="mb-2 flex items-center gap-2 py-2 px-4 text-sm text-indigo-600 font-medium border border-gray-300 rounded-md hover:bg-gray-50"
               >
                 <Plus className="w-4 h-4" />
@@ -669,7 +698,12 @@ export default function LectureItem({
               
               {/* Resources button */}
               <button
-                onClick={() => toggleAddResourceModal(sectionId, lecture.id)}
+                onClick={() => {
+                  // Check if toggleAddResourceModal exists before calling it
+                  if (toggleAddResourceModal) {
+                    toggleAddResourceModal(sectionId, lecture.id);
+                  }
+                }}
                 className="flex items-center gap-2 py-2 px-4 text-sm text-indigo-600 font-medium border border-gray-300 rounded-md hover:bg-gray-50"
               >
                 <Plus className="w-4 h-4" />

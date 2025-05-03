@@ -108,23 +108,30 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [activeResourceTab, setActiveResourceTab] = useState<ResourceTabType>(ResourceTabType.DOWNLOADABLE_FILE);
   const [showSectionForm, setShowSectionForm] = useState<boolean>(false);
+  const [draggedSection, setDraggedSection] = useState<string | null>(null);
+const [draggedLecture, setDraggedLecture] = useState<string | null>(null);
+const [dragTarget, setDragTarget] = useState<{
+  sectionId: string | null;
+  lectureId: string | null;
+}>({ sectionId: null, lectureId: null });
   
-  const { 
-    sections, 
-    addSection, 
-    addLecture,
-    deleteSection,
-    deleteLecture,
-    toggleSectionExpansion,
-    updateSectionName,
-    updateLectureName,
-    moveSection,
-    moveLecture,
-    updateLectureContent,
-    saveDescription: saveSectionDescription,
-    updateLectureWithUploadedContent,
-    handleLectureDrop
-  } = useSections([]);
+const { 
+  sections, 
+  setSections, // Add this line to get the setSections function
+  addSection, 
+  addLecture,
+  deleteSection,
+  deleteLecture,
+  toggleSectionExpansion,
+  updateSectionName,
+  updateLectureName,
+  moveSection,
+  moveLecture,
+  updateLectureContent,
+  saveDescription: saveSectionDescription,
+  updateLectureWithUploadedContent,
+  handleLectureDrop
+} = useSections([]);
   
   const contentSectionModal = useModal();
   const resourceModal = useModal();
@@ -176,29 +183,84 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
     saveSectionDescription(sectionId, lectureId, currentDescription);
     descriptionModal.close();
   };
-  
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-  };
 
   const handleDragStart = (e: React.DragEvent, sectionId: string, lectureId?: string) => {
+    e.stopPropagation(); // Prevent event bubbling
     setIsDragging(true);
+    
     if (lectureId) {
+      setDraggedLecture(lectureId);
       e.dataTransfer.setData("lectureId", lectureId);
+    } else {
+      setDraggedSection(sectionId);
     }
+    
     e.dataTransfer.setData("sectionId", sectionId);
+    e.dataTransfer.effectAllowed = 'move';
   };
 
-  const handleDrop = (e: React.DragEvent, targetSectionId: string, targetLectureId?: string) => {
-    e.preventDefault();
+  const handleDragEnd = () => {
     setIsDragging(false);
+    setDraggedSection(null);
+    setDraggedLecture(null);
+    setDragTarget({ sectionId: null, lectureId: null });
+  };
 
-    const sourceSectionId = e.dataTransfer.getData("sectionId");
-    const sourceLectureId = e.dataTransfer.getData("lectureId");
+  const handleDragOver = (e: React.DragEvent, targetSectionId: string, targetLectureId?: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    e.dataTransfer.dropEffect = 'move';
+    
+    // Update the drop target
+    setDragTarget({
+      sectionId: targetSectionId,
+      lectureId: targetLectureId || null
+    });
+  };
+  
 
-    if (sourceLectureId) {
-      handleLectureDrop(sourceSectionId, sourceLectureId, targetSectionId, targetLectureId);
-    }
+  const handleDrop = (e: React.DragEvent, targetSectionId: string, targetLectureId?: string) => {
+      e.preventDefault();
+      setIsDragging(false);
+      
+      // Get the dragged item data
+      const sourceSectionId = e.dataTransfer.getData("sectionId");
+      const sourceLectureId = e.dataTransfer.getData("lectureId");
+      
+      if (!sourceSectionId) return; // No valid data, abort
+      
+      // Case 1: We're dragging a lecture
+      if (sourceLectureId && sourceLectureId.trim() !== "") {
+        handleLectureDrop(sourceSectionId, sourceLectureId, targetSectionId, targetLectureId);
+        return;
+      }
+      
+      // Case 2: We're dragging a section (and not dropping onto a lecture)
+      if (!targetLectureId) {
+        // Find section indices
+        const sourceIndex = sections.findIndex(s => s.id === sourceSectionId);
+        const targetIndex = sections.findIndex(s => s.id === targetSectionId);
+        
+        // Skip if source or target not found, or if dropping onto itself
+        if (sourceIndex === -1 || targetIndex === -1 || sourceIndex === targetIndex) {
+          return;
+        }
+        
+        // Create a new array with the section moved to the new position
+        const newSections = [...sections];
+        const [movedSection] = newSections.splice(sourceIndex, 1);
+        newSections.splice(targetIndex, 0, movedSection);
+        
+        // Update the state with the new sections array
+        setSections(newSections);
+        toast.success("Section moved successfully");
+      }
+    };
+  
+
+  const handleDragLeave = () => {
+    // Optionally clear drop targets when leaving
+    setDragTarget({ sectionId: null, lectureId: null });
   };
 
   // Handle adding new section with title and objective
@@ -300,32 +362,37 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
           {/* Render sections */}
           {sections.map((section, index) => (
             <SectionItem
-              key={section.id}
-              section={section}
-              index={index}
-              totalSections={sections.length}
-              editingSectionId={editingSectionId}
-              setEditingSectionId={setEditingSectionId}
-              updateSectionName={updateSectionName}
-              deleteSection={deleteSection}
-              moveSection={moveSection}
-              toggleSectionExpansion={toggleSectionExpansion}
-              isDragging={isDragging}
-              handleDragStart={handleDragStart}
-              handleDragOver={handleDragOver}
-              handleDrop={handleDrop}
-              addLecture={addLecture}
-              editingLectureId={editingLectureId}
-              setEditingLectureId={setEditingLectureId}
-              updateLectureName={updateLectureName}
-              deleteLecture={deleteLecture}
-              moveLecture={moveLecture}
-              toggleContentSection={contentSectionModal.toggle}
-              toggleAddResourceModal={resourceModal.toggle}
-              toggleDescriptionEditor={toggleDescriptionEditor}
-              activeContentSection={contentSectionModal.activeSection}
-              addCurriculumItem={() => setShowContentTypeSelector(true)}
-            />
+            key={section.id}
+            section={section}
+            index={index}
+            totalSections={sections.length}
+            editingSectionId={editingSectionId}
+            setEditingSectionId={setEditingSectionId}
+            updateSectionName={updateSectionName}
+            deleteSection={deleteSection}
+            moveSection={moveSection}
+            toggleSectionExpansion={toggleSectionExpansion}
+            isDragging={isDragging}
+            handleDragStart={handleDragStart}
+            handleDragEnd={handleDragEnd}
+            handleDragOver={(e) => handleDragOver(e, section.id)}
+            handleDragLeave={handleDragLeave}
+            handleDrop={(e) => handleDrop(e, section.id)}
+            addLecture={addLecture}
+            editingLectureId={editingLectureId}
+            setEditingLectureId={setEditingLectureId}
+            updateLectureName={updateLectureName}
+            deleteLecture={deleteLecture}
+            moveLecture={moveLecture}
+            toggleContentSection={contentSectionModal.toggle}
+            toggleAddResourceModal={resourceModal.toggle}
+            toggleDescriptionEditor={toggleDescriptionEditor}
+            activeContentSection={contentSectionModal.activeSection}
+            addCurriculumItem={() => setShowContentTypeSelector(true)}
+            draggedSection={draggedSection}
+            draggedLecture={draggedLecture}
+            dragTarget={dragTarget}
+          />
           ))}
           
           {/* Section Form (non-modal, appears directly in the UI) */}

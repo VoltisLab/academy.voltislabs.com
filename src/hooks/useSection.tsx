@@ -1,6 +1,6 @@
 // hooks/useSections.tsx
 import { useState } from 'react';
-import { Lecture, ContentType, ContentItemType } from '@/lib/types';
+import { Lecture, ContentType, ContentItemType, Question } from '@/lib/types';
 import { generateId } from '@/lib/utils';
 import { toast } from 'react-hot-toast';
 
@@ -64,6 +64,32 @@ export const useSections = (initialSections: Section[] ) => {
     toast.success(`New ${contentType} added`);
     
     return newLecture.id;
+  };
+
+  const addQuiz = (sectionId: string, title: string, description: string): string => {
+    const quizId = addLecture(sectionId, 'quiz', title);
+    
+    // Update the description for the newly created quiz
+    setSections(sections.map(section => {
+      if (section.id === sectionId) {
+        return {
+          ...section,
+          lectures: section.lectures.map(lecture => {
+            if (lecture.id === quizId) {
+              return {
+                ...lecture,
+                description: description,
+                questions: []
+              };
+            }
+            return lecture;
+          })
+        };
+      }
+      return section;
+    }));
+    
+    return quizId;
   };
 
   // Delete a section
@@ -270,39 +296,133 @@ export const useSections = (initialSections: Section[] ) => {
     targetSectionId: string, 
     targetLectureId?: string
   ) => {
-    const sourceSection = sections.find(s => s.id === sourceSectionId);
-    const targetSection = sections.find(s => s.id === targetSectionId);
-
-    if (!sourceSection || !targetSection || !sourceLectureId) return;
-    if (sourceSectionId === targetSectionId && sourceLectureId === targetLectureId) return;
-
-    const sourceLecture = sourceSection.lectures.find(l => l.id === sourceLectureId);
-    if (!sourceLecture) return;
-
+    // Clone the current sections array to avoid direct state mutation
+    const updatedSections = [...sections];
+    
+    // Find the indices of the source and target sections
+    const sourceSectionIndex = updatedSections.findIndex(s => s.id === sourceSectionId);
+    const targetSectionIndex = updatedSections.findIndex(s => s.id === targetSectionId);
+    
+    // If either section is not found, abort
+    if (sourceSectionIndex === -1 || targetSectionIndex === -1) {
+      console.error("Source or target section not found");
+      return;
+    }
+    
+    // Find the source lecture within its section
+    const sourceSection = updatedSections[sourceSectionIndex];
+    const sourceLectureIndex = sourceSection.lectures.findIndex(l => l.id === sourceLectureId);
+    
+    // If the source lecture is not found, abort
+    if (sourceLectureIndex === -1) {
+      console.error("Source lecture not found");
+      return;
+    }
+    
+    // Get a copy of the lecture to be moved
+    const lectureCopy = { ...sourceSection.lectures[sourceLectureIndex] };
+    
+    // Create a new array of lectures for the source section with the lecture removed
     const updatedSourceLectures = sourceSection.lectures.filter(l => l.id !== sourceLectureId);
-    const updatedTargetLectures = [...targetSection.lectures];
-    const targetIndex = targetLectureId
-      ? updatedTargetLectures.findIndex(l => l.id === targetLectureId) + 1
-      : updatedTargetLectures.length;
-
-    updatedTargetLectures.splice(targetIndex, 0, sourceLecture);
-
-    setSections(sections.map(section => {
-      if (section.id === sourceSectionId) {
-        return { ...section, lectures: updatedSourceLectures };
+    
+    // Update the source section with the lecture removed
+    updatedSections[sourceSectionIndex] = {
+      ...sourceSection,
+      lectures: updatedSourceLectures
+    };
+    
+    // Handle the target section (which might be the same as the source)
+    const targetSection = updatedSections[targetSectionIndex];
+    const targetLectures = [...targetSection.lectures];
+    
+    // Determine where to insert the lecture in the target section
+    let insertIndex = targetLectures.length; // Default to the end
+    
+    if (targetLectureId) {
+      // If we have a target lecture ID, find its position
+      const targetLectureIndex = targetLectures.findIndex(l => l.id === targetLectureId);
+      
+      if (targetLectureIndex !== -1) {
+        // Insert after the target lecture
+        insertIndex = targetLectureIndex + 1;
       }
-      if (section.id === targetSectionId) {
-        return { ...section, lectures: updatedTargetLectures };
+    }
+    
+    // Insert the lecture at the determined position
+    targetLectures.splice(insertIndex, 0, lectureCopy);
+    
+    // Update the target section with the new lectures array
+    updatedSections[targetSectionIndex] = {
+      ...targetSection,
+      lectures: targetLectures
+    };
+    
+    // Update the state with the new sections array
+    setSections(updatedSections);
+    toast.success("Item moved successfully");
+  };
+  
+  // CourseBuilder.tsx - Updated handleDrop function
+  // This handles both section and lecture drops
+  
+
+  const updateQuizQuestions = (sectionId: string, quizId: string, questions: Question[]) => {
+    setSections(sections.map(section => {
+      if (section.id === sectionId) {
+        return {
+          ...section,
+          lectures: section.lectures.map(lecture => {
+            if (lecture.id === quizId && lecture.contentType === 'quiz') {
+              return {
+                ...lecture,
+                questions: questions
+              };
+            }
+            return lecture;
+          })
+        };
       }
       return section;
     }));
+    
+    toast.success("Quiz questions updated");
+  };
+
+  const addQuestionToQuiz = (sectionId: string, quizId: string, question: Question) => {
+    setSections(sections.map(section => {
+      if (section.id === sectionId) {
+        return {
+          ...section,
+          lectures: section.lectures.map(lecture => {
+            if (lecture.id === quizId && lecture.contentType === 'quiz') {
+              return {
+                ...lecture,
+                questions: [...(lecture.questions || []), question]
+              };
+            }
+            return lecture;
+          })
+        };
+      }
+      return section;
+    }));
+    
+    toast.success("Question added to quiz");
+  };
+  const updateSectionsOrder = (newSectionsArray: Section[]) => {
+    setSections(newSectionsArray);
+    toast.success("Section moved successfully");
   };
   
   return {
     sections,
+    updateQuizQuestions,
+    addQuiz,
     addSection,
     addLecture,
     deleteSection,
+    updateSectionsOrder, // Add this line
+    handleLectureDrop,
     deleteLecture,
     toggleSectionExpansion,
     updateSectionName,
@@ -312,6 +432,7 @@ export const useSections = (initialSections: Section[] ) => {
     updateLectureContent,
     saveDescription,
     updateLectureWithUploadedContent,
-    handleLectureDrop
+    setSections,
+    addQuestionToQuiz
   };
 };
