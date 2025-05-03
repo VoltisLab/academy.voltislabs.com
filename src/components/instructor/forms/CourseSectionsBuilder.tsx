@@ -315,15 +315,15 @@ const {
   };
   
   return (
-    <div className="max-w-6xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-      <div className="mb-6 flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-900">Course Curriculum Builder</h1>
-        <div className="space-x-3">
+    <div className="xl:max-w-6xl w-full xl:mx-auto py-6 xl:px-8">
+      <div className="mb-6 flex md:flex-row flex-col justify-between items-center">
+        <h1 className="xl:text-2xl text-xl font-bold text-gray-900">Course Curriculum Builder</h1>
+        <div className="space-x-3 flex sm:justify-between">
         <button
             type="button"
             onClick={handleSaveCourseSections}
             disabled={mutationLoading}
-            className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-gray-600 bg-gray-200 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            className="inline-flex items-center px-1 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-gray-600 bg-gray-200 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
           >
             {mutationLoading ? 'Saving...' : 'Save as Draft'}
           </button>
@@ -331,7 +331,7 @@ const {
             type="button"
             onClick={handleSaveCourseSections}
             disabled={mutationLoading}
-            className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            className="inline-flex items-center px-1 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
           >
             {mutationLoading ? 'Saving...' : 'Save and Continue'}
           </button>
