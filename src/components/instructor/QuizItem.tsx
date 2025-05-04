@@ -1,4 +1,3 @@
-"use client";
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   Trash2, Edit3, ChevronDown, ChevronUp, Move, X, Plus
@@ -152,7 +151,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
         onMouseEnter={() => setIsHovering(true)}
         onMouseLeave={() => setIsHovering(false)}
       >
-        <div className="flex justify-between items-center p-3 cursor-pointer">
+        <div className="flex justify-between items-center p-2 cursor-pointer">
           <div className="flex items-center space-x-3" onClick={toggleExpand}>
             <Move className="w-4 h-4 text-gray-400 cursor-move" />
             <div className="flex items-center space-x-2">
@@ -258,7 +257,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
 
         {/* Question Form */}
         {showQuestionForm && (
-          <div className="p-3 border-t">
+          <div className=" border-t">
             <QuestionForm 
               onAddQuestion={handleAddQuestion} 
               onCancel={() => setShowQuestionForm(false)} 
@@ -370,17 +369,20 @@ const QuizItem: React.FC<QuizItemProps> = ({
             </div>
           ) : (
             <>
-              <div className="flex justify-between items-center mb-3">
-                <div>Questions {questions.length > 0 && `(${questions.length})`}</div>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleNewQuestion();
-                  }}
-                  className="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-5 font-medium rounded-full text-purple-700 bg-purple-100 hover:bg-purple-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
-                >
-                  New Question
-                </button>
+              {/* Modified header - "New Question" button moved next to "Questions" text */}
+              <div className="flex items-center mb-3">
+                <div className="flex-grow flex items-center">
+                  <span className="mr-2">Questions {questions.length > 0 && `(${questions.length})`}</span>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleNewQuestion();
+                    }}
+                    className="inline-flex items-center px-2 py-1 border border-transparent text-sm leading-5 font-medium rounded-xl text-purple-700 bg-purple-100 hover:bg-purple-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+                  >
+                    New Question
+                  </button>
+                </div>
               </div>
 
               {questions.length > 0 && (
@@ -406,7 +408,8 @@ const QuizItem: React.FC<QuizItemProps> = ({
                     >
                       <div className="flex justify-between items-center">
                         <div className="font-medium">
-                          {index + 1}. {question.text} 
+                          {/* Fixed question text to remove p tags */}
+                          {index + 1}. {question.text.replace(/<\/?p>/g, '')} 
                           <span className="text-xs text-gray-500 ml-2">Multiple Choice</span>
                         </div>
                         <div className="flex space-x-2">
@@ -438,7 +441,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
               <div className="flex justify-end mt-3">
                 <QuizPreviewWrapper quiz={quizData}>
                   <button 
-                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700"
+                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
                     disabled={questions.length === 0}
                   >
                     Preview

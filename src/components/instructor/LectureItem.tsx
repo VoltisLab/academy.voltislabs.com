@@ -1,4 +1,3 @@
-"use client";
 import React, { useRef, useEffect, useState } from 'react';
 import { ContentItemType, Lecture, ContentType } from '@/lib/types';
 import { 
@@ -117,6 +116,7 @@ export default function LectureItem({
 }: LectureItemProps) {
   const lectureNameInputRef = useRef<HTMLInputElement>(null);
   const [showContentTypeSelector, setShowContentTypeSelector] = useState(false);
+  const [isHovering, setIsHovering] = useState(false);
   
   // Active content type state
   const [activeContentType, setActiveContentType] = useState<ContentItemType | null>(null);
@@ -260,7 +260,7 @@ export default function LectureItem({
       case 'video':
         return (
           <div className="border border-gray-300 rounded-md">
-            <div className="flex items-center justify-between px-4 py-2 border-b border-gray-300">
+            <div className="flex items-center justify-between px-2 py-2 border-b border-gray-300">
               <div className="flex-1">
                 <h3 className="text-lg font-medium">Add Video</h3>
               </div>
@@ -275,7 +275,7 @@ export default function LectureItem({
             
             <div className="p-4">
               <div className="border-b border-gray-300">
-                <div className="flex">
+                <div className="flex flex-wrap">
                   {videoTabs.map(tab => (
                     <button
                       key={tab.key}
@@ -293,7 +293,7 @@ export default function LectureItem({
               {videoContent.activeTab === 'uploadVideo' ? (
                 <div className="py-4">
                   <div className="flex items-center justify-between p-4 border border-gray-300 rounded-md">
-                    <div className="flex-1">
+                    <div className="flex-1 truncate text-sm">
                       {videoContent.uploadTab.selectedFile ? (
                         <span>{videoContent.uploadTab.selectedFile.name}</span>
                       ) : (
@@ -327,7 +327,7 @@ export default function LectureItem({
                             ...videoContent, 
                             libraryTab: { ...videoContent.libraryTab, searchQuery: e.target.value }
                           })}
-                          className="w-1/2 justify-end py-2 px-3 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                          className="w-full sm:w-1/2 justify-end py-2 px-3 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                         />
                       </div>
                       <button
@@ -340,7 +340,7 @@ export default function LectureItem({
                   </form>
                   
                   <div className="border border-gray-300 rounded-md">
-                    <div className="grid grid-cols-4 gap-4 p-3 border-b border-gray-300 bg-gray-50 text-sm font-medium">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4 p-3 border-b border-gray-300 bg-gray-50 text-xs md:text-sm font-medium">
                       <div>Filename</div>
                       <div>Type</div>
                       <div>Status</div>
@@ -348,7 +348,7 @@ export default function LectureItem({
                         Date <ChevronDown className="w-4 h-4" />
                       </div>
                     </div>
-                    <div className="p-4 text-center text-gray-500">
+                    <div className="p-4 text-center text-gray-500 text-sm">
                       No results found.
                     </div>
                   </div>
@@ -374,7 +374,7 @@ export default function LectureItem({
               </button>
             </div>
             
-            <div className="p-4">
+            <div className="p-2">
               <div className="mb-6">
                 <div className="flex items-center">
                   <div className={`w-6 h-6 rounded-full flex items-center justify-center font-medium ${
@@ -382,12 +382,12 @@ export default function LectureItem({
                   }`}>
                     1
                   </div>
-                  <span className="ml-2 font-medium">Pick a Video</span>
+                  <span className="ml-2 font-medium text-sm">Pick a Video</span>
                 </div>
                 
                 <div className="mt-4">
                   <div className="flex items-center justify-between p-4 border border-gray-300 rounded-md">
-                    <div className="flex-1">
+                    <div className="flex-1 text-sm truncate">
                       {videoSlideContent.video.selectedFile ? (
                         <span>{videoSlideContent.video.selectedFile.name}</span>
                       ) : (
@@ -417,12 +417,12 @@ export default function LectureItem({
                   }`}>
                     2
                   </div>
-                  <span className="ml-2 font-medium">Pick a Presentation</span>
+                  <span className="ml-2 font-medium text-sm">Pick a Presentation</span>
                 </div>
                 
                 <div className="mt-4">
                   <div className="flex items-center justify-between p-4 border border-gray-300 rounded-md">
-                    <div className="flex-1">
+                    <div className="flex-1 text-sm truncate">
                       {videoSlideContent.presentation.selectedFile ? (
                         <span>{videoSlideContent.presentation.selectedFile.name}</span>
                       ) : (
@@ -452,10 +452,10 @@ export default function LectureItem({
                   }`}>
                     3
                   </div>
-                  <span className="ml-2 font-medium">Synchronize Video & Presentation</span>
+                  <span className="ml-2 font-medium text-sm">Synchronize Video & Presentation</span>
                 </div>
                 
-                <div className="mt-4 p-6 border border-gray-300 rounded-md border-dashed text-center text-gray-500">
+                <div className="mt-4 p-6 border border-gray-300 rounded-md border-dashed text-center text-gray-500 text-sm">
                   Please pick a video & presentation first
                 </div>
               </div>
@@ -489,11 +489,11 @@ export default function LectureItem({
                   theme="snow"
                   placeholder="Start writing your article content here..."
                   className="bg-white rounded-b-md" 
-                  style={{ height: '150px' }} // Set your desired height here
-                  />
+                  style={{ height: '150px' }}
+                />
                 
                 <div className="mt-16 flex justify-end m-2">
-                  <button className="inline-flex items-center px-4 py-2  border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none">
+                  <button className="inline-flex items-center px-4 py-2 border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none">
                     Save
                   </button>
                 </div>
@@ -522,6 +522,8 @@ export default function LectureItem({
       }}
       onDragLeave={handleDragLeave}
       onDrop={(e) => handleDrop(e, sectionId, lecture.id)}
+      onMouseEnter={() => setIsHovering(true)}
+      onMouseLeave={() => setIsHovering(false)}
     >
       <div className="flex items-center p-3">
         <div className="flex-1 flex items-center">
@@ -541,48 +543,57 @@ export default function LectureItem({
               onClick={(e) => e.stopPropagation()}
             />
           ) : (
-            <div>{getLectureTypeLabel()} {lectureIndex + 1}: {lecture.name}</div>
+            <div className="text-sm sm:text-base truncate max-w-full">{getLectureTypeLabel()} {lectureIndex + 1}: {lecture.name}</div>
           )}
         </div>
-        <div className="flex items-center space-x-1">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              startEditingLecture(e);
-            }}
-            className="p-1 text-gray-400 hover:text-gray-600"
-          >
-            <Edit3 className="w-4 h-4" />
-          </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              deleteLecture(sectionId, lecture.id);
-            }}
-            className="p-1 text-gray-400 hover:text-red-600"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              moveLecture(sectionId, lecture.id, 'up');
-            }}
-            className="p-1 text-gray-400 hover:text-gray-600"
-            disabled={lectureIndex === 0}
-          >
-            <ChevronUp className={`w-4 h-4 ${lectureIndex === 0 ? 'opacity-50' : ''}`} />
-          </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              moveLecture(sectionId, lecture.id, 'down');
-            }}
-            className="p-1 text-gray-400 hover:text-gray-600"
-            disabled={lectureIndex === totalLectures - 1}
-          >
-            <ChevronDown className={`w-4 h-4 ${lectureIndex === totalLectures - 1 ? 'opacity-50' : ''}`} />
-          </button>
+        <div className="flex items-center">
+          {/* Action buttons that only show on hover on larger screens */}
+          <div className={`hidden sm:flex items-center space-x-1 transition-opacity duration-200 ${isHovering ? 'opacity-100' : 'opacity-0'}`}>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                startEditingLecture(e);
+              }}
+              className="p-1 text-gray-400 hover:text-gray-600"
+              aria-label="Edit"
+            >
+              <Edit3 className="w-4 h-4" />
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                deleteLecture(sectionId, lecture.id);
+              }}
+              className="p-1 text-gray-400 hover:text-red-600"
+              aria-label="Delete"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                moveLecture(sectionId, lecture.id, 'up');
+              }}
+              className="p-1 text-gray-400 hover:text-gray-600"
+              disabled={lectureIndex === 0}
+              aria-label="Move up"
+            >
+              <ChevronUp className={`w-4 h-4 ${lectureIndex === 0 ? 'opacity-50' : ''}`} />
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                moveLecture(sectionId, lecture.id, 'down');
+              }}
+              className="p-1 text-gray-400 hover:text-gray-600"
+              disabled={lectureIndex === totalLectures - 1}
+              aria-label="Move down"
+            >
+              <ChevronDown className={`w-4 h-4 ${lectureIndex === totalLectures - 1 ? 'opacity-50' : ''}`} />
+            </button>
+          </div>
+          
+          {/* Content button always visible */}
           <button 
             onClick={(e) => {
               e.stopPropagation();
@@ -597,12 +608,15 @@ export default function LectureItem({
                 }
               }
             }}
-            className="text-indigo-600 font-medium px-3 py-1 rounded-md hover:bg-indigo-50 flex items-center"
+            className="text-indigo-600 font-medium text-xs sm:text-sm px-2 sm:px-3 py-1 rounded-md hover:bg-indigo-50 flex items-center ml-1 sm:ml-2 border border-indigo-200"
           >
-            <Plus className="w-4 h-4 mr-1" /> Content
+            <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-0.5 sm:mr-1" /> 
+            <span>Content</span>
           </button>
+          
+          {/* Expand/Collapse button always visible */}
           <button 
-            className="p-1 text-gray-400 hover:text-gray-600"
+            className="p-1 text-gray-400 hover:text-gray-600 ml-1"
             onClick={(e) => {
               e.stopPropagation();
               // Check if toggleContentSection exists before calling it
@@ -614,6 +628,7 @@ export default function LectureItem({
                 }
               }
             }}
+            aria-label={isExpanded ? "Collapse" : "Expand"}
           >
             {isExpanded ? (
               <ChevronUp className="w-5 h-5" />
@@ -626,11 +641,11 @@ export default function LectureItem({
       
       {/* Expanded content area */}
       {isExpanded && (
-        <div className="px-3 pb-3">
+        <div className="">
           {showContentTypeSelector && !activeContentType && (
-            <div className="bg-white rounded-md shadow-sm border border-gray-300 p-4 w-full">
+            <div className="bg-white shadow-sm border border-gray-300 p-2 w-full">
               <div className="flex justify-between items-center mb-3">
-                <h3 className="text-gray-800 font-medium">Select content type</h3>
+                <h3 className="text-gray-800 font-medium text-sm sm:text-base">Select content type</h3>
                 <button 
                   onClick={() => setShowContentTypeSelector(false)} 
                   className="text-gray-500 hover:text-gray-700"
@@ -640,39 +655,39 @@ export default function LectureItem({
                 </button>
               </div>
               
-              <p className="text-sm text-gray-600 mb-4">
+              <p className="text-xs sm:text-sm text-gray-600 mb-4">
                 Select the main type of content. Files and links can be added as resources. 
                 <a href="#" className="text-indigo-600 hover:text-indigo-700 ml-1">Learn about content types.</a>
               </p>
               
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-3 gap-2 sm:gap-4">
                 <button 
                   onClick={() => handleContentTypeSelect('video')}
-                  className="flex flex-col items-center p-3 border border-gray-300 rounded-md hover:bg-gray-50"
+                  className="flex flex-col items-center p-2 sm:p-3 border border-gray-300 rounded-md hover:bg-gray-50"
                 >
-                  <div className="w-12 h-12 bg-gray-100 rounded-md mb-2 flex items-center justify-center">
+                  <div className="w-8 h-8 sm:w-12 sm:h-12 bg-gray-100 rounded-md mb-1 sm:mb-2 flex items-center justify-center">
                     <span className="text-gray-400">▶</span>
                   </div>
-                  <span className="text-sm">Video</span>
+                  <span className="text-xs sm:text-sm">Video</span>
                 </button>
                 
                 <button 
                   onClick={() => handleContentTypeSelect('video-slide' as ContentItemType)}
-                  className="flex flex-col items-center p-3 border border-gray-300 rounded-md hover:bg-gray-50"
+                  className="flex flex-col items-center p-2 sm:p-3 border border-gray-300 rounded-md hover:bg-gray-50"
                 >
-                  <div className="w-12 h-12 bg-gray-100 rounded-md mb-2 flex items-center justify-center">
+                  <div className="w-8 h-8 sm:w-12 sm:h-12 bg-gray-100 rounded-md mb-1 sm:mb-2 flex items-center justify-center">
                     <span className="text-gray-400">▶⊞</span>
                   </div>
-                  <span className="text-sm">Video & Slide Mashup</span>
+                  <span className="text-xs sm:text-sm">Video & Slide</span>
                 </button>
                 
                 <button 
                   onClick={() => handleContentTypeSelect('article')}
-                  className="flex flex-col items-center p-3 border border-gray-300 rounded-md hover:bg-gray-50">
-                  <div className="w-12 h-12 bg-gray-100 rounded-md mb-2 flex items-center justify-center">
+                  className="flex flex-col items-center p-2 sm:p-3 border border-gray-300 rounded-md hover:bg-gray-50">
+                  <div className="w-8 h-8 sm:w-12 sm:h-12 bg-gray-100 rounded-md mb-1 sm:mb-2 flex items-center justify-center">
                     <span className="text-gray-400">📄</span>
                   </div>
-                  <span className="text-sm">Article</span>
+                  <span className="text-xs sm:text-sm">Article</span>
                 </button>
               </div>
             </div>
@@ -681,7 +696,7 @@ export default function LectureItem({
           {activeContentType && renderContent()}
           
           {!showContentTypeSelector && !activeContentType && (
-            <>
+            <div className="p-2">
               {/* Description button */}
               <button
                 onClick={() => {
@@ -690,9 +705,9 @@ export default function LectureItem({
                     toggleDescriptionEditor(sectionId, lecture.id, lecture.description || "");
                   }
                 }}
-                className="mb-2 flex items-center gap-2 py-2 px-4 text-sm text-indigo-600 font-medium border border-gray-300 rounded-md hover:bg-gray-50"
+                className="mb-2 flex items-center gap-2 py-1.5 sm:py-2 px-3 sm:px-4 text-xs sm:text-sm text-indigo-600 font-medium border border-gray-300 rounded-md hover:bg-gray-50"
               >
-                <Plus className="w-4 h-4" />
+                <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
                 <span>Description</span>
               </button>
               
@@ -704,15 +719,15 @@ export default function LectureItem({
                     toggleAddResourceModal(sectionId, lecture.id);
                   }
                 }}
-                className="flex items-center gap-2 py-2 px-4 text-sm text-indigo-600 font-medium border border-gray-300 rounded-md hover:bg-gray-50"
+                className="flex items-center gap-2 py-1.5 sm:py-2 px-3 sm:px-4 text-xs sm:text-sm text-indigo-600 font-medium border border-gray-300 rounded-md hover:bg-gray-50"
               >
-                <Plus className="w-4 h-4" />
+                <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
                 <span>Resources</span>
               </button>
               
               {/* Any additional content */}
               {children}
-            </>
+            </div>
           )}
         </div>
       )}

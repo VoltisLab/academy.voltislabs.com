@@ -5,6 +5,7 @@ import { CourseCategory, GetCategoriesResponse, FormData, CreateCourseBasicInfoV
 import Cookies from "js-cookie";
 import { CREATE_COURSE_BASIC_INFO, GET_CATEGORIES } from "@/api/course/mutation";
 import toast from "react-hot-toast";
+import FormHeader from "./common/FormHeader";
 
 interface BasicInformationFormProps {
   onSaveNext: (courseId: number) => void;
@@ -160,7 +161,7 @@ export const BasicInformationForm = ({ onSaveNext }: BasicInformationFormProps) 
       if (!formData.title || !formData.categoryId || !formData.subCategoryId || 
           !formData.topic || !formData.language || !formData.courseLevel || 
           !formData.durationValue) {
-        throw new Error("Please fill in all required fields");
+        console.log("Please fill in all required fields");
       }
       
       const response = await createCourseBasicInfo({
@@ -202,26 +203,7 @@ export const BasicInformationForm = ({ onSaveNext }: BasicInformationFormProps) 
 
   return (
     <section className="space-y-10">
-      <div className="flex items-center justify-between border-b border-gray-200 px-4 md:px-6 py-4 bg-white">
-        <h2 className="text-lg font-semibold text-gray-900">Basic Information</h2>
-
-        <div className="flex items-center gap-4">
-          <button 
-            className="bg-indigo-100 text-indigo-700 font-medium text-sm px-4 py-2 rounded-md"
-            onClick={(e) => handleCourseCreation(e)}
-            disabled={loading}
-          >
-            {loading ? "Saving..." : "Save"}
-          </button>
-          <button 
-            className="text-indigo-800 text-sm font-medium"
-            onClick={(e) => handleCourseCreation(e, true)}
-            disabled={loading}
-          >
-            Save & Preview
-          </button>
-        </div>
-      </div>
+      <FormHeader loading={loading} handleCourseCreation={handleCourseCreation} title={"Basic Information"} />
 
       <form className="space-y-6 text-sm text-gray-800">
         {/* Title */}
@@ -330,7 +312,7 @@ export const BasicInformationForm = ({ onSaveNext }: BasicInformationFormProps) 
         </div>
 
         {/* Languages and Level */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
           <div>
             <label className="block font-medium mb-1">Course Language</label>
             <select 
@@ -347,6 +329,7 @@ export const BasicInformationForm = ({ onSaveNext }: BasicInformationFormProps) 
               ))}
             </select>
           </div>
+
           <div>
             <label className="block font-medium mb-1">Subtitle Language (Optional)</label>
             <select 
@@ -381,7 +364,7 @@ export const BasicInformationForm = ({ onSaveNext }: BasicInformationFormProps) 
           </div>
           <div>
             <label className="block font-medium mb-1">Duration</label>
-            <div className="flex gap-2">
+            <div className="flex gap-2 xl:flex-row flex-col">
               <input
                 type="number"
                 name="durationValue"

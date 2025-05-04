@@ -118,8 +118,8 @@ export const AdvanceInformationForm = ({ onSaveNext, courseId}: BasicInformation
 
   return (
     <section className="space-y-10">
-      <FormHeader />
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <FormHeader title="Advanced Information" handleCourseCreation={handleCourseUpdate} loading={loading} />
+      <div className="grid grid-cols-1 xl:grid-cols-2 xl:gap-8 gap-4">
         {/* Course Thumbnails with upload handlers */}
         <CourseThumbnailUploader 
           onFileSelect={handlePrimaryThumbnailUpload} 

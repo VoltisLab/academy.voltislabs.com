@@ -315,27 +315,52 @@ const {
   };
   
   return (
-    <div className="xl:max-w-6xl w-full xl:mx-auto py-6 xl:px-8">
-      <div className="mb-6 flex md:flex-row flex-col justify-between items-center">
-        <h1 className="xl:text-2xl text-xl font-bold text-gray-900">Course Curriculum Builder</h1>
-        <div className="space-x-3 flex sm:justify-between">
-        <button
-            type="button"
-            onClick={handleSaveCourseSections}
-            disabled={mutationLoading}
-            className="inline-flex items-center px-1 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-gray-600 bg-gray-200 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-          >
-            {mutationLoading ? 'Saving...' : 'Save as Draft'}
-          </button>
-          <button
-            type="button"
-            onClick={handleSaveCourseSections}
-            disabled={mutationLoading}
-            className="inline-flex items-center px-1 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-          >
-            {mutationLoading ? 'Saving...' : 'Save and Continue'}
-          </button>
-        </div>
+    <div className="xl:max-w-6xl w-full xl:mx-auto pb-6 xl:px-8">
+<div className="w-full  py-6">
+  <div className="flex w-full flex-col xl:flex-row justify-between items-center gap-4 sm:gap-6">
+    <h1 className="xl:text-xl sm:text-2xl md:text-[16px] font-bold text-gray-900 text-center sm:text-left">
+      Course Curriculum Builder
+    </h1>
+    <div className="md:flex space-x-3 hidden ">
+      <button
+        type="button"
+        onClick={handleSaveCourseSections}
+        disabled={mutationLoading}
+        className="inline-flex items-center px-3 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-gray-600 bg-gray-200 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+      >
+        {mutationLoading ? 'Saving...' : 'Save as Draft'}
+      </button>
+      <button
+        type="button"
+        onClick={handleSaveCourseSections}
+        disabled={mutationLoading}
+        className="inline-flex items-center px-3 py-2 border border-transparent rounded-md shadow-sm text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+      >
+        {mutationLoading ? 'Saving...' : 'Save & Next'}
+      </button>
+
+    </div>   
+    <div className="flex space-x-3 w-full justify-between md:hidden">
+      <button
+        type="button"
+        onClick={handleSaveCourseSections}
+        disabled={mutationLoading}
+        className="inline-flex items-center px-3 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-gray-600 bg-gray-200 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+      >
+        {mutationLoading ? 'Saving...' : 'Save as Draft'}
+      </button>
+      <button
+        type="button"
+        onClick={handleSaveCourseSections}
+        disabled={mutationLoading}
+        className="inline-flex items-center px-3 py-2 border border-transparent rounded-md shadow-sm text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+      >
+        {mutationLoading ? 'Saving...' : 'Save & Next'}
+      </button>
+    </div>
+
+
+  </div>
       </div>
       
       {mutationError && (
@@ -354,7 +379,7 @@ const {
       )}
       
       <div className="bg-white shadow rounded-lg overflow-hidden border border-gray-200">
-        <div className="p-4 sm:p-6 border-b">
+        <div className="p-2 sm:p-6 border-b">
           <p className="text-gray-500 mb-4">
             Create your course curriculum by adding sections and curriculum items. Drag to reorder.
           </p>
