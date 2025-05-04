@@ -244,7 +244,7 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
   };
 
   return (
-    <div className="border border-gray-200 rounded-md p-6 mb-4 bg-white">
+    <div className="border border-gray-200 p-2 xl:p-6 mb-4 bg-white">
       <div className="flex justify-between items-center mb-4">
         <h3 className="font-medium">Add Multiple Choice</h3>
         <button onClick={onCancel} className="text-gray-500 hover:text-gray-700">

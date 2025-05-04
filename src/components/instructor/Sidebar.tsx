@@ -15,10 +15,13 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
-
+import { useRouter } from "next/navigation";
+import LogoutModal from "../modals/LogoutModal";
+import { logout } from "@/api/auth/auth";
+import toast from "react-hot-toast";
 // Add custom styles for mobile sidebar transitions with enhanced modern styling
 const customStyles = `
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     .mobile-sidebar {
       transform: translateX(-100%);
       transition: transform 0.3s ease;
@@ -68,9 +71,32 @@ const customStyles = `
   }
 `;
 
-export default function Sidebar() {
+interface UserData {
+  firstName?: string;
+  lastName?: string;
+  // Add other user properties as needed
+}
+
+export default function InstructorSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState<boolean>(false);
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState<boolean>(false);
+  const [user, setUser] = useState<UserData | null>(null);
+
+  // Get user data (similar to student sidebar)
+  useEffect(() => {
+    // Client-side only code
+    try {
+      // Replace with your actual auth logic
+      const userData = getCurrentUser();
+      if (userData) {
+        setUser(userData);
+      }
+    } catch (error) {
+      console.error("Error fetching user data:", error);
+    }
+  }, []);
 
   // Close mobile sidebar when navigating to a new page
   useEffect(() => {
@@ -80,6 +106,23 @@ export default function Sidebar() {
   // Toggle mobile sidebar
   const toggleMobileSidebar = () => {
     setIsMobileSidebarOpen(!isMobileSidebarOpen);
+  };
+
+  // Logout handler (similar to student sidebar)
+  const handleLogout = () => {
+    // Replace with your actual logout logic
+    logout();
+    toast.success("Logging out... Please wait while we redirect you...")
+    setIsLogoutModalOpen(false);
+    router.push("/");
+  };
+
+  // Mock functions for auth - replace with your actual implementations
+  const getCurrentUser = (): UserData | null => {
+    // This is a placeholder - replace with your actual auth implementation
+    // For example, you might use a token from localStorage
+    const userString = localStorage.getItem('currentUser');
+    return userString ? JSON.parse(userString) : null;
   };
 
   return (
@@ -114,7 +157,23 @@ export default function Sidebar() {
 
         {/* User Profile + Hamburger Menu Button */}
         <div className="flex items-center space-x-3">
-          {/* You can add user profile here if needed */}
+          {/* User Profile */}
+          <div
+            className="cursor-pointer bg-[#1C1E29] size-[42px] rounded-full justify-center items-center relative overflow-hidden shadow flex"
+          >
+            <div className="size-[42px] rounded-full absolute -top-[20%] -right-[20%] z-10 bg-[#4F46E5]"></div>
+            <div className="bg-[#11131A] flex justify-center items-center rounded-full size-9 relative z-20">
+              <div className="size-7 relative">
+                <Image
+                  src={"/guy.jpg"}
+                  alt="User"
+                  fill
+                  sizes="(max-width: 768px) 100vw, 128px"
+                  className="object-cover rounded-full"
+                />
+              </div>
+            </div>
+          </div>
           
           {/* Hamburger Menu Button */}
           <button
@@ -128,10 +187,12 @@ export default function Sidebar() {
       </div>
 
       {/* Mobile Sidebar Overlay - with improved transition */}
-      <div
-        className={`mobile-overlay ${isMobileSidebarOpen ? "open" : ""}`}
-        onClick={toggleMobileSidebar}
-      ></div>
+      {isMobileSidebarOpen && (
+        <div
+          className="mobile-overlay open"
+          onClick={toggleMobileSidebar}
+        ></div>
+      )}
 
       {/* Sidebar */}
       <aside 
@@ -246,7 +307,10 @@ export default function Sidebar() {
 
           {/* Sign Out - fixed at bottom */}
           <div className="px-4 pb-6 mt-auto border-t border-gray-700 pt-4">
-            <button className="flex items-center gap-2 text-sm text-gray-400 hover:text-white px-4 py-2">
+            <button 
+              className="flex items-center gap-2 text-sm text-gray-400 hover:text-white px-4 py-2"
+              onClick={() => setIsLogoutModalOpen(true)}
+            >
               <LogOut className="w-4 h-4" /> Sign-out
             </button>
           </div>
@@ -255,6 +319,16 @@ export default function Sidebar() {
 
       {/* Content offset for desktop - this pushes main content to the right of sidebar */}
       <div className="md:ml-64"></div>
+      
+      {/* Logout Modal would go here - uncomment and implement if needed */}
+      
+      <LogoutModal
+        isOpen={isLogoutModalOpen}
+        onClose={() => setIsLogoutModalOpen(false)}
+        onLogout={handleLogout}
+        userName={`${user?.firstName || ""} ${user?.lastName || ""}`}
+      />
+     
     </>
   );
 }

@@ -1,14 +1,20 @@
-import FormFooterButtons from "./common/FormFooterButtons";
+import { useState } from "react";
 import FormHeader from "./common/FormHeader";
 import CourseSectionsBuilder from "./forms/CourseSectionsBuilder";
 interface BasicInformationFormProps {
   onSaveNext: () => void;
   courseId?: number;
 }
+
+const handleCurriculm = () => {
+
+}
+
 export const Curriculum = ({ onSaveNext, courseId }: BasicInformationFormProps) => {
+  const [loading, setLoading] = useState<boolean>(false)
   return (
     <section className="space-y-10">
-      <FormHeader />
+      <FormHeader title="Curriculum" loading={loading} handleCourseCreation={handleCurriculm} />
       <CourseSectionsBuilder onSaveNext={onSaveNext} courseId={courseId}/>
     </section>
   );

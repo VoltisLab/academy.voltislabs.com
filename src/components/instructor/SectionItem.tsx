@@ -288,7 +288,7 @@ export default function SectionItem({
     >
       {/* Section header - with hover state for buttons */}
       <div 
-        className="flex justify-between items-center p-3 bg-gray-50 cursor-pointer"
+        className="flex justify-between items-center p-2 bg-gray-50 cursor-pointer"
         onClick={() => toggleSectionExpansion(section.id)}
       >
         <div className="flex items-center space-x-3">
@@ -362,7 +362,7 @@ export default function SectionItem({
       </div>
       
       {section.isExpanded && (
-        <div className="p-4 bg-gray-50 relative">
+        <div className="p-2 bg-gray-50 relative">
           {/* Render lectures and assignments */}
           {section.lectures.map((lecture: Lecture, lectureIndex: number) => {
             return renderLectureItem(lecture, lectureIndex);
