@@ -1,6 +1,5 @@
-"use client";
 import React, { useRef, useEffect, useState } from 'react';
-import { Trash2, Edit3, ChevronDown, ChevronUp, Move, Plus, AlignJustify} from "lucide-react";
+import { Trash2, Edit3, ChevronDown, ChevronUp, Move, Plus, AlignJustify, FileText} from "lucide-react";
 import { Lecture, ContentItemType } from '@/lib/types';
 // Import the components
 import { ActionButtons } from './ActionButtons';
@@ -103,6 +102,9 @@ export default function SectionItem({
   const [isHovering, setIsHovering] = useState<boolean>(false);
   const [showCodingExerciseForm, setShowCodingExerciseForm] = useState<boolean>(false);
   const [showPracticeForm, setShowPracticeForm] = useState<boolean>(false);
+  const [showEditForm, setShowEditForm] = useState<boolean>(false);
+  const [editTitle, setEditTitle] = useState<string>("");
+  const [editObjective, setEditObjective] = useState<string>("");
 
   useEffect(() => {
     if (editingSectionId === section.id && sectionNameInputRef.current) {
@@ -110,9 +112,31 @@ export default function SectionItem({
     }
   }, [editingSectionId, section.id]);
 
+  useEffect(() => {
+    if (showEditForm) {
+      setEditTitle(section.name);
+      setEditObjective(section.objective || "");
+    }
+  }, [showEditForm, section.name, section.objective]);
+
   const startEditingSection = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
-    setEditingSectionId(section.id);
+    // Set initial values when opening the form
+    setEditTitle(section.name);
+    setEditObjective(section.objective || "");
+    setShowEditForm(true);
+  };
+
+  const handleSaveEdit = () => {
+    if (editTitle.trim()) {
+      // Call the update function with current values
+      updateSectionName(section.id, editTitle, editObjective);
+      
+      // Use setTimeout to ensure state updates before hiding the form
+      setTimeout(() => {
+        setShowEditForm(false);
+      }, 0);
+    }
   };
 
   // Handler for curriculum button click
@@ -330,12 +354,12 @@ export default function SectionItem({
 
   return (
     <div 
-      className={`border border-gray-500 overflow-hidden bg-red-300 ${
+      className={`border border-gray-300 overflow-hidden bg-white ${
         draggedSection === section.id ? 'opacity-50' : ''
       } ${
         dragTarget?.sectionId === section.id && !dragTarget?.lectureId ? 'border-2 border-indigo-500' : ''
       }`}
-      draggable={true}
+      draggable={!showEditForm}
       onDragStart={(e) => handleDragStart(e, section.id)}
       onDragEnd={handleDragEnd}
       onDragOver={(e) => handleDragOver(e)}
@@ -344,151 +368,179 @@ export default function SectionItem({
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
     >
-      {/* Section header - with hover state for buttons */}
-      <div 
-        className="flex justify-between items-center p-2 bg-gray-50 cursor-pointer"
-        onClick={() => toggleSectionExpansion(section.id)}
-      >
-        <div className="flex items-center space-x-3">
-          
-          {editingSectionId === section.id ? (
-            <input
-              ref={sectionNameInputRef}
-              type="text"
-              value={section.name}
-              onChange={(e) => updateSectionName(section.id, e.target.value, section.objective)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  setEditingSectionId(null);
-                }
-              }}
-              className="border-gray-300 focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border rounded-md px-2 py-1 section-edit"
-              onClick={(e) => e.stopPropagation()}
-            />
-          ) : (
-            <h3 className="font-semibold text-xs">Unpublished Section {index + 1}: {section.name}</h3>
-          )}
-          <AlignJustify className="w-5 h-5 text-gray-400 cursor-move" />
-        </div>
-        <div className="flex items-center space-x-2">
-          {/* Edit and Delete buttons only visible on hover */}
-          {isHovering && (
-            <>
-              <button
-                onClick={(e) => startEditingSection(e)}
-                className="text-gray-500 hover:text-gray-700 p-1"
-              >
-                <Edit3 className="w-4 h-4" />
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  deleteSection(section.id);
-                }}
-                className="text-gray-500 hover:text-red-600 p-1"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-            </>
-          )}
-          {/* Up/Down buttons and expansion chevron (always visible) */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              moveSection(section.id, 'up');
-            }}
-            className="text-gray-500 hover:text-gray-700 p-1"
-            disabled={index === 0}
-          >
-            <ChevronUp className={`w-4 h-4 ${index === 0 ? 'opacity-50' : ''}`} />
-          </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              moveSection(section.id, 'down');
-            }}
-            className="text-gray-500 hover:text-gray-700 p-1"
-            disabled={index === totalSections - 1}
-          >
-            <ChevronDown className={`w-4 h-4 ${index === totalSections - 1 ? 'opacity-50' : ''}`} />
-          </button>
-          {section.isExpanded ? (
-            <ChevronUp className="w-5 h-5 text-gray-500" />
-          ) : (
-            <ChevronDown className="w-5 h-5 text-gray-500" />
-          )}
-        </div>
-      </div>
-      
-      {section.isExpanded && (
-        <div className="p-2 bg-gray-50 relative">
-          {/* Render lectures and assignments */}
-          {section.lectures.map((lecture: Lecture, lectureIndex: number) => {
-            return renderLectureItem(lecture, lectureIndex);
-          })}
-          
-          {/* Assignment Form */}
-          {showAssignmentForm && (
-            <AssignmentForm
-              sectionId={section.id}
-              onAddAssignment={handleAddAssignment}
-              onCancel={() => setShowAssignmentForm(false)}
-            />
-          )}
+       
 
-
-        {showPracticeForm && (
-          <PracticeForm
-            sectionId={section.id}
-            onAddPractice={handleAddPractice}
-            onCancel={() => setShowPracticeForm(false)}
-          />
-        )}
-
-          {showCodingExerciseForm && (
-          <CodingExerciseForm
-            sectionId={section.id}
-            onAddCodingExercise={handleAddCodingExercise}
-            onCancel={() => setShowCodingExerciseForm(false)}
-          />
-        )}
-          
-          {/* Quiz Form */}
-          {showQuizForm && (
-            <QuizForm
-              sectionId={section.id}
-              onAddQuiz={handleAddQuiz}
-              onCancel={() => setShowQuizForm(false)}
-            />
-          )}
-          
-          {/* Render any additional children */}
-          {children}
-          
-          {/* Curriculum item button */}
-          <button 
-            onClick={handleCurriculumButtonClick}
-            className="mt-3 flex items-center text-indigo-600 border border-indigo-200 hover:border-indigo-300 px-3 py-2 rounded-md text-sm font-medium"
+        <div className='bg-gray-100 pb-5'>
+          {/* Section header - with hover state for buttons */}
+          <div 
+            className="flex justify-between items-center bg-gray-100 cursor-pointer w-full"
+            onClick={() => toggleSectionExpansion(section.id)}
           >
-            <Plus className="w-4 h-4 mr-2" /> Curriculum item
-          </button>
-          
-          {/* Show action buttons when toggled */}
-          {showActionButtons && (
-            <div className="mt-3">
-              <ActionButtons
-                sectionId={section.id}
-                onAddLecture={handleAddLecture}
-                onShowTypeSelector={() => {
-                  // For the lecture button - directly add a video lecture
-                  addLecture(section.id, 'video');
-                  setShowActionButtons(false);
-                }}
-              />
+            {showEditForm? (
+               <div className="m-4 flex-1 w-full bg-white p-2 border border-gray-400">
+               <div className="flex items-center mb-2 w-full ">
+                 <div className="w-16">
+                   <span className="text-sm font-bold text-gray-800">Section:</span>
+                 </div>
+                 <div className="flex-1">
+                 <input
+                  type="text"
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  placeholder="Demo Section"
+                  className="w-full border border-gray-400 rounded px-3 py-1 focus:outline-none focus:border-2 focus:border-[#6D28D2]"
+                  maxLength={80}
+                  ref={sectionNameInputRef}
+                />
+                   <div className="text-right text-xs text-gray-500 mt-1">
+                     {editTitle.length}/80
+                   </div>
+                 </div>
+               </div>
+               
+               <div className="mb-4 ml-16">
+                 <div className="mb-2">
+                   <span className="text-sm font-medium text-gray-800">What will students be able to do at the end of this section?</span>
+                 </div>
+                 <input
+                   type="text"
+                   value={editObjective}
+                   onChange={(e) => setEditObjective(e.target.value)}
+                   placeholder="Demo Section description"
+                   className="w-full border border-gray-400 rounded px-3 py-1 focus:outline-none focus:border-2 focus:border-[#6D28D2]"
+                   maxLength={200}
+                 />
+                 <div className="text-right text-xs text-gray-500 mt-1">
+                   {editObjective.length}/200
+                 </div>
+               </div>
+               
+               <div className="flex justify-end space-x-2">
+                 <button
+                   type="button"
+                   onClick={() => setShowEditForm(false)}
+                   className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded"
+                 >
+                   Cancel
+                 </button>
+                 <button
+                   type="button"
+                   onClick={handleSaveEdit}
+                   className="px-4 py-2 text-sm font-medium bg-[#6D28D2] text-white rounded hover:bg-[#7B3FE4]"
+                 >
+                   Save Section
+                 </button>
+               </div>
+             </div>
+            ) : (
+              <div className='flex flex-row justify-bewteen w-full p-2'>
+                 <div className="flex items-center space-x-3 mt-2 w-full">
+              <h3 className="font-semibold text-xs text-gray-700 whitespace-nowrap overflow-hidden text-ellipsis flex items-center gap-1">
+                Unpublished Section: <FileText size={10} /> {section.name}
+              </h3>
+
+              {/* Edit and Delete buttons only visible on hover */}
+              {isHovering && (
+                <>
+                  <button
+                    onClick={(e) => startEditingSection(e)}
+                    className="text-gray-500 hover:text-gray-700"
+                  >
+                    <Edit3 className="w-3 h-3" />
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      deleteSection(section.id);
+                    }}
+                    className="text-gray-500 hover:text-red-600"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </button>
+                </>
+              )}
             </div>
+
+            <div className="flex items-center space-x-2">
+              <AlignJustify className="w-5 h-5 text-gray-400 cursor-move" />
+            </div>
+              </div>
+            )}
+           
+          </div>
+          
+          {section.isExpanded && (
+            <div className="p-2 bg-gray-100 relative">
+              {/* Render lectures and assignments */}
+              {section.lectures.map((lecture: Lecture, lectureIndex: number) => {
+                return renderLectureItem(lecture, lectureIndex);
+              })}
+              
+              {/* Assignment Form */}
+              {showAssignmentForm && (
+                <AssignmentForm
+                  sectionId={section.id}
+                  onAddAssignment={handleAddAssignment}
+                  onCancel={() => setShowAssignmentForm(false)}
+                />
+              )}
+
+              {showPracticeForm && (
+                <PracticeForm
+                  sectionId={section.id}
+                  onAddPractice={handleAddPractice}
+                  onCancel={() => setShowPracticeForm(false)}
+                />
+              )}
+
+              {showCodingExerciseForm && (
+                <CodingExerciseForm
+                  sectionId={section.id}
+                  onAddCodingExercise={handleAddCodingExercise}
+                  onCancel={() => setShowCodingExerciseForm(false)}
+                />
+              )}
+              
+              {/* Quiz Form */}
+              {showQuizForm && (
+                <QuizForm
+                  sectionId={section.id}
+                  onAddQuiz={handleAddQuiz}
+                  onCancel={() => setShowQuizForm(false)}
+                />
+              )}
+              
+              {/* Render any additional children */}
+              {children}
+              
+              {/* Show action buttons when toggled */}
+              <div className='flex flex-row gap-2 '>
+              <button 
+                onClick={handleCurriculumButtonClick}
+                className="mt-3 max-h-8 ml-2 w-36 flex items-center text-[#6D28D2] border border-[#6D28D2] bg-white hover:border-[#6D28D2] px-2 py-1 rounded-sm text-sm font-medium"
+              >
+                <Plus className="w-4 h-4 mr-1 text-xs" /> Curriculum item
+              </button>
+              {showActionButtons && (
+                <div className="mt-3">
+                  <ActionButtons
+                    sectionId={section.id}
+                    onAddLecture={handleAddLecture}
+                    onShowTypeSelector={() => {
+                      // For the lecture button - directly add a video lecture
+                      addLecture(section.id, 'video');
+                      setShowActionButtons(false);
+                    }}
+                  />
+                </div>
+              )}
+              </div>
+            </div>
+            
           )}
+
         </div>
-      )}
+ 
     </div>
   );
 }
