@@ -132,7 +132,7 @@ const CodeEditorComponent: React.FC<CodeEditorComponentProps> = ({
             eval(`(function() { ${code} })()`);
             executionOutput = logs.join('\n');
           } catch (error) {
-            executionOutput = `Error: ${error.message}`;
+            executionOutput = `Error: ${error instanceof Error ? error.message : String(error)}`;
           }
           
           console.log = originalConsoleLog;
@@ -142,7 +142,7 @@ const CodeEditorComponent: React.FC<CodeEditorComponentProps> = ({
         
         setOutput(executionOutput);
       } catch (error) {
-        setOutput(`Execution error: ${error.message}`);
+        setOutput(`Execution error: ${error instanceof Error ? error.message : String(error)}`);
       } finally {
         setIsRunning(false);
       }
