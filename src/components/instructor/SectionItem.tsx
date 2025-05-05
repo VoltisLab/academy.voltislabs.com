@@ -1,6 +1,6 @@
 "use client";
 import React, { useRef, useEffect, useState } from 'react';
-import { Trash2, Edit3, ChevronDown, ChevronUp, Move, Plus} from "lucide-react";
+import { Trash2, Edit3, ChevronDown, ChevronUp, Move, Plus, AlignJustify} from "lucide-react";
 import { Lecture, ContentItemType } from '@/lib/types';
 // Import the components
 import { ActionButtons } from './ActionButtons';
@@ -11,6 +11,9 @@ import QuizForm from './QuizForm';
 import QuizItem from './QuizItem';
 import CodingExerciseForm from './CodingExcerciseForm';
 import CodingExerciseItem from './CodingExcerciseItem';
+import PracticeItem from './PracticeItem';
+import PracticeForm from './PracticeForm';
+import { FaHamburger } from 'react-icons/fa';
 
 interface SectionItemProps {
   section: {
@@ -46,6 +49,8 @@ interface SectionItemProps {
   addLecture: (sectionId: string, contentType: ContentItemType, title?: string) => string;
   addCurriculumItem: (sectionId: string) => void;
   updateQuizQuestions?: (sectionId: string, quizId: string, questions: any[]) => void;
+  // New prop for practice exercises
+  savePracticeCode?: (sectionId: string, lectureId: string, code: string, language: string) => void;
   children?: React.ReactNode;
   // Props for enhanced drag and drop
   draggedSection?: string | null;
@@ -84,6 +89,7 @@ export default function SectionItem({
   addLecture,
   addCurriculumItem,
   updateQuizQuestions,
+  savePracticeCode,
   children,
   draggedSection,
   draggedLecture,
@@ -96,6 +102,7 @@ export default function SectionItem({
   const [showQuizForm, setShowQuizForm] = useState<boolean>(false);
   const [isHovering, setIsHovering] = useState<boolean>(false);
   const [showCodingExerciseForm, setShowCodingExerciseForm] = useState<boolean>(false);
+  const [showPracticeForm, setShowPracticeForm] = useState<boolean>(false);
 
   useEffect(() => {
     if (editingSectionId === section.id && sectionNameInputRef.current) {
@@ -144,14 +151,22 @@ export default function SectionItem({
       setShowAssignmentForm(true);
       setShowQuizForm(false);
       setShowCodingExerciseForm(false);
+      setShowPracticeForm(false);
     } else if (contentType === 'quiz') {
       setShowQuizForm(true);
       setShowAssignmentForm(false);
       setShowCodingExerciseForm(false);
+      setShowPracticeForm(false);
     } else if (contentType === 'coding-exercise') {
       setShowCodingExerciseForm(true);
       setShowAssignmentForm(false);
       setShowQuizForm(false);
+      setShowPracticeForm(false);
+    } else if (contentType === 'practice') {
+      setShowPracticeForm(true);
+      setShowAssignmentForm(false);
+      setShowQuizForm(false);
+      setShowCodingExerciseForm(false);
     } else {
       // Make sure to always pass the title parameter to addLecture
       const lectureId = addLecture(sectionId, contentType, title);
@@ -159,6 +174,22 @@ export default function SectionItem({
     }
     
     setShowActionButtons(false);
+  };
+
+  const handleAddPractice = (sectionId: string, title: string, description: string) => {
+    // Add the lecture with practice content type
+    const newLectureId = addLecture(sectionId, 'practice', title);
+    
+    // If description is provided, update it
+    if (description) {
+      const sections = [...section.lectures];
+      const lectureIndex = sections.findIndex(lecture => lecture.id === newLectureId);
+      if (lectureIndex !== -1) {
+        sections[lectureIndex].description = description;
+      }
+    }
+    
+    setShowPracticeForm(false);
   };
 
   // Render lecture items based on their content type
@@ -241,6 +272,33 @@ export default function SectionItem({
         />
       );
     }
+
+    // Render the practice item
+    if (lecture.contentType === 'practice') {
+      return (
+        <PracticeItem
+          key={lecture.id}
+          lecture={lecture}
+          lectureIndex={lectureIndex}
+          totalLectures={section.lectures.length}
+          sectionId={section.id}
+          editingLectureId={editingLectureId}
+          setEditingLectureId={setEditingLectureId}
+          updateLectureName={updateLectureName}
+          deleteLecture={deleteLecture}
+          moveLecture={moveLecture}
+          savePracticeCode={savePracticeCode}
+          handleDragStart={handleDragStart}
+          handleDragOver={handleDragOver}
+          handleDrop={handleDrop}
+          isDragging={isDragging}
+          handleDragEnd={handleDragEnd}
+          handleDragLeave={handleDragLeave}
+          draggedLecture={draggedLecture}
+          dragTarget={dragTarget}
+        />
+      );
+    }
     
     return (
       <LectureItem
@@ -272,7 +330,7 @@ export default function SectionItem({
 
   return (
     <div 
-      className={`mb-4 border rounded-lg overflow-hidden bg-white ${
+      className={`border border-gray-500 overflow-hidden bg-red-300 ${
         draggedSection === section.id ? 'opacity-50' : ''
       } ${
         dragTarget?.sectionId === section.id && !dragTarget?.lectureId ? 'border-2 border-indigo-500' : ''
@@ -292,7 +350,7 @@ export default function SectionItem({
         onClick={() => toggleSectionExpansion(section.id)}
       >
         <div className="flex items-center space-x-3">
-          <Move className="w-5 h-5 text-gray-400 cursor-move" />
+          
           {editingSectionId === section.id ? (
             <input
               ref={sectionNameInputRef}
@@ -308,8 +366,9 @@ export default function SectionItem({
               onClick={(e) => e.stopPropagation()}
             />
           ) : (
-            <h3 className="font-semibold">Section {index + 1}: {section.name}</h3>
+            <h3 className="font-semibold text-xs">Unpublished Section {index + 1}: {section.name}</h3>
           )}
+          <AlignJustify className="w-5 h-5 text-gray-400 cursor-move" />
         </div>
         <div className="flex items-center space-x-2">
           {/* Edit and Delete buttons only visible on hover */}
@@ -376,6 +435,15 @@ export default function SectionItem({
               onCancel={() => setShowAssignmentForm(false)}
             />
           )}
+
+
+        {showPracticeForm && (
+          <PracticeForm
+            sectionId={section.id}
+            onAddPractice={handleAddPractice}
+            onCancel={() => setShowPracticeForm(false)}
+          />
+        )}
 
           {showCodingExerciseForm && (
           <CodingExerciseForm

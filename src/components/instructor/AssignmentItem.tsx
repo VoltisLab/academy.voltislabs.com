@@ -80,9 +80,9 @@ export default function AssignmentItem({
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
     >
-      <div className="flex items-center p-3">
+      <div className="flex items-center p-2 w-full">
         <div className="flex-1 flex items-center">
-          <div className="mr-2 text-yellow-500">⚠</div>
+          <div className="mr-1 text-xs text-yellow-500">⚠</div>
           {editingLectureId === lecture.id ? (
             <input
               ref={nameInputRef}
@@ -98,9 +98,8 @@ export default function AssignmentItem({
               onClick={(e) => e.stopPropagation()}
             />
           ) : (
-            <div className="flex items-center">
-              <span className="text-gray-700 text-sm">Unpublished Assignment:</span>
-              <span className="text-indigo-600 ml-2 font-bold">{lecture.name}</span>
+            <div className="flex items-center ">
+              <span className="text-indigo-600 text-sm">{lecture.name}</span>
             </div>
           )}
         </div>

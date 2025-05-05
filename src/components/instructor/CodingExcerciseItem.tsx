@@ -1,5 +1,5 @@
 "use client";
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { Lecture } from '@/lib/types';
 import { Trash2, Edit3, ChevronDown, ChevronUp, Code } from "lucide-react";
 
@@ -46,6 +46,7 @@ const CodingExerciseItem: React.FC<CodingExerciseItemProps> = ({
   dragTarget
 }) => {
   const lectureNameInputRef = useRef<HTMLInputElement>(null);
+  const [isHovering, setIsHovering] = useState(false);
   
   useEffect(() => {
     if (editingLectureId === lecture.id && lectureNameInputRef.current) {
@@ -75,8 +76,10 @@ const CodingExerciseItem: React.FC<CodingExerciseItemProps> = ({
       }}
       onDragLeave={handleDragLeave}
       onDrop={(e) => handleDrop(e, sectionId, lecture.id)}
+      onMouseEnter={() => setIsHovering(true)}
+      onMouseLeave={() => setIsHovering(false)}
     >
-      <div className="flex items-center p-3">
+      <div className="flex items-center p-2">
         <div className="flex-1 flex items-center">
           <div className="mr-2 text-gray-600">●</div>
           {editingLectureId === lecture.id ? (
@@ -95,56 +98,60 @@ const CodingExerciseItem: React.FC<CodingExerciseItemProps> = ({
             />
           ) : (
             <div className="flex items-center">
-              <span className="text-green-600 font-medium">Coding Exercise {lectureIndex + 1}:</span>
-              <span className="ml-1">{lecture.name}</span>
-              <span className="ml-2 px-1  bg-green-100 text-green-800 rounded-full">
+              <span className="text-green-600 font-medium text-xs">Coding Exercise {lectureIndex + 1}:</span>
+              <span className="ml-1 xl:text-sm text-xs">{lecture.name}</span>
+              <span className="ml-2 px-1 bg-green-100 text-green-800 rounded-full">
                 <Code size={14} />
               </span>
             </div>
           )}
         </div>
         <div className="flex items-center space-x-1">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              startEditingLecture(e);
-            }}
-            className="p-1 text-gray-400 hover:text-gray-600"
-          >
-            <Edit3 className="w-4 h-4" />
-          </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              deleteLecture(sectionId, lecture.id);
-            }}
-            className="p-1 text-gray-400 hover:text-red-600"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              moveLecture(sectionId, lecture.id, 'up');
-            }}
-            className="p-1 text-gray-400 hover:text-gray-600"
-            disabled={lectureIndex === 0}
-          >
-            <ChevronUp className={`w-4 h-4 ${lectureIndex === 0 ? 'opacity-50' : ''}`} />
-          </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              moveLecture(sectionId, lecture.id, 'down');
-            }}
-            className="p-1 text-gray-400 hover:text-gray-600"
-            disabled={lectureIndex === totalLectures - 1}
-          >
-            <ChevronDown className={`w-4 h-4 ${lectureIndex === totalLectures - 1 ? 'opacity-50' : ''}`} />
-          </button>
+          {isHovering && (
+            <>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  startEditingLecture(e);
+                }}
+                className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <Edit3 className="w-4 h-4" />
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  deleteLecture(sectionId, lecture.id);
+                }}
+                className="p-1 text-gray-400 hover:text-red-600 transition-colors"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  moveLecture(sectionId, lecture.id, 'up');
+                }}
+                className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                disabled={lectureIndex === 0}
+              >
+                <ChevronUp className={`w-4 h-4 ${lectureIndex === 0 ? 'opacity-50' : ''}`} />
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  moveLecture(sectionId, lecture.id, 'down');
+                }}
+                className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                disabled={lectureIndex === totalLectures - 1}
+              >
+                <ChevronDown className={`w-4 h-4 ${lectureIndex === totalLectures - 1 ? 'opacity-50' : ''}`} />
+              </button>
+            </>
+          )}
         </div>
       </div>
-      <div className="px-3 pb-3">
+      <div className="px-2 pb-3">
         <div className="text-xs text-gray-500">
           {lecture.description ? (
             <p>{lecture.description}</p>

@@ -67,7 +67,7 @@ export default function CourseFormTabs() {
   };
 
   return (
-    <div className="bg-white w-full xl:max-w-[90rem] p-2 mx-auto min-h-screen">
+    <div className="bg-white w-full xl:max-w-[90rem] p-1 mx-auto min-h-screen">
       {/* Mobile Tabs - Horizontally Scrollable */}
       <div className="md:hidden border-b border-gray-200 pb-2">
         <div className="flex items-center overflow-x-auto scrollbar-hide gap-8 px-1">

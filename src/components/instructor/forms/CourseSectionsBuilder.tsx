@@ -1,7 +1,7 @@
 // components/CourseBuilder.tsx
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
-import { X, Plus } from 'lucide-react';
+import { X, Plus, Info } from 'lucide-react';
 import { ContentType, ResourceTabType, Section, CourseSectionInput, LectureInput } from '@/lib/types';
 import { useSections } from '@/hooks/useSection';
 import { useFileUpload } from '@/hooks/useFileUpload';
@@ -9,8 +9,6 @@ import { useModal } from '@/hooks/useModal';
 import { ContentTypeSelector } from '../ContentTypeSelector';
 import { ActionButtons } from '../ActionButtons';
 import SectionItem from '../SectionItem';
-import AddResourceModal from '../AddResourceModal';
-import DescriptionEditorModal from '../DescriptionEditorModal';
 import { useCourseSectionsUpdate } from '@/services/courseSectionsService';
 
 interface CourseBuilderProps {
@@ -34,64 +32,120 @@ const SectionForm: React.FC<{
   };
   
   return (
-    <div className="bg-white rounded-lg overflow-hidden border border-gray-200 mb-4">
-      <div className="flex justify-between items-center p-3 bg-gray-50">
-        <h3 className="font-semibold">New Section:</h3>
-        <button onClick={onCancel} className="text-gray-500 hover:text-gray-700">
-          <X className="w-5 h-5" />
+    <div className="relative">
+      {/* X button positioned outside the form */}
+      <button 
+        onClick={onCancel} 
+        className="absolute -top-5 left-0 text-gray-400 hover:text-gray-600"
+        aria-label="Close"
+      >
+        <X className="w-4 h-4" />
+      </button>
+      
+      <div className="bg-white border border-gray-500  mb-6">
+        <div className="flex items-start px-4 py-3">
+          <div className="flex-1">
+            <div className="">
+              <div className="flex items-center">
+                <div className="w-28">
+                  <label className="text-md font-bold text-gray-800">New Section:</label>
+                </div>
+                <div className="flex-1">
+                  <input
+                    type="text"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="Enter a Title"
+                    className="w-full border border-gray-500 rounded px-3 py-1 focus:outline-none focus:border-2 focus:border-[#6D28D2]"
+                    maxLength={80}
+                  />
+                  <div className="text-right text-xs text-gray-500 mt-1">
+                    {title.length}/80
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="mb-3 ml-28">
+              <label className="block text-sm font-medium text-gray-800 mb-2">
+                What will students be able to do at the end of this section?
+              </label>
+              <input
+                value={objective}
+                onChange={(e) => setObjective(e.target.value)}
+                placeholder="Enter a Learning Objective"
+                className="w-full border border-gray-500 rounded px-3 py-1 focus:outline-none focus:border-2 focus:border-[#6D28D2]"
+                maxLength={200}
+              />
+              <div className="text-right text-xs text-gray-500 mt-1">
+                {objective.length}/200
+              </div>
+            </div>
+            
+            <div className="flex justify-end space-x-2 mt-3">
+              <button
+                type="button"
+                onClick={onCancel}
+                className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleSubmit}
+                className="px-4 py-2 text-sm font-medium bg-[#6D28D2] text-white rounded hover:bg-[#7B3FE4]"
+              >
+                Add Section
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const InfoBox: React.FC<{ onDismiss: () => void }> = ({ onDismiss }) => {
+  return (
+    <div className="flex items-start p-5 bg-white rounded-xl border border-gray-200 mb-6">
+      <div className="flex-shrink-0 mt-0.5 mr-3">
+        <Info className="h-6 w-6 text-[#6D28D2]" />
+      </div>
+      <div className="flex-1">
+        <p className="text-md font-bold text-gray-700">
+          Here's where you add course content—like lectures, course sections, assignments, and more. Click a + icon on the left to get started.
+        </p>
+        <button 
+          onClick={onDismiss} 
+          className="mt-2 px-3 py-2 text-xs font-medium text-[#6D28D2] border border-[#6D28D2] rounded hover:bg-indigo-50"
+        >
+          Dismiss
         </button>
       </div>
-      
-      <div className="p-4">
-        <form onSubmit={handleSubmit}>
-          <div className="mb-4">
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Enter a Title"
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              maxLength={80}
-              required
-            />
-            <div className="text-right text-xs text-gray-500 mt-1">
-              {title.length}/80
-            </div>
-          </div>
-          
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              What will students be able to do at the end of this section?
-            </label>
-            <textarea
-              value={objective}
-              onChange={(e) => setObjective(e.target.value)}
-              placeholder="Enter a Learning Objective"
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              rows={3}
-              maxLength={200}
-            />
-            <div className="text-right text-xs text-gray-500 mt-1">
-              {objective.length}/200
-            </div>
-          </div>
-          
-          <div className="flex justify-end space-x-3">
-            <button
-              type="button"
-              onClick={onCancel}
-              className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            >
-              Add Section
-            </button>
-          </div>
-        </form>
+    </div>
+  );
+};
+
+const NewFeatureAlert: React.FC<{ onDismiss: () => void }> = ({ onDismiss }) => {
+  return (
+    <div className="bg-white border border-gray-200 rounded-lg mb-6 overflow-hidden">
+      <div className="flex items-start px-4 py-3">
+        <div className="flex-shrink-0 mr-3">
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-green-200 text-gray-800">
+            New
+          </span>
+        </div>
+        <div className="flex-1">
+          <p className="text-sm font-bold text-gray-700">
+            Check out the latest creation flow improvements, new question types, and AI-assisted features in practice tests.
+          </p>
+          <button 
+            onClick={onDismiss} 
+            className="mt-2 py-2 px-2 text-xs font-medium text-gray-600 hover:bg-gray-200"
+          >
+            Dismiss
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -109,33 +163,34 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
   const [activeResourceTab, setActiveResourceTab] = useState<ResourceTabType>(ResourceTabType.DOWNLOADABLE_FILE);
   const [showSectionForm, setShowSectionForm] = useState<boolean>(false);
   const [draggedSection, setDraggedSection] = useState<string | null>(null);
-const [draggedLecture, setDraggedLecture] = useState<string | null>(null);
-const [dragTarget, setDragTarget] = useState<{
-  sectionId: string | null;
-  lectureId: string | null;
-}>({ sectionId: null, lectureId: null });
+  const [draggedLecture, setDraggedLecture] = useState<string | null>(null);
+  const [showInfoBox, setShowInfoBox] = useState<boolean>(true);
+  const [showNewFeatureAlert, setShowNewFeatureAlert] = useState<boolean>(true);
+  const [dragTarget, setDragTarget] = useState<{
+    sectionId: string | null;
+    lectureId: string | null;
+  }>({ sectionId: null, lectureId: null });
   
-const { 
-  sections, 
-  setSections, // Add this line to get the setSections function
-  addSection, 
-  addLecture,
-  deleteSection,
-  deleteLecture,
-  toggleSectionExpansion,
-  updateSectionName,
-  updateLectureName,
-  moveSection,
-  moveLecture,
-  updateLectureContent,
-  saveDescription: saveSectionDescription,
-  updateLectureWithUploadedContent,
-  handleLectureDrop
-} = useSections([]);
+  const { 
+    sections, 
+    setSections, 
+    addSection, 
+    addLecture,
+    deleteSection,
+    deleteLecture,
+    toggleSectionExpansion,
+    updateSectionName,
+    updateLectureName,
+    moveSection,
+    moveLecture,
+    updateLectureContent,
+    saveDescription: saveSectionDescription,
+    updateLectureWithUploadedContent,
+    handleLectureDrop,
+    savePracticeCode
+  } = useSections([]);
   
   const contentSectionModal = useModal();
-  const resourceModal = useModal();
-  const descriptionModal = useModal();
   
   const { 
     isUploading, 
@@ -145,7 +200,7 @@ const {
     handleFileSelection 
   } = useFileUpload(
     updateLectureWithUploadedContent,
-    () => resourceModal.close()
+    () => {}
   );
   
   const { updateCourseSections, loading: mutationLoading, error: mutationError } = useCourseSectionsUpdate();
@@ -169,19 +224,15 @@ const {
   
   // Toggle description editor
   const toggleDescriptionEditor = (sectionId: string, lectureId: string, currentText: string = "") => {
-    descriptionModal.toggle(sectionId, lectureId);
-    if (!descriptionModal.isOpen) {
+    contentSectionModal.toggle(sectionId, lectureId);
+    if (!contentSectionModal.isOpen) {
       setCurrentDescription(currentText);
     }
   };
   
-  // Save description
-  const saveDescription = () => {
-    if (!descriptionModal.activeSection) return;
-    
-    const { sectionId, lectureId } = descriptionModal.activeSection;
-    saveSectionDescription(sectionId, lectureId, currentDescription);
-    descriptionModal.close();
+  // Toggle add resource
+  const toggleAddResourceModal = (sectionId: string, lectureId: string) => {
+    contentSectionModal.toggle(sectionId, lectureId);
   };
 
   const handleDragStart = (e: React.DragEvent, sectionId: string, lectureId?: string) => {
@@ -218,46 +269,44 @@ const {
     });
   };
   
-
   const handleDrop = (e: React.DragEvent, targetSectionId: string, targetLectureId?: string) => {
-      e.preventDefault();
-      setIsDragging(false);
+    e.preventDefault();
+    setIsDragging(false);
+    
+    // Get the dragged item data
+    const sourceSectionId = e.dataTransfer.getData("sectionId");
+    const sourceLectureId = e.dataTransfer.getData("lectureId");
+    
+    if (!sourceSectionId) return; // No valid data, abort
+    
+    // Case 1: We're dragging a lecture
+    if (sourceLectureId && sourceLectureId.trim() !== "") {
+      handleLectureDrop(sourceSectionId, sourceLectureId, targetSectionId, targetLectureId);
+      return;
+    }
+    
+    // Case 2: We're dragging a section (and not dropping onto a lecture)
+    if (!targetLectureId) {
+      // Find section indices
+      const sourceIndex = sections.findIndex(s => s.id === sourceSectionId);
+      const targetIndex = sections.findIndex(s => s.id === targetSectionId);
       
-      // Get the dragged item data
-      const sourceSectionId = e.dataTransfer.getData("sectionId");
-      const sourceLectureId = e.dataTransfer.getData("lectureId");
-      
-      if (!sourceSectionId) return; // No valid data, abort
-      
-      // Case 1: We're dragging a lecture
-      if (sourceLectureId && sourceLectureId.trim() !== "") {
-        handleLectureDrop(sourceSectionId, sourceLectureId, targetSectionId, targetLectureId);
+      // Skip if source or target not found, or if dropping onto itself
+      if (sourceIndex === -1 || targetIndex === -1 || sourceIndex === targetIndex) {
         return;
       }
       
-      // Case 2: We're dragging a section (and not dropping onto a lecture)
-      if (!targetLectureId) {
-        // Find section indices
-        const sourceIndex = sections.findIndex(s => s.id === sourceSectionId);
-        const targetIndex = sections.findIndex(s => s.id === targetSectionId);
-        
-        // Skip if source or target not found, or if dropping onto itself
-        if (sourceIndex === -1 || targetIndex === -1 || sourceIndex === targetIndex) {
-          return;
-        }
-        
-        // Create a new array with the section moved to the new position
-        const newSections = [...sections];
-        const [movedSection] = newSections.splice(sourceIndex, 1);
-        newSections.splice(targetIndex, 0, movedSection);
-        
-        // Update the state with the new sections array
-        setSections(newSections);
-        toast.success("Section moved successfully");
-      }
-    };
+      // Create a new array with the section moved to the new position
+      const newSections = [...sections];
+      const [movedSection] = newSections.splice(sourceIndex, 1);
+      newSections.splice(targetIndex, 0, movedSection);
+      
+      // Update the state with the new sections array
+      setSections(newSections);
+      toast.success("Section moved successfully");
+    }
+  };
   
-
   const handleDragLeave = () => {
     // Optionally clear drop targets when leaving
     setDragTarget({ sectionId: null, lectureId: null });
@@ -290,7 +339,10 @@ const {
           videoUrls: {
             action: "ADD",
             videos: lecture.videos.map(video => ({ url: video.url }))
-          }
+          },
+          // Add code-related fields if present
+          code: lecture.code,
+          codeLanguage: lecture.codeLanguage
         }));
         
         return {
@@ -315,129 +367,81 @@ const {
   };
   
   return (
-    <div className="xl:max-w-6xl w-full xl:mx-auto pb-6 xl:px-8">
-<div className="w-full  py-6">
-  <div className="flex w-full flex-col xl:flex-row justify-between items-center gap-4 sm:gap-6">
-    <h1 className="xl:text-xl sm:text-2xl md:text-[16px] font-bold text-gray-900 text-center sm:text-left">
-      Course Curriculum Builder
-    </h1>
-    <div className="md:flex space-x-3 hidden ">
-      <button
-        type="button"
-        onClick={handleSaveCourseSections}
-        disabled={mutationLoading}
-        className="inline-flex items-center px-3 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-gray-600 bg-gray-200 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-      >
-        {mutationLoading ? 'Saving...' : 'Save as Draft'}
-      </button>
-      <button
-        type="button"
-        onClick={handleSaveCourseSections}
-        disabled={mutationLoading}
-        className="inline-flex items-center px-3 py-2 border border-transparent rounded-md shadow-sm text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-      >
-        {mutationLoading ? 'Saving...' : 'Save & Next'}
-      </button>
-
-    </div>   
-    <div className="flex space-x-3 w-full justify-between md:hidden">
-      <button
-        type="button"
-        onClick={handleSaveCourseSections}
-        disabled={mutationLoading}
-        className="inline-flex items-center px-3 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-gray-600 bg-gray-200 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-      >
-        {mutationLoading ? 'Saving...' : 'Save as Draft'}
-      </button>
-      <button
-        type="button"
-        onClick={handleSaveCourseSections}
-        disabled={mutationLoading}
-        className="inline-flex items-center px-3 py-2 border border-transparent rounded-md shadow-sm text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-      >
-        {mutationLoading ? 'Saving...' : 'Save & Next'}
-      </button>
-    </div>
-
-
-  </div>
-      </div>
-      
-      {mutationError && (
-        <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-6">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <X className="h-5 w-5 text-red-400" />
-            </div>
-            <div className="ml-3">
-              <p className="text-sm text-red-700">
-                {mutationError.message || "Error saving course curriculum"}
-              </p>
-            </div>
-          </div>
+    <div className="xl:max-w-4xl max-w-full mx-auto">
+      <div className="p-4 pb-0">
+        <div className="flex justify-between items-center mb-4">
+          <h1 className="text-xl font-bold text-gray-800">Curriculum</h1>
+          <button
+            className="px-3 py-1.5 bg-white text-[#6D28D2] border border-[#6D28D2] rounded-md text-sm font-medium hover:bg-indigo-50"
+          >
+            Bulk Uploader
+          </button>
         </div>
-      )}
-      
-      <div className="bg-white shadow rounded-lg overflow-hidden border border-gray-200">
-        <div className="p-2 sm:p-6 border-b">
-          <p className="text-gray-500 mb-4">
-            Create your course curriculum by adding sections and curriculum items. Drag to reorder.
-          </p>
-          
-          {/* Render sections */}
-          {sections.map((section, index) => (
-            <SectionItem
-            key={section.id}
-            section={section}
-            index={index}
-            totalSections={sections.length}
-            editingSectionId={editingSectionId}
-            setEditingSectionId={setEditingSectionId}
-            updateSectionName={updateSectionName}
-            deleteSection={deleteSection}
-            moveSection={moveSection}
-            toggleSectionExpansion={toggleSectionExpansion}
-            isDragging={isDragging}
-            handleDragStart={handleDragStart}
-            handleDragEnd={handleDragEnd}
-            handleDragOver={(e) => handleDragOver(e, section.id)}
-            handleDragLeave={handleDragLeave}
-            handleDrop={(e) => handleDrop(e, section.id)}
-            addLecture={addLecture}
-            editingLectureId={editingLectureId}
-            setEditingLectureId={setEditingLectureId}
-            updateLectureName={updateLectureName}
-            deleteLecture={deleteLecture}
-            moveLecture={moveLecture}
-            toggleContentSection={contentSectionModal.toggle}
-            toggleAddResourceModal={resourceModal.toggle}
-            toggleDescriptionEditor={toggleDescriptionEditor}
-            activeContentSection={contentSectionModal.activeSection}
-            addCurriculumItem={() => setShowContentTypeSelector(true)}
-            draggedSection={draggedSection}
-            draggedLecture={draggedLecture}
-            dragTarget={dragTarget}
-          />
-          ))}
-          
-          {/* Section Form (non-modal, appears directly in the UI) */}
-          {showSectionForm && (
-            <SectionForm
-              onAddSection={handleAddSection}
-              onCancel={() => setShowSectionForm(false)}
-            />
+        
+        <div className="mt-4">
+          {showInfoBox && (
+            <InfoBox onDismiss={() => setShowInfoBox(false)} />
           )}
           
-          {/* Add Section Button */}
-          <div className="flex mt-6">
-            <button
-              onClick={() => setShowSectionForm(true)}
-              className="inline-flex items-center px-4 py-2 border border-gray-300 text-indigo-600 bg-white rounded-md text-sm font-medium"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Section
-            </button>
+          <div className="text-sm text-gray-700 mb-2">
+            Start putting together your course by creating sections, lectures and practice (quizzes, coding exercises and assignments).
           </div>
+          <div className="text-sm text-gray-700 mb-4">
+            <span>Start putting together your course by creating sections, lectures and practice activities </span>
+            <span className="text-[#6D28D2]">(quizzes, coding exercises and assignments)</span>
+            <span>. Use your </span>
+            <span className="text-[#6D28D2]">course outline</span>
+            <span> to structure your content and label your sections and lectures clearly. If you're intending to offer your course for free, the total length of video content must be less than 2 hours.</span>
+          </div>
+          
+          {showNewFeatureAlert && (
+            <NewFeatureAlert onDismiss={() => setShowNewFeatureAlert(false)} />
+          )}
+        </div>
+        
+        <div className="bg-white shadow-sm rounded-md border border-gray-200 mb-6">
+          {/* Render sections */}
+          {sections.length > 0 ? (
+            sections.map((section, index) => (
+              <SectionItem
+                key={section.id}
+                section={section}
+                index={index}
+                totalSections={sections.length}
+                editingSectionId={editingSectionId}
+                setEditingSectionId={setEditingSectionId}
+                updateSectionName={updateSectionName}
+                deleteSection={deleteSection}
+                moveSection={moveSection}
+                toggleSectionExpansion={toggleSectionExpansion}
+                isDragging={isDragging}
+                handleDragStart={handleDragStart}
+                handleDragEnd={handleDragEnd}
+                handleDragOver={(e) => handleDragOver(e, section.id)}
+                handleDragLeave={handleDragLeave}
+                handleDrop={(e) => handleDrop(e, section.id)}
+                addLecture={addLecture}
+                editingLectureId={editingLectureId}
+                setEditingLectureId={setEditingLectureId}
+                updateLectureName={updateLectureName}
+                deleteLecture={deleteLecture}
+                moveLecture={moveLecture}
+                toggleContentSection={contentSectionModal.toggle}
+                toggleAddResourceModal={toggleAddResourceModal}
+                toggleDescriptionEditor={toggleDescriptionEditor}
+                activeContentSection={contentSectionModal.activeSection}
+                addCurriculumItem={() => setShowContentTypeSelector(true)}
+                savePracticeCode={savePracticeCode}
+                draggedSection={draggedSection}
+                draggedLecture={draggedLecture}
+                dragTarget={dragTarget}
+              />
+            ))
+          ) : (
+            <div className="flex justify-center items-center min-h-10 text-gray-500">
+              {/* This is an empty state for when there are no sections */}
+            </div>
+          )}
           
           {showContentTypeSelector && (
             <div className="absolute z-10 left-0 mt-2">
@@ -449,8 +453,24 @@ const {
             </div>
           )}
         </div>
+        
+        {/* Section Form rendered outside the main content area when shown */}
+        {showSectionForm && (
+          <SectionForm
+            onAddSection={handleAddSection}
+            onCancel={() => setShowSectionForm(false)}
+          />
+        )}
+        
+        <button
+          onClick={() => setShowSectionForm(true)}
+          className="inline-flex items-center mb-8 px-3 py-1.5 border border-[#6D28D2] text-[#6D28D2] bg-white rounded text-sm font-medium hover:bg-indigo-50"
+        >
+          <Plus className="h-4 w-4 mr-1" />
+          Section
+        </button>
       </div>
-      
+    
       {/* Hidden file input for file uploads */}
       <input 
         type="file" 
@@ -471,30 +491,6 @@ const {
         }}
         className="hidden" 
       />
-      
-      {/* Modals */}
-      {resourceModal.isOpen && resourceModal.activeSection && (
-        <AddResourceModal
-          activeContentSection={resourceModal.activeSection}
-          setShowAddResourceModal={resourceModal.close}
-          activeResourceTab={activeResourceTab}
-          setActiveResourceTab={setActiveResourceTab}
-          sections={sections}
-          isUploading={isUploading}
-          uploadProgress={uploadProgress}
-          triggerFileUpload={triggerFileUpload}
-        />
-      )}
-      
-      {descriptionModal.isOpen && descriptionModal.activeSection && (
-        <DescriptionEditorModal
-          activeDescriptionSection={descriptionModal.activeSection}
-          setShowDescriptionEditor={descriptionModal.close}
-          currentDescription={currentDescription}
-          setCurrentDescription={setCurrentDescription}
-          saveDescription={saveDescription}
-        />
-      )}
     </div>
   );
 };
