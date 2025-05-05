@@ -128,10 +128,10 @@ const InfoBox: React.FC<{ onDismiss: () => void }> = ({ onDismiss }) => {
 
 const NewFeatureAlert: React.FC<{ onDismiss: () => void }> = ({ onDismiss }) => {
   return (
-    <div className="bg-white border border-gray-200 rounded-lg mb-6 overflow-hidden">
+    <div className="bg-gray-100 border border-gray-300  mb-6 overflow-hidden">
       <div className="flex items-start px-4 py-3">
         <div className="flex-shrink-0 mr-3">
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-green-200 text-gray-800">
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-green-300 text-gray-800">
             New
           </span>
         </div>
@@ -399,7 +399,7 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
           )}
         </div>
         
-        <div className="bg-white shadow-sm rounded-md border border-gray-200 mb-6">
+        <div className="bg-white border border-gray-200 mb-6 mt-20">
           {/* Render sections */}
           {sections.length > 0 ? (
             sections.map((section, index) => (
@@ -438,7 +438,7 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
               />
             ))
           ) : (
-            <div className="flex justify-center items-center min-h-10 text-gray-500">
+            <div className="flex justify-center border border-gray-400 bg-gray-100 items-center min-h-10 ">
               {/* This is an empty state for when there are no sections */}
             </div>
           )}
