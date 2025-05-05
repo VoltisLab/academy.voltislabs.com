@@ -7,23 +7,23 @@ export interface SignUpData {
     password: string;
     otpCode: String;
     isInstructor: boolean;
-  }
+}
   
-  export interface LoginData {
+export interface LoginData {
     email: string;
     password: string;
-  }
+}
   
-  export interface SignUpResponse {
+export interface SignUpResponse {
     register: {
       success: boolean;
       token: string;
       refreshToken: string;
       errors: string[]
     };
-  }
+}
   
-  export interface LoginResponse {
+export interface LoginResponse {
     login: {
       success: boolean;
       token: string;
@@ -40,29 +40,28 @@ export interface SignUpData {
         isInstructor: boolean;
       };
     };
-  }
+}
   
-    
-    export interface UserData {
-      verified: boolean;
-      username: string;
-      lastName: string;
-      isVerified: boolean;
-      firstName: string;
-      email: string;
-      id: string;
-    }
+export interface UserData {
+    verified: boolean;
+    username: string;
+    lastName: string;
+    isVerified: boolean;
+    firstName: string;
+    email: string;
+    id: string;
+}
   
-    
-    export interface ApiClientOptions {
-        includeAuth?: boolean;
-        credentials?: RequestCredentials;
-      }
+export interface ApiClientOptions {
+    includeAuth?: boolean;
+    credentials?: RequestCredentials;
+}
       
-      export interface ApiResponse<T> {
-        data?: T;
-        errors?: Array<{ message: string }>;
-      }
+export interface ApiResponse<T> {
+    data?: T;
+    errors?: Array<{ message: string }>;
+}
+
 // Define the structure for category items with checkboxes
 export interface CategoryItem {
   id: string;
@@ -85,16 +84,6 @@ export interface Category extends BaseCategory {
   items?: (CategoryItem | Category)[];
 }
 
-export interface UserData {
-  id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  username: string;
-  verified: boolean;
-  isVerified: boolean;
-}
-
 // Define more specific error types
 export interface FormErrors {
   email?: string;
@@ -102,7 +91,7 @@ export interface FormErrors {
   fullName?: string;
   otpCode?: string;
   general?: string;
-  emailVerification?: string; // Added this property
+  emailVerification?: string;
 }
 
 export interface OptionType {
@@ -150,14 +139,13 @@ export interface FormData {
   description: string;
 }
 
-
-
 export interface CreateCourseBasicInfoResponse {
   createCourseBasicInfo: {
     message: string;
     success: boolean;
   };
 }
+
 export interface CourseCategory {
   id: string;
   name: string;
@@ -200,8 +188,15 @@ export interface CourseInfo {
   courseRequirements: string[];
 }
 
-export type ContentItemType = 'video' | 'article' | 'quiz' | 'coding-exercise' | 'assignment' | 'practice' | 'role-play'| "video-slide"
+export type ContentItemType = 'video' | 'article' | 'quiz' | 'coding-exercise' | 'assignment' | 'practice' | 'role-play'| 'video-slide';
 
+// Interface for external resources (links, references, etc.)
+export interface ExternalResource {
+  url: string;
+  name: string;
+}
+
+// Interface for lectures - updated with code-related properties
 export interface Lecture {
   title?: string;
   id: string;
@@ -212,8 +207,32 @@ export interface Lecture {
   attachedFiles: AttachedFile[];
   videos: Video[];
   contentType: ContentItemType;
-  isExpanded: boolean
+  isExpanded: boolean;
   questions?: Array<Question>;
+  
+  // Code editor related fields
+  code?: string;                    // Stores the code content for practice exercises
+  codeLanguage?: string;            // Stores the programming language for the code editor
+  externalResources?: ExternalResource[]; // Links to external resources related to the practice
+  
+  // Fields for coding challenges/evaluations
+  testCases?: TestCase[];           // Test cases to validate student code
+  expectedOutput?: string;          // Expected output for auto-grading
+  initialCode?: string;             // Initial code template to show to students
+  solutionCode?: string;            // Solution code (for instructor reference)
+  
+  // Assignment related fields
+  dueDate?: string;
+  pointsValue?: number;
+}
+
+// Interface for test cases to validate student code
+export interface TestCase {
+  id: string;
+  input: string;
+  expectedOutput: string;
+  isHidden?: boolean;               // Hidden test cases are not shown to students
+  explanation?: string;             // Explanation of what the test case is checking
 }
 
 export interface Question {
@@ -228,12 +247,13 @@ export interface Question {
   type: string;
 }
 
-
 export interface Section {
   name: string;
   lectures: Lecture[];
   editing: boolean;
   lectureEditing: boolean[];
+  isExpanded?: boolean;
+  id: string;
 }
 
 export interface ContentDropdownState {
@@ -254,6 +274,7 @@ export interface ContentStatus {
   captions: boolean;
   description: boolean;
   notes: boolean;
+  code?: boolean;           // Added for code exercises
 }
 
 export interface CourseSectionData {
@@ -271,6 +292,8 @@ export interface CourseSectionData {
       action: string;
       videos: { url: string }[];
     };
+    code?: string;           // Added for code practices
+    codeLanguage?: string;   // Added for code practices
   }[];
 }
 
@@ -298,9 +321,22 @@ export interface ContentModalProps {
   config: ModalConfig;
 }
 
-// types.ts
+// CodeEditor related props
+export interface CodeEditorModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  sectionId: string;
+  lectureId: string;
+  initialCode?: string;
+  language?: string;
+  title?: string;
+  instructions?: string;
+  onSaveCode?: (sectionId: string, lectureId: string, code: string, language: string) => void;
+}
+
 export interface AttachedFile {
   url: string;
+  name: string;
 }
 
 export interface FileOperation {
@@ -330,7 +366,6 @@ export interface UpdateCourseSectionsResponse {
   };
 }
 
-
 export interface CourseSectionBuilderProps {
   onSaveNext?: () => void;
   courseId: number | undefined;
@@ -339,18 +374,6 @@ export interface CourseSectionBuilderProps {
 export interface Video {
   url: string;
   name: string;
-}
-
-export interface AttachedFile {
-  url: string;
-  name: string;
-}
-
-export interface Section {
-  id: string;
-  name: string;
-  lectures: Lecture[];
-  isExpanded: boolean;
 }
 
 // Input types for API calls
@@ -374,6 +397,9 @@ export interface LectureInput {
   lectureNotes: string;
   attachedFiles: AttachedFilesInput;
   videoUrls: VideoUrlsInput;
+  code?: string;              // Added for code practices
+  codeLanguage?: string;      // Added for code practices
+  testCases?: TestCase[];     // Added for code exercises
 }
 
 export interface VideoUrlsInput {
@@ -381,27 +407,42 @@ export interface VideoUrlsInput {
   videos: VideoInput[];
 }
 
-export interface CourseSectionInput {
-  sectionName: string;
-  lectures: LectureInput[];
-}
-
-// Enum for content types
+// Enum for content types - expanded with code-related types
 export enum ContentType {
+  DESCRIPTION = "description",
   VIDEO = "video",
   FILE = "file",
-  DESCRIPTION = "description",
   CAPTIONS = "captions",
-  LECTURE_NOTES = "lectureNotes"
+  LECTURE_NOTES = "lecture_notes",
+  CODE = "code",             // Added for code content
+  TEST_CASES = "test_cases"  // Added for code test cases
 }
 
-// Enum for resource tab types
+// Enum for resource tab types - expanded with code-related types
 export enum ResourceTabType {
   DOWNLOADABLE_FILE = "downloadable",
   LIBRARY = "library",
   EXTERNAL = "external",
   SOURCE_CODE = "source-code",
-  VIDEO= "video",
+  CODE_PRACTICE = "code-practice",   // Added for code practices
+  VIDEO = "video",
   CAPTIONS = "captions",
   LECTURE_NOTES = "lecture-notes"
+}
+
+// Enum for code language types
+export enum CodeLanguageType {
+  JAVASCRIPT = "javascript",
+  TYPESCRIPT = "typescript",
+  PYTHON = "python",
+  JAVA = "java",
+  CSHARP = "csharp",
+  CPP = "cpp",
+  PHP = "php",
+  RUBY = "ruby",
+  GO = "go",
+  RUST = "rust",
+  HTML = "html",
+  CSS = "css",
+  SQL = "sql"
 }

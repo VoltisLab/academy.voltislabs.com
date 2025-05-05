@@ -9,8 +9,6 @@ import { useModal } from '@/hooks/useModal';
 import { ContentTypeSelector } from '../ContentTypeSelector';
 import { ActionButtons } from '../ActionButtons';
 import SectionItem from '../SectionItem';
-import AddResourceModal from '../AddResourceModal';
-import DescriptionEditorModal from '../DescriptionEditorModal';
 import { useCourseSectionsUpdate } from '@/services/courseSectionsService';
 
 interface CourseBuilderProps {
@@ -109,33 +107,32 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
   const [activeResourceTab, setActiveResourceTab] = useState<ResourceTabType>(ResourceTabType.DOWNLOADABLE_FILE);
   const [showSectionForm, setShowSectionForm] = useState<boolean>(false);
   const [draggedSection, setDraggedSection] = useState<string | null>(null);
-const [draggedLecture, setDraggedLecture] = useState<string | null>(null);
-const [dragTarget, setDragTarget] = useState<{
-  sectionId: string | null;
-  lectureId: string | null;
-}>({ sectionId: null, lectureId: null });
+  const [draggedLecture, setDraggedLecture] = useState<string | null>(null);
+  const [dragTarget, setDragTarget] = useState<{
+    sectionId: string | null;
+    lectureId: string | null;
+  }>({ sectionId: null, lectureId: null });
   
-const { 
-  sections, 
-  setSections, // Add this line to get the setSections function
-  addSection, 
-  addLecture,
-  deleteSection,
-  deleteLecture,
-  toggleSectionExpansion,
-  updateSectionName,
-  updateLectureName,
-  moveSection,
-  moveLecture,
-  updateLectureContent,
-  saveDescription: saveSectionDescription,
-  updateLectureWithUploadedContent,
-  handleLectureDrop
-} = useSections([]);
+  const { 
+    sections, 
+    setSections, 
+    addSection, 
+    addLecture,
+    deleteSection,
+    deleteLecture,
+    toggleSectionExpansion,
+    updateSectionName,
+    updateLectureName,
+    moveSection,
+    moveLecture,
+    updateLectureContent,
+    saveDescription: saveSectionDescription,
+    updateLectureWithUploadedContent,
+    handleLectureDrop,
+    savePracticeCode
+  } = useSections([]);
   
   const contentSectionModal = useModal();
-  const resourceModal = useModal();
-  const descriptionModal = useModal();
   
   const { 
     isUploading, 
@@ -145,7 +142,7 @@ const {
     handleFileSelection 
   } = useFileUpload(
     updateLectureWithUploadedContent,
-    () => resourceModal.close()
+    () => {}
   );
   
   const { updateCourseSections, loading: mutationLoading, error: mutationError } = useCourseSectionsUpdate();
@@ -169,19 +166,15 @@ const {
   
   // Toggle description editor
   const toggleDescriptionEditor = (sectionId: string, lectureId: string, currentText: string = "") => {
-    descriptionModal.toggle(sectionId, lectureId);
-    if (!descriptionModal.isOpen) {
+    contentSectionModal.toggle(sectionId, lectureId);
+    if (!contentSectionModal.isOpen) {
       setCurrentDescription(currentText);
     }
   };
   
-  // Save description
-  const saveDescription = () => {
-    if (!descriptionModal.activeSection) return;
-    
-    const { sectionId, lectureId } = descriptionModal.activeSection;
-    saveSectionDescription(sectionId, lectureId, currentDescription);
-    descriptionModal.close();
+  // Toggle add resource
+  const toggleAddResourceModal = (sectionId: string, lectureId: string) => {
+    contentSectionModal.toggle(sectionId, lectureId);
   };
 
   const handleDragStart = (e: React.DragEvent, sectionId: string, lectureId?: string) => {
@@ -218,46 +211,44 @@ const {
     });
   };
   
-
   const handleDrop = (e: React.DragEvent, targetSectionId: string, targetLectureId?: string) => {
-      e.preventDefault();
-      setIsDragging(false);
+    e.preventDefault();
+    setIsDragging(false);
+    
+    // Get the dragged item data
+    const sourceSectionId = e.dataTransfer.getData("sectionId");
+    const sourceLectureId = e.dataTransfer.getData("lectureId");
+    
+    if (!sourceSectionId) return; // No valid data, abort
+    
+    // Case 1: We're dragging a lecture
+    if (sourceLectureId && sourceLectureId.trim() !== "") {
+      handleLectureDrop(sourceSectionId, sourceLectureId, targetSectionId, targetLectureId);
+      return;
+    }
+    
+    // Case 2: We're dragging a section (and not dropping onto a lecture)
+    if (!targetLectureId) {
+      // Find section indices
+      const sourceIndex = sections.findIndex(s => s.id === sourceSectionId);
+      const targetIndex = sections.findIndex(s => s.id === targetSectionId);
       
-      // Get the dragged item data
-      const sourceSectionId = e.dataTransfer.getData("sectionId");
-      const sourceLectureId = e.dataTransfer.getData("lectureId");
-      
-      if (!sourceSectionId) return; // No valid data, abort
-      
-      // Case 1: We're dragging a lecture
-      if (sourceLectureId && sourceLectureId.trim() !== "") {
-        handleLectureDrop(sourceSectionId, sourceLectureId, targetSectionId, targetLectureId);
+      // Skip if source or target not found, or if dropping onto itself
+      if (sourceIndex === -1 || targetIndex === -1 || sourceIndex === targetIndex) {
         return;
       }
       
-      // Case 2: We're dragging a section (and not dropping onto a lecture)
-      if (!targetLectureId) {
-        // Find section indices
-        const sourceIndex = sections.findIndex(s => s.id === sourceSectionId);
-        const targetIndex = sections.findIndex(s => s.id === targetSectionId);
-        
-        // Skip if source or target not found, or if dropping onto itself
-        if (sourceIndex === -1 || targetIndex === -1 || sourceIndex === targetIndex) {
-          return;
-        }
-        
-        // Create a new array with the section moved to the new position
-        const newSections = [...sections];
-        const [movedSection] = newSections.splice(sourceIndex, 1);
-        newSections.splice(targetIndex, 0, movedSection);
-        
-        // Update the state with the new sections array
-        setSections(newSections);
-        toast.success("Section moved successfully");
-      }
-    };
+      // Create a new array with the section moved to the new position
+      const newSections = [...sections];
+      const [movedSection] = newSections.splice(sourceIndex, 1);
+      newSections.splice(targetIndex, 0, movedSection);
+      
+      // Update the state with the new sections array
+      setSections(newSections);
+      toast.success("Section moved successfully");
+    }
+  };
   
-
   const handleDragLeave = () => {
     // Optionally clear drop targets when leaving
     setDragTarget({ sectionId: null, lectureId: null });
@@ -290,7 +281,10 @@ const {
           videoUrls: {
             action: "ADD",
             videos: lecture.videos.map(video => ({ url: video.url }))
-          }
+          },
+          // Add code-related fields if present
+          code: lecture.code,
+          codeLanguage: lecture.codeLanguage
         }));
         
         return {
@@ -316,51 +310,48 @@ const {
   
   return (
     <div className="xl:max-w-6xl w-full xl:mx-auto pb-6 xl:px-8">
-<div className="w-full pb-6">
-  <div className="flex w-full flex-col xl:flex-row justify-between items-center gap-4 sm:gap-6">
-    <h1 className="xl:text-xl sm:text-2xl md:text-[16px] font-bold text-gray-900 text-center sm:text-left">
-      Course Curriculum Builder
-    </h1>
-    <div className="md:flex space-x-3 hidden ">
-      <button
-        type="button"
-        onClick={handleSaveCourseSections}
-        disabled={mutationLoading}
-        className="inline-flex items-center px-3 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-gray-600 bg-gray-200 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-      >
-        {mutationLoading ? 'Saving...' : 'Save as Draft'}
-      </button>
-      <button
-        type="button"
-        onClick={handleSaveCourseSections}
-        disabled={mutationLoading}
-        className="inline-flex items-center px-3 py-2 border border-transparent rounded-md shadow-sm text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-      >
-        {mutationLoading ? 'Saving...' : 'Save & Next'}
-      </button>
-
-    </div>   
-    <div className="flex space-x-3 w-full justify-between md:hidden">
-      <button
-        type="button"
-        onClick={handleSaveCourseSections}
-        disabled={mutationLoading}
-        className="inline-flex items-center px-3 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-gray-600 bg-gray-200 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-      >
-        {mutationLoading ? 'Saving...' : 'Save as Draft'}
-      </button>
-      <button
-        type="button"
-        onClick={handleSaveCourseSections}
-        disabled={mutationLoading}
-        className="inline-flex items-center px-3 py-2 border border-transparent rounded-md shadow-sm text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-      >
-        {mutationLoading ? 'Saving...' : 'Save & Next'}
-      </button>
-    </div>
-
-
-  </div>
+      <div className="w-full pb-6">
+        <div className="flex w-full flex-col xl:flex-row justify-between items-center gap-4 sm:gap-6">
+          <h1 className="xl:text-xl sm:text-2xl md:text-[16px] font-bold text-gray-900 text-center sm:text-left">
+            Course Curriculum Builder
+          </h1>
+          <div className="md:flex space-x-3 hidden ">
+            <button
+              type="button"
+              onClick={handleSaveCourseSections}
+              disabled={mutationLoading}
+              className="inline-flex items-center px-3 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-gray-600 bg-gray-200 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            >
+              {mutationLoading ? 'Saving...' : 'Save as Draft'}
+            </button>
+            <button
+              type="button"
+              onClick={handleSaveCourseSections}
+              disabled={mutationLoading}
+              className="inline-flex items-center px-3 py-2 border border-transparent rounded-md shadow-sm text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            >
+              {mutationLoading ? 'Saving...' : 'Save & Next'}
+            </button>
+          </div>   
+          <div className="flex space-x-3 w-full justify-between md:hidden">
+            <button
+              type="button"
+              onClick={handleSaveCourseSections}
+              disabled={mutationLoading}
+              className="inline-flex items-center px-3 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-gray-600 bg-gray-200 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            >
+              {mutationLoading ? 'Saving...' : 'Save as Draft'}
+            </button>
+            <button
+              type="button"
+              onClick={handleSaveCourseSections}
+              disabled={mutationLoading}
+              className="inline-flex items-center px-3 py-2 border border-transparent rounded-md shadow-sm text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            >
+              {mutationLoading ? 'Saving...' : 'Save & Next'}
+            </button>
+          </div>
+        </div>
       </div>
       
       {mutationError && (
@@ -387,37 +378,38 @@ const {
           {/* Render sections */}
           {sections.map((section, index) => (
             <SectionItem
-            key={section.id}
-            section={section}
-            index={index}
-            totalSections={sections.length}
-            editingSectionId={editingSectionId}
-            setEditingSectionId={setEditingSectionId}
-            updateSectionName={updateSectionName}
-            deleteSection={deleteSection}
-            moveSection={moveSection}
-            toggleSectionExpansion={toggleSectionExpansion}
-            isDragging={isDragging}
-            handleDragStart={handleDragStart}
-            handleDragEnd={handleDragEnd}
-            handleDragOver={(e) => handleDragOver(e, section.id)}
-            handleDragLeave={handleDragLeave}
-            handleDrop={(e) => handleDrop(e, section.id)}
-            addLecture={addLecture}
-            editingLectureId={editingLectureId}
-            setEditingLectureId={setEditingLectureId}
-            updateLectureName={updateLectureName}
-            deleteLecture={deleteLecture}
-            moveLecture={moveLecture}
-            toggleContentSection={contentSectionModal.toggle}
-            toggleAddResourceModal={resourceModal.toggle}
-            toggleDescriptionEditor={toggleDescriptionEditor}
-            activeContentSection={contentSectionModal.activeSection}
-            addCurriculumItem={() => setShowContentTypeSelector(true)}
-            draggedSection={draggedSection}
-            draggedLecture={draggedLecture}
-            dragTarget={dragTarget}
-          />
+              key={section.id}
+              section={section}
+              index={index}
+              totalSections={sections.length}
+              editingSectionId={editingSectionId}
+              setEditingSectionId={setEditingSectionId}
+              updateSectionName={updateSectionName}
+              deleteSection={deleteSection}
+              moveSection={moveSection}
+              toggleSectionExpansion={toggleSectionExpansion}
+              isDragging={isDragging}
+              handleDragStart={handleDragStart}
+              handleDragEnd={handleDragEnd}
+              handleDragOver={(e) => handleDragOver(e, section.id)}
+              handleDragLeave={handleDragLeave}
+              handleDrop={(e) => handleDrop(e, section.id)}
+              addLecture={addLecture}
+              editingLectureId={editingLectureId}
+              setEditingLectureId={setEditingLectureId}
+              updateLectureName={updateLectureName}
+              deleteLecture={deleteLecture}
+              moveLecture={moveLecture}
+              toggleContentSection={contentSectionModal.toggle}
+              toggleAddResourceModal={toggleAddResourceModal}
+              toggleDescriptionEditor={toggleDescriptionEditor}
+              activeContentSection={contentSectionModal.activeSection}
+              addCurriculumItem={() => setShowContentTypeSelector(true)}
+              savePracticeCode={savePracticeCode}
+              draggedSection={draggedSection}
+              draggedLecture={draggedLecture}
+              dragTarget={dragTarget}
+            />
           ))}
           
           {/* Section Form (non-modal, appears directly in the UI) */}
@@ -471,30 +463,6 @@ const {
         }}
         className="hidden" 
       />
-      
-      {/* Modals */}
-      {resourceModal.isOpen && resourceModal.activeSection && (
-        <AddResourceModal
-          activeContentSection={resourceModal.activeSection}
-          setShowAddResourceModal={resourceModal.close}
-          activeResourceTab={activeResourceTab}
-          setActiveResourceTab={setActiveResourceTab}
-          sections={sections}
-          isUploading={isUploading}
-          uploadProgress={uploadProgress}
-          triggerFileUpload={triggerFileUpload}
-        />
-      )}
-      
-      {descriptionModal.isOpen && descriptionModal.activeSection && (
-        <DescriptionEditorModal
-          activeDescriptionSection={descriptionModal.activeSection}
-          setShowDescriptionEditor={descriptionModal.close}
-          currentDescription={currentDescription}
-          setCurrentDescription={setCurrentDescription}
-          saveDescription={saveDescription}
-        />
-      )}
     </div>
   );
 };

@@ -11,6 +11,8 @@ import QuizForm from './QuizForm';
 import QuizItem from './QuizItem';
 import CodingExerciseForm from './CodingExcerciseForm';
 import CodingExerciseItem from './CodingExcerciseItem';
+import PracticeItem from './PracticeItem';
+import PracticeForm from './PracticeForm';
 
 interface SectionItemProps {
   section: {
@@ -46,6 +48,8 @@ interface SectionItemProps {
   addLecture: (sectionId: string, contentType: ContentItemType, title?: string) => string;
   addCurriculumItem: (sectionId: string) => void;
   updateQuizQuestions?: (sectionId: string, quizId: string, questions: any[]) => void;
+  // New prop for practice exercises
+  savePracticeCode?: (sectionId: string, lectureId: string, code: string, language: string) => void;
   children?: React.ReactNode;
   // Props for enhanced drag and drop
   draggedSection?: string | null;
@@ -84,6 +88,7 @@ export default function SectionItem({
   addLecture,
   addCurriculumItem,
   updateQuizQuestions,
+  savePracticeCode,
   children,
   draggedSection,
   draggedLecture,
@@ -96,6 +101,7 @@ export default function SectionItem({
   const [showQuizForm, setShowQuizForm] = useState<boolean>(false);
   const [isHovering, setIsHovering] = useState<boolean>(false);
   const [showCodingExerciseForm, setShowCodingExerciseForm] = useState<boolean>(false);
+  const [showPracticeForm, setShowPracticeForm] = useState<boolean>(false);
 
   useEffect(() => {
     if (editingSectionId === section.id && sectionNameInputRef.current) {
@@ -144,14 +150,22 @@ export default function SectionItem({
       setShowAssignmentForm(true);
       setShowQuizForm(false);
       setShowCodingExerciseForm(false);
+      setShowPracticeForm(false);
     } else if (contentType === 'quiz') {
       setShowQuizForm(true);
       setShowAssignmentForm(false);
       setShowCodingExerciseForm(false);
+      setShowPracticeForm(false);
     } else if (contentType === 'coding-exercise') {
       setShowCodingExerciseForm(true);
       setShowAssignmentForm(false);
       setShowQuizForm(false);
+      setShowPracticeForm(false);
+    } else if (contentType === 'practice') {
+      setShowPracticeForm(true);
+      setShowAssignmentForm(false);
+      setShowQuizForm(false);
+      setShowCodingExerciseForm(false);
     } else {
       // Make sure to always pass the title parameter to addLecture
       const lectureId = addLecture(sectionId, contentType, title);
@@ -159,6 +173,22 @@ export default function SectionItem({
     }
     
     setShowActionButtons(false);
+  };
+
+  const handleAddPractice = (sectionId: string, title: string, description: string) => {
+    // Add the lecture with practice content type
+    const newLectureId = addLecture(sectionId, 'practice', title);
+    
+    // If description is provided, update it
+    if (description) {
+      const sections = [...section.lectures];
+      const lectureIndex = sections.findIndex(lecture => lecture.id === newLectureId);
+      if (lectureIndex !== -1) {
+        sections[lectureIndex].description = description;
+      }
+    }
+    
+    setShowPracticeForm(false);
   };
 
   // Render lecture items based on their content type
@@ -233,6 +263,33 @@ export default function SectionItem({
           handleDrop={handleDrop}
           toggleContentSection={toggleContentSection}
           updateQuizQuestions={updateQuizQuestions}
+          isDragging={isDragging}
+          handleDragEnd={handleDragEnd}
+          handleDragLeave={handleDragLeave}
+          draggedLecture={draggedLecture}
+          dragTarget={dragTarget}
+        />
+      );
+    }
+
+    // Render the practice item
+    if (lecture.contentType === 'practice') {
+      return (
+        <PracticeItem
+          key={lecture.id}
+          lecture={lecture}
+          lectureIndex={lectureIndex}
+          totalLectures={section.lectures.length}
+          sectionId={section.id}
+          editingLectureId={editingLectureId}
+          setEditingLectureId={setEditingLectureId}
+          updateLectureName={updateLectureName}
+          deleteLecture={deleteLecture}
+          moveLecture={moveLecture}
+          savePracticeCode={savePracticeCode}
+          handleDragStart={handleDragStart}
+          handleDragOver={handleDragOver}
+          handleDrop={handleDrop}
           isDragging={isDragging}
           handleDragEnd={handleDragEnd}
           handleDragLeave={handleDragLeave}
@@ -376,6 +433,15 @@ export default function SectionItem({
               onCancel={() => setShowAssignmentForm(false)}
             />
           )}
+
+
+        {showPracticeForm && (
+          <PracticeForm
+            sectionId={section.id}
+            onAddPractice={handleAddPractice}
+            onCancel={() => setShowPracticeForm(false)}
+          />
+        )}
 
           {showCodingExerciseForm && (
           <CodingExerciseForm

@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from 'react';
-import { Plus, X } from 'lucide-react';
+import { Plus, X, Code } from 'lucide-react';
 import { ContentItemType } from '@/lib/types';
 
 interface ActionButtonsProps {
@@ -116,10 +116,10 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
       </button>
       <button
         onClick={() => onAddLecture(sectionId, 'practice')}
-        className="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-5 font-medium rounded-full text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+        className="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-5 font-medium rounded-full text-cyan-700 bg-cyan-100 hover:bg-cyan-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500"
       >
-        <Plus className="w-4 h-4 mr-1" />
-        Practice...
+        <Code className="w-4 h-4 mr-1" />
+        Practice
       </button>
       <button
         onClick={() => onAddLecture(sectionId, 'assignment')}

@@ -11,7 +11,7 @@ interface Section {
   lectures: Lecture[];
   editing: boolean;
   lectureEditing: boolean[];
-  objective?: string; // Added objective field
+  objective?: string;
 }
 
 export const useSections = (initialSections: Section[] ) => {
@@ -21,12 +21,12 @@ export const useSections = (initialSections: Section[] ) => {
   const addSection = (name: string = "New Section", objective?: string) => {
     const newSection: Section = {
       id: generateId(),
-      name: name, // Use the provided name instead of hardcoded "New Section"
-      objective: objective, // Store the objective
+      name: name,
+      objective: objective,
       lectures: [],
       editing: false,
       lectureEditing: [],
-      isExpanded: true // Changed to true so users see expanded section after adding
+      isExpanded: true
     };
     
     setSections([...sections, newSection]);
@@ -48,7 +48,11 @@ export const useSections = (initialSections: Section[] ) => {
       attachedFiles: [],
       videos: [],
       contentType: contentType,
-      isExpanded: true // Set to true so users can immediately see the new lecture
+      isExpanded: true,
+      // New fields for practice coding exercise
+      code: contentType === 'practice' ? getDefaultCodeTemplate('javascript') : undefined,
+      codeLanguage: contentType === 'practice' ? 'javascript' : undefined,
+      externalResources: []
     };
   
     setSections(sections.map(section => {
@@ -64,6 +68,70 @@ export const useSections = (initialSections: Section[] ) => {
     toast.success(`New ${contentType} added`);
     
     return newLecture.id;
+  };
+
+  // Default code templates based on language
+  const getDefaultCodeTemplate = (language: string): string => {
+    switch (language) {
+      case 'javascript':
+        return '// JavaScript Code\nconsole.log("Hello, World!");\n\n// Write your code here\nfunction solution() {\n  // Your solution goes here\n  \n  return result;\n}\n';
+      case 'typescript':
+        return '// TypeScript Code\nconsole.log("Hello, World!");\n\n// Write your code here\nfunction solution(): any {\n  // Your solution goes here\n  \n  return result;\n}\n';
+      case 'python':
+        return '# Python Code\nprint("Hello, World!")\n\n# Write your code here\ndef solution():\n    # Your solution goes here\n    \n    return result\n';
+      default:
+        return `// ${language} Code\n// Write your code here\n`;
+    }
+  };
+
+  // Save practice code
+  const savePracticeCode = (sectionId: string, lectureId: string, code: string, language: string) => {
+    setSections(sections.map(section => {
+      if (section.id === sectionId) {
+        return {
+          ...section,
+          lectures: section.lectures.map(lecture => {
+            if (lecture.id === lectureId && lecture.contentType === 'practice') {
+              return {
+                ...lecture,
+                code: code,
+                codeLanguage: language
+              };
+            }
+            return lecture;
+          })
+        };
+      }
+      return section;
+    }));
+    
+    toast.success("Code saved successfully");
+  };
+
+  // Add external resource to practice exercise
+  const addExternalResource = (sectionId: string, lectureId: string, url: string, name: string) => {
+    setSections(sections.map(section => {
+      if (section.id === sectionId) {
+        return {
+          ...section,
+          lectures: section.lectures.map(lecture => {
+            if (lecture.id === lectureId) {
+              const resources = [...(lecture.externalResources || [])];
+              resources.push({ url, name });
+              
+              return {
+                ...lecture,
+                externalResources: resources
+              };
+            }
+            return lecture;
+          })
+        };
+      }
+      return section;
+    }));
+    
+    toast.success("Resource added");
   };
 
   const addQuiz = (sectionId: string, title: string, description: string): string => {
@@ -362,10 +430,6 @@ export const useSections = (initialSections: Section[] ) => {
     toast.success("Item moved successfully");
   };
   
-  // CourseBuilder.tsx - Updated handleDrop function
-  // This handles both section and lecture drops
-  
-
   const updateQuizQuestions = (sectionId: string, quizId: string, questions: Question[]) => {
     setSections(sections.map(section => {
       if (section.id === sectionId) {
@@ -409,6 +473,7 @@ export const useSections = (initialSections: Section[] ) => {
     
     toast.success("Question added to quiz");
   };
+  
   const updateSectionsOrder = (newSectionsArray: Section[]) => {
     setSections(newSectionsArray);
     toast.success("Section moved successfully");
@@ -421,7 +486,7 @@ export const useSections = (initialSections: Section[] ) => {
     addSection,
     addLecture,
     deleteSection,
-    updateSectionsOrder, // Add this line
+    updateSectionsOrder,
     handleLectureDrop,
     deleteLecture,
     toggleSectionExpansion,
@@ -433,6 +498,9 @@ export const useSections = (initialSections: Section[] ) => {
     saveDescription,
     updateLectureWithUploadedContent,
     setSections,
-    addQuestionToQuiz
+    addQuestionToQuiz,
+    savePracticeCode,
+    addExternalResource,
+    getDefaultCodeTemplate
   };
 };
