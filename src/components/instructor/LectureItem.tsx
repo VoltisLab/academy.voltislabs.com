@@ -525,9 +525,9 @@ export default function LectureItem({
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
     >
-      <div className="flex items-center p-3">
+      <div className="flex items-center p-2">
         <div className="flex-1 flex items-center">
-          <div className="mr-2 text-gray-600">●</div>
+          <div className="xl:mr-2 mr-1 text-gray-600">●</div>
           {editingLectureId === lecture.id ? (
             <input
               ref={lectureNameInputRef}

@@ -86,7 +86,7 @@ const SectionForm: React.FC<{
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="xl:px-4 px-2 xl:py-2 py-1 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             >
               Add Section
             </button>
@@ -316,7 +316,7 @@ const {
   
   return (
     <div className="xl:max-w-6xl w-full xl:mx-auto pb-6 xl:px-8">
-<div className="w-full  py-6">
+<div className="w-full pb-6">
   <div className="flex w-full flex-col xl:flex-row justify-between items-center gap-4 sm:gap-6">
     <h1 className="xl:text-xl sm:text-2xl md:text-[16px] font-bold text-gray-900 text-center sm:text-left">
       Course Curriculum Builder

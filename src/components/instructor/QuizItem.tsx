@@ -93,7 +93,6 @@ const QuizItem: React.FC<QuizItemProps> = ({
   const handleAddQuestion = (question: Question) => {
     const newQuestions = [...questions, { ...question, id: `q-${Date.now()}` }];
     setQuestions(newQuestions);
-    setShowQuestionForm(false);
     
     // Update questions in parent component if updateQuizQuestions is provided
     if (updateQuizQuestions) {
@@ -185,7 +184,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
                     e.stopPropagation();
                     setEditingLectureId(lecture.id);
                   }}
-                  className="text-gray-500 hover:text-gray-700 p-1"
+                  className="text-gray-500 hover:text-gray-700 p-1 transition-opacity"
                 >
                   <Edit3 className="w-4 h-4" />
                 </button>
@@ -194,32 +193,32 @@ const QuizItem: React.FC<QuizItemProps> = ({
                     e.stopPropagation();
                     deleteLecture(sectionId, lecture.id);
                   }}
-                  className="text-gray-500 hover:text-red-600 p-1"
+                  className="text-gray-500 hover:text-red-600 p-1 transition-opacity"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    moveLecture(sectionId, lecture.id, 'up');
+                  }}
+                  className="text-gray-500 hover:text-gray-700 p-1 transition-opacity"
+                  disabled={lectureIndex === 0}
+                >
+                  <ChevronUp className={`w-4 h-4 ${lectureIndex === 0 ? 'opacity-50' : ''}`} />
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    moveLecture(sectionId, lecture.id, 'down');
+                  }}
+                  className="text-gray-500 hover:text-gray-700 p-1 transition-opacity"
+                  disabled={lectureIndex === totalLectures - 1}
+                >
+                  <ChevronDown className={`w-4 h-4 ${lectureIndex === totalLectures - 1 ? 'opacity-50' : ''}`} />
+                </button>
               </>
             )}
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                moveLecture(sectionId, lecture.id, 'up');
-              }}
-              className="text-gray-500 hover:text-gray-700 p-1"
-              disabled={lectureIndex === 0}
-            >
-              <ChevronUp className={`w-4 h-4 ${lectureIndex === 0 ? 'opacity-50' : ''}`} />
-            </button>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                moveLecture(sectionId, lecture.id, 'down');
-              }}
-              className="text-gray-500 hover:text-gray-700 p-1"
-              disabled={lectureIndex === totalLectures - 1}
-            >
-              <ChevronDown className={`w-4 h-4 ${lectureIndex === totalLectures - 1 ? 'opacity-50' : ''}`} />
-            </button>
             <button
               onClick={handleQuestionsButtonClick}
               className="ml-2 px-3 py-1 text-purple-600 bg-purple-50 hover:bg-purple-100 rounded-md flex items-center"
@@ -278,11 +277,11 @@ const QuizItem: React.FC<QuizItemProps> = ({
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
     >
-      <div className="flex justify-between items-center p-3 cursor-pointer" onClick={toggleExpand}>
+      <div className="flex justify-between items-center p-2 cursor-pointer" onClick={toggleExpand}>
         <div className="flex items-center space-x-3">
           <Move className="w-4 h-4 text-gray-400 cursor-move" />
           <div className="flex items-center space-x-2">
-            <span className=" w-5 h-5 rounded-full bg-purple-500 text-white text-center text-xs flex items-center justify-center">
+            <span className="w-4 h-4 rounded-full bg-purple-500 text-white text-center text-xs flex items-center justify-center">
               Q
             </span>
             {editingLectureId === lecture.id ? (
@@ -300,7 +299,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
                 onClick={(e) => e.stopPropagation()}
               />
             ) : (
-              <h4 className="font-medium text-sm">{lecture.name || "New quiz"}</h4>
+              <h4 className="text-sm">{lecture.name || "New quiz"}</h4>
             )}
           </div>
         </div>
@@ -312,7 +311,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
                   e.stopPropagation();
                   setEditingLectureId(lecture.id);
                 }}
-                className="text-gray-500 hover:text-gray-700 p-1"
+                className="text-gray-500 hover:text-gray-700 p-1 transition-opacity"
               >
                 <Edit3 className="w-4 h-4" />
               </button>
@@ -321,32 +320,32 @@ const QuizItem: React.FC<QuizItemProps> = ({
                   e.stopPropagation();
                   deleteLecture(sectionId, lecture.id);
                 }}
-                className="text-gray-500 hover:text-red-600 p-1"
+                className="text-gray-500 hover:text-red-600 p-1 transition-opacity"
               >
                 <Trash2 className="w-4 h-4" />
               </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  moveLecture(sectionId, lecture.id, 'up');
+                }}
+                className="text-gray-500 hover:text-gray-700 p-1 transition-opacity"
+                disabled={lectureIndex === 0}
+              >
+                <ChevronUp className={`w-4 h-4 ${lectureIndex === 0 ? 'opacity-50' : ''}`} />
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  moveLecture(sectionId, lecture.id, 'down');
+                }}
+                className="text-gray-500 hover:text-gray-700 p-1 transition-opacity"
+                disabled={lectureIndex === totalLectures - 1}
+              >
+                <ChevronDown className={`w-4 h-4 ${lectureIndex === totalLectures - 1 ? 'opacity-50' : ''}`} />
+              </button>
             </>
           )}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              moveLecture(sectionId, lecture.id, 'up');
-            }}
-            className="text-gray-500 hover:text-gray-700 p-1"
-            disabled={lectureIndex === 0}
-          >
-            <ChevronUp className={`w-4 h-4 ${lectureIndex === 0 ? 'opacity-50' : ''}`} />
-          </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              moveLecture(sectionId, lecture.id, 'down');
-            }}
-            className="text-gray-500 hover:text-gray-700 p-1"
-            disabled={lectureIndex === totalLectures - 1}
-          >
-            <ChevronDown className={`w-4 h-4 ${lectureIndex === totalLectures - 1 ? 'opacity-50' : ''}`} />
-          </button>
           {expanded ? (
             <ChevronUp className="w-5 h-5 text-gray-500" />
           ) : (

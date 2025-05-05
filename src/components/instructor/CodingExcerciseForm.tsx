@@ -60,7 +60,7 @@ const CodingExerciseForm: React.FC<CodingExerciseFormProps> = ({
             <button
               type="submit"
               disabled={!title.trim()}
-              className={`px-4 py-2 ${!title.trim() ? 'bg-purple-400 cursor-not-allowed' : 'bg-purple-600 hover:bg-purple-700'} text-white rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500`}
+              className={`xl:px-4 px-2 xl:py-2 py-1 ${!title.trim() ? 'bg-indigo-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'} text-white rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500`}
             >
               Add Coding Exercise
             </button>
