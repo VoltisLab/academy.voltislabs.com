@@ -461,9 +461,11 @@ export default function SectionItem({
               )}
             </div>
 
-            <div className="flex items-center space-x-2">
+            {isHovering && (
+              <div className="flex items-center space-x-2">
               <AlignJustify className="w-5 h-5 text-gray-400 cursor-move" />
             </div>
+            )}
               </div>
             )}
            
