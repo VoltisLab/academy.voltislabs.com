@@ -14,15 +14,21 @@ export default function AssignmentForm({
   onCancel
 }: AssignmentFormProps) {
   const [title, setTitle] = useState('');
-  const [charCount, setCharCount] = useState(0);
   const maxChars = 80;
+  const [charCount, setCharCount] = useState(maxChars);
   const inputRef = useRef<HTMLInputElement>(null);
   
   useEffect(() => {
+    // Focus the input when component mounts
     if (inputRef.current) {
       inputRef.current.focus();
     }
   }, []);
+
+  // Update character count when title changes
+  useEffect(() => {
+    setCharCount(maxChars - title.length);
+  }, [title]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,30 +41,31 @@ export default function AssignmentForm({
     const newValue = e.target.value;
     if (newValue.length <= maxChars) {
       setTitle(newValue);
-      setCharCount(newValue.length);
+      // Character count is updated in the useEffect hook
     }
   };
 
   return (
-    <div className="mb-3 bg-white border border-gray-300 rounded-md relative">
+    <div className="mb-3 ml-10 mt-6 bg-white border border-gray-500 relative">
       <button 
         onClick={onCancel}
-        className="absolute left-3 top-3 text-gray-400 hover:text-gray-600"
+        className="absolute -left-6 -top-4 text-gray-400 hover:text-gray-600"
       >
-        <X className="w-5 h-5" />
+        <X className="w-4 h-4 text-gray-700" />
       </button>
       
-      <form onSubmit={handleSubmit} className="pt-10 pb-4 px-4">
-        <div className="mb-4">
+      <form onSubmit={handleSubmit} className="pt-3 pb-3 px-4">
+        <div className="mb-4 relative">
           <input
             ref={inputRef}
             type="text"
             value={title}
             onChange={handleChange}
             placeholder="Enter a Title"
-            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="w-full border border-gray-500 rounded px-3 py-1 focus:outline-none focus:ring-1 focus:ring-[#6D28D2]"
+            maxLength={maxChars}
           />
-          <div className="text-right text-sm text-gray-500 mt-1">
+          <div className="absolute right-3 top-1 text-sm text-gray-500">
             {charCount}
           </div>
         </div>
@@ -67,13 +74,13 @@ export default function AssignmentForm({
           <button
             type="button"
             onClick={onCancel}
-            className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md"
+            className="p-2 text-xs text-gray-700 hover:bg-gray-100 rounded-md"
           >
             Cancel
           </button>
           <button
             type="submit"
-            className="xl:px-4 px-2 py-1 xl:py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:bg-indigo-300"
+            className=" p-2 font-medium text-xs bg-[#6D28D2] text-white rounded-md hover:bg-[#7D28D2] disabled:bg-indigo-300"
             disabled={!title.trim()}
           >
             Add Assignment

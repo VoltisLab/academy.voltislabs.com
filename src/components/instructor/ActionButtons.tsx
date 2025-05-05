@@ -104,28 +104,28 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
         onClick={() => onAddLecture(sectionId, 'quiz')}
         className="inline-flex items-center text-xs font-medium rounded-md text-[#6D28D2] p-1 m-1 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
       >
-        <Plus className="w-4 h-4 mr-1" />
+        <Plus className="w-3 h-3 mr-1" />
         Quiz
       </button>
       <button
         onClick={() => onAddLecture(sectionId, 'coding-exercise')}
         className="inline-flex items-center text-xs font-medium text-[#6D28D2] rounded-md p-1 m-1 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
       >
-        <Plus className="w-4 h-4 mr-1" />
+        <Plus className="w-3 h-3 mr-1" />
         Coding Exercise
       </button>
       <button
         onClick={() => onAddLecture(sectionId, 'practice')}
         className="inline-flex items-center text-xs font-medium text-[#6D28D2] rounded-md p-1 m-1 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500"
       >
-        <Plus className="w-4 h-4 mr-1" />
+        <Plus className="w-3 h-3 mr-1" />
         Practice
       </button>
       <button
         onClick={() => onAddLecture(sectionId, 'assignment')}
         className="inline-flex items-center text-xs font-medium text-[#6D28D2] rounded-md p-1 m-1 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
       >
-        <Plus className="w-4 h-4 mr-1" />
+        <Plus className="w-3 h-3 mr-1" />
         Assignment
       </button>
       <button
@@ -133,7 +133,7 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
         className="inline-flex items-center text-xs font-medium m-1 text-[#6D28D2] rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 relative"
       >
         <div className="absolute top-1 left-20 bg-indigo-200 text-black text-xs px-1 rounded">Beta</div>
-        <Plus className="w-4 h-4 mr-1" />
+        <Plus className="w-3 h-3 mr-1" />
         Role Play
       </button>
     </div>
