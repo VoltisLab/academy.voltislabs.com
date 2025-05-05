@@ -1,6 +1,6 @@
 "use client";
 import React, { useRef, useEffect, useState } from 'react';
-import { Trash2, Edit3, ChevronDown, ChevronUp, Move, Plus} from "lucide-react";
+import { Trash2, Edit3, ChevronDown, ChevronUp, Move, Plus, AlignJustify} from "lucide-react";
 import { Lecture, ContentItemType } from '@/lib/types';
 // Import the components
 import { ActionButtons } from './ActionButtons';
@@ -13,6 +13,7 @@ import CodingExerciseForm from './CodingExcerciseForm';
 import CodingExerciseItem from './CodingExcerciseItem';
 import PracticeItem from './PracticeItem';
 import PracticeForm from './PracticeForm';
+import { FaHamburger } from 'react-icons/fa';
 
 interface SectionItemProps {
   section: {
@@ -329,7 +330,7 @@ export default function SectionItem({
 
   return (
     <div 
-      className={`mb-4 border rounded-lg overflow-hidden bg-white ${
+      className={`border border-gray-500 overflow-hidden bg-red-300 ${
         draggedSection === section.id ? 'opacity-50' : ''
       } ${
         dragTarget?.sectionId === section.id && !dragTarget?.lectureId ? 'border-2 border-indigo-500' : ''
@@ -349,7 +350,7 @@ export default function SectionItem({
         onClick={() => toggleSectionExpansion(section.id)}
       >
         <div className="flex items-center space-x-3">
-          <Move className="w-5 h-5 text-gray-400 cursor-move" />
+          
           {editingSectionId === section.id ? (
             <input
               ref={sectionNameInputRef}
@@ -365,8 +366,9 @@ export default function SectionItem({
               onClick={(e) => e.stopPropagation()}
             />
           ) : (
-            <h3 className="font-semibold">Section {index + 1}: {section.name}</h3>
+            <h3 className="font-semibold text-xs">Unpublished Section {index + 1}: {section.name}</h3>
           )}
+          <AlignJustify className="w-5 h-5 text-gray-400 cursor-move" />
         </div>
         <div className="flex items-center space-x-2">
           {/* Edit and Delete buttons only visible on hover */}
