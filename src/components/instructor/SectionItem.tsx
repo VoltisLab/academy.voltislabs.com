@@ -516,27 +516,42 @@ export default function SectionItem({
               {children}
               
               {/* Show action buttons when toggled */}
-              <div className='flex flex-row gap-2 '>
-              <button 
-                onClick={handleCurriculumButtonClick}
-                className="mt-3 max-h-8 ml-2 w-36 flex items-center text-[#6D28D2] border border-[#6D28D2] bg-white hover:border-[#6D28D2] px-2 py-1 rounded-sm text-sm font-medium"
-              >
-                <Plus className="w-4 h-4 mr-1 text-xs" /> Curriculum item
-              </button>
-              {showActionButtons && (
-                <div className="mt-3">
-                  <ActionButtons
-                    sectionId={section.id}
-                    onAddLecture={handleAddLecture}
-                    onShowTypeSelector={() => {
-                      // For the lecture button - directly add a video lecture
-                      addLecture(section.id, 'video');
-                      setShowActionButtons(false);
-                    }}
-                  />
-                </div>
-              )}
-              </div>
+             {/* Updated Curriculum & Action Buttons UI */}
+<div className="ml-2 mt-3 relative">
+  {!showActionButtons ? (
+    <button 
+      onClick={handleCurriculumButtonClick}
+      className="max-h-7 w-32 flex items-center text-[#6D28D2] border border-[#6D28D2] bg-indigo-50 hover:border-[#6D28D2] px-2 py-1 rounded-sm text-xs font-medium"
+    >
+      <Plus className="w-4 h-4 mr-1 text-xs" /> Curriculum item
+    </button>
+  ) : (
+    <div className="relative">
+      {/* X button to close */}
+      <button 
+        onClick={() => setShowActionButtons(false)}
+        className="absolute -top-3 cursor-pointer left-2 w-6 h-6 rounded-full flex items-center justify-center text-gray-500 hover:text-gray-700 z-10"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+      
+      {/* Action Buttons */}
+      <div className="bg-white border-inset border border-gray-200 rounded-md ml-8">
+        <ActionButtons
+          sectionId={section.id}
+          onAddLecture={handleAddLecture}
+          onShowTypeSelector={() => {
+            // For the lecture button - directly add a video lecture
+            addLecture(section.id, 'video');
+            setShowActionButtons(false);
+          }}
+        />
+      </div>
+    </div>
+  )}
+</div>
             </div>
             
           )}

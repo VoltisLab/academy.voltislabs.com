@@ -44,7 +44,7 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
     return (
       <div className="bg-white border border-gray-200 rounded-lg p-4 mb-4">
         <div className="flex justify-between items-center mb-2">
-          <h3 className="text-sm font-medium">New Lecture:</h3>
+          <h3 className="text-xs font-medium">New Lecture:</h3>
           <button 
             onClick={handleCancel}
             className="text-gray-500 hover:text-gray-700"
@@ -89,51 +89,51 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
   }
 
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex flex-wrap gap-2 bg-white px-2 border border-gray-400 border-dashed">
       <button
         onClick={(e) => {
           e.stopPropagation();
           setShowLectureForm(true);
         }}
-        className="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-5 font-medium rounded-full text-indigo-700 bg-indigo-100 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+        className="inline-flex items-center text-xs font-medium rounded-md text-[#6D28D2] p-1 m-1 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
       >
-        <Plus className="w-4 h-4 mr-1" />
+        <Plus className="w-3 h-3 mr-1" />
         Lecture
       </button>
       <button
         onClick={() => onAddLecture(sectionId, 'quiz')}
-        className="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-5 font-medium rounded-full text-purple-700 bg-purple-100 hover:bg-purple-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+        className="inline-flex items-center text-xs font-medium rounded-md text-[#6D28D2] p-1 m-1 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
       >
-        <Plus className="w-4 h-4 mr-1" />
+        <Plus className="w-3 h-3 mr-1" />
         Quiz
       </button>
       <button
         onClick={() => onAddLecture(sectionId, 'coding-exercise')}
-        className="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-5 font-medium rounded-full text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+        className="inline-flex items-center text-xs font-medium text-[#6D28D2] rounded-md p-1 m-1 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
       >
-        <Plus className="w-4 h-4 mr-1" />
+        <Plus className="w-3 h-3 mr-1" />
         Coding Exercise
       </button>
       <button
         onClick={() => onAddLecture(sectionId, 'practice')}
-        className="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-5 font-medium rounded-full text-cyan-700 bg-cyan-100 hover:bg-cyan-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500"
+        className="inline-flex items-center text-xs font-medium text-[#6D28D2] rounded-md p-1 m-1 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500"
       >
-        <Code className="w-4 h-4 mr-1" />
+        <Plus className="w-3 h-3 mr-1" />
         Practice
       </button>
       <button
         onClick={() => onAddLecture(sectionId, 'assignment')}
-        className="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-5 font-medium rounded-full text-yellow-700 bg-yellow-100 hover:bg-yellow-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
+        className="inline-flex items-center text-xs font-medium text-[#6D28D2] rounded-md p-1 m-1 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
       >
-        <Plus className="w-4 h-4 mr-1" />
+        <Plus className="w-3 h-3 mr-1" />
         Assignment
       </button>
       <button
         onClick={() => onAddLecture(sectionId, 'role-play')}
-        className="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-5 font-medium rounded-full text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 relative"
+        className="inline-flex items-center text-xs font-medium m-1 text-[#6D28D2] rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 relative"
       >
-        <div className="absolute -top-1 -right-1 bg-indigo-500 text-white text-xs px-1 rounded">Beta</div>
-        <Plus className="w-4 h-4 mr-1" />
+        <div className="absolute top-1 left-20 bg-indigo-200 text-black text-xs px-1 rounded">Beta</div>
+        <Plus className="w-3 h-3 mr-1" />
         Role Play
       </button>
     </div>
