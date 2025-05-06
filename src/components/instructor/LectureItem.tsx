@@ -1,9 +1,10 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { ContentItemType, Lecture, ContentType } from '@/lib/types';
-import { 
-  Plus, Trash2, Edit3, ChevronDown, ChevronUp, Move, Search, X, FileText, Upload, Library
-} from "lucide-react";
+import { ContentItemType, Lecture, ContentType, ResourceTabType } from '@/lib/types';
+import {Plus, Trash2, Edit3, ChevronDown, ChevronUp, Search, X, CircleCheck, FileText, AlignJustify} from "lucide-react";
 import dynamic from 'next/dynamic';
+import AddResourceComponent from './AddResourceComponent';
+import DescriptionEditorComponent from './DescriptionEditorComponent';
+import { CiCircleCheck } from "react-icons/ci";
 const ReactQuill = dynamic(() => import('react-quill-new'), { 
   ssr: false,
   loading: () => <p>Loading editor...</p>
@@ -29,12 +30,12 @@ const quillFormats = [
 
 // React Quill styles
 import 'react-quill-new/dist/quill.snow.css';
+
 // Tab interfaces
 interface TabInterface {
   label: string;
   key: string;
 }
-
 
 // Content interfaces for different content types
 interface VideoContent {
@@ -76,6 +77,8 @@ interface LectureItemProps {
   toggleAddResourceModal?: (sectionId: string, lectureId: string) => void;
   toggleDescriptionEditor?: (sectionId: string, lectureId: string, currentText: string) => void;
   activeContentSection?: {sectionId: string, lectureId: string} | null;
+  activeResourceSection?: {sectionId: string, lectureId: string} | null;
+  activeDescriptionSection?: {sectionId: string, lectureId: string} | null;
   isDragging: boolean;
   handleDragStart: (e: React.DragEvent, sectionId: string, lectureId?: string) => void;
   handleDragOver: (e: React.DragEvent) => void;
@@ -87,6 +90,10 @@ interface LectureItemProps {
     sectionId: string | null;
     lectureId: string | null;
   };
+  sections?: any[];
+  updateCurrentDescription?: (description: string) => void;
+  saveDescription?: () => void;
+  currentDescription?: string;
   children?: React.ReactNode;
 }
 
@@ -104,6 +111,8 @@ export default function LectureItem({
   toggleAddResourceModal,
   toggleDescriptionEditor,
   activeContentSection,
+  activeResourceSection,
+  activeDescriptionSection,
   isDragging,
   handleDragStart,
   handleDragOver,
@@ -112,6 +121,10 @@ export default function LectureItem({
   handleDragLeave,
   draggedLecture,
   dragTarget,
+  sections = [],
+  updateCurrentDescription,
+  saveDescription,
+  currentDescription = '',
   children
 }: LectureItemProps) {
   const lectureNameInputRef = useRef<HTMLInputElement>(null);
@@ -137,6 +150,11 @@ export default function LectureItem({
   const [articleContent, setArticleContent] = useState<ArticleContent>({
     text: ''
   });
+
+  // For resource component
+  const [activeResourceTab, setActiveResourceTab] = useState<ResourceTabType>(ResourceTabType.DOWNLOADABLE_FILE);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   // Video tab options
   const videoTabs: TabInterface[] = [
@@ -243,6 +261,14 @@ export default function LectureItem({
 
   const isExpanded = activeContentSection?.sectionId === sectionId && 
                      activeContentSection?.lectureId === lecture.id;
+
+  // Determine if the resource section is active for THIS specific lecture
+  const isResourceSectionActive = activeResourceSection?.sectionId === sectionId && 
+                                 activeResourceSection?.lectureId === lecture.id;
+
+  // Determine if the description section is active for THIS specific lecture
+  const isDescriptionSectionActive = activeDescriptionSection?.sectionId === sectionId && 
+                                    activeDescriptionSection?.lectureId === lecture.id;
 
   // Reset content type when section is collapsed
   useEffect(() => {
@@ -463,51 +489,69 @@ export default function LectureItem({
           </div>
         );
         
-        case 'article':
-          return (
-            <div className="border border-gray-300 rounded-md">
-              <div className="flex items-center justify-between px-4 py-2 border-b border-gray-300">
-                <div className="flex-1">
-                  <h3 className="text-lg font-medium">Add Article</h3>
-                </div>
-                <button 
-                  onClick={() => setActiveContentType(null)} 
-                  className="text-gray-500 hover:text-gray-700"
-                  aria-label="Close"
-                >
-                  <X className="w-5 h-5" />
+      case 'article':
+        return (
+          <div className="border border-gray-300 rounded-md">
+            <div className="flex items-center justify-between px-4 py-2 border-b border-gray-300">
+              <div className="flex-1">
+                <h3 className="text-lg font-medium">Add Article</h3>
+              </div>
+              <button 
+                onClick={() => setActiveContentType(null)} 
+                className="text-gray-500 hover:text-gray-700"
+                aria-label="Close"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="">
+                           
+              <ReactQuill
+                value={articleContent.text}
+                onChange={(value) => handleArticleTextChange(value)}
+                modules={quillModules}
+                formats={quillFormats}
+                theme="snow"
+                placeholder="Start writing your article content here..."
+                className="bg-white rounded-b-md" 
+                style={{ height: '150px' }}
+              />
+              
+              <div className="mt-16 flex justify-end m-2">
+                <button className="inline-flex items-center px-4 py-2 border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none">
+                  Save
                 </button>
               </div>
-              
-              <div className="">
-                           
-                <ReactQuill
-                  value={articleContent.text}
-                  onChange={(value) => handleArticleTextChange(value)}
-                  modules={quillModules}
-                  formats={quillFormats}
-                  theme="snow"
-                  placeholder="Start writing your article content here..."
-                  className="bg-white rounded-b-md" 
-                  style={{ height: '150px' }}
-                />
-                
-                <div className="mt-16 flex justify-end m-2">
-                  <button className="inline-flex items-center px-4 py-2 border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none">
-                    Save
-                  </button>
-                </div>
-              </div>
             </div>
-          );
+          </div>
+        );
       default:
         return null;
     }
   };
 
+  // Simulate uploading a file for resources
+  const triggerFileUpload = (contentType: ContentType) => {
+    setIsUploading(true);
+    const interval = setInterval(() => {
+      setUploadProgress(prev => {
+        if (prev >= 100) {
+          clearInterval(interval);
+          setTimeout(() => {
+            setIsUploading(false);
+            setUploadProgress(0);
+          }, 500);
+          return 100;
+        }
+        return prev + 10;
+      });
+    }, 300);
+  };
+
   return (
     <div 
-      className={`mb-3 bg-white rounded-lg border border-gray-300 ${
+      className={`mb-3 bg-white border border-gray-300 ${isExpanded && "border-b border-gray-500 "}${
         draggedLecture === lecture.id ? 'opacity-50' : ''
       } ${
         dragTarget?.lectureId === lecture.id ? 'border-2 border-indigo-500' : ''
@@ -525,9 +569,11 @@ export default function LectureItem({
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
     >
-      <div className="flex items-center p-2">
+      <div className={`flex items-center ${isExpanded && "border-b border-gray-500 "} px-3 py-2 `}>
         <div className="flex-1 flex items-center">
-          <div className="xl:mr-2 mr-1 text-gray-600">●</div>
+        <div className="bg-black rounded-full items-center justify-center mr-2 ">
+        <CircleCheck className="text-white bg-gray-800 rounded-full" size={14} />
+      </div>
           {editingLectureId === lecture.id ? (
             <input
               ref={lectureNameInputRef}
@@ -543,13 +589,14 @@ export default function LectureItem({
               onClick={(e) => e.stopPropagation()}
             />
           ) : (
-            <div className="text-sm sm:text-base truncate max-w-full">{getLectureTypeLabel()} {lectureIndex + 1}: {lecture.name}</div>
-          )}
-        </div>
-        <div className="flex items-center">
-          {/* Action buttons that only show on hover on larger screens */}
-          <div className={`hidden sm:flex items-center space-x-1 transition-opacity duration-200 ${isHovering ? 'opacity-100' : 'opacity-0'}`}>
-            <button
+            <div className="text-sm sm:text-base text-gray-800 truncate max-w-full whitespace-nowrap overflow-hidden flex items-center">
+  {getLectureTypeLabel()} {lectureIndex + 1}: <FileText size={15} className="ml-2 inline-block flex-shrink-0" /> 
+  <span className="truncate overflow-hidden ml-1">{lecture.name}</span>
+
+{isHovering &&(
+
+  <div>
+      <button
               onClick={(e) => {
                 e.stopPropagation();
                 startEditingLecture(e);
@@ -569,7 +616,16 @@ export default function LectureItem({
             >
               <Trash2 className="w-4 h-4" />
             </button>
-            <button
+  </div>
+)}
+</div>
+          )}
+        </div>
+        <div className="flex items-center">
+          {/* Action buttons that only show on hover on larger screens */}
+          <div className={`hidden sm:flex items-center space-x-1 transition-opacity duration-200 ${isHovering ? 'opacity-100' : 'opacity-0'}`}>
+        
+            {/* <button
               onClick={(e) => {
                 e.stopPropagation();
                 moveLecture(sectionId, lecture.id, 'up');
@@ -590,7 +646,7 @@ export default function LectureItem({
               aria-label="Move down"
             >
               <ChevronDown className={`w-4 h-4 ${lectureIndex === totalLectures - 1 ? 'opacity-50' : ''}`} />
-            </button>
+            </button> */}
           </div>
           
           {/* Content button always visible */}
@@ -608,10 +664,10 @@ export default function LectureItem({
                 }
               }
             }}
-            className="text-indigo-600 font-medium text-xs sm:text-sm px-2 sm:px-3 py-1 rounded-md hover:bg-indigo-50 flex items-center ml-1 sm:ml-2 border border-indigo-200"
+            className="text-[#6D28D2] font-medium text-xs sm:text-sm px-2 sm:px-3 py-2 rounded hover:bg-indigo-50 flex items-center ml-1 sm:ml-2 border border-[#6D28D2]"
           >
             <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-0.5 sm:mr-1" /> 
-            <span>Content</span>
+            <span className='font-bold'>Content</span>
           </button>
           
           {/* Expand/Collapse button always visible */}
@@ -635,14 +691,53 @@ export default function LectureItem({
             ) : (
               <ChevronDown className="w-5 h-5" />
             )}
+            
           </button>
+          {isHovering && (
+            <div className="">
+            <AlignJustify className="w-5 h-5 text-gray-500 cursor-move" />
+          </div>
+          )}
         </div>
       </div>
       
       {/* Expanded content area */}
       {isExpanded && (
-        <div className="">
-          {showContentTypeSelector && !activeContentType && (
+        <div>
+          {/* Render Resource Component when active */}
+          {isResourceSectionActive && (
+            <AddResourceComponent
+              activeContentSection={activeResourceSection}
+              onClose={() => {
+                if (toggleAddResourceModal) {
+                  toggleAddResourceModal(sectionId, lecture.id);
+                }
+              }}
+              activeResourceTab={activeResourceTab}
+              setActiveResourceTab={setActiveResourceTab}
+              sections={sections}
+              isUploading={isUploading}
+              uploadProgress={uploadProgress}
+              triggerFileUpload={triggerFileUpload}
+            />
+          )}
+
+          {/* Render Description Component when active */}
+          {isDescriptionSectionActive && updateCurrentDescription && saveDescription && (
+            <DescriptionEditorComponent
+              activeDescriptionSection={activeDescriptionSection}
+              onClose={() => {
+                if (toggleDescriptionEditor) {
+                  toggleDescriptionEditor(sectionId, lecture.id, currentDescription);
+                }
+              }}
+              currentDescription={currentDescription || ''}
+              setCurrentDescription={updateCurrentDescription}
+              saveDescription={saveDescription}
+            />
+          )}
+
+          {showContentTypeSelector && !activeContentType && !isResourceSectionActive && !isDescriptionSectionActive && (
             <div className="bg-white shadow-sm border border-gray-300 p-2 w-full">
               <div className="flex justify-between items-center mb-3">
                 <h3 className="text-gray-800 font-medium text-sm sm:text-base">Select content type</h3>
@@ -695,34 +790,34 @@ export default function LectureItem({
           
           {activeContentType && renderContent()}
           
-          {!showContentTypeSelector && !activeContentType && (
-            <div className="p-2">
-              {/* Description button */}
+          {!showContentTypeSelector && !activeContentType && !isResourceSectionActive && !isDescriptionSectionActive && (
+            <div className="p-4">
+              {/* Description button - only show if description section is not active */}
               <button
-                onClick={() => {
-                  // Check if toggleDescriptionEditor exists before calling it
+                onClick={(e) => {
+                  e.stopPropagation();
                   if (toggleDescriptionEditor) {
                     toggleDescriptionEditor(sectionId, lecture.id, lecture.description || "");
                   }
                 }}
-                className="mb-2 flex items-center gap-2 py-1.5 sm:py-2 px-3 sm:px-4 text-xs sm:text-sm text-indigo-600 font-medium border border-gray-300 rounded-md hover:bg-gray-50"
+                className="flex items-center gap-2 py-1.5 sm:py-2 px-2 sm:px-4 text-xs sm:text-sm text-[#6D28D2] font-medium border border-[#6D28D2] rounded-sm hover:bg-gray-50"
               >
                 <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
-                <span>Description</span>
+                <span className="font-bold">Description</span>
               </button>
-              
-              {/* Resources button */}
+
+              {/* Resource button - only show if resource section is not active */}
               <button
-                onClick={() => {
-                  // Check if toggleAddResourceModal exists before calling it
+                onClick={(e) => {
+                  e.stopPropagation();
                   if (toggleAddResourceModal) {
                     toggleAddResourceModal(sectionId, lecture.id);
                   }
                 }}
-                className="flex items-center gap-2 py-1.5 sm:py-2 px-3 sm:px-4 text-xs sm:text-sm text-indigo-600 font-medium border border-gray-300 rounded-md hover:bg-gray-50"
+                className="flex items-center mt-2 gap-2 py-1.5 sm:py-2 px-2 sm:px-4 text-xs sm:text-sm text-[#6D28D2] font-medium border border-[#6D28D2] rounded-sm hover:bg-gray-50"
               >
                 <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
-                <span>Resources</span>
+                <span className='font-bold'>Resources</span>
               </button>
               
               {/* Any additional content */}
