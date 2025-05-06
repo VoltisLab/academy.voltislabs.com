@@ -42,31 +42,26 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
 
   if (showLectureForm) {
     return (
-      <div className="bg-white border border-gray-200 rounded-lg p-4 mb-4">
+      <div className="bg-white border border-gray-200 rounded-lg px-4 py-2 ">
         <div className="flex justify-between items-center mb-2">
-          <h3 className="text-xs font-medium">New Lecture:</h3>
-          <button 
-            onClick={handleCancel}
-            className="text-gray-500 hover:text-gray-700"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-        <div className="mb-4">
-          <input
-            type="text"
-            value={lectureTitle}
-            onChange={(e) => setLectureTitle(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Enter a Title"
-            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            maxLength={80}
-            autoFocus
-          />
-          <div className="text-right text-xs text-gray-500 mt-1">
-            {lectureTitle.length}/80
+          <h3 className="text-sm font-medium text-gray-800 mb-3">New Lecture:</h3>
+          <div className="mb-4 w-[87%] relative">
+            <input
+              type="text"
+              value={lectureTitle}
+              onChange={(e) => setLectureTitle(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Enter a Title"
+              className="w-full border border-gray-300 rounded px-3 py-1 pr-10 focus:outline-none focus:ring-1 focus:ring-[#6D28D2]"
+              maxLength={80}
+              autoFocus
+            />
+            <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-sm font-bold text-gray-500">
+              {80 - lectureTitle.length}
+            </div>
           </div>
         </div>
+        
         <div className="flex justify-end space-x-3">
           <button
             type="button"
@@ -79,7 +74,7 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
             type="button"
             onClick={handleAddLecture}
             disabled={!lectureTitle.trim()}
-            className={`xl:px-4 px-2 xl:py-2 py-1 ${!lectureTitle.trim() ? 'bg-indigo-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'} text-white rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500`}
+            className={`xl:px-4 px-2 xl:py-2 py-1 bg-[#6D28D2] hover:bg-[#7D28D2] text-white rounded-md focus:outline-none focus:ring-2 focus:ring-[#6D28D2]`}
           >
             Add Lecture
           </button>
@@ -95,42 +90,42 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
           e.stopPropagation();
           setShowLectureForm(true);
         }}
-        className="inline-flex items-center text-xs font-medium rounded-md text-[#6D28D2] p-1 m-1 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+        className="inline-flex items-center text-xs font-medium rounded-md text-[#6D28D2] p-1 m-1 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2"
       >
         <Plus className="w-3 h-3 mr-1" />
         Lecture
       </button>
       <button
         onClick={() => onAddLecture(sectionId, 'quiz')}
-        className="inline-flex items-center text-xs font-medium rounded-md text-[#6D28D2] p-1 m-1 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+        className="inline-flex items-center text-xs font-medium rounded-md text-[#6D28D2] p-1 m-1 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 "
       >
         <Plus className="w-3 h-3 mr-1" />
         Quiz
       </button>
       <button
         onClick={() => onAddLecture(sectionId, 'coding-exercise')}
-        className="inline-flex items-center text-xs font-medium text-[#6D28D2] rounded-md p-1 m-1 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+        className="inline-flex items-center text-xs font-medium text-[#6D28D2] rounded-md p-1 m-1 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2"
       >
         <Plus className="w-3 h-3 mr-1" />
         Coding Exercise
       </button>
       <button
         onClick={() => onAddLecture(sectionId, 'practice')}
-        className="inline-flex items-center text-xs font-medium text-[#6D28D2] rounded-md p-1 m-1 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500"
+        className="inline-flex items-center text-xs font-medium text-[#6D28D2] rounded-md p-1 m-1 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2"
       >
         <Plus className="w-3 h-3 mr-1" />
         Practice
       </button>
       <button
         onClick={() => onAddLecture(sectionId, 'assignment')}
-        className="inline-flex items-center text-xs font-medium text-[#6D28D2] rounded-md p-1 m-1 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
+        className="inline-flex items-center text-xs font-medium text-[#6D28D2] rounded-md p-1 m-1 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2"
       >
         <Plus className="w-3 h-3 mr-1" />
         Assignment
       </button>
       <button
         onClick={() => onAddLecture(sectionId, 'role-play')}
-        className="inline-flex items-center text-xs font-medium m-1 text-[#6D28D2] rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 relative"
+        className="inline-flex items-center text-xs font-medium m-1 text-[#6D28D2] rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 relative"
       >
         <div className="absolute top-1 left-20 bg-indigo-200 text-black text-xs px-1 rounded">Beta</div>
         <Plus className="w-3 h-3 mr-1" />

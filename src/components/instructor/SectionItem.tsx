@@ -105,6 +105,11 @@ export default function SectionItem({
   const [showEditForm, setShowEditForm] = useState<boolean>(false);
   const [editTitle, setEditTitle] = useState<string>("");
   const [editObjective, setEditObjective] = useState<string>("");
+  
+  // Added states to track active sections for resources and descriptions
+  const [activeResourceSection, setActiveResourceSection] = useState<{sectionId: string, lectureId: string} | null>(null);
+  const [activeDescriptionSection, setActiveDescriptionSection] = useState<{sectionId: string, lectureId: string} | null>(null);
+  const [currentDescription, setCurrentDescription] = useState<string>("");
 
   useEffect(() => {
     if (editingSectionId === section.id && sectionNameInputRef.current) {
@@ -167,6 +172,7 @@ export default function SectionItem({
     const newLectureId = addLecture(sectionId, 'coding-exercise', title);
     setShowCodingExerciseForm(false);
   };
+  
   // Enhanced lecture adding handler that properly handles title
   const handleAddLecture = (sectionId: string, contentType: ContentItemType, title?: string) => {
     console.log("SectionItem handling lecture add:", { sectionId, contentType, title });
@@ -214,6 +220,62 @@ export default function SectionItem({
     }
     
     setShowPracticeForm(false);
+  };
+
+  // Custom toggleAddResourceModal that updates local state
+  const handleToggleAddResourceModal = (sectionId: string, lectureId: string) => {
+    // Check if we're toggling the same lecture
+    if (activeResourceSection && 
+        activeResourceSection.sectionId === sectionId && 
+        activeResourceSection.lectureId === lectureId) {
+      // Toggle off
+      setActiveResourceSection(null);
+    } else {
+      // Toggle on for a new lecture
+      setActiveResourceSection({ sectionId, lectureId });
+      // Make sure description section is closed
+      setActiveDescriptionSection(null);
+    }
+    
+    // Also call the parent toggle if it exists
+    if (toggleAddResourceModal) {
+      toggleAddResourceModal(sectionId, lectureId);
+    }
+  };
+
+  // Custom toggleDescriptionEditor that updates local state
+  const handleToggleDescriptionEditor = (sectionId: string, lectureId: string, currentText: string = "") => {
+    // Check if we're toggling the same lecture
+    if (activeDescriptionSection && 
+        activeDescriptionSection.sectionId === sectionId && 
+        activeDescriptionSection.lectureId === lectureId) {
+      // Toggle off
+      setActiveDescriptionSection(null);
+    } else {
+      // Toggle on for a new lecture
+      setActiveDescriptionSection({ sectionId, lectureId });
+      setCurrentDescription(currentText);
+      // Make sure resource section is closed
+      setActiveResourceSection(null);
+    }
+    
+    // Also call the parent toggle if it exists
+    if (toggleDescriptionEditor) {
+      toggleDescriptionEditor(sectionId, lectureId, currentText);
+    }
+  };
+
+  // Handle description update
+  const updateCurrentDescription = (description: string) => {
+    setCurrentDescription(description);
+  };
+
+  // Handle description save
+  const saveDescription = () => {
+    // This would typically update the description in your data store
+    console.log("Saving description:", currentDescription);
+    // Close the description editor
+    setActiveDescriptionSection(null);
   };
 
   // Render lecture items based on their content type
@@ -337,9 +399,11 @@ export default function SectionItem({
         deleteLecture={deleteLecture}
         moveLecture={moveLecture}
         toggleContentSection={toggleContentSection}
-        toggleAddResourceModal={toggleAddResourceModal}
-        toggleDescriptionEditor={toggleDescriptionEditor}
+        toggleAddResourceModal={handleToggleAddResourceModal}
+        toggleDescriptionEditor={handleToggleDescriptionEditor}
         activeContentSection={activeContentSection}
+        activeResourceSection={activeResourceSection}
+        activeDescriptionSection={activeDescriptionSection}
         isDragging={isDragging}
         handleDragStart={handleDragStart}
         handleDragOver={handleDragOver}
@@ -348,6 +412,10 @@ export default function SectionItem({
         handleDragLeave={handleDragLeave}
         draggedLecture={draggedLecture}
         dragTarget={dragTarget}
+        sections={[section]}
+        updateCurrentDescription={updateCurrentDescription}
+        saveDescription={saveDescription}
+        currentDescription={currentDescription}
       />
     );
   };  
@@ -433,10 +501,10 @@ export default function SectionItem({
                </div>
              </div>
             ) : (
-              <div className='flex flex-row justify-bewteen w-full p-2'>
-                 <div className="flex items-center space-x-3 mt-2 w-full">
-              <h3 className="font-semibold text-xs text-gray-700 whitespace-nowrap overflow-hidden text-ellipsis flex items-center gap-1">
-                Unpublished Section: <FileText size={10} /> {section.name}
+              <div className='flex flex-row justify-between w-full p-2'>
+                <div className="flex items-center space-x-3 mt-4 w-full">
+              <h3 className="text-[15px] tracking-tight text-[#16161d] font-bold whitespace-nowrap overflow-hidden text-ellipsis flex items-center gap-1">
+                Unpublished Section: <FileText size={15}  className='ml-2'/> <span className='font-normal'>{section.name}</span>
               </h3>
 
               {/* Edit and Delete buttons only visible on hover */}
@@ -521,9 +589,9 @@ export default function SectionItem({
   {!showActionButtons ? (
     <button 
       onClick={handleCurriculumButtonClick}
-      className="max-h-7 w-32 flex items-center text-[#6D28D2] border border-[#6D28D2] bg-indigo-50 hover:border-[#6D28D2] px-2 py-1 rounded-sm text-xs font-medium"
+      className="-mx-1.5 w-36 flex items-center text-[#6D28D2] border border-[#6D28D2] bg-white hover:bg-indigo-50 hover:border-[#6D28D2] px-1 py-2 rounded-sm text-sm font-bold"
     >
-      <Plus className="w-4 h-4 mr-1 text-xs" /> Curriculum item
+      <Plus className="w-4 h-4 mr-1 text-xs" color='#666' /> Curriculum item
     </button>
   ) : (
     <div className="relative">
