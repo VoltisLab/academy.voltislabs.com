@@ -551,7 +551,7 @@ export default function LectureItem({
 
   return (
     <div 
-      className={`mb-3 bg-white border border-gray-300 ${
+      className={`mb-3 bg-white border border-gray-300 ${isExpanded && "border-b border-gray-500 "}${
         draggedLecture === lecture.id ? 'opacity-50' : ''
       } ${
         dragTarget?.lectureId === lecture.id ? 'border-2 border-indigo-500' : ''
