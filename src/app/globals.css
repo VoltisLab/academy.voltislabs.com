@@ -11,5 +11,10 @@ body {
 }
 
 .jakarta {
-  font-family: var(--font-jakarta)
+  font-family: var(--font-jakarta);
+}
+
+.my-quill .ql-editor {
+  @apply px-3 py-2 text-base leading-relaxed border-none w-full min-h-[6rem];
+  white-space: pre-wrap;
 }
