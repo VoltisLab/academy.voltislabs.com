@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { ContentItemType, Lecture, ContentType, ResourceTabType } from '@/lib/types';
-import {Plus, Trash2, Edit3, ChevronDown, ChevronUp, Search, X, CircleCheck, FileText, AlignJustify} from "lucide-react";
+import {Plus, Trash2, Edit3, ChevronDown, ChevronUp, Search, X, CircleCheck, FileText, AlignJustify, Play, SquarePlay} from "lucide-react";
 import dynamic from 'next/dynamic';
 import AddResourceComponent from './AddResourceComponent';
 import DescriptionEditorComponent from './DescriptionEditorComponent';
@@ -551,7 +551,7 @@ export default function LectureItem({
 
   return (
     <div 
-      className={`mb-3 bg-white border border-gray-300 ${isExpanded && "border-b border-gray-500 "}${
+      className={`mb-3 bg-white border border-gray-400 ${isExpanded && "border-b border-gray-500 "}${
         draggedLecture === lecture.id ? 'opacity-50' : ''
       } ${
         dragTarget?.lectureId === lecture.id ? 'border-2 border-indigo-500' : ''
@@ -649,26 +649,61 @@ export default function LectureItem({
             </button> */}
           </div>
           
-          {/* Content button always visible */}
+          {/* Content button - Modified to change text when content selector is shown */}
           <button 
-            onClick={(e) => {
-              e.stopPropagation();
-              // Check if toggleContentSection exists before calling it
-              if (toggleContentSection) {
-                toggleContentSection(sectionId, lecture.id);
-                if (!isExpanded) {
-                  setShowContentTypeSelector(true);
-                } else {
-                  setShowContentTypeSelector(false);
-                  setActiveContentType(null);
-                }
-              }
-            }}
-            className="text-[#6D28D2] font-medium text-xs sm:text-sm px-2 sm:px-3 py-2 rounded hover:bg-indigo-50 flex items-center ml-1 sm:ml-2 border border-[#6D28D2]"
-          >
-            <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-0.5 sm:mr-1" /> 
-            <span className='font-bold'>Content</span>
-          </button>
+  onClick={(e) => {
+    e.stopPropagation();
+    // Only toggle content section if not in resource mode
+    if (!isResourceSectionActive && toggleContentSection) {
+      toggleContentSection(sectionId, lecture.id);
+      if (!isExpanded) {
+        setShowContentTypeSelector(true);
+      } else {
+        setShowContentTypeSelector(false);
+        setActiveContentType(null);
+      }
+    }
+  }}
+  className={`${
+    (showContentTypeSelector && isExpanded) || isResourceSectionActive
+    ? "text-gray-800 font-normal border-b-0 border-l border-t border-r border-gray-400 -mb-[9.5px] bg-white pb-2" 
+    : "text-[#6D28D2] font-medium border-[#6D28D2] hover:bg-indigo-50 rounded "
+  } text-xs sm:text-sm px-2 sm:px-3 py-2 flex items-center ml-1 sm:ml-2 border`}
+>
+  {isResourceSectionActive ? (
+    <>
+      <span className='font-bold'>Add Resource</span>
+      <X 
+        className="w-3 h-3 sm:w-4 sm:h-4 ml-1 sm:ml-2" 
+        onClick={(e) => {
+          e.stopPropagation();
+          if (toggleAddResourceModal) {
+            toggleAddResourceModal(sectionId, lecture.id);
+          }
+        }}
+      />
+    </>
+  ) : showContentTypeSelector && isExpanded ? (
+    <>
+      <span className='font-bold'>Select content type</span>
+      <X 
+        className="w-3 h-3 sm:w-4 sm:h-4 ml-1 sm:ml-2" 
+        onClick={(e) => {
+          e.stopPropagation();
+          setShowContentTypeSelector(false);
+          if (toggleContentSection) {
+            toggleContentSection(sectionId, lecture.id);
+          }
+        }}
+      />
+    </>
+  ) : (
+    <>
+      <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-0.5 sm:mr-1" /> 
+      <span className='font-bold'>Content</span>
+    </>
+  )}
+</button>
           
           {/* Expand/Collapse button always visible */}
           <button 
@@ -702,7 +737,7 @@ export default function LectureItem({
       </div>
       
       {/* Expanded content area */}
-      {isExpanded && (
+      {(isExpanded || isResourceSectionActive || isDescriptionSectionActive) && (
         <div>
           {/* Render Resource Component when active */}
           {isResourceSectionActive && (
@@ -738,54 +773,62 @@ export default function LectureItem({
           )}
 
           {showContentTypeSelector && !activeContentType && !isResourceSectionActive && !isDescriptionSectionActive && (
-            <div className="bg-white shadow-sm border border-gray-300 p-2 w-full">
-              <div className="flex justify-between items-center mb-3">
-                <h3 className="text-gray-800 font-medium text-sm sm:text-base">Select content type</h3>
-                <button 
-                  onClick={() => setShowContentTypeSelector(false)} 
-                  className="text-gray-500 hover:text-gray-700"
-                  aria-label="Close"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-              
-              <p className="text-xs sm:text-sm text-gray-600 mb-4">
-                Select the main type of content. Files and links can be added as resources. 
-                <a href="#" className="text-indigo-600 hover:text-indigo-700 ml-1">Learn about content types.</a>
-              </p>
-              
-              <div className="grid grid-cols-3 gap-2 sm:gap-4">
-                <button 
-                  onClick={() => handleContentTypeSelect('video')}
-                  className="flex flex-col items-center p-2 sm:p-3 border border-gray-300 rounded-md hover:bg-gray-50"
-                >
-                  <div className="w-8 h-8 sm:w-12 sm:h-12 bg-gray-100 rounded-md mb-1 sm:mb-2 flex items-center justify-center">
-                    <span className="text-gray-400">▶</span>
+            <div className="bg-white shadow-sm border border-gray-300 p-2 w-full">          
+            <p className="text-xs sm:text-sm text-gray-600 mb-4 mx-auto text-center">
+              Select the main type of content. Files and links can be added as resources.
+              <a href="#" className="text-indigo-600 hover:text-indigo-700 ml-1">
+                Learn about content types.
+              </a>
+            </p>
+          
+            <div className="grid grid-cols-3 gap-2 max-w-xs mx-auto">
+              {/* Video Button */}
+              <button
+                onClick={() => handleContentTypeSelect('video')}
+                className="flex flex-col border border-gray-300 w-24 h-20"
+              >
+                <div className="bg-gray-100 flex-1 flex items-center justify-center">
+                  <div className="p-1.5 bg-gray-300 rounded-full">
+                    <Play className="text-white w-4 h-4" />
                   </div>
-                  <span className="text-xs sm:text-sm">Video</span>
-                </button>
-                
-                <button 
-                  onClick={() => handleContentTypeSelect('video-slide' as ContentItemType)}
-                  className="flex flex-col items-center p-2 sm:p-3 border border-gray-300 rounded-md hover:bg-gray-50"
-                >
-                  <div className="w-8 h-8 sm:w-12 sm:h-12 bg-gray-100 rounded-md mb-1 sm:mb-2 flex items-center justify-center">
-                    <span className="text-gray-400">▶⊞</span>
+                </div>
+                <div className="bg-gray-300 text-center py-1">
+                  <span className="text-xs text-gray-800">Video</span>
+                </div>
+              </button>
+          
+              {/* Video & Slide Button */}
+              <button
+                onClick={() => handleContentTypeSelect('video-slide')}
+                className="flex flex-col border border-gray-300 w-24 h-20"
+              >
+                <div className="bg-gray-100 flex-1 flex items-center justify-center">
+                  <SquarePlay className="text-gray-400 w-5 h-5" />
+                </div>
+                <div className="bg-gray-300 text-center py-1">
+                  <span className="text-xs text-gray-800 leading-tight">
+                    Video & Slide<br />Mashup
+                  </span>
+                </div>
+              </button>
+          
+              {/* Article Button */}
+              <button
+                onClick={() => handleContentTypeSelect('article')}
+                className="flex flex-col border border-gray-300 w-24 h-20"
+              >
+                <div className="bg-gray-100 flex-1 flex items-center justify-center">
+                  <div className="p-1.5 bg-gray-300 rounded-full">
+                    <FileText className="text-white w-4 h-4" />
                   </div>
-                  <span className="text-xs sm:text-sm">Video & Slide</span>
-                </button>
-                
-                <button 
-                  onClick={() => handleContentTypeSelect('article')}
-                  className="flex flex-col items-center p-2 sm:p-3 border border-gray-300 rounded-md hover:bg-gray-50">
-                  <div className="w-8 h-8 sm:w-12 sm:h-12 bg-gray-100 rounded-md mb-1 sm:mb-2 flex items-center justify-center">
-                    <span className="text-gray-400">📄</span>
-                  </div>
-                  <span className="text-xs sm:text-sm">Article</span>
-                </button>
-              </div>
+                </div>
+                <div className="bg-gray-300 text-center py-1">
+                  <span className="text-xs text-gray-800">Article</span>
+                </div>
+              </button>
             </div>
+          </div>
+          
           )}
           
           {activeContentType && renderContent()}
