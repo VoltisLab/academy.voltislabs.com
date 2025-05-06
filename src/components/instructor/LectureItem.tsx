@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { ContentItemType, Lecture, ContentType, ResourceTabType } from '@/lib/types';
-import {Plus, Trash2, Edit3, ChevronDown, ChevronUp, Search, X, CircleCheck} from "lucide-react";
+import {Plus, Trash2, Edit3, ChevronDown, ChevronUp, Search, X, CircleCheck, FileText, AlignJustify} from "lucide-react";
 import dynamic from 'next/dynamic';
 import AddResourceComponent from './AddResourceComponent';
 import DescriptionEditorComponent from './DescriptionEditorComponent';
@@ -572,7 +572,7 @@ export default function LectureItem({
       <div className={`flex items-center ${isExpanded && "border-b border-gray-500 "} px-3 py-2 `}>
         <div className="flex-1 flex items-center">
         <div className="bg-black rounded-full items-center justify-center mr-2 ">
-        <CircleCheck className="text-white bg-black rounded-full" size={14} />
+        <CircleCheck className="text-white bg-gray-800 rounded-full" size={14} />
       </div>
           {editingLectureId === lecture.id ? (
             <input
@@ -589,13 +589,14 @@ export default function LectureItem({
               onClick={(e) => e.stopPropagation()}
             />
           ) : (
-            <div className="text-sm sm:text-base truncate max-w-full">{getLectureTypeLabel()} {lectureIndex + 1}: {lecture.name}</div>
-          )}
-        </div>
-        <div className="flex items-center">
-          {/* Action buttons that only show on hover on larger screens */}
-          <div className={`hidden sm:flex items-center space-x-1 transition-opacity duration-200 ${isHovering ? 'opacity-100' : 'opacity-0'}`}>
-            <button
+            <div className="text-sm sm:text-base text-gray-800 truncate max-w-full whitespace-nowrap overflow-hidden flex items-center">
+  {getLectureTypeLabel()} {lectureIndex + 1}: <FileText size={15} className="ml-2 inline-block flex-shrink-0" /> 
+  <span className="truncate overflow-hidden ml-1">{lecture.name}</span>
+
+{isHovering &&(
+
+  <div>
+      <button
               onClick={(e) => {
                 e.stopPropagation();
                 startEditingLecture(e);
@@ -615,7 +616,16 @@ export default function LectureItem({
             >
               <Trash2 className="w-4 h-4" />
             </button>
-            <button
+  </div>
+)}
+</div>
+          )}
+        </div>
+        <div className="flex items-center">
+          {/* Action buttons that only show on hover on larger screens */}
+          <div className={`hidden sm:flex items-center space-x-1 transition-opacity duration-200 ${isHovering ? 'opacity-100' : 'opacity-0'}`}>
+        
+            {/* <button
               onClick={(e) => {
                 e.stopPropagation();
                 moveLecture(sectionId, lecture.id, 'up');
@@ -636,7 +646,7 @@ export default function LectureItem({
               aria-label="Move down"
             >
               <ChevronDown className={`w-4 h-4 ${lectureIndex === totalLectures - 1 ? 'opacity-50' : ''}`} />
-            </button>
+            </button> */}
           </div>
           
           {/* Content button always visible */}
@@ -681,7 +691,13 @@ export default function LectureItem({
             ) : (
               <ChevronDown className="w-5 h-5" />
             )}
+            
           </button>
+          {isHovering && (
+            <div className="">
+            <AlignJustify className="w-5 h-5 text-gray-500 cursor-move" />
+          </div>
+          )}
         </div>
       </div>
       
