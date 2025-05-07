@@ -12,24 +12,21 @@ const ReactQuill = dynamic(() => import('react-quill-new'), {
 
 // Define the toolbar modules for React Quill
 const quillModules = {
-  toolbar: [
-    [{ 'header': [1, 2, 3, false] }],
-    ['bold', 'italic', 'underline', 'strike'],
-    [{'list': 'ordered'}, {'list': 'bullet'}],
-    ['link', 'image', 'code-block'],
-    ['clean']
-  ],
+  toolbar: {
+    container: "#custom-toolbar",
+  },
 };
 
 const quillFormats = [
-  'header',
-  'bold', 'italic', 'underline', 'strike',
-  'list', 'bullet',
-  'link', 'image', 'code-block'
+  "header", "bold", "italic", "underline", "strike",
+  "list", "bullet", "link", "image", "code-block"
 ];
+
+ 
 
 // React Quill styles
 import 'react-quill-new/dist/quill.snow.css';
+import { cn } from '@/lib/utils';
 
 // Tab interfaces
 interface TabInterface {
@@ -130,6 +127,8 @@ export default function LectureItem({
   const lectureNameInputRef = useRef<HTMLInputElement>(null);
   const [showContentTypeSelector, setShowContentTypeSelector] = useState(false);
   const [isHovering, setIsHovering] = useState(false);
+  const [content, setContent] = useState("");
+  const [htmlMode, setHtmlMode] = useState(false);
   
   // Active content type state
   const [activeContentType, setActiveContentType] = useState<ContentItemType | null>(null);
@@ -318,7 +317,7 @@ export default function LectureItem({
               
               {videoContent.activeTab === 'uploadVideo' ? (
                 <div className="py-4">
-                  <div className="flex items-center justify-between p-4 border border-gray-300 rounded-md">
+                  <div className="flex items-center justify-between p-4 border border-gray-500 rounded-md">
                     <div className="flex-1 truncate text-sm">
                       {videoContent.uploadTab.selectedFile ? (
                         <span>{videoContent.uploadTab.selectedFile.name}</span>
@@ -386,145 +385,169 @@ export default function LectureItem({
         
       case 'video-slide' as ContentItemType:
         return (
-          <div className="border border-gray-300 rounded-md">
-            <div className="flex items-center justify-between px-4 py-2 border-b border-gray-300">
-              <div className="flex-1">
-                <h3 className="text-lg font-medium">Add Video & Slide Mashup</h3>
-              </div>
-              <button 
-                onClick={() => setActiveContentType(null)} 
-                className="text-gray-500 hover:text-gray-700"
-                aria-label="Close"
-              >
-                <X className="w-5 h-5" />
-              </button>
+          <div className="border border-gray-300 ">
+
+      {/* Body */}
+      <div className="px-4 pt-4 pb-6 space-y-6">
+        {/* Step 1 - Video */}
+        <div>
+          <div className="flex items-center mb-2 border-b pb-3 border-b-gray-300">
+            <div className="w-6 h-6 rounded-full bg-gray-200 text-gray-700 flex items-center justify-center text-sm font-bold">
+              1
             </div>
-            
-            <div className="p-2">
-              <div className="mb-6">
-                <div className="flex items-center">
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center font-medium ${
-                    videoSlideContent.step >= 1 ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-700'
-                  }`}>
-                    1
-                  </div>
-                  <span className="ml-2 font-medium text-sm">Pick a Video</span>
-                </div>
-                
-                <div className="mt-4">
-                  <div className="flex items-center justify-between p-4 border border-gray-300 rounded-md">
-                    <div className="flex-1 text-sm truncate">
-                      {videoSlideContent.video.selectedFile ? (
-                        <span>{videoSlideContent.video.selectedFile.name}</span>
-                      ) : (
-                        <span>No file selected</span>
-                      )}
-                    </div>
-                    <label className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 cursor-pointer">
-                      <input
-                        type="file"
-                        accept="video/*"
-                        onChange={(e) => handleVideoSlideFileSelect('video', e)}
-                        className="hidden"
-                      />
-                      Select Video
-                    </label>
-                  </div>
-                  <p className="mt-2 text-xs text-gray-500">
-                    Note: All files should be at least 720p and less than 4.0 GB.
-                  </p>
-                </div>
-              </div>
-              
-              <div className="mb-6">
-                <div className="flex items-center">
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center font-medium ${
-                    videoSlideContent.step >= 2 ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-700'
-                  }`}>
-                    2
-                  </div>
-                  <span className="ml-2 font-medium text-sm">Pick a Presentation</span>
-                </div>
-                
-                <div className="mt-4">
-                  <div className="flex items-center justify-between p-4 border border-gray-300 rounded-md">
-                    <div className="flex-1 text-sm truncate">
-                      {videoSlideContent.presentation.selectedFile ? (
-                        <span>{videoSlideContent.presentation.selectedFile.name}</span>
-                      ) : (
-                        <span>No file selected</span>
-                      )}
-                    </div>
-                    <label className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 cursor-pointer">
-                      <input
-                        type="file"
-                        accept=".pdf"
-                        onChange={(e) => handleVideoSlideFileSelect('presentation', e)}
-                        className="hidden"
-                      />
-                      Select PDF
-                    </label>
-                  </div>
-                  <p className="mt-2 text-xs text-gray-500">
-                    Note: A presentation means slides (e.g. PowerPoint, Keynote). Slides are a great way to combine text and visuals to explain concepts in an effective and efficient way. Use meaningful graphics and clearly legible text!
-                  </p>
-                </div>
-              </div>
-              
-              <div className="mb-6">
-                <div className="flex items-center">
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center font-medium ${
-                    videoSlideContent.step >= 3 ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-700'
-                  }`}>
-                    3
-                  </div>
-                  <span className="ml-2 font-medium text-sm">Synchronize Video & Presentation</span>
-                </div>
-                
-                <div className="mt-4 p-6 border border-gray-300 rounded-md border-dashed text-center text-gray-500 text-sm">
-                  Please pick a video & presentation first
-                </div>
-              </div>
-            </div>
+            <span className="ml-2 text-sm font-semibold text-gray-800">
+              Pick a Video
+            </span>
           </div>
+          <div className="flex items-center justify-between">
+            <div className="flex-1 border border-gray-500 rounded-md px-4 py-2 text-sm text-gray-600 truncate">
+              {videoSlideContent.video.selectedFile ? (
+                <span>{videoSlideContent.video.selectedFile.name}</span>
+              ) : (
+                <span>No file selected</span>
+              )}
+            </div>
+            <label className="ml-4 px-4 py-1.5 border border-[#6D28D2] text-sm font-semibold text-[#6D28D2] rounded-md hover:bg-[#6D28D2]/10 cursor-pointer transition">
+              <input
+                type="file"
+                accept="video/*"
+                onChange={(e) => handleVideoSlideFileSelect("video", e)}
+                className="hidden"
+              />
+              Select Video
+            </label>
+          </div>
+          <p className="mt-1.5 text-xs text-gray-500">
+            <strong>Note:</strong> All files should be at least 720p and less than 4.0 GB.
+          </p>
+        </div>
+
+        {/* Step 2 - PDF */}
+        <div>
+          <div className="flex items-center mb-2 border-b pb-3 border-b-gray-300">
+            <div className="w-6 h-6 rounded-full bg-gray-200 text-gray-700 flex items-center justify-center text-sm font-bold">
+              2
+            </div>
+            <span className="ml-2 text-sm font-semibold text-gray-800">
+              Pick a Presentation
+            </span>
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="flex-1 border border-gray-500 rounded-md px-4 py-2 text-sm text-gray-600 truncate">
+              {videoSlideContent.presentation.selectedFile ? (
+                <span>{videoSlideContent.presentation.selectedFile.name}</span>
+              ) : (
+                <span>No file selected</span>
+              )}
+            </div>
+            <label className="ml-4 px-4 py-1.5 border border-[#6D28D2] text-sm font-semibold text-[#6D28D2] rounded-md hover:bg-[#6D28D2]/10 cursor-pointer transition">
+              <input
+                type="file"
+                accept=".pdf"
+                onChange={(e) => handleVideoSlideFileSelect("presentation", e)}
+                className="hidden"
+              />
+              Select PDF
+            </label>
+          </div>
+          <p className="mt-1.5 text-xs  text-gray-600">
+            <strong>Note:</strong> A presentation means slides (e.g. PowerPoint, Keynote). Slides are a great way to
+            combine text and visuals to explain concepts in an effective and efficient way. Use meaningful graphics and
+            clearly legible text!
+          </p>
+        </div>
+
+        {/* Step 3 - Sync */}
+        <div>
+          <div className="flex items-center mb-2 border-b pb-3 border-b-gray-300">
+            <div className="w-6 h-6 rounded-full bg-gray-200 text-gray-700 flex items-center justify-center text-sm font-bold">
+              3
+            </div>
+            <span className="ml-2 text-sm font-semibold text-gray-800">
+              Synchronize Video & Presentation
+            </span>
+          </div>
+          <div className="border border-dashed border-gray-600 rounded-md px-4 py-4 text-left text-sm text-gray-600">
+            Please pick a video & presentation first
+          </div>
+        </div>
+      </div>
+    </div>
         );
         
       case 'article':
         return (
-          <div className="border border-gray-300 rounded-md">
-            <div className="flex items-center justify-between px-4 py-2 border-b border-gray-300">
-              <div className="flex-1">
-                <h3 className="text-lg font-medium">Add Article</h3>
-              </div>
-              <button 
-                onClick={() => setActiveContentType(null)} 
-                className="text-gray-500 hover:text-gray-700"
-                aria-label="Close"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            
-            <div className="">
-                           
-              <ReactQuill
-                value={articleContent.text}
-                onChange={(value) => handleArticleTextChange(value)}
-                modules={quillModules}
-                formats={quillFormats}
-                theme="snow"
-                placeholder="Start writing your article content here..."
-                className="bg-white rounded-b-md" 
-                style={{ height: '150px' }}
-              />
-              
-              <div className="mt-16 flex justify-end m-2">
-                <button className="inline-flex items-center px-4 py-2 border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none">
-                  Save
-                </button>
-              </div>
-            </div>
-          </div>
+          <div className="border border-gray-300 rounded-md p-4">
+  {/* Heading */}
+  <h3 className="text-sm font-semibold text-gray-800 mb-2">Text</h3>
+
+  {/* Editor Container with pink ring */}
+  <div className="focus-within:ring-2 focus-within:ring-[#EC4899] rounded-md transition-all duration-200 border border-gray-300">
+    
+    {/* Custom toolbar container */}
+    <div className="flex justify-between items-center flex-nowrap w-full px-2 py-1 bg-white border-b border-gray-200" id="custom-toolbar">
+
+      
+      {/* Quill formatting buttons */}
+      <div className="flex items-center gap-2 text-sm text-gray-800">
+        <select className="ql-header outline-none border-none bg-transparent" defaultValue="">
+          <option value="">Styles</option>
+          <option value="1">Heading 1</option>
+          <option value="2">Heading 2</option>
+          <option value="3">Heading 3</option>
+        </select>
+        <button className="ql-bold" />
+        <button className="ql-italic" />
+        <button className="ql-list" value="ordered" />
+        <button className="ql-list" value="bullet" />
+        <button className="ql-link" />
+        <button className="ql-image" />
+        <button className="ql-code-block" />
+      </div>
+
+      {/* Edit HTML toggle button */}
+      <div className="shrink-0">
+  <button
+    onClick={() => setHtmlMode(!htmlMode)}
+    className="text-xs font-medium text-gray-800 hover:bg-gray-100 rounded px-3 py-1 whitespace-nowrap"
+  >
+    {htmlMode ? "Live Preview" : "Edit HTML"}
+  </button>
+</div>
+
+    </div>
+
+    {/* Editor Body */}
+    <div
+      className={`h-[66px] px-2 transition-all ${
+        htmlMode ? "bg-[#1A1B1F]" : "bg-white"
+      }`}
+    >
+      <ReactQuill
+        value={content}
+        onChange={setContent}
+        modules={{ toolbar: "#custom-toolbar" }}
+        formats={quillFormats}
+        theme="snow"
+        placeholder="Start writing your article content here..."
+        className={`h-full [&_.ql-editor]:h-full [&_.ql-editor]:p-2 [&_.ql-toolbar]:!border-0 [&_.ql-container]:!border-0 [&_.ql-toolbar_.ql-formats>*]:!border-0 [&_.ql-toolbar_.ql-formats>*]:!shadow-none ${
+          htmlMode
+            ? "!text-white [&_.ql-editor]:text-white [&_.ql-editor]:bg-[#1A1B1F]"
+            : ""
+        }`}
+      />
+    </div>
+  </div>
+
+  {/* Save Button */}
+  <div className="flex justify-end pt-4">
+    <button className="bg-[#6D28D2] text-white text-sm px-4 py-2 rounded hover:bg-[#5b21b6] transition">
+      Save
+    </button>
+  </div>
+</div>
+
+        
         );
       default:
         return null;
@@ -850,18 +873,21 @@ export default function LectureItem({
               </button>
 
               {/* Resource button - only show if resource section is not active */}
+              {!showContentTypeSelector && !activeContentType && !isResourceSectionActive && !isDescriptionSectionActive && (
               <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (toggleAddResourceModal) {
-                    toggleAddResourceModal(sectionId, lecture.id);
-                  }
-                }}
-                className="flex items-center mt-2 gap-2 py-1.5 sm:py-2 px-2 sm:px-4 text-xs sm:text-sm text-[#6D28D2] font-medium border border-[#6D28D2] rounded-sm hover:bg-gray-50"
-              >
-                <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
-                <span className='font-bold'>Resources</span>
-              </button>
+              onClick={(e) => {
+                e.stopPropagation();
+                if (toggleAddResourceModal) {
+                  toggleAddResourceModal(sectionId, lecture.id);
+                }
+              }}
+              className="flex items-center mt-2 gap-2 py-1.5 sm:py-2 px-2 sm:px-4 text-xs sm:text-sm text-[#6D28D2] font-medium border border-[#6D28D2] rounded-sm hover:bg-gray-50"
+            >
+              <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span className='font-bold'>Resources</span>
+            </button>
+              )}
+
               
               {/* Any additional content */}
               {children}
