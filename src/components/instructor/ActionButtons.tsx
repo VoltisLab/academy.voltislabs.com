@@ -52,7 +52,7 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
               onChange={(e) => setLectureTitle(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Enter a Title"
-              className="w-full border border-gray-300 rounded px-3 py-1 pr-10 focus:outline-none focus:ring-1 focus:ring-[#6D28D2]"
+              className="w-full border border-gray-300 rounded px-3 py-1 pr-10 focus:outline-none  focus:border-[#6D28D2]"
               maxLength={80}
               autoFocus
             />
@@ -74,7 +74,7 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
             type="button"
             onClick={handleAddLecture}
             disabled={!lectureTitle.trim()}
-            className={`xl:px-4 px-2 xl:py-2 py-1 bg-[#6D28D2] hover:bg-[#7D28D2] text-white rounded-md focus:outline-none focus:ring-2 focus:ring-[#6D28D2]`}
+            className={`xl:px-4 px-2 xl:py-2 py-1 bg-[#6D28D2] hover:bg-[#7D28D2] text-white rounded-md focus:outline-none  focus:ring-[#6D28D2]`}
           >
             Add Lecture
           </button>
@@ -90,42 +90,42 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
           e.stopPropagation();
           setShowLectureForm(true);
         }}
-        className="inline-flex items-center text-xs font-medium rounded-md text-[#6D28D2] p-1 m-1 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2"
+        className="inline-flex items-center text-xs font-medium rounded-md text-[#6D28D2] p-1 m-1 hover:bg-gray-200 focus:outline-none "
       >
         <Plus className="w-3 h-3 mr-1" />
         Lecture
       </button>
       <button
         onClick={() => onAddLecture(sectionId, 'quiz')}
-        className="inline-flex items-center text-xs font-medium rounded-md text-[#6D28D2] p-1 m-1 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 "
+        className="inline-flex items-center text-xs font-medium rounded-md text-[#6D28D2] p-1 m-1 hover:bg-gray-200 focus:outline-none  "
       >
         <Plus className="w-3 h-3 mr-1" />
         Quiz
       </button>
       <button
         onClick={() => onAddLecture(sectionId, 'coding-exercise')}
-        className="inline-flex items-center text-xs font-medium text-[#6D28D2] rounded-md p-1 m-1 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2"
+        className="inline-flex items-center text-xs font-medium text-[#6D28D2] rounded-md p-1 m-1 hover:bg-gray-200 focus:outline-none "
       >
         <Plus className="w-3 h-3 mr-1" />
         Coding Exercise
       </button>
       <button
         onClick={() => onAddLecture(sectionId, 'practice')}
-        className="inline-flex items-center text-xs font-medium text-[#6D28D2] rounded-md p-1 m-1 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2"
+        className="inline-flex items-center text-xs font-medium text-[#6D28D2] rounded-md p-1 m-1 hover:bg-gray-200 focus:outline-none "
       >
         <Plus className="w-3 h-3 mr-1" />
         Practice
       </button>
       <button
         onClick={() => onAddLecture(sectionId, 'assignment')}
-        className="inline-flex items-center text-xs font-medium text-[#6D28D2] rounded-md p-1 m-1 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2"
+        className="inline-flex items-center text-xs font-medium text-[#6D28D2] rounded-md p-1 m-1 hover:bg-gray-200 focus:outline-none "
       >
         <Plus className="w-3 h-3 mr-1" />
         Assignment
       </button>
       <button
         onClick={() => onAddLecture(sectionId, 'role-play')}
-        className="inline-flex items-center text-xs font-medium m-1 text-[#6D28D2] rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 relative"
+        className="inline-flex items-center text-xs font-medium m-1 text-[#6D28D2] rounded-md hover:bg-gray-200 focus:outline-none  relative"
       >
         <div className="absolute top-1 left-20 bg-indigo-200 text-black text-xs px-1 rounded">Beta</div>
         <Plus className="w-3 h-3 mr-1" />
