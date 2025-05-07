@@ -6,6 +6,7 @@ import AddResourceComponent from './AddResourceComponent';
 import DescriptionEditorComponent from './DescriptionEditorComponent';
 import 'react-quill-new/dist/quill.snow.css';
 import { cn } from '@/lib/utils';
+import VideoSlideMashupComponent from './VideoAndSlideMashup';
 const ReactQuill = dynamic(() => import('react-quill-new'), { 
   ssr: false,
   loading: () => <p>Loading editor...</p>
@@ -218,6 +219,7 @@ const handlePresentationUpload = (event: React.ChangeEvent<HTMLInputElement>) =>
   }
 };
 
+
 // Function to determine the number of pages in a PDF
 const determinePDFPageCount = (file: File) => {
   // If we have access to the PDF.js library, we could use it to accurately count pages
@@ -427,6 +429,15 @@ const handleVideoFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
       text
     });
   };
+
+  const handleSaveDescription = () => {
+    if (!activeDescriptionSection || !saveDescription) return;
+    
+    // Call the provided saveDescription function
+    saveDescription();
+    
+    // No need to manually close here as the parent component will handle it
+  };
   
   // Handle search in library tab
   const handleSearchLibrary = (event: React.FormEvent) => {
@@ -630,373 +641,7 @@ const handleVideoFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
         
   case 'video-slide':
   return (
-    <div className="border border-gray-300 rounded-md">
-      <div className="px-4 pt-4 pb-6 space-y-6">
-        {/* Step 1 - Video */}
-        <div>
-          <div className="flex items-center mb-2 border-b pb-3 border-b-gray-300">
-            <div className={`w-8 h-8 flex items-center justify-center text-sm font-bold ${videoUploaded ? 'bg-amber-200 text-gray-800' : 'bg-gray-100 text-gray-700'}`}>
-              1
-            </div>
-            <span className="ml-2 text-sm font-semibold text-gray-800">
-              Pick a Video
-            </span>
-          </div>
-
-          {videoUploaded ? (
-            <div className="space-y-2">
-              <div className="overflow-x-auto">
-                <div className="grid grid-cols-4 gap-2 md:gap-4 text-[16px] font-bold text-gray-800 border-b border-gray-300 py-2 min-w-max">
-                  <div>Filename</div>
-                  <div>Type</div>
-                  <div>Status</div>
-                  <div>Date</div>
-                </div>
-                <div className="grid grid-cols-4 gap-2 md:gap-4 text-sm items-center text-gray-700 font-semibold min-w-max py-2">
-                  <div className="truncate">
-                    {videoSlideContent.video.selectedFile?.name || "2025-05-01-025523.webm"}
-                  </div>
-                  <div>Video</div>
-                  <div className="flex items-center">
-                    <div className="w-20 bg-gray-200 h-2 rounded-full overflow-hidden mr-2">
-                      <div className="bg-purple-600 h-2 rounded-full" style={{ width: '100%' }}></div>
-                    </div>
-                    <span className="text-xs">100%</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    {new Date().toLocaleDateString('en-US', {month: '2-digit', day: '2-digit', year: 'numeric'})}
-                    <button 
-                      className="text-gray-500 hover:text-gray-700"
-                      onClick={() => {
-                        setVideoUploaded(false);
-                        setVideoSlideContent({
-                          ...videoSlideContent,
-                          video: { selectedFile: null }
-                        });
-                      }}
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ) : videoUploading ? (
-            <div className="space-y-2">
-              <div className="overflow-x-auto">
-                <div className="grid grid-cols-4 gap-2 md:gap-4 text-[16px] font-bold text-gray-800 border-b border-gray-300 py-2 min-w-max">
-                  <div>Filename</div>
-                  <div>Type</div>
-                  <div>Status</div>
-                  <div>Date</div>
-                </div>
-                <div className="grid grid-cols-4 gap-2 md:gap-4 text-sm items-center text-gray-700 font-semibold min-w-max py-2">
-                  <div className="truncate">
-                    {videoSlideContent.video.selectedFile?.name || "2025-05-01-025523.webm"}
-                  </div>
-                  <div>Video</div>
-                  <div className="flex items-center">
-                    <div className="w-20 bg-gray-200 h-2 rounded-full overflow-hidden mr-2">
-                      <div className="bg-purple-600 h-2 rounded-full" style={{ width: `${videoUploadProgress}%` }}></div>
-                    </div>
-                    <span className="text-xs">{videoUploadProgress}%</span>
-                  </div>
-                  <div>{new Date().toLocaleDateString('en-US', {month: '2-digit', day: '2-digit', year: 'numeric'})}</div>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="flex items-center justify-between">
-              <div className="flex-1 border border-gray-500 rounded px-4 py-3 text-sm text-gray-600 truncate">
-                {videoSlideContent.video.selectedFile ? (
-                  <span>{videoSlideContent.video.selectedFile.name}</span>
-                ) : (
-                  <span>No file selected</span>
-                )}
-              </div>
-              <label className="ml-4 px-2 py-3 border border-[#6D28D2] text-sm font-bold text-[#6D28D2] hover:bg-[#6D28D2]/10 cursor-pointer transition">
-                <input
-                  type="file"
-                  accept="video/*"
-                  onChange={handleVideoSlideVideoUpload}
-                  className="hidden"
-                />
-                Select Video
-              </label>
-            </div>
-          )}
-          <p className="mt-1.5 text-xs text-gray-500">
-            <strong>Note:</strong> All files should be at least 720p and less than 4.0 GB.
-          </p>
-        </div>
-
-        {/* Step 2 - PDF */}
-        <div>
-          <div className="flex items-center mb-2 border-b pb-3 border-b-gray-300">
-            <div className={`w-8 h-8 flex items-center justify-center text-sm font-bold ${presentationUploaded ? 'bg-amber-200 text-gray-800' : 'bg-gray-100 text-gray-700'}`}>
-              2
-            </div>
-            <span className="ml-2 text-sm font-semibold text-gray-800">
-              Pick a Presentation
-            </span>
-          </div>
-
-          {presentationUploaded ? (
-            syncComplete ? (
-              <div className="flex items-center space-x-3">
-                <div className="w-16 h-16 border border-gray-300 flex items-center justify-center overflow-hidden bg-gray-50">
-                  <img 
-                    src={videoSlideContent.presentation.selectedFile ? URL.createObjectURL(videoSlideContent.presentation.selectedFile) : "/placeholder-pdf.png"} 
-                    alt="PDF preview" 
-                    className="max-w-full max-h-full object-contain"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.src = "/placeholder-pdf.png";
-                    }}
-                  />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-800 truncate max-w-md">
-                    {videoSlideContent.presentation.selectedFile?.name || "Volunteer-Confidentiality-Agreement-Stanley-Samuel-Arikpo.docx.pdf"}
-                  </p>
-                  <p className="text-xs text-gray-500">1 page</p>
-                </div>
-                <button 
-                  className="ml-auto px-3 py-1 text-purple-600 text-sm font-bold border border-purple-600 rounded hover:bg-purple-50"
-                  onClick={() => {
-                    setPresentationUploaded(false);
-                    setSyncComplete(false);
-                    setVideoSlideStep(2);
-                    setVideoSlideContent({
-                      ...videoSlideContent,
-                      presentation: { selectedFile: null }
-                    });
-                  }}
-                >
-                  Change
-                </button>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <div className="overflow-x-auto">
-                  <div className="grid grid-cols-4 gap-2 md:gap-4 text-[16px] font-bold text-gray-800 border-b border-gray-300 py-2 min-w-max">
-                    <div>Filename</div>
-                    <div>Type</div>
-                    <div>Status</div>
-                    <div>Date</div>
-                  </div>
-                  <div className="grid grid-cols-4 gap-2 md:gap-4 text-sm items-center text-gray-700 font-semibold min-w-max py-2">
-                    <div className="truncate">
-                      {videoSlideContent.presentation.selectedFile?.name || "Volunteer-Confidentiality-Agreement-Stanley-Samuel-Arikpo.docx.pdf"}
-                    </div>
-                    <div>Presentation</div>
-                    <div className="flex items-center">
-                      <div className="w-20 bg-gray-200 h-2 rounded-full overflow-hidden mr-2">
-                        <div className="bg-purple-600 h-2 rounded-full" style={{ width: '100%' }}></div>
-                      </div>
-                      <span className="text-xs">100%</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      {new Date().toLocaleDateString('en-US', {month: '2-digit', day: '2-digit', year: 'numeric'})}
-                      <button 
-                        className="text-gray-500 hover:text-gray-700"
-                        onClick={() => {
-                          setPresentationUploaded(false);
-                          setVideoSlideContent({
-                            ...videoSlideContent,
-                            presentation: { selectedFile: null }
-                          });
-                        }}
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )
-          ) : presentationUploading ? (
-            <div className="space-y-2">
-              <div className="overflow-x-auto">
-                <div className="grid grid-cols-4 gap-2 md:gap-4 text-[16px] font-bold text-gray-800 border-b border-gray-300 py-2 min-w-max">
-                  <div>Filename</div>
-                  <div>Type</div>
-                  <div>Status</div>
-                  <div>Date</div>
-                </div>
-                <div className="grid grid-cols-4 gap-2 md:gap-4 text-sm items-center text-gray-700 font-semibold min-w-max py-2">
-                  <div className="truncate">
-                    {videoSlideContent.presentation.selectedFile?.name || "Volunteer-Confidentiality-Agreement-Stanley-Samuel-Arikpo.docx.pdf"}
-                  </div>
-                  <div>Presentation</div>
-                  <div className="flex items-center">
-                    <div className="w-20 bg-gray-200 h-2 rounded-full overflow-hidden mr-2">
-                      <div className="bg-purple-600 h-2 rounded-full" style={{ width: `${presentationUploadProgress}%` }}></div>
-                    </div>
-                    <span className="text-xs">{presentationUploadProgress}%</span>
-                  </div>
-                  <div>{new Date().toLocaleDateString('en-US', {month: '2-digit', day: '2-digit', year: 'numeric'})}</div>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="flex items-center justify-between">
-              <div className="flex-1 border border-gray-500 rounded px-4 py-3 text-sm text-gray-600 truncate">
-                {videoSlideContent.presentation.selectedFile ? (
-                  <span>{videoSlideContent.presentation.selectedFile.name}</span>
-                ) : (
-                  <span>No file selected</span>
-                )}
-              </div>
-              <label className="ml-4 px-2 py-3 border border-[#6D28D2] text-sm font-bold text-[#6D28D2] hover:bg-[#6D28D2]/10 cursor-pointer transition">
-                <input
-                  type="file"
-                  accept=".pdf"
-                  onChange={handlePresentationUpload}
-                  className="hidden"
-                />
-                Select PDF
-              </label>
-            </div>
-          )}
-          <p className="mt-1.5 text-xs text-gray-600">
-            <strong>Note:</strong> A presentation means slides (e.g. PowerPoint, Keynote). Slides are a great way to
-            combine text and visuals to explain concepts in an effective and efficient way. Use meaningful graphics and
-            clearly legible text!
-          </p>
-        </div>
-
-        {/* Step 3 - Sync */}
-        <div>
-          <div className="flex items-center mb-2 border-b pb-3 border-b-gray-300">
-            <div className={`w-8 h-8 flex items-center justify-center text-sm font-bold bg-gray-100 text-gray-700 `}>
-              3
-            </div>
-            <span className="ml-2 text-sm font-semibold text-gray-800">
-              Synchronize Video & Presentation
-            </span>
-          </div>
-          
-          {videoUploaded && presentationUploaded && !syncComplete ? (
-            <div className="space-y-4">
-              {isFullscreen ? (
-                <div className="fixed inset-0 bg-black bg-opacity-90 z-50 flex flex-col">
-                  <div className="bg-white px-4 py-2 flex justify-between items-center">
-                    <h3 className="font-bold text-gray-800">Preview</h3>
-                    <button 
-                      onClick={toggleFullscreen}
-                      className="text-gray-700 hover:text-gray-900"
-                    >
-                      <X className="w-5 h-5" />
-                    </button>
-                  </div>
-                  <div className="flex-1 flex items-center justify-center bg-gray-100">
-                    <img 
-                      src="/api/placeholder/600/800" 
-                      alt="PDF Preview" 
-                      className="max-h-full max-w-full object-contain shadow-lg"
-                    />
-                  </div>
-                  <div className="bg-gray-100 px-4 py-2 flex justify-between items-center">
-                    <div className="flex items-center space-x-4">
-                      <button 
-                        onClick={goToPreviousSlide}
-                        className="p-2 rounded-full bg-white shadow hover:bg-gray-200 disabled:opacity-50"
-                        disabled={currentSlide <= 1}
-                      >
-                        <ChevronDown className="w-5 h-5 transform rotate-90" />
-                      </button>
-                      <button 
-                        onClick={goToNextSlide}
-                        className="p-2 rounded-full bg-white shadow hover:bg-gray-200 disabled:opacity-50"
-                        disabled={currentSlide >= totalSlides}
-                      >
-                        <ChevronDown className="w-5 h-5 transform -rotate-90" />
-                      </button>
-                      <span className="text-sm font-medium">
-                        {currentSlide} of {totalSlides} Slides
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  {/* PDF Preview */}
-                  <div className="border-b border-gray-300 pb-2">
-                    <div className="w-full h-80 bg-white relative">
-                      <img 
-                        src="/api/placeholder/600/800" 
-                        alt="PDF Preview" 
-                        className="w-full h-full object-contain"
-                      />
-                      <button
-                        onClick={toggleFullscreen}
-                        className="absolute bottom-2 right-2 p-1 bg-white rounded shadow text-gray-700 hover:text-gray-900"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 1v4m0 0h-4m4 0l-5-5" />
-                        </svg>
-                      </button>
-                    </div>
-
-                    {/* Progress bar at the bottom */}
-                    <div className="w-full bg-purple-100 h-2 mt-2">
-                      <div className="bg-purple-600 h-2" style={{ width: `${(currentSlide / totalSlides) * 100}%` }}></div>
-                    </div>
-
-                    {/* Slide navigation */}
-                    <div className="flex items-center justify-between mt-2">
-                      <button 
-                        onClick={goToPreviousSlide}
-                        className="p-1 rounded text-purple-600 hover:text-purple-800 disabled:opacity-50 disabled:text-gray-400"
-                        disabled={currentSlide <= 1}
-                      >
-                        <ChevronDown className="w-5 h-5 transform rotate-90" />
-                      </button>
-                      
-                      <span className="text-sm font-medium">
-                        {currentSlide} of {totalSlides} Slides
-                      </span>
-                      
-                      <button 
-                        onClick={goToNextSlide}
-                        className="p-1 rounded text-purple-600 hover:text-purple-800 disabled:opacity-50 disabled:text-gray-400"
-                        disabled={currentSlide >= totalSlides}
-                      >
-                        <ChevronDown className="w-5 h-5 transform -rotate-90" />
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Action buttons */}
-                  <div className="flex space-x-2">
-                    <button
-                      onClick={usePresentation}
-                      className="flex-1 bg-purple-600 text-white font-medium py-2 px-4 rounded hover:bg-purple-700 transition"
-                    >
-                      Use this presentation
-                    </button>
-                    <button
-                      className="flex-1 border border-gray-300 text-gray-700 font-medium py-2 px-4 rounded hover:bg-gray-50 transition"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-          ) : videoUploaded && presentationUploaded && syncComplete ? (
-            <div>
-              {/* Display successfully synced state - empty div, as requested */}
-            </div>
-          ) : (
-            <div className="border-2 border-dashed border-gray-400 px-4 py-4 text-left text-sm text-gray-600">
-              Please pick a video & presentation first
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
+   <VideoSlideMashupComponent/>
   );
     
       
@@ -1097,273 +742,245 @@ const handleVideoFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     }, 300);
   };
 
-  return (
-    <div 
-      className={`mb-3 bg-white border border-gray-400 ${isExpanded && "border-b border-gray-500 "}${
-        draggedLecture === lecture.id ? 'opacity-50' : ''
-      } ${
-        dragTarget?.lectureId === lecture.id ? 'border-2 border-indigo-500' : ''
-      }`}
-      draggable={true}
-      onDragStart={(e) => handleDragStart(e, sectionId, lecture.id)}
-      onDragEnd={handleDragEnd}
-      onDragOver={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        handleDragOver(e);
-      }}
-      onDragLeave={handleDragLeave}
-      onDrop={(e) => handleDrop(e, sectionId, lecture.id)}
-      onMouseEnter={() => setIsHovering(true)}
-      onMouseLeave={() => setIsHovering(false)}
-    >
-      <div className={`flex items-center ${isExpanded && "border-b border-gray-500 "} px-3 py-2 `}>
-        <div className="flex-1 flex items-center">
+  // Update the main component return JSX to properly show the description text
+return (
+  <div 
+    className={`mb-3 bg-white border border-gray-400 ${isExpanded && "border-b border-gray-500 "}${
+      draggedLecture === lecture.id ? 'opacity-50' : ''
+    } ${
+      dragTarget?.lectureId === lecture.id ? 'border-2 border-indigo-500' : ''
+    }`}
+    draggable={true}
+    onDragStart={(e) => handleDragStart(e, sectionId, lecture.id)}
+    onDragEnd={handleDragEnd}
+    onDragOver={(e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      handleDragOver(e);
+    }}
+    onDragLeave={handleDragLeave}
+    onDrop={(e) => handleDrop(e, sectionId, lecture.id)}
+    onMouseEnter={() => setIsHovering(true)}
+    onMouseLeave={() => setIsHovering(false)}
+  >
+    <div className={`flex items-center ${isExpanded && "border-b border-gray-500 "} px-3 py-2 `}>
+      <div className="flex-1 flex items-center">
         <div className="bg-black rounded-full items-center justify-center mr-2 ">
-        <CircleCheck className="text-white bg-gray-800 rounded-full" size={14} />
-      </div>
-          {editingLectureId === lecture.id ? (
-            <input
-              ref={lectureNameInputRef}
-              type="text"
-              value={lecture.name}
-              onChange={(e) => updateLectureName(sectionId, lecture.id, e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  setEditingLectureId(null);
-                }
-              }}
-              className="border-gray-300 focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border rounded-md px-2 py-1"
-              onClick={(e) => e.stopPropagation()}
-            />
-          ) : (
-            <div className="text-sm sm:text-base text-gray-800 truncate max-w-full whitespace-nowrap overflow-hidden flex items-center">
-  {getLectureTypeLabel()} {lectureIndex + 1}: <FileText size={15} className="ml-2 inline-block flex-shrink-0" /> 
-  <span className="truncate overflow-hidden ml-1">{lecture.name}</span>
-
-{isHovering &&(
-
-  <div>
-      <button
-              onClick={(e) => {
-                e.stopPropagation();
-                startEditingLecture(e);
-              }}
-              className="p-1 text-gray-400 hover:text-gray-600"
-              aria-label="Edit"
-            >
-              <Edit3 className="w-4 h-4" />
-            </button>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                deleteLecture(sectionId, lecture.id);
-              }}
-              className="p-1 text-gray-400 hover:text-red-600"
-              aria-label="Delete"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
-  </div>
-)}
-</div>
-          )}
+          <CircleCheck className="text-white bg-gray-800 rounded-full" size={14} />
         </div>
-        <div className="flex items-center">
-          {/* Action buttons that only show on hover on larger screens */}
-          <div className={`hidden sm:flex items-center space-x-1 transition-opacity duration-200 ${isHovering ? 'opacity-100' : 'opacity-0'}`}>
-        
-            {/* <button
-              onClick={(e) => {
-                e.stopPropagation();
-                moveLecture(sectionId, lecture.id, 'up');
-              }}
-              className="p-1 text-gray-400 hover:text-gray-600"
-              disabled={lectureIndex === 0}
-              aria-label="Move up"
-            >
-              <ChevronUp className={`w-4 h-4 ${lectureIndex === 0 ? 'opacity-50' : ''}`} />
-            </button>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                moveLecture(sectionId, lecture.id, 'down');
-              }}
-              className="p-1 text-gray-400 hover:text-gray-600"
-              disabled={lectureIndex === totalLectures - 1}
-              aria-label="Move down"
-            >
-              <ChevronDown className={`w-4 h-4 ${lectureIndex === totalLectures - 1 ? 'opacity-50' : ''}`} />
-            </button> */}
-          </div>
-          
-          {/* Content button - Modified to change text when content selector is shown */}
-          <button 
-  onClick={(e) => {
-    e.stopPropagation();
-    // Only toggle content section if not in resource mode
-    if (!isResourceSectionActive && toggleContentSection) {
-      toggleContentSection(sectionId, lecture.id);
-      if (!isExpanded) {
-        setShowContentTypeSelector(true);
-      } else {
-        setShowContentTypeSelector(false);
-        setActiveContentType(null);
-      }
-    }
-  }}
-  className={`${
-    (showContentTypeSelector && isExpanded) || isResourceSectionActive || activeContentType
-    ? "text-gray-800 font-normal border-b-0 border-l border-t border-r border-gray-400 -mb-[12px] bg-white pb-2" 
-    : "text-[#6D28D2] font-medium border-[#6D28D2] hover:bg-indigo-50 rounded "
-  } text-xs sm:text-sm px-2 sm:px-3 py-2 flex items-center ml-1 sm:ml-2 border`}
->
-  {isResourceSectionActive ? (
-    <>
-      <span className='font-bold'>Add Resource</span>
-      <X 
-        className="w-3 h-3 sm:w-4 sm:h-4 ml-1 sm:ml-2" 
-        onClick={(e) => {
-          e.stopPropagation();
-          if (toggleAddResourceModal) {
-            toggleAddResourceModal(sectionId, lecture.id);
-          }
-        }}
-      />
-    </>
-  ) : activeContentType === 'video' ? (
-    <>
-      <span className='font-bold'>Add Video</span>
-      <X 
-        className="w-3 h-3 sm:w-4 sm:h-4 ml-1 sm:ml-2" 
-        onClick={(e) => {
-          e.stopPropagation();
-          setActiveContentType(null);
-          if (toggleContentSection) {
-            toggleContentSection(sectionId, lecture.id);
-          }
-        }}
-      />
-    </>
-  ) : activeContentType === 'video-slide' ? (
-    <>
-      <span className='font-bold'>Add Video & Slide Mashup</span>
-      <X 
-        className="w-3 h-3 sm:w-4 sm:h-4 ml-1 sm:ml-2" 
-        onClick={(e) => {
-          e.stopPropagation();
-          setActiveContentType(null);
-          if (toggleContentSection) {
-            toggleContentSection(sectionId, lecture.id);
-          }
-        }}
-      />
-    </>
-  ) : activeContentType === 'article' ? (
-    <>
-      <span className='font-bold'>Add Article</span>
-      <X 
-        className="w-3 h-3 sm:w-4 sm:h-4 ml-1 sm:ml-2" 
-        onClick={(e) => {
-          e.stopPropagation();
-          setActiveContentType(null);
-          if (toggleContentSection) {
-            toggleContentSection(sectionId, lecture.id);
-          }
-        }}
-      />
-    </>
-  ) : showContentTypeSelector && isExpanded ? (
-    <>
-      <span className='font-bold'>Select content type</span>
-      <X 
-        className="w-3 h-3 sm:w-4 sm:h-4 ml-1 sm:ml-2" 
-        onClick={(e) => {
-          e.stopPropagation();
-          setShowContentTypeSelector(false);
-          if (toggleContentSection) {
-            toggleContentSection(sectionId, lecture.id);
-          }
-        }}
-      />
-    </>
-  ) : (
-    <>
-      <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-0.5 sm:mr-1" /> 
-      <span className='font-bold'>Content</span>
-    </>
-  )}
-</button>
-          
-          {/* Expand/Collapse button always visible */}
-          <button 
-            className="p-1 text-gray-400 hover:text-gray-600 ml-1"
-            onClick={(e) => {
-              e.stopPropagation();
-              // Check if toggleContentSection exists before calling it
-              if (toggleContentSection) {
-                toggleContentSection(sectionId, lecture.id);
-                if (isExpanded) {
-                  setShowContentTypeSelector(false);
-                  setActiveContentType(null);
-                }
+        {editingLectureId === lecture.id ? (
+          <input
+            ref={lectureNameInputRef}
+            type="text"
+            value={lecture.name}
+            onChange={(e) => updateLectureName(sectionId, lecture.id, e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                setEditingLectureId(null);
               }
             }}
-            aria-label={isExpanded ? "Collapse" : "Expand"}
-          >
-            {isExpanded ? (
-              <ChevronUp className="w-5 h-5" />
-            ) : (
-              <ChevronDown className="w-5 h-5" />
+            className="border-gray-300 focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border rounded-md px-2 py-1"
+            onClick={(e) => e.stopPropagation()}
+          />
+        ) : (
+          <div className="text-sm sm:text-base text-gray-800 truncate max-w-full whitespace-nowrap overflow-hidden flex items-center">
+            {getLectureTypeLabel()} {lectureIndex + 1}: <FileText size={15} className="ml-2 inline-block flex-shrink-0" /> 
+            <span className="truncate overflow-hidden ml-1">{lecture.name}</span>
+
+            {isHovering && (
+              <div>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    startEditingLecture(e);
+                  }}
+                  className="p-1 text-gray-400 hover:text-gray-600"
+                  aria-label="Edit"
+                >
+                  <Edit3 className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    deleteLecture(sectionId, lecture.id);
+                  }}
+                  className="p-1 text-gray-400 hover:text-red-600"
+                  aria-label="Delete"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
             )}
-            
-          </button>
-          {isHovering && (
-            <div className="">
+          </div>
+        )}
+      </div>
+      <div className="flex items-center">
+        <div className={`hidden sm:flex items-center space-x-1 transition-opacity duration-200 ${isHovering ? 'opacity-100' : 'opacity-0'}`}>
+        </div>
+        
+        <button 
+          onClick={(e) => {
+            e.stopPropagation();
+            if (!isResourceSectionActive && toggleContentSection) {
+              toggleContentSection(sectionId, lecture.id);
+              if (!isExpanded) {
+                setShowContentTypeSelector(true);
+              } else {
+                setShowContentTypeSelector(false);
+                setActiveContentType(null);
+              }
+            }
+          }}
+          className={`${
+            (showContentTypeSelector && isExpanded) || isResourceSectionActive || activeContentType
+            ? "text-gray-800 font-normal border-b-0 border-l border-t border-r border-gray-400 -mb-[12px] bg-white pb-2" 
+            : "text-[#6D28D2] font-medium border-[#6D28D2] hover:bg-indigo-50 rounded "
+          } text-xs sm:text-sm px-2 sm:px-3 py-2 flex items-center ml-1 sm:ml-2 border`}
+        >
+          {isResourceSectionActive ? (
+            <>
+              <span className='font-bold'>Add Resource</span>
+              <X 
+                className="w-3 h-3 sm:w-4 sm:h-4 ml-1 sm:ml-2" 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (toggleAddResourceModal) {
+                    toggleAddResourceModal(sectionId, lecture.id);
+                  }
+                }}
+              />
+            </>
+          ) : activeContentType === 'video' ? (
+            <>
+              <span className='font-bold'>Add Video</span>
+              <X 
+                className="w-3 h-3 sm:w-4 sm:h-4 ml-1 sm:ml-2" 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setActiveContentType(null);
+                  if (toggleContentSection) {
+                    toggleContentSection(sectionId, lecture.id);
+                  }
+                }}
+              />
+            </>
+          ) : activeContentType === 'video-slide' ? (
+            <>
+              <span className='font-bold'>Add Video & Slide Mashup</span>
+              <X 
+                className="w-3 h-3 sm:w-4 sm:h-4 ml-1 sm:ml-2" 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setActiveContentType(null);
+                  if (toggleContentSection) {
+                    toggleContentSection(sectionId, lecture.id);
+                  }
+                }}
+              />
+            </>
+          ) : activeContentType === 'article' ? (
+            <>
+              <span className='font-bold'>Add Article</span>
+              <X 
+                className="w-3 h-3 sm:w-4 sm:h-4 ml-1 sm:ml-2" 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setActiveContentType(null);
+                  if (toggleContentSection) {
+                    toggleContentSection(sectionId, lecture.id);
+                  }
+                }}
+              />
+            </>
+          ) : showContentTypeSelector && isExpanded ? (
+            <>
+              <span className='font-bold'>Select content type</span>
+              <X 
+                className="w-3 h-3 sm:w-4 sm:h-4 ml-1 sm:ml-2" 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowContentTypeSelector(false);
+                  if (toggleContentSection) {
+                    toggleContentSection(sectionId, lecture.id);
+                  }
+                }}
+              />
+            </>
+          ) : (
+            <>
+              <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-0.5 sm:mr-1" /> 
+              <span className='font-bold'>Content</span>
+            </>
+          )}
+        </button>
+        
+        <button 
+          className="p-1 text-gray-400 hover:text-gray-600 ml-1"
+          onClick={(e) => {
+            e.stopPropagation();
+            if (toggleContentSection) {
+              toggleContentSection(sectionId, lecture.id);
+              if (isExpanded) {
+                setShowContentTypeSelector(false);
+                setActiveContentType(null);
+              }
+            }
+          }}
+          aria-label={isExpanded ? "Collapse" : "Expand"}
+        >
+          {isExpanded ? (
+            <ChevronUp className="w-5 h-5" />
+          ) : (
+            <ChevronDown className="w-5 h-5" />
+          )}
+          
+        </button>
+        {isHovering && (
+          <div className="">
             <AlignJustify className="w-5 h-5 text-gray-500 cursor-move" />
           </div>
-          )}
-        </div>
+        )}
       </div>
-      
-      {/* Expanded content area */}
-      {(isExpanded || isResourceSectionActive || isDescriptionSectionActive) && (
-        <div>
-          {/* Render Resource Component when active */}
-          {isResourceSectionActive && (
-            <AddResourceComponent
-              activeContentSection={activeResourceSection}
-              onClose={() => {
-                if (toggleAddResourceModal) {
-                  toggleAddResourceModal(sectionId, lecture.id);
-                }
-              }}
-              activeResourceTab={activeResourceTab}
-              setActiveResourceTab={setActiveResourceTab}
-              sections={sections}
-              isUploading={isUploading}
-              uploadProgress={uploadProgress}
-              triggerFileUpload={triggerFileUpload}
-            />
-          )}
+    </div>
+    
+    {/* Expanded content area */}
+    {(isExpanded || isResourceSectionActive || isDescriptionSectionActive) && (
+      <div>
+        {/* Render Resource Component when active */}
+        {isResourceSectionActive && (
+          <AddResourceComponent
+            activeContentSection={activeResourceSection}
+            onClose={() => {
+              if (toggleAddResourceModal) {
+                toggleAddResourceModal(sectionId, lecture.id);
+              }
+            }}
+            activeResourceTab={activeResourceTab}
+            setActiveResourceTab={setActiveResourceTab}
+            sections={sections}
+            isUploading={isUploading}
+            uploadProgress={uploadProgress}
+            triggerFileUpload={triggerFileUpload}
+          />
+        )}
 
-          {/* Render Description Component when active */}
-          {isDescriptionSectionActive && updateCurrentDescription && saveDescription && (
-            <DescriptionEditorComponent
-              activeDescriptionSection={activeDescriptionSection}
-              onClose={() => {
-                if (toggleDescriptionEditor) {
-                  toggleDescriptionEditor(sectionId, lecture.id, currentDescription);
-                }
-              }}
-              currentDescription={currentDescription || ''}
-              setCurrentDescription={updateCurrentDescription}
-              saveDescription={saveDescription}
-            />
-          )}
+        {/* Render Description Component when active */}
+        {isDescriptionSectionActive && updateCurrentDescription && saveDescription && (
+          <DescriptionEditorComponent
+            activeDescriptionSection={activeDescriptionSection}
+            onClose={() => {
+              if (toggleDescriptionEditor) {
+                toggleDescriptionEditor(sectionId, lecture.id, currentDescription);
+              }
+            }}
+            currentDescription={currentDescription || ''}
+            setCurrentDescription={updateCurrentDescription}
+            saveDescription={saveDescription}
+          />
+        )}
 
-          {showContentTypeSelector && !activeContentType && !isResourceSectionActive && !isDescriptionSectionActive && (
-            <div className="bg-white shadow-sm border border-gray-300 p-2 w-full">          
+        {showContentTypeSelector && !activeContentType && !isResourceSectionActive && !isDescriptionSectionActive && (
+          <div className="bg-white shadow-sm border border-gray-300 p-2 w-full">          
             <p className="text-xs sm:text-sm text-gray-600 mb-4 mx-auto text-center">
               Select the main type of content. Files and links can be added as resources.
               <a href="#" className="text-indigo-600 hover:text-indigo-700 ml-1">
@@ -1418,50 +1035,64 @@ const handleVideoFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
               </button>
             </div>
           </div>
-          
-          )}
-          
-          {activeContentType && renderContent()}
-          
-          {!showContentTypeSelector && !activeContentType && !isResourceSectionActive && !isDescriptionSectionActive && (
-            <div className="p-4">
-              {/* Description button - only show if description section is not active */}
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (toggleDescriptionEditor) {
-                    toggleDescriptionEditor(sectionId, lecture.id, lecture.description || "");
-                  }
-                }}
-                className="flex items-center gap-2 py-1.5 sm:py-2 px-2 sm:px-4 text-xs sm:text-sm text-[#6D28D2] font-medium border border-[#6D28D2] rounded-sm hover:bg-gray-50"
-              >
-                <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
-                <span className="font-bold">Description</span>
-              </button>
+        )}
+        
+        {activeContentType && renderContent()}
+        
+        {!showContentTypeSelector && !activeContentType && !isResourceSectionActive && !isDescriptionSectionActive && (
+  <div className="p-4">
+    {/* Display the lecture description if it exists */}
+    {lecture.description && (
+      <div 
+        className="text-gray-700 text-sm mb-3 p-2 border-l-2 border-gray-300 cursor-pointer hover:bg-gray-50"
+        onClick={(e) => {
+          e.stopPropagation();
+          if (toggleDescriptionEditor) {
+            toggleDescriptionEditor(sectionId, lecture.id, lecture.description || "");
+          }
+        }}
+        dangerouslySetInnerHTML={{ __html: lecture.description }}
+      />
+    )}
 
-              {/* Resource button - only show if resource section is not active */}
-              {!showContentTypeSelector && !activeContentType && !isResourceSectionActive && !isDescriptionSectionActive && (
-              <button
-              onClick={(e) => {
-                e.stopPropagation();
-                if (toggleAddResourceModal) {
-                  toggleAddResourceModal(sectionId, lecture.id);
-                }
-              }}
-              className="flex items-center mt-2 gap-2 py-1.5 sm:py-2 px-2 sm:px-4 text-xs sm:text-sm text-[#6D28D2] font-medium border border-[#6D28D2] rounded-sm hover:bg-gray-50"
-            >
-              <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
-              <span className='font-bold'>Resources</span>
-            </button>
-              )}
+    {/* Description button - only show if there's no description or if the description component isn't active */}
+    {!lecture.description && !isDescriptionSectionActive && (
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          if (toggleDescriptionEditor) {
+            toggleDescriptionEditor(sectionId, lecture.id, lecture.description || "");
+          }
+        }}
+        className="flex items-center gap-2 py-1.5 sm:py-2 px-2 sm:px-4 text-xs sm:text-sm text-[#6D28D2] font-medium border border-[#6D28D2] rounded-sm hover:bg-gray-50"
+      >
+        <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
+        <span className="font-bold">Description</span>
+      </button>
+    )}
 
-              
-              {/* Any additional content */}
-              {children}
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
+    {/* Resource button - only show if the resource component isn't active */}
+    {!isResourceSectionActive && (
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          if (toggleAddResourceModal) {
+            toggleAddResourceModal(sectionId, lecture.id);
+          }
+        }}
+        className={`flex items-center ${!lecture.description ? 'mt-2' : ''} gap-2 py-1.5 sm:py-2 px-2 sm:px-4 text-xs sm:text-sm text-[#6D28D2] font-medium border border-[#6D28D2] rounded-sm hover:bg-gray-50`}
+      >
+        <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
+        <span className='font-bold'>Resources</span>
+      </button>
+    )}
+
+    {/* Any additional content */}
+    {children}
+  </div>
+)}
+      </div>
+    )}
+  </div>
+);
 }
