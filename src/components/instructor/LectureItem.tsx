@@ -285,102 +285,100 @@ export default function LectureItem({
       case 'video':
         return (
           <div className="border border-gray-300 rounded-md">
-            <div className="flex items-center justify-between px-2 py-2 border-b border-gray-300">
-              <div className="flex-1">
-                <h3 className="text-lg font-medium">Add Video</h3>
-              </div>
-              <button 
-                onClick={() => setActiveContentType(null)} 
-                className="text-gray-500 hover:text-gray-700"
-                aria-label="Close"
-              >
-                <X className="w-5 h-5" />
-              </button>
+          <div className="p-2">
+            {/* Tabs */}
+            <div className="flex border-b border-gray-300">
+              {videoTabs.map((tab) => (
+                <button
+                  key={tab.key}
+                  className={`py-2 px-4 text-sm ${
+                    videoContent.activeTab === tab.key
+                      ? 'text-gray-800 font-bold border-b-2 border-gray-800'
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                  onClick={() =>
+                    setVideoContent({ ...videoContent, activeTab: tab.key })
+                  }
+                >
+                  {tab.label}
+                </button>
+              ))}
             </div>
-            
-            <div className="p-4">
-              <div className="border-b border-gray-300">
-                <div className="flex flex-wrap">
-                  {videoTabs.map(tab => (
-                    <button
-                      key={tab.key}
-                      className={`py-2 px-4 text-sm font-medium ${videoContent.activeTab === tab.key 
-                        ? 'border-b-2 border-indigo-600 text-indigo-600' 
-                        : 'text-gray-500 hover:text-gray-700'}`}
-                      onClick={() => setVideoContent({ ...videoContent, activeTab: tab.key })}
-                    >
-                      {tab.label}
-                    </button>
-                  ))}
+        
+            {videoContent.activeTab === 'uploadVideo' ? (
+              <div className="py-4">
+                {/* File selection box */}
+                <div className="flex items-center justify-between ">
+                  <span className="text-sm text-gray-700 truncate py-3 border border-gray-300 w-[85%] px-4">
+                    {videoContent.uploadTab.selectedFile
+                      ? videoContent.uploadTab.selectedFile.name
+                      : 'No file selected'}
+                  </span>
+                  <label className="text-sm font-medium text-[#6D28D9] border border-[#6D28D9] px-3 py-2 rounded cursor-pointer hover:bg-[#f5f3ff]">
+                    <input
+                      type="file"
+                      accept="video/*"
+                      onChange={handleVideoFileSelect}
+                      className="hidden"
+                    />
+                    Select Video
+                  </label>
                 </div>
+                <p className="mt-2 text-xs text-gray-500">
+                  <strong>Note:</strong> All files should be at least 720p and less than 4.0 GB.
+                </p>
               </div>
-              
-              {videoContent.activeTab === 'uploadVideo' ? (
-                <div className="py-4">
-                  <div className="flex items-center justify-between p-4 border border-gray-500 rounded-md">
-                    <div className="flex-1 truncate text-sm">
-                      {videoContent.uploadTab.selectedFile ? (
-                        <span>{videoContent.uploadTab.selectedFile.name}</span>
-                      ) : (
-                        <span>No file selected</span>
-                      )}
-                    </div>
-                    <label className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 cursor-pointer">
+            ) : (
+              <div className="py-4">
+                {/* Search input (half-width from center to right) */}
+                <form onSubmit={handleSearchLibrary} className="mb-4">
+                  <div className="flex justify-end gap-2">
+                    <div className="w-1/2 relative">
                       <input
-                        type="file"
-                        accept="video/*"
-                        onChange={handleVideoFileSelect}
-                        className="hidden"
+                        type="text"
+                        placeholder="Search files by name"
+                        value={videoContent.libraryTab.searchQuery}
+                        onChange={(e) =>
+                          setVideoContent({
+                            ...videoContent,
+                            libraryTab: {
+                              ...videoContent.libraryTab,
+                              searchQuery: e.target.value,
+                            },
+                          })
+                        }
+                        className="w-full py-2 px-3 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                       />
-                      Select Video
-                    </label>
+                    </div>
+                    <button
+                      type="submit"
+                      className="p-2 bg-[#6D28D9] text-white rounded-md hover:bg-indigo-700"
+                    >
+                      <Search className="w-5 h-5" />
+                    </button>
                   </div>
-                  <p className="mt-2 text-xs text-gray-500">
-                    Note: All files should be at least 720p and less than 4.0 GB.
-                  </p>
-                </div>
-              ) : (
-                <div className="py-4">
-                  <form onSubmit={handleSearchLibrary} className="mb-4">
-                    <div className="flex gap-2">
-                      <div className="flex-1 relative">
-                        <input 
-                          type="text" 
-                          placeholder="Search files by name"
-                          value={videoContent.libraryTab.searchQuery}
-                          onChange={(e) => setVideoContent({
-                            ...videoContent, 
-                            libraryTab: { ...videoContent.libraryTab, searchQuery: e.target.value }
-                          })}
-                          className="w-full sm:w-1/2 justify-end py-2 px-3 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                        />
-                      </div>
-                      <button
-                        type="submit"
-                        className="p-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
-                      >
-                        <Search className="w-5 h-5" />
-                      </button>
-                    </div>
-                  </form>
-                  
-                  <div className="border border-gray-300 rounded-md">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4 p-3 border-b border-gray-300 bg-gray-50 text-xs md:text-sm font-medium">
-                      <div>Filename</div>
-                      <div>Type</div>
-                      <div>Status</div>
-                      <div className="flex items-center gap-1">
-                        Date <ChevronDown className="w-4 h-4" />
-                      </div>
-                    </div>
-                    <div className="p-4 text-center text-gray-500 text-sm">
-                      No results found.
+                </form>
+        
+                {/* Table header and results */}
+                <div className=" border-b border-gray-300">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4 p-3 text-xs md:text-sm font-medium border-b border-gray-300">
+                    <div>Filename</div>
+                    <div>Type</div>
+                    <div>Status</div>
+                    <div className="flex items-center gap-1">
+                      Date <ChevronDown className="w-4 h-4" />
                     </div>
                   </div>
+                  <div className="px-4 py-7 text-center text-gray-500 text-sm">
+                    No results found.
+                  </div>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
+        </div>
+        
+        
         );
         
       case 'video-slide' as ContentItemType:
