@@ -98,6 +98,26 @@ const QuizItem: React.FC<QuizItemProps> = ({
   const [questions, setQuestions] = useState<Question[]>(
     lecture.questions || []
   );
+  const [showEditForm, setShowEditForm] = useState(false);
+
+  console.log("Lecture:" + lecture.questions);
+
+  const initialQuestion = {
+    id: "123456",
+    questionText: "What is the capital of Nigeria?",
+    answers: [
+      { text: "Lagos", explanation: "Lagos was the former capital" },
+      { text: "Kano", explanation: "Kano is a major city in the north" },
+      { text: "Abuja", explanation: "Abuja is the current capital" },
+      { text: "Port Harcourt", explanation: "Port Harcourt is an oil city" },
+    ],
+    correctAnswerIndex: 2,
+    relatedLecture: "Nigerian Geography",
+  };
+
+  const [editingQuestionIndex, setEditingQuestionIndex] = useState<
+    number | null
+  >(null);
 
   useEffect(() => {
     if (editingLectureId === lecture.id && lectureNameInputRef.current) {
@@ -118,14 +138,14 @@ const QuizItem: React.FC<QuizItemProps> = ({
   };
 
   const handleNewQuestion = () => {
-    setShowQuestionForm(true);
-    setShowQuestionTypeSelector(false);
+    setShowQuestionForm(false);
+    setShowQuestionTypeSelector(true);
   };
 
   const handleAddQuestion = (question: Question) => {
     const newQuestions = [...questions, { ...question, id: `q-${Date.now()}` }];
     setQuestions(newQuestions);
-
+    console.log(newQuestions);
     // Update questions in parent component if updateQuizQuestions is provided
     if (updateQuizQuestions) {
       updateQuizQuestions(sectionId, lecture.id, newQuestions);
@@ -143,8 +163,10 @@ const QuizItem: React.FC<QuizItemProps> = ({
   };
 
   const handleEditQuestion = (index: number) => {
-    // This function would open the question form with the existing question data
-    console.log("Edit question:", index);
+    // setInitialQuestion(questions[index]); // Set the question to be edited
+    // setEditIndex(index); // Also keep track of the index being edited
+    setEditingQuestionIndex(index);
+    setShowEditForm(true); // Show the edit form
   };
 
   const handleQuestionsButtonClick = () => {
@@ -274,7 +296,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
                 onClick={handleQuestionsButtonClick}
                 className="ml-auto px-3 py-1 border border-purple-600 text-purple-600 bg-purple-50 hover:bg-purple-100 rounded-md flex items-center cursor-pointer"
               >
-                <Plus className="w-4 h-4 mr-1" />
+                <Plus className="w-4 h-4 mr-1 " />
                 Questions
               </button>
             )}
@@ -331,7 +353,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
             ) : (
               <div className="border-t border-zinc-400">
                 <QuestionForm
-                  onAddQuestion={handleAddQuestion}
+                  onSubmit={handleAddQuestion}
                   onCancel={() => setShowQuestionForm(false)}
                 />
               </div>
@@ -449,15 +471,17 @@ const QuizItem: React.FC<QuizItemProps> = ({
               </button> */}
             </>
           )}
-          {expanded ? (
-            <button className="cursor-pointer p-1 ml-auto bg-gray-200">
-              <ChevronUp className="w-5 h-5 text-gray-500" />
-            </button>
-          ) : (
-            <button className="cursor-pointer p-1 ml-auto bg-gray-200">
-              <ChevronDown className="w-5 h-5 text-gray-500 " />
-            </button>
-          )}
+          {expanded
+            ? !showEditForm && (
+                <button className="cursor-pointer p-1 ml-auto bg-gray-200">
+                  <ChevronUp className="w-5 h-5 text-gray-500" />
+                </button>
+              )
+            : !showEditForm && (
+                <button className="cursor-pointer p-1 ml-auto bg-gray-200">
+                  <ChevronDown className="w-5 h-5 text-gray-500 " />
+                </button>
+              )}
           <button className="p-1 w-5">
             {isHovering && (
               <RxHamburgerMenu className="text-gray-600 cursor-move w-4 h-4" />
@@ -467,7 +491,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
       </div>
 
       {expanded && (
-        <div className="px-3 py-2 border-t">
+        <div className={`px-3 border-t ${!showEditForm && "py-2"}`}>
           {isNewQuiz ? (
             <div className="flex justify-end">
               <button
@@ -481,104 +505,100 @@ const QuizItem: React.FC<QuizItemProps> = ({
           ) : (
             <>
               {/* Modified header - "New Question" button moved next to "Questions" text */}
-              <div className="flex items-center mb-3">
-                <div className="flex-grow flex items-center">
-                  <span className="mr-2">
-                    Questions {questions.length > 0 && `(${questions.length})`}
-                  </span>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleNewQuestion();
-                    }}
-                    className="inline-flex items-center border border-purple-600 px-2 py-1 text-sm leading-5 rounded text-purple-600 hover:bg-purple-200 transition cursor-pointer font-bold"
-                  >
-                    New Question
-                  </button>
-                  <div className="ml-auto">
-                    {" "}
-                    <QuizPreviewWrapper quiz={quizData}>
-                      <button
-                        className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 transition cursor-pointer"
-                        disabled={questions.length === 0}
-                      >
-                        Preview
-                      </button>
-                    </QuizPreviewWrapper>
-                  </div>
-                </div>
-              </div>
 
-              {questions.length > 0 && (
-                <div className="">
-                  {questions.map((question, index) => (
-                    <div
-                      key={question.id || index}
-                      className="mb-2 rounded h-10 flex items-center"
-                      onMouseEnter={(e) => {
-                        // Find all buttons in this div and make them visible
-                        const buttons =
-                          e.currentTarget.querySelectorAll("button");
-                        buttons.forEach((button) => {
-                          button.classList.remove("hidden");
-                        });
-                      }}
-                      onMouseLeave={(e) => {
-                        // Find all buttons in this div and hide them
-                        const buttons =
-                          e.currentTarget.querySelectorAll("button");
-                        buttons.forEach((button) => {
-                          button.classList.add("hidden");
-                        });
-                      }}
-                    >
-                      <div className="flex justify-between items-center w-full">
-                        <div className="font-medium text-sm ">
-                          {/* Fixed question text to remove p tags */}
-                          {index + 1}. {question.text.replace(/<\/?p>/g, "")}
-                          <span className="text-xs text-gray-500 ml-2">
-                            Multiple Choice
-                          </span>
-                        </div>
-                        <div className="flex space-x-2">
+              {!showEditForm && (
+                <>
+                  <div className="flex items-center mb-3">
+                    <div className="flex-grow flex items-center">
+                      <span className="mr-2">
+                        Questions{" "}
+                        {questions.length > 0 && `(${questions.length})`}
+                      </span>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleNewQuestion();
+                        }}
+                        className="inline-flex items-center border border-purple-600 px-2 py-1 text-sm leading-5 rounded text-purple-600 hover:bg-purple-200 transition cursor-pointer font-bold"
+                      >
+                        New Question
+                      </button>
+                      <div className="ml-auto">
+                        {" "}
+                        <QuizPreviewWrapper quiz={quizData}>
                           <button
-                            className="p-1 text-gray-500 hover:bg-gray-200 rounded transition cursor-pointer"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleEditQuestion(index);
-                            }}
+                            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 transition cursor-pointer"
+                            disabled={questions.length === 0}
                           >
-                            <Edit3 className="w-4 h-4" />
+                            Preview
                           </button>
-                          <button
-                            className="p-1 text-gray-500 hover:bg-gray-200 rounded transition cursor-pointer"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteQuestion(index);
-                            }}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                          <button className="p-1 hover:bg-gray-200 rounded transition cursor-move">
-                            <RxHamburgerMenu className="w-4 h-4  text-gray-500" />
-                          </button>
-                        </div>
+                        </QuizPreviewWrapper>
                       </div>
                     </div>
-                  ))}
-                </div>
-              )}
+                  </div>
 
-              {/* <div className="flex justify-end mt-3">
-                <QuizPreviewWrapper quiz={quizData}>
-                  <button
-                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
-                    disabled={questions.length === 0}
-                  >
-                    Preview
-                  </button>
-                </QuizPreviewWrapper>
-              </div> */}
+                  {questions.length > 0 && (
+                    <div className="">
+                      {questions.map((question, index) => (
+                        <div
+                          key={question.id || index}
+                          className="mb-2 rounded h-10 flex items-center"
+                          onMouseEnter={(e) => {
+                            // Find all buttons in this div and make them visible
+                            const buttons =
+                              e.currentTarget.querySelectorAll("button");
+                            buttons.forEach((button) => {
+                              button.classList.remove("hidden");
+                            });
+                          }}
+                          onMouseLeave={(e) => {
+                            // Find all buttons in this div and hide them
+                            const buttons =
+                              e.currentTarget.querySelectorAll("button");
+                            buttons.forEach((button) => {
+                              button.classList.add("hidden");
+                            });
+                          }}
+                        >
+                          <div className="flex justify-between items-center w-full">
+                            <div className="font-medium text-sm ">
+                              {/* Fixed question text to remove p tags */}
+                              {index + 1}.{" "}
+                              {question.text.replace(/<\/?p>/g, "")}
+                              <span className="text-xs text-gray-500 ml-2">
+                                Multiple Choice
+                              </span>
+                            </div>
+                            <div className="flex space-x-2">
+                              <button
+                                className="p-1 text-gray-500 hover:bg-gray-200 rounded transition cursor-pointer"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleEditQuestion(index);
+                                }}
+                              >
+                                <Edit3 className="w-4 h-4" />
+                              </button>
+                              <button
+                                className="p-1 text-gray-500 hover:bg-gray-200 rounded transition cursor-pointer"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteQuestion(index);
+                                }}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                              <button className="p-1 hover:bg-gray-200 rounded transition cursor-move">
+                                <RxHamburgerMenu className="w-4 h-4  text-gray-500" />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
             </>
           )}
 
@@ -613,15 +633,32 @@ const QuizItem: React.FC<QuizItemProps> = ({
             </div>
           )} */}
 
-          {/* Question Form */}
-          {/* {showQuestionForm && (
-            <div className="mt-3 border-t pt-3">
+          {/* Editable Question Form */}
+          {showEditForm && (
+            <div className=" relative">
+              <div className="absolute -translate-y-[97.5%] px-3 py-1 border-x border-t border-zinc-400 right-10 gap-1.5 bg-white z-10 flex items-center">
+                <span className="font-bold text-sm">Add Multiple Choice</span>
+                <button
+                  onClick={() => {
+                    setShowQuestionTypeSelector(false);
+                    setShowQuestionForm(false);
+                    setShowEditForm(false);
+                  }}
+                  className="text-gray-500 hover:text-gray-700 cursor-pointer p-1 hover:bg-gray-300 rounded-xs"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
               <QuestionForm
-                onAddQuestion={handleAddQuestion}
+                onSubmit={handleAddQuestion}
                 onCancel={() => setShowQuestionForm(false)}
+                isEditedForm={true}
+                initialQuestion={
+                  questions[editingQuestionIndex as number] ?? null
+                }
               />
             </div>
-          )} */}
+          )}
         </div>
       )}
     </div>

@@ -1,21 +1,22 @@
 "use client";
-import React, { useState, useEffect, useRef } from "react";
-import { X, Trash2, Image, Code, Bold, Italic } from "lucide-react";
-import ReactQuill from "react-quill-new";
+import { Trash2 } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import toast from "react-hot-toast";
 import "react-quill-new/dist/quill.snow.css";
 import RichTextEditor from "./RichTextEditor";
-import toast from "react-hot-toast";
 
 interface QuestionFormProps {
-  onAddQuestion: (question: any) => void;
+  onSubmit: (question: any) => void; // rename to be more generic
   onCancel: () => void;
   initialQuestion?: any;
+  isEditedForm?: boolean;
 }
 
 const QuestionForm: React.FC<QuestionFormProps> = ({
-  onAddQuestion,
+  onSubmit,
   onCancel,
   initialQuestion,
+  isEditedForm,
 }) => {
   const [questionText, setQuestionText] = useState("");
   const [answers, setAnswers] = useState<
@@ -38,20 +39,6 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
   const [focusedAnswerIndex, setFocusedAnswerIndex] = useState<number | null>(
     null
   );
-
-  // References to Quill editors
-  const questionQuillRef = useRef<ReactQuill>(null);
-  const answerQuillRefs = useRef<{ [key: number]: ReactQuill | null }>({});
-
-  // Basic toolbar configuration - same for both question and answers
-  const quillModules = {
-    toolbar: [
-      ["bold", "italic"],
-      ["image", "code"],
-    ],
-  };
-
-  const quillFormats = ["bold", "italic", "code", "image"];
 
   useEffect(() => {
     // If we're editing an existing question, populate the form
@@ -141,6 +128,7 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
 
     // Create the question object
     const question = {
+      ...(isEditedForm && initialQuestion?.id && { id: initialQuestion.id }),
       text: questionText,
       answers: validAnswers,
       correctAnswerIndex,
@@ -148,131 +136,13 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
       type: "multiple-choice",
     };
 
-    onAddQuestion(question);
-  };
+    console.log("what jkkjjk: " + question.correctAnswerIndex);
 
-  // Format handlers for custom toolbar
-  const handleQuestionBold = () => {
-    if (questionQuillRef.current) {
-      const quill = questionQuillRef.current.getEditor();
-      const selection = quill.getSelection();
-      if (selection) {
-        // Check if selected text is already bold
-        const format = quill.getFormat(selection);
-        quill.format("bold", !format.bold);
-      } else {
-        // If no selection, toggle for future input
-        const format = quill.getFormat();
-        quill.format("bold", !format.bold);
-      }
-    }
-  };
-
-  const handleQuestionItalic = () => {
-    if (questionQuillRef.current) {
-      const quill = questionQuillRef.current.getEditor();
-      const selection = quill.getSelection();
-      if (selection) {
-        const format = quill.getFormat(selection);
-        quill.format("italic", !format.italic);
-      } else {
-        const format = quill.getFormat();
-        quill.format("italic", !format.italic);
-      }
-    }
-  };
-
-  const handleQuestionImage = () => {
-    // Create and trigger file input
-    const input = document.createElement("input");
-    input.setAttribute("type", "file");
-    input.setAttribute("accept", "image/*");
-    input.click();
-
-    input.onchange = () => {
-      if (input.files && input.files[0] && questionQuillRef.current) {
-        const file = input.files[0];
-        const reader = new FileReader();
-
-        reader.onload = (e) => {
-          const quill = questionQuillRef.current?.getEditor();
-          if (quill) {
-            const range = quill.getSelection() || { index: 0, length: 0 };
-            quill.insertEmbed(range.index, "image", e.target?.result);
-          }
-        };
-
-        reader.readAsDataURL(file);
-      }
-    };
-  };
-
-  const handleQuestionCode = () => {
-    if (questionQuillRef.current) {
-      const quill = questionQuillRef.current.getEditor();
-      const selection = quill.getSelection();
-      if (selection) {
-        const format = quill.getFormat(selection);
-        quill.format("code", !format.code);
-      } else {
-        const format = quill.getFormat();
-        quill.format("code", !format.code);
-      }
-    }
-  };
-
-  // Answer format handlers
-  const handleAnswerBold = (index: number) => {
-    const quill = answerQuillRefs.current[index]?.getEditor();
-    if (quill) {
-      const selection = quill.getSelection();
-      if (selection) {
-        const format = quill.getFormat(selection);
-        quill.format("bold", !format.bold);
-      } else {
-        const format = quill.getFormat();
-        quill.format("bold", !format.bold);
-      }
-    }
-  };
-
-  const handleAnswerItalic = (index: number) => {
-    const quill = answerQuillRefs.current[index]?.getEditor();
-    if (quill) {
-      const selection = quill.getSelection();
-      if (selection) {
-        const format = quill.getFormat(selection);
-        quill.format("italic", !format.italic);
-      } else {
-        const format = quill.getFormat();
-        quill.format("italic", !format.italic);
-      }
-    }
-  };
-
-  const handleAnswerCode = (index: number) => {
-    const quill = answerQuillRefs.current[index]?.getEditor();
-    if (quill) {
-      const selection = quill.getSelection();
-      if (selection) {
-        const format = quill.getFormat(selection);
-        quill.format("code", !format.code);
-      } else {
-        const format = quill.getFormat();
-        quill.format("code", !format.code);
-      }
-    }
+    onSubmit(question);
   };
 
   return (
     <div className="border border-t-0 border-gray-200 p-2 xl:p-4 mb-4 bg-white">
-      {/* <div className="flex justify-between items-center mb-4">
-        <h3 className="font-medium">Add Multiple Choice</h3>
-        <button onClick={onCancel} className="text-gray-500 hover:text-gray-700">
-          <X className="w-4 h-4" />
-        </button>
-      </div> */}
-
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-2 rounded-md mb-4">
           {error}
@@ -281,56 +151,12 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
 
       <div className="mb-6">
         <label className="block text-sm font-bold mb-2">Question</label>
+
         <RichTextEditor
           value={questionText}
           onChange={setQuestionText}
           type="question"
-          // onImageClick={() =>}
-        />{" "}
-        {/* <div className="border border-zinc-400 rounded-md overflow-hidden">
-          <div className="bg-white p-2 border-b border-zinc-400 flex items-center space-x-2">
-            <button
-              onClick={handleQuestionBold}
-              className="p-1 hover:bg-gray-100 rounded"
-              aria-label="Bold"
-            >
-              <Bold size={16} />
-            </button>
-            <button
-              onClick={handleQuestionItalic}
-              className="p-1 hover:bg-gray-100 rounded"
-              aria-label="Italic"
-            >
-              <Italic size={16} />
-            </button>
-            <button
-              onClick={handleQuestionImage}
-              className="p-1 hover:bg-gray-100 rounded"
-              aria-label="Insert Image"
-            >
-              <Image size={16} />
-            </button>
-            <button
-              onClick={handleQuestionCode}
-              className="p-1 hover:bg-gray-100 rounded"
-              aria-label="Insert Code"
-            >
-              <Code size={16} />
-            </button>
-          </div>
-          <div className="p-3">
-            <ReactQuill
-              ref={questionQuillRef}
-              value={questionText}
-              onChange={setQuestionText}
-              modules={{ toolbar: false }}
-              formats={quillFormats}
-              placeholder="Enter your question"
-              theme="snow"
-              className="no-toolbar-editor"
-            />
-          </div>
-        </div> */}
+        />
       </div>
 
       <div className="mb-6">
@@ -357,43 +183,6 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
               <div className="flex-1">
                 <div className="mb-2 relative h-fit ">
                   <div className="flex items-start">
-                    {/* <div className="bg-white p-2 border-b border-zinc-400 flex items-center space-x-2">
-                      <button
-                        onClick={() => handleAnswerBold(index)}
-                        className="p-1 hover:bg-gray-100 rounded"
-                        aria-label="Bold"
-                      >
-                        <Bold size={16} />
-                      </button>
-                      <button
-                        onClick={() => handleAnswerItalic(index)}
-                        className="p-1 hover:bg-gray-100 rounded"
-                        aria-label="Italic"
-                      >
-                        <Italic size={16} />
-                      </button>
-                      <button
-                        onClick={() => handleAnswerCode(index)}
-                        className="p-1 hover:bg-gray-100 rounded"
-                        aria-label="Insert Code"
-                      >
-                        <Code size={16} />
-                      </button>
-                    </div> */}
-                    {/* <div className="p-3">
-                      <ReactQuill
-                        ref={(el) => {
-                          answerQuillRefs.current[index] = el;
-                        }}
-                        value={answer.text}
-                        onChange={(value) => updateAnswerText(index, value)}
-                        modules={{ toolbar: false }}
-                        formats={quillFormats}
-                        placeholder="Add an answer."
-                        theme="snow"
-                        className="no-toolbar-editor"
-                      />
-                    </div> */}
                     <div className="w-full space-y-2">
                       <RichTextEditor
                         type="answer"
