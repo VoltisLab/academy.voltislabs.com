@@ -4,7 +4,8 @@ import {Plus, Trash2, Edit3, ChevronDown, ChevronUp, Search, X, CircleCheck, Fil
 import dynamic from 'next/dynamic';
 import AddResourceComponent from './AddResourceComponent';
 import DescriptionEditorComponent from './DescriptionEditorComponent';
-import { CiCircleCheck } from "react-icons/ci";
+import 'react-quill-new/dist/quill.snow.css';
+import { cn } from '@/lib/utils';
 const ReactQuill = dynamic(() => import('react-quill-new'), { 
   ssr: false,
   loading: () => <p>Loading editor...</p>
@@ -21,12 +22,6 @@ const quillFormats = [
   "header", "bold", "italic", "underline", "strike",
   "list", "bullet", "link", "image", "code-block"
 ];
-
- 
-
-// React Quill styles
-import 'react-quill-new/dist/quill.snow.css';
-import { cn } from '@/lib/utils';
 
 // Tab interfaces
 interface TabInterface {
@@ -475,7 +470,7 @@ const handleVideoFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
               key={tab.key}
               className={`py-2 px-4 text-sm ${
                 videoContent.activeTab === tab.key
-                  ? 'text-gray-800 font-bold border-b-2 border-gray-800'
+                  ? 'text-gray-800 font-bold border-b-3 border-gray-800'
                   : 'text-gray-500 hover:text-gray-700 font-semibold'
               }`}
               onClick={() =>
@@ -601,7 +596,7 @@ const handleVideoFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
                         },
                       })
                     }
-                    className="w-full py-2 px-3 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                    className="w-full py-2 px-3 border border-gray-400 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                   />
                 </div>
                 <button
