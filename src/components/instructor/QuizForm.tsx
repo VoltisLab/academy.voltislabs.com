@@ -2,6 +2,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { BoldIcon, Italic, X } from "lucide-react";
 import ReactQuill from "react-quill-new";
+import RichTextEditor from "./RichTextEditor";
 // import type { ReactQuillProps } from "react-quill";
 
 interface QuizFormProps {
@@ -28,7 +29,9 @@ const QuizForm: React.FC<QuizFormProps> = ({
 
   // const fontWeight = isBold ? "font-medium" : "font-normal";
   // const fontStyle = isItalic ? "italic" : "not-italic";
-  const wrapperRing = isFocused ? "ring-1 ring-indigo-500" : "ring-0";
+  const wrapperRing = isFocused
+    ? "border border-transparent ring-1 ring-purple-600"
+    : "border-zinc-400 border";
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -96,12 +99,12 @@ const QuizForm: React.FC<QuizFormProps> = ({
         <h3 className="text-sm font-medium">New Quiz:</h3>
         <button
           onClick={onCancel}
-          className="text-gray-500 hover:text-gray-700"
+          className="text-zinc-400 hover:text-gray-700"
         >
           <X className="w-4 h-4" />
         </button>
       </div>
-      <div className="mb-4">
+      <div className="mb-4 space-y-4">
         <div className="relative">
           <input
             type="text"
@@ -109,62 +112,20 @@ const QuizForm: React.FC<QuizFormProps> = ({
             onChange={(e) => setTitle(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Enter a Title"
-            className="w-full border border-gray-500 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            className="w-full border border-zinc-400 rounded focus:border-transparent px-3 py-2 focus:outline-none focus:ring-1 focus:ring-purple-600"
             maxLength={80}
             autoFocus
           />
-          <div className="text-right text-sm text-gray-500 absolute top-1/2 right-3 -translate-y-1/2">
+          <div className="text-right text-sm text-zinc-400 absolute top-1/2 right-3 -translate-y-1/2">
             {80 - title.length || 0}
           </div>
         </div>
-
         {/* Description */}
-        <div
-          ref={wrapperRef}
-          className={`mt-4 overflow-hidden border divide-y divide-gray-500 border-gray-500 rounded ${wrapperRing}`}
-        >
-          <div className="font-bold w-full h-10 flex">
-            <p
-              onClick={() => toggleFormat("bold")}
-              className={`h-full px-3 transition flex items-center cursor-pointer  ${
-                isBold
-                  ? "bg-black text-white rounded-l"
-                  : "hover:bg-zinc-300 rounded"
-              }`}
-            >
-              <BoldIcon size={16} />
-            </p>
-            <p
-              onClick={() => toggleFormat("italic")}
-              className={`h-full px-3 transition flex items-center cursor-pointer ${
-                isItalic
-                  ? "bg-black text-white rounded-r"
-                  : "hover:bg-zinc-300 rounded"
-              }`}
-            >
-              <Italic size={16} />
-            </p>
-          </div>
-          {/* <textarea
-            ref={editorRef}
-            // contentEditable
-            onFocus={() => setIsFocused(true)}
-            onBlur={() => setIsFocused(false)}
-            onChange={handleChange}
-            onKeyDown={handleKeyDownText}
-            placeholder="Quiz Description"
-            className="w-full px-3 py-2 min-h-[6rem] focus:outline-none"
-            style={{ whiteSpace: "pre-wrap" }}
-          /> */}
-          <ReactQuill
-            ref={quillRef}
-            value={value}
-            onChange={setValue}
-            className="my-quill"
-            placeholder="Quiz Description"
-            modules={{ toolbar: false }} // disables default toolbar
-          />
-        </div>
+        <RichTextEditor
+          value={description}
+          onChange={setDescription}
+          type="description"
+        />
       </div>
       <div className="flex justify-end space-x-3">
         <button
@@ -181,8 +142,8 @@ const QuizForm: React.FC<QuizFormProps> = ({
           className={`px-4 py-2 ${
             !title.trim()
               ? "bg-indigo-400 cursor-not-allowed"
-              : "bg-indigo-600 hover:bg-indigo-700"
-          } text-white rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500`}
+              : "bg-purple-600 hover:bg-indigo-700"
+          } text-white rounded-md focus:outline-none focus:ring-2 focus:ring-purple-600`}
         >
           Add Quiz
         </button>

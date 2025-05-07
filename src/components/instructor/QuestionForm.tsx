@@ -1,8 +1,10 @@
 "use client";
-import React, { useState, useEffect, useRef } from 'react';
-import { X, Trash2, Image, Code, Bold, Italic } from 'lucide-react';
-import ReactQuill from 'react-quill-new';
-import 'react-quill-new/dist/quill.snow.css';
+import React, { useState, useEffect, useRef } from "react";
+import { X, Trash2, Image, Code, Bold, Italic } from "lucide-react";
+import ReactQuill from "react-quill-new";
+import "react-quill-new/dist/quill.snow.css";
+import RichTextEditor from "./RichTextEditor";
+import toast from "react-hot-toast";
 
 interface QuestionFormProps {
   onAddQuestion: (question: any) => void;
@@ -13,70 +15,83 @@ interface QuestionFormProps {
 const QuestionForm: React.FC<QuestionFormProps> = ({
   onAddQuestion,
   onCancel,
-  initialQuestion
+  initialQuestion,
 }) => {
-  const [questionText, setQuestionText] = useState('');
-  const [answers, setAnswers] = useState<Array<{ text: string, explanation: string }>>([
-    { text: '', explanation: '' },
-    { text: '', explanation: '' },
-    { text: '', explanation: '' },
-    { text: '', explanation: '' }
+  const [questionText, setQuestionText] = useState("");
+  const [answers, setAnswers] = useState<
+    Array<{ text: string; explanation: string }>
+  >([
+    { text: "", explanation: "" },
+    { text: "", explanation: "" },
+    { text: "", explanation: "" },
+    { text: "", explanation: "" },
   ]);
-  const [correctAnswerIndex, setCorrectAnswerIndex] = useState<number | null>(null);
-  const [relatedLecture, setRelatedLecture] = useState('');
-  const [error, setError] = useState('');
-  const [hoveredAnswerIndex, setHoveredAnswerIndex] = useState<number | null>(null);
-  
+  const [correctAnswerIndex, setCorrectAnswerIndex] = useState<number | null>(
+    null
+  );
+  const [relatedLecture, setRelatedLecture] = useState("");
+  const [error, setError] = useState("");
+  const [hoveredAnswerIndex, setHoveredAnswerIndex] = useState<number | null>(
+    null
+  );
+
+  const [focusedAnswerIndex, setFocusedAnswerIndex] = useState<number | null>(
+    null
+  );
+
   // References to Quill editors
   const questionQuillRef = useRef<ReactQuill>(null);
-  const answerQuillRefs = useRef<{[key: number]: ReactQuill | null}>({});
+  const answerQuillRefs = useRef<{ [key: number]: ReactQuill | null }>({});
 
   // Basic toolbar configuration - same for both question and answers
   const quillModules = {
     toolbar: [
-      ['bold', 'italic'],
-      ['image', 'code']
-    ]
+      ["bold", "italic"],
+      ["image", "code"],
+    ],
   };
 
-  const quillFormats = [
-    'bold', 'italic', 'code', 'image'
-  ];
+  const quillFormats = ["bold", "italic", "code", "image"];
 
   useEffect(() => {
     // If we're editing an existing question, populate the form
     if (initialQuestion) {
-      setQuestionText(initialQuestion.text || '');
-      setAnswers(initialQuestion.answers || [
-        { text: '', explanation: '' },
-        { text: '', explanation: '' },
-        { text: '', explanation: '' },
-        { text: '', explanation: '' }
-      ]);
+      setQuestionText(initialQuestion.text || "");
+      setAnswers(
+        initialQuestion.answers || [
+          { text: "", explanation: "" },
+          { text: "", explanation: "" },
+          { text: "", explanation: "" },
+          { text: "", explanation: "" },
+        ]
+      );
       setCorrectAnswerIndex(initialQuestion.correctAnswerIndex || null);
-      setRelatedLecture(initialQuestion.relatedLecture || '');
+      setRelatedLecture(initialQuestion.relatedLecture || "");
     }
   }, [initialQuestion]);
 
   const addAnswer = () => {
     if (answers.length < 15) {
-      setAnswers([...answers, { text: '', explanation: '' }]);
+      setAnswers([...answers, { text: "", explanation: "" }]);
     }
   };
 
   const removeAnswer = (indexToRemove: number) => {
     if (answers.length <= 2) {
-      setError('Questions must have at least 2 answers');
+      setError("Questions must have at least 2 answers");
       return;
     }
-    
+
     const newAnswers = answers.filter((_, index) => index !== indexToRemove);
     setAnswers(newAnswers);
-    
+
     // Adjust the correct answer index if necessary
     if (correctAnswerIndex === indexToRemove) {
       setCorrectAnswerIndex(null);
-    } else if (correctAnswerIndex !== null && correctAnswerIndex > indexToRemove) {
+    } else if (
+      correctAnswerIndex !== null &&
+      correctAnswerIndex > indexToRemove
+    ) {
       setCorrectAnswerIndex(correctAnswerIndex - 1);
     }
   };
@@ -85,9 +100,13 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
     const newAnswers = [...answers];
     newAnswers[index].text = value;
     setAnswers(newAnswers);
-    
+
     // If this is the last answer and it's being filled, add another empty answer
-    if (index === answers.length - 1 && value.trim() !== '' && answers.length < 15) {
+    if (
+      index === answers.length - 1 &&
+      value.trim() !== "" &&
+      answers.length < 15
+    ) {
       addAnswer();
     }
   };
@@ -101,20 +120,22 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
   const handleSubmit = () => {
     // Validate form
     if (!questionText.trim()) {
-      setError('Question text is required');
+      setError("Question text is required");
       return;
     }
 
     // Filter out empty answers
-    const validAnswers = answers.filter(answer => answer.text.trim() !== '');
-    
+    const validAnswers = answers.filter((answer) => answer.text.trim() !== "");
+
     if (validAnswers.length < 2) {
-      setError('At least 2 answers are required');
+      setError("At least 2 answers are required");
+      toast.error("At least 2 answers are required");
       return;
     }
 
     if (correctAnswerIndex === null) {
-      setError('You must select a correct answer');
+      setError("You must select a correct answer");
+      toast.error("You must select a correct answer");
       return;
     }
 
@@ -124,7 +145,7 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
       answers: validAnswers,
       correctAnswerIndex,
       relatedLecture,
-      type: 'multiple-choice'
+      type: "multiple-choice",
     };
 
     onAddQuestion(question);
@@ -138,11 +159,11 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
       if (selection) {
         // Check if selected text is already bold
         const format = quill.getFormat(selection);
-        quill.format('bold', !format.bold);
+        quill.format("bold", !format.bold);
       } else {
         // If no selection, toggle for future input
         const format = quill.getFormat();
-        quill.format('bold', !format.bold);
+        quill.format("bold", !format.bold);
       }
     }
   };
@@ -153,34 +174,34 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
       const selection = quill.getSelection();
       if (selection) {
         const format = quill.getFormat(selection);
-        quill.format('italic', !format.italic);
+        quill.format("italic", !format.italic);
       } else {
         const format = quill.getFormat();
-        quill.format('italic', !format.italic);
+        quill.format("italic", !format.italic);
       }
     }
   };
 
   const handleQuestionImage = () => {
     // Create and trigger file input
-    const input = document.createElement('input');
-    input.setAttribute('type', 'file');
-    input.setAttribute('accept', 'image/*');
+    const input = document.createElement("input");
+    input.setAttribute("type", "file");
+    input.setAttribute("accept", "image/*");
     input.click();
-    
+
     input.onchange = () => {
       if (input.files && input.files[0] && questionQuillRef.current) {
         const file = input.files[0];
         const reader = new FileReader();
-        
+
         reader.onload = (e) => {
           const quill = questionQuillRef.current?.getEditor();
           if (quill) {
             const range = quill.getSelection() || { index: 0, length: 0 };
-            quill.insertEmbed(range.index, 'image', e.target?.result);
+            quill.insertEmbed(range.index, "image", e.target?.result);
           }
         };
-        
+
         reader.readAsDataURL(file);
       }
     };
@@ -192,10 +213,10 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
       const selection = quill.getSelection();
       if (selection) {
         const format = quill.getFormat(selection);
-        quill.format('code', !format.code);
+        quill.format("code", !format.code);
       } else {
         const format = quill.getFormat();
-        quill.format('code', !format.code);
+        quill.format("code", !format.code);
       }
     }
   };
@@ -207,10 +228,10 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
       const selection = quill.getSelection();
       if (selection) {
         const format = quill.getFormat(selection);
-        quill.format('bold', !format.bold);
+        quill.format("bold", !format.bold);
       } else {
         const format = quill.getFormat();
-        quill.format('bold', !format.bold);
+        quill.format("bold", !format.bold);
       }
     }
   };
@@ -221,10 +242,10 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
       const selection = quill.getSelection();
       if (selection) {
         const format = quill.getFormat(selection);
-        quill.format('italic', !format.italic);
+        quill.format("italic", !format.italic);
       } else {
         const format = quill.getFormat();
-        quill.format('italic', !format.italic);
+        quill.format("italic", !format.italic);
       }
     }
   };
@@ -235,22 +256,22 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
       const selection = quill.getSelection();
       if (selection) {
         const format = quill.getFormat(selection);
-        quill.format('code', !format.code);
+        quill.format("code", !format.code);
       } else {
         const format = quill.getFormat();
-        quill.format('code', !format.code);
+        quill.format("code", !format.code);
       }
     }
   };
 
   return (
-    <div className="border border-gray-200 p-2 xl:p-6 mb-4 bg-white">
-      <div className="flex justify-between items-center mb-4">
+    <div className="border border-t-0 border-gray-200 p-2 xl:p-4 mb-4 bg-white">
+      {/* <div className="flex justify-between items-center mb-4">
         <h3 className="font-medium">Add Multiple Choice</h3>
         <button onClick={onCancel} className="text-gray-500 hover:text-gray-700">
           <X className="w-4 h-4" />
         </button>
-      </div>
+      </div> */}
 
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-2 rounded-md mb-4">
@@ -259,32 +280,38 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
       )}
 
       <div className="mb-6">
-        <label className="block text-sm font-medium text-gray-700 mb-1">Question</label>
-        <div className="border border-gray-300 rounded-md overflow-hidden">
-          <div className="bg-white p-2 border-b border-gray-300 flex items-center space-x-2">
-            <button 
-              onClick={handleQuestionBold} 
+        <label className="block text-sm font-bold mb-2">Question</label>
+        <RichTextEditor
+          value={questionText}
+          onChange={setQuestionText}
+          type="question"
+          // onImageClick={() =>}
+        />{" "}
+        {/* <div className="border border-zinc-400 rounded-md overflow-hidden">
+          <div className="bg-white p-2 border-b border-zinc-400 flex items-center space-x-2">
+            <button
+              onClick={handleQuestionBold}
               className="p-1 hover:bg-gray-100 rounded"
               aria-label="Bold"
             >
               <Bold size={16} />
             </button>
-            <button 
-              onClick={handleQuestionItalic} 
+            <button
+              onClick={handleQuestionItalic}
               className="p-1 hover:bg-gray-100 rounded"
               aria-label="Italic"
             >
               <Italic size={16} />
             </button>
-            <button 
-              onClick={handleQuestionImage} 
+            <button
+              onClick={handleQuestionImage}
               className="p-1 hover:bg-gray-100 rounded"
               aria-label="Insert Image"
             >
               <Image size={16} />
             </button>
-            <button 
-              onClick={handleQuestionCode} 
+            <button
+              onClick={handleQuestionCode}
               className="p-1 hover:bg-gray-100 rounded"
               aria-label="Insert Code"
             >
@@ -296,21 +323,23 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
               ref={questionQuillRef}
               value={questionText}
               onChange={setQuestionText}
-              modules={{toolbar: false}}
+              modules={{ toolbar: false }}
               formats={quillFormats}
               placeholder="Enter your question"
               theme="snow"
               className="no-toolbar-editor"
             />
           </div>
-        </div>
+        </div> */}
       </div>
 
       <div className="mb-6">
-        <label className="block text-sm font-medium text-gray-700 mb-1">Answers</label>
+        <label className="block text-sm font-bold text-gray-700 mb-2">
+          Answers
+        </label>
         {answers.map((answer, index) => (
-          <div 
-            key={index} 
+          <div
+            key={index}
             className="mb-4"
             onMouseEnter={() => setHoveredAnswerIndex(index)}
             onMouseLeave={() => setHoveredAnswerIndex(null)}
@@ -322,65 +351,86 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
                 name="correctAnswer"
                 checked={correctAnswerIndex === index}
                 onChange={() => setCorrectAnswerIndex(index)}
-                className="mt-6 mr-2"
+                className="mr-2 size-5 accent-purple-600"
               />
+
               <div className="flex-1">
-                <div className="mb-2 relative">
-                  <div className="border border-gray-300 rounded-md overflow-hidden">
-                    <div className="bg-white p-2 border-b border-gray-300 flex items-center space-x-2">
-                      <button 
-                        onClick={() => handleAnswerBold(index)} 
+                <div className="mb-2 relative h-fit ">
+                  <div className="flex items-start">
+                    {/* <div className="bg-white p-2 border-b border-zinc-400 flex items-center space-x-2">
+                      <button
+                        onClick={() => handleAnswerBold(index)}
                         className="p-1 hover:bg-gray-100 rounded"
                         aria-label="Bold"
                       >
                         <Bold size={16} />
                       </button>
-                      <button 
-                        onClick={() => handleAnswerItalic(index)} 
+                      <button
+                        onClick={() => handleAnswerItalic(index)}
                         className="p-1 hover:bg-gray-100 rounded"
                         aria-label="Italic"
                       >
                         <Italic size={16} />
                       </button>
-                      <button 
-                        onClick={() => handleAnswerCode(index)} 
+                      <button
+                        onClick={() => handleAnswerCode(index)}
                         className="p-1 hover:bg-gray-100 rounded"
                         aria-label="Insert Code"
                       >
                         <Code size={16} />
                       </button>
-                    </div>
-                    <div className="p-3">
+                    </div> */}
+                    {/* <div className="p-3">
                       <ReactQuill
-                        ref={(el) => { answerQuillRefs.current[index] = el; }}
+                        ref={(el) => {
+                          answerQuillRefs.current[index] = el;
+                        }}
                         value={answer.text}
                         onChange={(value) => updateAnswerText(index, value)}
-                        modules={{toolbar: false}}
+                        modules={{ toolbar: false }}
                         formats={quillFormats}
                         placeholder="Add an answer."
                         theme="snow"
                         className="no-toolbar-editor"
                       />
+                    </div> */}
+                    <div className="w-full space-y-2">
+                      <RichTextEditor
+                        type="answer"
+                        value={answer.text}
+                        onChange={(value: string) =>
+                          updateAnswerText(index, value)
+                        }
+                        isFocusedAnswerId={focusedAnswerIndex === index}
+                        setFocusedAnswerIndex={setFocusedAnswerIndex}
+                        answerIndex={index}
+                      />
+
+                      <div className="relative w-[90%] ml-auto">
+                        <input
+                          type="text"
+                          value={answer.explanation}
+                          onChange={(e) =>
+                            updateAnswerExplanation(index, e.target.value)
+                          }
+                          placeholder="Explain why this is or isn't the best answer."
+                          className="w-full border border-zinc-400 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-indigo-500 text-sm text-gray-600"
+                        />
+                        <div className="absolute right-2 top-2 text-xs text-gray-500">
+                          {600 - answer.explanation.length}
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                  <button 
-                    onClick={() => removeAnswer(index)}
-                    className={`absolute right-2 top-2 text-gray-500 hover:text-red-600 ${hoveredAnswerIndex === index ? 'visible' : 'invisible'}`}
-                    aria-label="Delete answer"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-                <div className="relative">
-                  <input
-                    type="text"
-                    value={answer.explanation}
-                    onChange={(e) => updateAnswerExplanation(index, e.target.value)}
-                    placeholder="Explain why this is or isn't the best answer."
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-indigo-500 text-sm text-gray-600"
-                  />
-                  <div className="absolute right-2 top-2 text-xs text-gray-500">
-                    {answer.explanation.length}/600
+
+                    <button
+                      onClick={() => removeAnswer(index)}
+                      className={`text-gray-500 hover:text-red-600 ml-10 mt-2 cursor-pointer ${
+                        hoveredAnswerIndex === index ? "visible" : "invisible"
+                      }`}
+                      aria-label="Delete answer"
+                    >
+                      <Trash2 className="size-5" />
+                    </button>
                   </div>
                 </div>
               </div>
@@ -393,11 +443,13 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
       </div>
 
       <div className="mb-6">
-        <label className="block text-sm font-medium text-gray-700 mb-1">Related Lecture</label>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          Related Lecture
+        </label>
         <select
           value={relatedLecture}
           onChange={(e) => setRelatedLecture(e.target.value)}
-          className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+          className="w-full border border-zinc-400 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-indigo-500"
         >
           <option value="">-- Select One --</option>
           {/* Lecture options would be populated here */}
@@ -422,11 +474,11 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
         :global(.no-toolbar-editor .ql-container) {
           border: none;
         }
-        
+
         :global(.no-toolbar-editor .ql-toolbar) {
           display: none;
         }
-        
+
         :global(.no-toolbar-editor .ql-editor) {
           padding: 0;
           min-height: 40px;
