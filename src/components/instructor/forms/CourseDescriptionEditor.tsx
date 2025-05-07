@@ -1,42 +1,100 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import ReactQuill from 'react-quill-new';
-import 'react-quill-new/dist/quill.snow.css';
+import { useEditor, EditorContent } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
 
 interface CourseDescriptionEditorProps {
   value: string;
   onChange: (content: string) => void;
 }
 
-export default function CourseDescriptionEditor({ 
+export default function TipTapEditor({ 
   value, 
   onChange 
 }: CourseDescriptionEditorProps) {
-  const [editorValue, setEditorValue] = useState<string>(value);
+  const [isFocused, setIsFocused] = useState(false);
+  
+  const editor = useEditor({
+    extensions: [
+      StarterKit,
+    ],
+    content: value,
+    onUpdate: ({ editor }) => {
+      const html = editor.getHTML();
+      onChange(html);
+    },
+  });
 
-  // Update local state when props change
+  // Update content when value prop changes
   useEffect(() => {
-    setEditorValue(value);
-  }, [value]);
-
-  const handleChange = (content: string) => {
-    setEditorValue(content);
-    
-    // Send data up to parent component
-    onChange(content);
-  };
+    if (editor && editor.getHTML() !== value) {
+      editor.commands.setContent(value);
+    }
+  }, [value, editor]);
 
   return (
-    <div className="space-y-2">
-      <label className="block font-medium text-gray-800 mb-1">Course Descriptions</label>
-      <ReactQuill
-        theme="snow"
-        value={editorValue}
-        onChange={handleChange}
-        placeholder="Enter your course descriptions"
-        className="bg-white"
-      />
+    <div className="editor-container">
+      <label className="block font-medium text-gray-800 mb-1">Lecture Description</label>
+      <div 
+        className={`tiptap-wrapper ${isFocused ? 'focused' : ''}`}
+        onFocus={() => setIsFocused(true)}
+        onBlur={() => setIsFocused(false)}
+      >
+        <EditorContent 
+          editor={editor} 
+          className="bg-white lecture-editor"
+        />
+      </div>
+      
+      <style jsx>{`
+        /* Container styling */
+        .editor-container {
+          display: flex;
+          flex-direction: column;
+        }
+        
+        /* Editor styling */
+        .tiptap-wrapper {
+          border: 1px solid #e2e8f0;
+          border-radius: 0.375rem;
+          overflow: hidden;
+          transition: border-color 0.2s ease;
+        }
+        
+        /* Focus state - purple border */
+        .tiptap-wrapper.focused {
+          border-color: #6D28D2;
+          box-shadow: 0 0 0 1px #6D28D2;
+        }
+        
+        /* Hover state */
+        .tiptap-wrapper:hover {
+          border-color: #a78bfa;
+        }
+        
+        /* Remove excess spacing */
+        .lecture-editor {
+          margin-bottom: 8px;
+        }
+        
+        /* Editor content area */
+        .lecture-editor .ProseMirror {
+          min-height: 100px;
+          max-height: 200px;
+          padding: 12px;
+          outline: none;
+        }
+        
+        /* Placeholder styling */
+        .lecture-editor .ProseMirror p.is-editor-empty:first-child::before {
+          content: "Add a description. Include what students will be able to do after completing the lecture.";
+          float: left;
+          color: #adb5bd;
+          pointer-events: none;
+          height: 0;
+        }
+      `}</style>
     </div>
   );
 }

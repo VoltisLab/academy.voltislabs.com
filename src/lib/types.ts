@@ -427,7 +427,8 @@ export enum ResourceTabType {
   CODE_PRACTICE = "code-practice",   // Added for code practices
   VIDEO = "video",
   CAPTIONS = "captions",
-  LECTURE_NOTES = "lecture-notes"
+  LECTURE_NOTES = "lecture-notes",
+  EXTERNAL_RESOURCE = "EXTERNAL_RESOURCE"
 }
 
 // Enum for code language types
