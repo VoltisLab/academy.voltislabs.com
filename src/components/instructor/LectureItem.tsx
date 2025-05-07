@@ -129,6 +129,188 @@ export default function LectureItem({
   const [isHovering, setIsHovering] = useState(false);
   const [content, setContent] = useState("");
   const [htmlMode, setHtmlMode] = useState(false);
+  // Add these to your existing state variables in the LectureItem component
+const [isVideoUploading, setIsVideoUploading] = useState(false);
+const [videoUploadProgress, setVideoUploadProgress] = useState(0);
+const [videoUploadComplete, setVideoUploadComplete] = useState(false);
+
+const [videoSlideStep, setVideoSlideStep] = useState(1);
+const [videoUploading, setVideoUploading] = useState(false);
+const [videoUploaded, setVideoUploaded] = useState(false);
+const [presentationUploading, setPresentationUploading] = useState(false);
+const [presentationUploadProgress, setPresentationUploadProgress] = useState(0);
+const [presentationUploaded, setPresentationUploaded] = useState(false);
+const [currentSlide, setCurrentSlide] = useState(1);
+const [totalSlides, setTotalSlides] = useState(1); // Initialize with 1, will be updated after PDF upload
+const [isFullscreen, setIsFullscreen] = useState(false);
+const [syncComplete, setSyncComplete] = useState(false);
+
+// Add these handlers for the video and slide mashup
+
+// Handle video upload for video-slide content type
+const handleVideoSlideVideoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  if (event.target.files && event.target.files.length > 0) {
+    const file = event.target.files[0];
+    
+    // Update the state with the selected file
+    setVideoSlideContent({
+      ...videoSlideContent,
+      video: { selectedFile: file }
+    });
+    
+    // Start the upload process
+    setVideoUploading(true);
+    setVideoUploadProgress(0);
+    
+    // Simulate file upload with progress
+    const interval = setInterval(() => {
+      setVideoUploadProgress(prev => {
+        if (prev >= 100) {
+          clearInterval(interval);
+          setTimeout(() => {
+            setVideoUploading(false);
+            setVideoUploaded(true);
+            // Automatically move to step 2 if not already there
+            if (videoSlideStep === 1) {
+              setVideoSlideStep(2);
+            }
+          }, 500);
+          return 100;
+        }
+        return prev + 5; // Increase by 5% each time
+      });
+    }, 200);
+  }
+};
+
+// Handle presentation (PDF) upload for video-slide content type
+const handlePresentationUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  if (event.target.files && event.target.files.length > 0) {
+    const file = event.target.files[0];
+    
+    // Update the state with the selected file
+    setVideoSlideContent({
+      ...videoSlideContent,
+      presentation: { selectedFile: file }
+    });
+    
+    // Start the upload process
+    setPresentationUploading(true);
+    setPresentationUploadProgress(0);
+    
+    // Simulate file upload with progress
+    const interval = setInterval(() => {
+      setPresentationUploadProgress(prev => {
+        if (prev >= 100) {
+          clearInterval(interval);
+          setTimeout(() => {
+            setPresentationUploading(false);
+            setPresentationUploaded(true);
+            
+            // Attempt to determine the number of pages in the PDF
+            determinePDFPageCount(file);
+            
+            // Automatically move to step 3 if video is already uploaded
+            if (videoUploaded && videoSlideStep === 2) {
+              setVideoSlideStep(3);
+            }
+          }, 500);
+          return 100;
+        }
+        return prev + 5; // Increase by 5% each time
+      });
+    }, 200);
+  }
+};
+
+// Function to determine the number of pages in a PDF
+const determinePDFPageCount = (file: File) => {
+  // If we have access to the PDF.js library, we could use it to accurately count pages
+  // This is a simplified approach that estimates based on file size
+  // In a real implementation, you would use a PDF parsing library
+  
+  const reader = new FileReader();
+  
+  reader.onload = (e) => {
+    if (e.target?.result) {
+      try {
+        // This is a placeholder for PDF page counting logic
+        // In a real implementation, you would use PDF.js or a similar library
+        
+        // For demonstration purposes, we'll set a reasonable number based on file size
+        const fileSize = file.size;
+        const estimatedPages = Math.max(1, Math.min(Math.floor(fileSize / 50000), 30));
+        
+        // If file size is over 50KB, assume multi-page document
+        setTotalSlides(estimatedPages);
+        setCurrentSlide(1);
+        
+        console.log(`Estimated ${estimatedPages} pages for PDF with size ${fileSize} bytes`);
+      } catch (error) {
+        console.error('Error determining PDF page count:', error);
+        setTotalSlides(1); // Default to 1 page on error
+        setCurrentSlide(1);
+      }
+    }
+  };
+  
+  reader.readAsArrayBuffer(file);
+};
+
+// Handle "Use this presentation" button click
+const usePresentation = () => {
+  setSyncComplete(true);
+  setVideoSlideStep(4);
+};
+
+// Slide navigation handlers
+const goToPreviousSlide = () => {
+  setCurrentSlide(prev => Math.max(1, prev - 1));
+};
+
+const goToNextSlide = () => {
+  setCurrentSlide(prev => Math.min(totalSlides, prev + 1));
+};
+
+// Toggle fullscreen
+const toggleFullscreen = () => {
+  setIsFullscreen(!isFullscreen);
+};
+
+
+
+// Add this function to handle the video file upload and progress
+const handleVideoFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  if (event.target.files && event.target.files.length > 0) {
+    const file = event.target.files[0];
+    
+    // Update the state with the selected file
+    setVideoContent({
+      ...videoContent,
+      uploadTab: { selectedFile: file }
+    });
+    
+    // Start the upload process
+    setIsVideoUploading(true);
+    setVideoUploadProgress(0);
+    setVideoUploadComplete(false);
+    
+    // Simulate file upload with progress
+    const interval = setInterval(() => {
+      setVideoUploadProgress(prev => {
+        if (prev >= 100) {
+          clearInterval(interval);
+          setTimeout(() => {
+            setIsVideoUploading(false);
+            setVideoUploadComplete(true);
+          }, 500);
+          return 100;
+        }
+        return prev + 5; // Increase by 5% each time
+      });
+    }, 200);
+  }
+};
   
   // Active content type state
   const [activeContentType, setActiveContentType] = useState<ContentItemType | null>(null);
@@ -283,138 +465,271 @@ export default function LectureItem({
 
     switch (activeContentType) {
       case 'video':
-        return (
-          <div className="border border-gray-300 rounded-md">
-          <div className="p-2">
-            {/* Tabs */}
-            <div className="flex border-b border-gray-300">
-              {videoTabs.map((tab) => (
-                <button
-                  key={tab.key}
-                  className={`py-2 px-4 text-sm ${
-                    videoContent.activeTab === tab.key
-                      ? 'text-gray-800 font-bold border-b-2 border-gray-800'
-                      : 'text-gray-500 hover:text-gray-700'
-                  }`}
-                  onClick={() =>
-                    setVideoContent({ ...videoContent, activeTab: tab.key })
-                  }
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-        
-            {videoContent.activeTab === 'uploadVideo' ? (
-              <div className="py-4">
+  return (
+    <div className="border border-gray-300 rounded-md">
+      <div className="p-2">
+        {/* Tabs */}
+        <div className="flex border-b border-gray-300">
+          {videoTabs.map((tab) => (
+            <button
+              key={tab.key}
+              className={`py-2 px-4 text-sm ${
+                videoContent.activeTab === tab.key
+                  ? 'text-gray-800 font-bold border-b-2 border-gray-800'
+                  : 'text-gray-500 hover:text-gray-700 font-semibold'
+              }`}
+              onClick={() =>
+                setVideoContent({ ...videoContent, activeTab: tab.key })
+              }
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+    
+        {videoContent.activeTab === 'uploadVideo' ? (
+          <div className="py-4">
+            {videoUploadComplete ? (
+              <div className="space-y-4">
+                {/* File display with replace button */}
+                <div className="border-b border-gray-300 py-2 overflow-x-auto">
+                  <div className="grid grid-cols-4 gap-2 md:gap-4 text-[17px] font-bold text-gray-800 border-b border-gray-300 min-w-max">
+                    <div>Filename</div>
+                    <div>Type</div>
+                    <div>Status</div>
+                    <div>Date</div>
+                  </div>
+                  <div className="grid grid-cols-4 gap-2 md:gap-4 text-sm mt-2 items-center text-gray-700 font-semibold min-w-max">
+                    <div className="truncate">{videoContent.uploadTab.selectedFile?.name || "2025-05-01-025523.webm"}</div>
+                    <div>Video</div>
+                    <div>Processing</div>
+                    <div className="flex justify-between items-center">
+                      {new Date().toLocaleDateString('en-US', {month: '2-digit', day: '2-digit', year: 'numeric'})}
+                      <button 
+                        className="text-[#6D28D2] hover:text-[#7D28D2] text-xs font-bold"
+                        onClick={() => {
+                          setVideoUploadComplete(false);
+                          setVideoContent({
+                            ...videoContent,
+                            uploadTab: { selectedFile: null }
+                          });
+                        }}
+                      >
+                        Replace
+                      </button>
+                    </div>
+                  </div>
+                  <div className="mt-4">
+                    <div className="flex items-center justify-between">
+                      <div className="w-full bg-gray-200 rounded h-2">
+                        <div className="bg-gray-500 h-2 rounded" style={{ width: '100%' }}></div>
+                      </div>
+                    </div>
+                    <p className="mt-2 text-xs text-gray-700">
+                      <strong className="font-bold">Note:</strong> <span className="font-semibold">This video is still being processed. We will send you an email when it is ready.</span>
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : isVideoUploading ? (
+              <div className="space-y-4">
+                {/* File being uploaded with progress bar */}
+                <div className="border-b border-gray-300 py-2">
+                  <div className="grid grid-cols-4 gap-2 md:gap-4 text-[17px] font-bold text-gray-800 border-b border-gray-300">
+                    <div>Filename</div>
+                    <div>Type</div>
+                    <div>Status</div>
+                    <div>Date</div>
+                  </div>
+                  <div className="grid grid-cols-4 gap-2 md:gap-4 text-sm mt-2 items-center">
+                    <div className="truncate">{videoContent.uploadTab.selectedFile?.name || "2025-05-01-025523.webm"}</div>
+                    <div>Video</div>
+                    <div className="flex items-center">
+                      <div className="w-full flex items-center">
+                        <div className="w-20 bg-gray-200 h-2 overflow-hidden roundedd">
+                          <div className="bg-[#6D28D2] h-2 " style={{ width: `${videoUploadProgress}%` }}></div>
+                        </div>
+                        <span className="ml-2 text-xs">{videoUploadProgress}%</span>
+                      </div>
+                    </div>
+                    <div>{new Date().toLocaleDateString('en-US', {month: '2-digit', day: '2-digit', year: 'numeric'})}</div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <>
                 {/* File selection box */}
-                <div className="flex items-center justify-between ">
-                  <span className="text-sm text-gray-700 truncate py-3 border border-gray-300 w-[85%] px-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-800 font-semibold truncate py-3 border border-gray-400 w-[85%] px-4">
                     {videoContent.uploadTab.selectedFile
                       ? videoContent.uploadTab.selectedFile.name
                       : 'No file selected'}
                   </span>
-                  <label className="text-sm font-medium text-[#6D28D9] border border-[#6D28D9] px-3 py-2 rounded cursor-pointer hover:bg-[#f5f3ff]">
+                  <label className="ml-4 px-2 py-3 border border-[#6D28D2] text-sm font-bold text-[#6D28D2] rounded hover:bg-[#6D28D2]/10 cursor-pointer transition">
                     <input
                       type="file"
                       accept="video/*"
-                      onChange={handleVideoFileSelect}
+                      onChange={handleVideoFileUpload}
                       className="hidden"
                     />
                     Select Video
                   </label>
                 </div>
-                <p className="mt-2 text-xs text-gray-500">
-                  <strong>Note:</strong> All files should be at least 720p and less than 4.0 GB.
+                <p className="mt-2 text-xs text-gray-500 ">
+                  <strong className='font-bold'>Note:</strong> <span className='font-semibold'>All files should be at least 720p and less than 4.0 GB.</span>
                 </p>
-              </div>
-            ) : (
-              <div className="py-4">
-                {/* Search input (half-width from center to right) */}
-                <form onSubmit={handleSearchLibrary} className="mb-4">
-                  <div className="flex justify-end gap-2">
-                    <div className="w-1/2 relative">
-                      <input
-                        type="text"
-                        placeholder="Search files by name"
-                        value={videoContent.libraryTab.searchQuery}
-                        onChange={(e) =>
-                          setVideoContent({
-                            ...videoContent,
-                            libraryTab: {
-                              ...videoContent.libraryTab,
-                              searchQuery: e.target.value,
-                            },
-                          })
-                        }
-                        className="w-full py-2 px-3 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                      />
-                    </div>
-                    <button
-                      type="submit"
-                      className="p-2 bg-[#6D28D9] text-white rounded-md hover:bg-indigo-700"
-                    >
-                      <Search className="w-5 h-5" />
-                    </button>
-                  </div>
-                </form>
-        
-                {/* Table header and results */}
-                <div className=" border-b border-gray-300">
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4 p-3 text-xs md:text-sm font-medium border-b border-gray-300">
-                    <div>Filename</div>
-                    <div>Type</div>
-                    <div>Status</div>
-                    <div className="flex items-center gap-1">
-                      Date <ChevronDown className="w-4 h-4" />
-                    </div>
-                  </div>
-                  <div className="px-4 py-7 text-center text-gray-500 text-sm">
-                    No results found.
-                  </div>
-                </div>
-              </div>
+              </>
             )}
           </div>
-        </div>
+        ) : (
+          // Library tab code - remains the same
+          <div className="py-4">
+            {/* Search input (half-width from center to right) */}
+            <form onSubmit={handleSearchLibrary} className="mb-4">
+              <div className="flex justify-end gap-2">
+                <div className="w-1/2 relative">
+                  <input
+                    type="text"
+                    placeholder="Search files by name"
+                    value={videoContent.libraryTab.searchQuery}
+                    onChange={(e) =>
+                      setVideoContent({
+                        ...videoContent,
+                        libraryTab: {
+                          ...videoContent.libraryTab,
+                          searchQuery: e.target.value,
+                        },
+                      })
+                    }
+                    className="w-full py-2 px-3 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  className="p-2 bg-[#6D28D9] text-white rounded-md hover:bg-indigo-700"
+                >
+                  <Search className="w-5 h-5" />
+                </button>
+              </div>
+            </form>
+    
+            {/* Table header and results */}
+            <div className=" border-b border-gray-300">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4 p-3 text-[16px] font-bold border-b border-gray-300">
+                <div>Filename</div>
+                <div>Type</div>
+                <div>Status</div>
+                <div className="flex items-center gap-1">
+                  Date <ChevronDown className="w-4 h-4" />
+                </div>
+              </div>
+              <div className="px-4 py-7 text-center text-gray-500 text-sm">
+                No results found.
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
         
-        
-        );
-        
-      case 'video-slide' as ContentItemType:
-        return (
-          <div className="border border-gray-300 ">
-
-      {/* Body */}
+  case 'video-slide':
+  return (
+    <div className="border border-gray-300 rounded-md">
       <div className="px-4 pt-4 pb-6 space-y-6">
         {/* Step 1 - Video */}
         <div>
           <div className="flex items-center mb-2 border-b pb-3 border-b-gray-300">
-            <div className="w-6 h-6 rounded-full bg-gray-200 text-gray-700 flex items-center justify-center text-sm font-bold">
+            <div className={`w-8 h-8 flex items-center justify-center text-sm font-bold ${videoUploaded ? 'bg-amber-200 text-gray-800' : 'bg-gray-100 text-gray-700'}`}>
               1
             </div>
             <span className="ml-2 text-sm font-semibold text-gray-800">
               Pick a Video
             </span>
           </div>
-          <div className="flex items-center justify-between">
-            <div className="flex-1 border border-gray-500 rounded-md px-4 py-2 text-sm text-gray-600 truncate">
-              {videoSlideContent.video.selectedFile ? (
-                <span>{videoSlideContent.video.selectedFile.name}</span>
-              ) : (
-                <span>No file selected</span>
-              )}
+
+          {videoUploaded ? (
+            <div className="space-y-2">
+              <div className="overflow-x-auto">
+                <div className="grid grid-cols-4 gap-2 md:gap-4 text-[16px] font-bold text-gray-800 border-b border-gray-300 py-2 min-w-max">
+                  <div>Filename</div>
+                  <div>Type</div>
+                  <div>Status</div>
+                  <div>Date</div>
+                </div>
+                <div className="grid grid-cols-4 gap-2 md:gap-4 text-sm items-center text-gray-700 font-semibold min-w-max py-2">
+                  <div className="truncate">
+                    {videoSlideContent.video.selectedFile?.name || "2025-05-01-025523.webm"}
+                  </div>
+                  <div>Video</div>
+                  <div className="flex items-center">
+                    <div className="w-20 bg-gray-200 h-2 rounded-full overflow-hidden mr-2">
+                      <div className="bg-purple-600 h-2 rounded-full" style={{ width: '100%' }}></div>
+                    </div>
+                    <span className="text-xs">100%</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    {new Date().toLocaleDateString('en-US', {month: '2-digit', day: '2-digit', year: 'numeric'})}
+                    <button 
+                      className="text-gray-500 hover:text-gray-700"
+                      onClick={() => {
+                        setVideoUploaded(false);
+                        setVideoSlideContent({
+                          ...videoSlideContent,
+                          video: { selectedFile: null }
+                        });
+                      }}
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
-            <label className="ml-4 px-4 py-1.5 border border-[#6D28D2] text-sm font-semibold text-[#6D28D2] rounded-md hover:bg-[#6D28D2]/10 cursor-pointer transition">
-              <input
-                type="file"
-                accept="video/*"
-                onChange={(e) => handleVideoSlideFileSelect("video", e)}
-                className="hidden"
-              />
-              Select Video
-            </label>
-          </div>
+          ) : videoUploading ? (
+            <div className="space-y-2">
+              <div className="overflow-x-auto">
+                <div className="grid grid-cols-4 gap-2 md:gap-4 text-[16px] font-bold text-gray-800 border-b border-gray-300 py-2 min-w-max">
+                  <div>Filename</div>
+                  <div>Type</div>
+                  <div>Status</div>
+                  <div>Date</div>
+                </div>
+                <div className="grid grid-cols-4 gap-2 md:gap-4 text-sm items-center text-gray-700 font-semibold min-w-max py-2">
+                  <div className="truncate">
+                    {videoSlideContent.video.selectedFile?.name || "2025-05-01-025523.webm"}
+                  </div>
+                  <div>Video</div>
+                  <div className="flex items-center">
+                    <div className="w-20 bg-gray-200 h-2 rounded-full overflow-hidden mr-2">
+                      <div className="bg-purple-600 h-2 rounded-full" style={{ width: `${videoUploadProgress}%` }}></div>
+                    </div>
+                    <span className="text-xs">{videoUploadProgress}%</span>
+                  </div>
+                  <div>{new Date().toLocaleDateString('en-US', {month: '2-digit', day: '2-digit', year: 'numeric'})}</div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between">
+              <div className="flex-1 border border-gray-500 rounded px-4 py-3 text-sm text-gray-600 truncate">
+                {videoSlideContent.video.selectedFile ? (
+                  <span>{videoSlideContent.video.selectedFile.name}</span>
+                ) : (
+                  <span>No file selected</span>
+                )}
+              </div>
+              <label className="ml-4 px-2 py-3 border border-[#6D28D2] text-sm font-bold text-[#6D28D2] hover:bg-[#6D28D2]/10 cursor-pointer transition">
+                <input
+                  type="file"
+                  accept="video/*"
+                  onChange={handleVideoSlideVideoUpload}
+                  className="hidden"
+                />
+                Select Video
+              </label>
+            </div>
+          )}
           <p className="mt-1.5 text-xs text-gray-500">
             <strong>Note:</strong> All files should be at least 720p and less than 4.0 GB.
           </p>
@@ -423,32 +738,133 @@ export default function LectureItem({
         {/* Step 2 - PDF */}
         <div>
           <div className="flex items-center mb-2 border-b pb-3 border-b-gray-300">
-            <div className="w-6 h-6 rounded-full bg-gray-200 text-gray-700 flex items-center justify-center text-sm font-bold">
+            <div className={`w-8 h-8 flex items-center justify-center text-sm font-bold ${presentationUploaded ? 'bg-amber-200 text-gray-800' : 'bg-gray-100 text-gray-700'}`}>
               2
             </div>
             <span className="ml-2 text-sm font-semibold text-gray-800">
               Pick a Presentation
             </span>
           </div>
-          <div className="flex items-center justify-between">
-            <div className="flex-1 border border-gray-500 rounded-md px-4 py-2 text-sm text-gray-600 truncate">
-              {videoSlideContent.presentation.selectedFile ? (
-                <span>{videoSlideContent.presentation.selectedFile.name}</span>
-              ) : (
-                <span>No file selected</span>
-              )}
+
+          {presentationUploaded ? (
+            syncComplete ? (
+              <div className="flex items-center space-x-3">
+                <div className="w-16 h-16 border border-gray-300 flex items-center justify-center overflow-hidden bg-gray-50">
+                  <img 
+                    src={videoSlideContent.presentation.selectedFile ? URL.createObjectURL(videoSlideContent.presentation.selectedFile) : "/placeholder-pdf.png"} 
+                    alt="PDF preview" 
+                    className="max-w-full max-h-full object-contain"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.src = "/placeholder-pdf.png";
+                    }}
+                  />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-800 truncate max-w-md">
+                    {videoSlideContent.presentation.selectedFile?.name || "Volunteer-Confidentiality-Agreement-Stanley-Samuel-Arikpo.docx.pdf"}
+                  </p>
+                  <p className="text-xs text-gray-500">1 page</p>
+                </div>
+                <button 
+                  className="ml-auto px-3 py-1 text-purple-600 text-sm font-bold border border-purple-600 rounded hover:bg-purple-50"
+                  onClick={() => {
+                    setPresentationUploaded(false);
+                    setSyncComplete(false);
+                    setVideoSlideStep(2);
+                    setVideoSlideContent({
+                      ...videoSlideContent,
+                      presentation: { selectedFile: null }
+                    });
+                  }}
+                >
+                  Change
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <div className="overflow-x-auto">
+                  <div className="grid grid-cols-4 gap-2 md:gap-4 text-[16px] font-bold text-gray-800 border-b border-gray-300 py-2 min-w-max">
+                    <div>Filename</div>
+                    <div>Type</div>
+                    <div>Status</div>
+                    <div>Date</div>
+                  </div>
+                  <div className="grid grid-cols-4 gap-2 md:gap-4 text-sm items-center text-gray-700 font-semibold min-w-max py-2">
+                    <div className="truncate">
+                      {videoSlideContent.presentation.selectedFile?.name || "Volunteer-Confidentiality-Agreement-Stanley-Samuel-Arikpo.docx.pdf"}
+                    </div>
+                    <div>Presentation</div>
+                    <div className="flex items-center">
+                      <div className="w-20 bg-gray-200 h-2 rounded-full overflow-hidden mr-2">
+                        <div className="bg-purple-600 h-2 rounded-full" style={{ width: '100%' }}></div>
+                      </div>
+                      <span className="text-xs">100%</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      {new Date().toLocaleDateString('en-US', {month: '2-digit', day: '2-digit', year: 'numeric'})}
+                      <button 
+                        className="text-gray-500 hover:text-gray-700"
+                        onClick={() => {
+                          setPresentationUploaded(false);
+                          setVideoSlideContent({
+                            ...videoSlideContent,
+                            presentation: { selectedFile: null }
+                          });
+                        }}
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )
+          ) : presentationUploading ? (
+            <div className="space-y-2">
+              <div className="overflow-x-auto">
+                <div className="grid grid-cols-4 gap-2 md:gap-4 text-[16px] font-bold text-gray-800 border-b border-gray-300 py-2 min-w-max">
+                  <div>Filename</div>
+                  <div>Type</div>
+                  <div>Status</div>
+                  <div>Date</div>
+                </div>
+                <div className="grid grid-cols-4 gap-2 md:gap-4 text-sm items-center text-gray-700 font-semibold min-w-max py-2">
+                  <div className="truncate">
+                    {videoSlideContent.presentation.selectedFile?.name || "Volunteer-Confidentiality-Agreement-Stanley-Samuel-Arikpo.docx.pdf"}
+                  </div>
+                  <div>Presentation</div>
+                  <div className="flex items-center">
+                    <div className="w-20 bg-gray-200 h-2 rounded-full overflow-hidden mr-2">
+                      <div className="bg-purple-600 h-2 rounded-full" style={{ width: `${presentationUploadProgress}%` }}></div>
+                    </div>
+                    <span className="text-xs">{presentationUploadProgress}%</span>
+                  </div>
+                  <div>{new Date().toLocaleDateString('en-US', {month: '2-digit', day: '2-digit', year: 'numeric'})}</div>
+                </div>
+              </div>
             </div>
-            <label className="ml-4 px-4 py-1.5 border border-[#6D28D2] text-sm font-semibold text-[#6D28D2] rounded-md hover:bg-[#6D28D2]/10 cursor-pointer transition">
-              <input
-                type="file"
-                accept=".pdf"
-                onChange={(e) => handleVideoSlideFileSelect("presentation", e)}
-                className="hidden"
-              />
-              Select PDF
-            </label>
-          </div>
-          <p className="mt-1.5 text-xs  text-gray-600">
+          ) : (
+            <div className="flex items-center justify-between">
+              <div className="flex-1 border border-gray-500 rounded px-4 py-3 text-sm text-gray-600 truncate">
+                {videoSlideContent.presentation.selectedFile ? (
+                  <span>{videoSlideContent.presentation.selectedFile.name}</span>
+                ) : (
+                  <span>No file selected</span>
+                )}
+              </div>
+              <label className="ml-4 px-2 py-3 border border-[#6D28D2] text-sm font-bold text-[#6D28D2] hover:bg-[#6D28D2]/10 cursor-pointer transition">
+                <input
+                  type="file"
+                  accept=".pdf"
+                  onChange={handlePresentationUpload}
+                  className="hidden"
+                />
+                Select PDF
+              </label>
+            </div>
+          )}
+          <p className="mt-1.5 text-xs text-gray-600">
             <strong>Note:</strong> A presentation means slides (e.g. PowerPoint, Keynote). Slides are a great way to
             combine text and visuals to explain concepts in an effective and efficient way. Use meaningful graphics and
             clearly legible text!
@@ -458,21 +874,137 @@ export default function LectureItem({
         {/* Step 3 - Sync */}
         <div>
           <div className="flex items-center mb-2 border-b pb-3 border-b-gray-300">
-            <div className="w-6 h-6 rounded-full bg-gray-200 text-gray-700 flex items-center justify-center text-sm font-bold">
+            <div className={`w-8 h-8 flex items-center justify-center text-sm font-bold bg-gray-100 text-gray-700 `}>
               3
             </div>
             <span className="ml-2 text-sm font-semibold text-gray-800">
               Synchronize Video & Presentation
             </span>
           </div>
-          <div className="border border-dashed border-gray-600 rounded-md px-4 py-4 text-left text-sm text-gray-600">
-            Please pick a video & presentation first
-          </div>
+          
+          {videoUploaded && presentationUploaded && !syncComplete ? (
+            <div className="space-y-4">
+              {isFullscreen ? (
+                <div className="fixed inset-0 bg-black bg-opacity-90 z-50 flex flex-col">
+                  <div className="bg-white px-4 py-2 flex justify-between items-center">
+                    <h3 className="font-bold text-gray-800">Preview</h3>
+                    <button 
+                      onClick={toggleFullscreen}
+                      className="text-gray-700 hover:text-gray-900"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                  <div className="flex-1 flex items-center justify-center bg-gray-100">
+                    <img 
+                      src="/api/placeholder/600/800" 
+                      alt="PDF Preview" 
+                      className="max-h-full max-w-full object-contain shadow-lg"
+                    />
+                  </div>
+                  <div className="bg-gray-100 px-4 py-2 flex justify-between items-center">
+                    <div className="flex items-center space-x-4">
+                      <button 
+                        onClick={goToPreviousSlide}
+                        className="p-2 rounded-full bg-white shadow hover:bg-gray-200 disabled:opacity-50"
+                        disabled={currentSlide <= 1}
+                      >
+                        <ChevronDown className="w-5 h-5 transform rotate-90" />
+                      </button>
+                      <button 
+                        onClick={goToNextSlide}
+                        className="p-2 rounded-full bg-white shadow hover:bg-gray-200 disabled:opacity-50"
+                        disabled={currentSlide >= totalSlides}
+                      >
+                        <ChevronDown className="w-5 h-5 transform -rotate-90" />
+                      </button>
+                      <span className="text-sm font-medium">
+                        {currentSlide} of {totalSlides} Slides
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {/* PDF Preview */}
+                  <div className="border-b border-gray-300 pb-2">
+                    <div className="w-full h-80 bg-white relative">
+                      <img 
+                        src="/api/placeholder/600/800" 
+                        alt="PDF Preview" 
+                        className="w-full h-full object-contain"
+                      />
+                      <button
+                        onClick={toggleFullscreen}
+                        className="absolute bottom-2 right-2 p-1 bg-white rounded shadow text-gray-700 hover:text-gray-900"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 1v4m0 0h-4m4 0l-5-5" />
+                        </svg>
+                      </button>
+                    </div>
+
+                    {/* Progress bar at the bottom */}
+                    <div className="w-full bg-purple-100 h-2 mt-2">
+                      <div className="bg-purple-600 h-2" style={{ width: `${(currentSlide / totalSlides) * 100}%` }}></div>
+                    </div>
+
+                    {/* Slide navigation */}
+                    <div className="flex items-center justify-between mt-2">
+                      <button 
+                        onClick={goToPreviousSlide}
+                        className="p-1 rounded text-purple-600 hover:text-purple-800 disabled:opacity-50 disabled:text-gray-400"
+                        disabled={currentSlide <= 1}
+                      >
+                        <ChevronDown className="w-5 h-5 transform rotate-90" />
+                      </button>
+                      
+                      <span className="text-sm font-medium">
+                        {currentSlide} of {totalSlides} Slides
+                      </span>
+                      
+                      <button 
+                        onClick={goToNextSlide}
+                        className="p-1 rounded text-purple-600 hover:text-purple-800 disabled:opacity-50 disabled:text-gray-400"
+                        disabled={currentSlide >= totalSlides}
+                      >
+                        <ChevronDown className="w-5 h-5 transform -rotate-90" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Action buttons */}
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={usePresentation}
+                      className="flex-1 bg-purple-600 text-white font-medium py-2 px-4 rounded hover:bg-purple-700 transition"
+                    >
+                      Use this presentation
+                    </button>
+                    <button
+                      className="flex-1 border border-gray-300 text-gray-700 font-medium py-2 px-4 rounded hover:bg-gray-50 transition"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          ) : videoUploaded && presentationUploaded && syncComplete ? (
+            <div>
+              {/* Display successfully synced state - empty div, as requested */}
+            </div>
+          ) : (
+            <div className="border-2 border-dashed border-gray-400 px-4 py-4 text-left text-sm text-gray-600">
+              Please pick a video & presentation first
+            </div>
+          )}
         </div>
       </div>
     </div>
-        );
-        
+  );
+    
+      
       case 'article':
         return (
           <div className="border border-gray-300 rounded-md p-4">
