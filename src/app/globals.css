@@ -15,6 +15,24 @@ body {
 }
 
 .my-quill .ql-editor {
-  @apply px-3 py-2 text-base leading-relaxed border-none w-full min-h-[6rem];
+  @apply px-3 py-2 text-base leading-relaxed border-0 w-full min-h-[5.5rem] bg-transparent;
   white-space: pre-wrap;
+}
+
+/* Target inline <code> elements inserted by Quill */
+.my-quill .ql-editor code {
+  color: #d0a120; /* yellow text */
+  background: transparent !important; /* remove bg */
+  border: 1px solid #d1d5db; /* gray-300 */
+  /* padding: 1rem 1rem; */
+  border-radius: 0.25rem;
+  font-family: monospace;
+}
+
+.my-quill .ql-container {
+  border-top: none !important;
+  border: none !important;
+}
+.my-quill .ql-editor::before {
+  font-style: normal !important; /* Make placeholder not italic */
 }

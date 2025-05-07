@@ -11,6 +11,9 @@ import {
 import { Lecture } from "@/lib/types";
 import QuestionForm from "./QuestionForm";
 import QuizPreviewWrapper from "./QuizPreviewWrapper";
+import { FaCircleCheck } from "react-icons/fa6";
+import { GoQuestion } from "react-icons/go";
+import { RxHamburgerMenu } from "react-icons/rx";
 
 interface QuizItemProps {
   lecture: Lecture;
@@ -149,7 +152,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
   };
 
   const handleMultipleChoiceClick = () => {
-    setShowQuestionTypeSelector(false);
+    // setShowQuestionTypeSelector(false);
     setShowQuestionForm(true);
   };
 
@@ -171,21 +174,22 @@ const QuizItem: React.FC<QuizItemProps> = ({
   if (!expanded && isNewQuiz) {
     return (
       <div
-        className="mb-3 border border-gray-300 rounded-md bg-white overflow-hidden"
+        className="mb-3 border border-zinc-400 rounded-md bg-white overflow-hidden"
         draggable
         onDragStart={(e) => handleDragStart(e, sectionId, lecture.id)}
         onDragOver={handleDragOver}
         onDrop={(e) => handleDrop(e, sectionId, lecture.id)}
-        onMouseEnter={() => setIsHovering(true)}
-        onMouseLeave={() => setIsHovering(false)}
       >
-        <div className="flex justify-between items-center p-2 cursor-pointer">
+        <div className="flex justify-between items-center px-3 cursor-move">
           <div className="flex items-center space-x-3" onClick={toggleExpand}>
-            <Move className="w-4 h-4 text-gray-400 cursor-move" />
+            <div className="w-max shrink-0 flex items-center gap-3">
+              <FaCircleCheck size={16} className="shrink-0" />
+              <p className="w-max">Quiz {lectureIndex + 1}:</p>
+            </div>
+
             <div className="flex items-center space-x-2">
-              <span className="w-5 h-5 rounded-full bg-purple-500 text-white text-center text-xs flex items-center justify-center">
-                Q
-              </span>
+              <GoQuestion size={12} />
+
               {editingLectureId === lecture.id ? (
                 <input
                   ref={lectureNameInputRef}
@@ -209,7 +213,12 @@ const QuizItem: React.FC<QuizItemProps> = ({
               )}
             </div>
           </div>
-          <div className="flex items-center space-x-2">
+
+          <div
+            className="flex items-center space-x-2 ml-2 mr-auto w-full h-11 py-2"
+            onMouseEnter={() => setIsHovering(true)}
+            onMouseLeave={() => setIsHovering(false)}
+          >
             {isHovering && (
               <>
                 <button
@@ -217,7 +226,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
                     e.stopPropagation();
                     setEditingLectureId(lecture.id);
                   }}
-                  className="text-gray-500 hover:text-gray-700 p-1 transition-opacity"
+                  className="text-gray-500 hover:text-gray-700 p-1 transition-opacity cursor-pointer"
                 >
                   <Edit3 className="w-4 h-4" />
                 </button>
@@ -226,11 +235,11 @@ const QuizItem: React.FC<QuizItemProps> = ({
                     e.stopPropagation();
                     deleteLecture(sectionId, lecture.id);
                   }}
-                  className="text-gray-500 hover:text-red-600 p-1 transition-opacity"
+                  className="text-gray-500 hover:text-red-600 p-1 transition-opacity cursor-pointer"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
-                <button
+                {/* <button
                   onClick={(e) => {
                     e.stopPropagation();
                     moveLecture(sectionId, lecture.id, "up");
@@ -243,8 +252,8 @@ const QuizItem: React.FC<QuizItemProps> = ({
                       lectureIndex === 0 ? "opacity-50" : ""
                     }`}
                   />
-                </button>
-                <button
+                </button> */}
+                {/* <button
                   onClick={(e) => {
                     e.stopPropagation();
                     moveLecture(sectionId, lecture.id, "down");
@@ -256,59 +265,89 @@ const QuizItem: React.FC<QuizItemProps> = ({
                     className={`w-4 h-4 ${
                       lectureIndex === totalLectures - 1 ? "opacity-50" : ""
                     }`}
-                  />
-                </button>
+                  /> 
+                </button>*/}
               </>
             )}
-            <button
-              onClick={handleQuestionsButtonClick}
-              className="ml-2 px-3 py-1 text-purple-600 bg-purple-50 hover:bg-purple-100 rounded-md flex items-center"
-            >
-              <Plus className="w-4 h-4 mr-1" />
-              Questions
-            </button>
+            {!showQuestionTypeSelector && (
+              <button
+                onClick={handleQuestionsButtonClick}
+                className="ml-auto px-3 py-1 border border-purple-600 text-purple-600 bg-purple-50 hover:bg-purple-100 rounded-md flex items-center cursor-pointer"
+              >
+                <Plus className="w-4 h-4 mr-1" />
+                Questions
+              </button>
+            )}
+
+            <div className={`w-4 h-4 ${showQuestionTypeSelector && "ml-auto"}`}>
+              {isHovering && (
+                <RxHamburgerMenu className="size-full cursor-move" />
+              )}
+            </div>
           </div>
         </div>
 
         {/* Question Type Selector */}
         {showQuestionTypeSelector && (
-          <div className="p-3 border-t relative">
-            <div className="absolute top-0 right-0 p-2">
+          <div className="relative">
+            <div className="absolute -translate-y-[97.5%] px-3 py-1 border-x border-t border-zinc-400 right-10 gap-1.5 bg-white z-10 flex items-center">
+              <span className="font-bold text-sm">Add Multiple Choice</span>
               <button
-                onClick={() => setShowQuestionTypeSelector(false)}
-                className="text-gray-500 hover:text-gray-700"
+                onClick={() => {
+                  setShowQuestionTypeSelector(false);
+                  setShowQuestionForm(false);
+                }}
+                className="text-gray-500 hover:text-gray-700 cursor-pointer p-1 hover:bg-gray-300 rounded-xs"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <div className="text-center">
-              <h3 className="text-sm text-gray-500 mb-2">
-                Select question type
-              </h3>
-              <div className="flex justify-center">
-                <button
-                  onClick={handleMultipleChoiceClick}
-                  className="flex flex-col items-center p-4 border border-gray-200 rounded-md hover:border-purple-500 hover:bg-purple-50"
-                >
-                  <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-2">
-                    <span className="text-2xl">?</span>
+            {!showQuestionForm ? (
+              <div className="p-3 size-full border-t border-zinc-400">
+                <div className="text-center">
+                  <div className="flex justify-center">
+                    <button
+                      onClick={handleMultipleChoiceClick}
+                      className="flex flex-col items-center border group border-gray-300 bg-gray-100 cursor-pointer rounded-xs hover:bg-black hover:text-white text-gray-400 transition"
+                    >
+                      <div className="p-2 relative overflow-hidden">
+                        <GoQuestion
+                          size={30}
+                          className="transition-transform duration-300  group-hover:-translate-y-[150%] absolute"
+                        />
+                        <GoQuestion
+                          size={30}
+                          className="transition-transform duration-300  translate-y-[150%] group-hover:translate-y-0"
+                        />
+                      </div>
+
+                      <span className="text-xs py-0.5 duration-150 transition px-2 bg-gray-300 text-black group-hover:bg-black group-hover:text-white">
+                        Multiple Choice
+                      </span>
+                    </button>
                   </div>
-                  <span className="text-sm font-medium">Multiple Choice</span>
-                </button>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="border-t border-zinc-400">
+                <QuestionForm
+                  onAddQuestion={handleAddQuestion}
+                  onCancel={() => setShowQuestionForm(false)}
+                />
+              </div>
+            )}
           </div>
         )}
 
         {/* Question Form */}
-        {showQuestionForm && (
-          <div className=" border-t">
+        {/* {showQuestionForm && (
+          <div className="">
             <QuestionForm
               onAddQuestion={handleAddQuestion}
               onCancel={() => setShowQuestionForm(false)}
             />
           </div>
-        )}
+        )} */}
       </div>
     );
   }
@@ -320,19 +359,24 @@ const QuizItem: React.FC<QuizItemProps> = ({
       onDragStart={(e) => handleDragStart(e, sectionId, lecture.id)}
       onDragOver={handleDragOver}
       onDrop={(e) => handleDrop(e, sectionId, lecture.id)}
-      onMouseEnter={() => setIsHovering(true)}
-      onMouseLeave={() => setIsHovering(false)}
     >
       <div
-        className="flex justify-between items-center p-2 cursor-pointer"
+        className="flex justify-between items-center p-3 cursor-move h-11"
         onClick={toggleExpand}
+        onMouseEnter={() => setIsHovering(true)}
+        onMouseLeave={() => setIsHovering(false)}
       >
         <div className="flex items-center space-x-3">
-          <Move className="w-4 h-4 text-gray-400 cursor-move" />
+          <div className="w-max shrink-0 flex items-center gap-3">
+            <FaCircleCheck size={16} className="shrink-0" />
+            <p className="w-max">Quiz {lectureIndex + 1}:</p>
+            <GoQuestion size={12} />
+          </div>
+
           <div className="flex items-center space-x-2">
-            <span className="w-4 h-4 rounded-full bg-purple-500 text-white text-center text-xs flex items-center justify-center">
+            {/* <span className="w-4 h-4 rounded-full bg-purple-500 text-white text-center text-xs flex items-center justify-center">
               Q
-            </span>
+            </span> */}
             {editingLectureId === lecture.id ? (
               <input
                 ref={lectureNameInputRef}
@@ -350,11 +394,11 @@ const QuizItem: React.FC<QuizItemProps> = ({
                 onClick={(e) => e.stopPropagation()}
               />
             ) : (
-              <h4 className="text-sm">{lecture.name || "New quiz"}</h4>
+              <h4 className="text-sm w-max">{lecture.name || "New quiz"}</h4>
             )}
           </div>
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-2 w-full ml-2">
           {isHovering && (
             <>
               <button
@@ -362,7 +406,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
                   e.stopPropagation();
                   setEditingLectureId(lecture.id);
                 }}
-                className="text-gray-500 hover:text-gray-700 p-1 transition-opacity"
+                className="text-gray-500 hover:text-gray-700 p-1 transition-opacity cursor-pointer"
               >
                 <Edit3 className="w-4 h-4" />
               </button>
@@ -371,11 +415,11 @@ const QuizItem: React.FC<QuizItemProps> = ({
                   e.stopPropagation();
                   deleteLecture(sectionId, lecture.id);
                 }}
-                className="text-gray-500 hover:text-red-600 p-1 transition-opacity"
+                className="text-gray-500 hover:text-red-600 p-1 transition-opacity cursor-pointer"
               >
                 <Trash2 className="w-4 h-4" />
               </button>
-              <button
+              {/* <button
                 onClick={(e) => {
                   e.stopPropagation();
                   moveLecture(sectionId, lecture.id, "up");
@@ -402,19 +446,28 @@ const QuizItem: React.FC<QuizItemProps> = ({
                     lectureIndex === totalLectures - 1 ? "opacity-50" : ""
                   }`}
                 />
-              </button>
+              </button> */}
             </>
           )}
           {expanded ? (
-            <ChevronUp className="w-5 h-5 text-gray-500" />
+            <button className="cursor-pointer p-1 ml-auto bg-gray-200">
+              <ChevronUp className="w-5 h-5 text-gray-500" />
+            </button>
           ) : (
-            <ChevronDown className="w-5 h-5 text-gray-500" />
+            <button className="cursor-pointer p-1 ml-auto bg-gray-200">
+              <ChevronDown className="w-5 h-5 text-gray-500 " />
+            </button>
           )}
+          <button className="p-1 w-5">
+            {isHovering && (
+              <RxHamburgerMenu className="text-gray-600 cursor-move w-4 h-4" />
+            )}
+          </button>
         </div>
       </div>
 
       {expanded && (
-        <div className="p-3 border-t">
+        <div className="px-3 py-2 border-t">
           {isNewQuiz ? (
             <div className="flex justify-end">
               <button
@@ -438,19 +491,30 @@ const QuizItem: React.FC<QuizItemProps> = ({
                       e.stopPropagation();
                       handleNewQuestion();
                     }}
-                    className="inline-flex items-center px-2 py-1 border border-transparent text-sm leading-5 font-medium rounded-xl text-purple-700 bg-purple-100 hover:bg-purple-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+                    className="inline-flex items-center border border-purple-600 px-2 py-1 text-sm leading-5 rounded text-purple-600 hover:bg-purple-200 transition cursor-pointer font-bold"
                   >
                     New Question
                   </button>
+                  <div className="ml-auto">
+                    {" "}
+                    <QuizPreviewWrapper quiz={quizData}>
+                      <button
+                        className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 transition cursor-pointer"
+                        disabled={questions.length === 0}
+                      >
+                        Preview
+                      </button>
+                    </QuizPreviewWrapper>
+                  </div>
                 </div>
               </div>
 
               {questions.length > 0 && (
-                <div className="mb-3">
+                <div className="">
                   {questions.map((question, index) => (
                     <div
                       key={question.id || index}
-                      className="mb-2 p-2 border border-gray-200 rounded hover:border-gray-300"
+                      className="mb-2 rounded h-10 flex items-center"
                       onMouseEnter={(e) => {
                         // Find all buttons in this div and make them visible
                         const buttons =
@@ -468,8 +532,8 @@ const QuizItem: React.FC<QuizItemProps> = ({
                         });
                       }}
                     >
-                      <div className="flex justify-between items-center">
-                        <div className="font-medium">
+                      <div className="flex justify-between items-center w-full">
+                        <div className="font-medium text-sm ">
                           {/* Fixed question text to remove p tags */}
                           {index + 1}. {question.text.replace(/<\/?p>/g, "")}
                           <span className="text-xs text-gray-500 ml-2">
@@ -478,7 +542,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
                         </div>
                         <div className="flex space-x-2">
                           <button
-                            className="p-1 text-gray-500 hover:text-gray-700 hidden"
+                            className="p-1 text-gray-500 hover:bg-gray-200 rounded transition cursor-pointer"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleEditQuestion(index);
@@ -487,13 +551,16 @@ const QuizItem: React.FC<QuizItemProps> = ({
                             <Edit3 className="w-4 h-4" />
                           </button>
                           <button
-                            className="p-1 text-gray-500 hover:text-red-600 hidden"
+                            className="p-1 text-gray-500 hover:bg-gray-200 rounded transition cursor-pointer"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleDeleteQuestion(index);
                             }}
                           >
                             <Trash2 className="w-4 h-4" />
+                          </button>
+                          <button className="p-1 hover:bg-gray-200 rounded transition cursor-move">
+                            <RxHamburgerMenu className="w-4 h-4  text-gray-500" />
                           </button>
                         </div>
                       </div>
@@ -502,7 +569,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
                 </div>
               )}
 
-              <div className="flex justify-end mt-3">
+              {/* <div className="flex justify-end mt-3">
                 <QuizPreviewWrapper quiz={quizData}>
                   <button
                     className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
@@ -511,12 +578,12 @@ const QuizItem: React.FC<QuizItemProps> = ({
                     Preview
                   </button>
                 </QuizPreviewWrapper>
-              </div>
+              </div> */}
             </>
           )}
 
           {/* Question Type Selector */}
-          {showQuestionTypeSelector && (
+          {/* {showQuestionTypeSelector && (
             <div className="mt-3 border-t pt-3 relative">
               <div className="absolute top-3 right-0 p-2">
                 <button
@@ -530,6 +597,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
                 <h3 className="text-sm text-gray-500 mb-2">
                   Select question type
                 </h3>
+
                 <div className="flex justify-center">
                   <button
                     onClick={handleMultipleChoiceClick}
@@ -543,17 +611,17 @@ const QuizItem: React.FC<QuizItemProps> = ({
                 </div>
               </div>
             </div>
-          )}
+          )} */}
 
           {/* Question Form */}
-          {showQuestionForm && (
+          {/* {showQuestionForm && (
             <div className="mt-3 border-t pt-3">
               <QuestionForm
                 onAddQuestion={handleAddQuestion}
                 onCancel={() => setShowQuestionForm(false)}
               />
             </div>
-          )}
+          )} */}
         </div>
       )}
     </div>
