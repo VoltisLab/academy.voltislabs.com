@@ -686,8 +686,8 @@ export default function LectureItem({
     }
   }}
   className={`${
-    (showContentTypeSelector && isExpanded) || isResourceSectionActive
-    ? "text-gray-800 font-normal border-b-0 border-l border-t border-r border-gray-400 -mb-[9.5px] bg-white pb-2" 
+    (showContentTypeSelector && isExpanded) || isResourceSectionActive || activeContentType
+    ? "text-gray-800 font-normal border-b-0 border-l border-t border-r border-gray-400 -mb-[12px] bg-white pb-2" 
     : "text-[#6D28D2] font-medium border-[#6D28D2] hover:bg-indigo-50 rounded "
   } text-xs sm:text-sm px-2 sm:px-3 py-2 flex items-center ml-1 sm:ml-2 border`}
 >
@@ -700,6 +700,48 @@ export default function LectureItem({
           e.stopPropagation();
           if (toggleAddResourceModal) {
             toggleAddResourceModal(sectionId, lecture.id);
+          }
+        }}
+      />
+    </>
+  ) : activeContentType === 'video' ? (
+    <>
+      <span className='font-bold'>Add Video</span>
+      <X 
+        className="w-3 h-3 sm:w-4 sm:h-4 ml-1 sm:ml-2" 
+        onClick={(e) => {
+          e.stopPropagation();
+          setActiveContentType(null);
+          if (toggleContentSection) {
+            toggleContentSection(sectionId, lecture.id);
+          }
+        }}
+      />
+    </>
+  ) : activeContentType === 'video-slide' ? (
+    <>
+      <span className='font-bold'>Add Video & Slide Mashup</span>
+      <X 
+        className="w-3 h-3 sm:w-4 sm:h-4 ml-1 sm:ml-2" 
+        onClick={(e) => {
+          e.stopPropagation();
+          setActiveContentType(null);
+          if (toggleContentSection) {
+            toggleContentSection(sectionId, lecture.id);
+          }
+        }}
+      />
+    </>
+  ) : activeContentType === 'article' ? (
+    <>
+      <span className='font-bold'>Add Article</span>
+      <X 
+        className="w-3 h-3 sm:w-4 sm:h-4 ml-1 sm:ml-2" 
+        onClick={(e) => {
+          e.stopPropagation();
+          setActiveContentType(null);
+          if (toggleContentSection) {
+            toggleContentSection(sectionId, lecture.id);
           }
         }}
       />
