@@ -297,27 +297,6 @@ const SimplePdfViewer: React.FC<PdfViewerProps> = ({
             />
           </div>
 
-          {/* Navigation placeholder */}
-          <div className="flex items-center justify-between mt-2 px-4">
-            <button 
-              className="p-1 rounded text-gray-400"
-              disabled
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
-            
-            <div className="flex-1 flex justify-center items-center space-x-1 px-4 overflow-x-auto">
-              <div className="text-sm text-gray-500">Use browser's PDF controls to navigate</div>
-            </div>
-            
-            <button 
-              className="p-1 rounded text-gray-400"
-              disabled
-            >
-              <ChevronRight className="w-5 h-5" />
-            </button>
-          </div>
-          
           <div className="px-4 pt-2 text-sm text-center font-medium text-gray-700">
             {file?.name}
           </div>
