@@ -94,6 +94,15 @@ export default function DescriptionEditorComponent({
   saveDescription
 }: DescriptionEditorComponentProps) {
   if (!activeDescriptionSection) return null;
+  
+  // This function handles saving the description and closing the editor
+  // In DescriptionEditorComponent.tsx
+  const handleSaveDescription = () => {
+    // Call the parent component's save function
+    saveDescription();
+    
+    // No need to manually call onClose as the parent component will update state
+  };
 
   return (
     <div className="w-full border-t border-gray-400 overflow-hidden bg-white">
@@ -125,7 +134,7 @@ export default function DescriptionEditorComponent({
           Cancel
         </button>
         <button
-          onClick={saveDescription}
+          onClick={handleSaveDescription}
           className="px-4 py-1.5 bg-[#6D28D2] border border-transparent rounded-md text-sm font-medium text-white hover:bg-[#6D28D2]"
         >
           Save

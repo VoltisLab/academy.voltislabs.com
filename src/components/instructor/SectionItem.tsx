@@ -13,6 +13,8 @@ import CodingExerciseItem from './CodingExcerciseItem';
 import PracticeItem from './PracticeItem';
 import PracticeForm from './PracticeForm';
 import { FaHamburger } from 'react-icons/fa';
+import { useSections } from '@/hooks/useSection';
+
 
 interface SectionItemProps {
   section: {
@@ -60,6 +62,7 @@ interface SectionItemProps {
   };
 }
 
+
 export default function SectionItem({
   section,
   index,
@@ -92,7 +95,7 @@ export default function SectionItem({
   children,
   draggedSection,
   draggedLecture,
-  dragTarget
+  dragTarget,
 }: SectionItemProps) {
   const sectionNameInputRef = useRef<HTMLInputElement>(null);
   // State for toggling action buttons
@@ -105,6 +108,7 @@ export default function SectionItem({
   const [showEditForm, setShowEditForm] = useState<boolean>(false);
   const [editTitle, setEditTitle] = useState<string>("");
   const [editObjective, setEditObjective] = useState<string>("");
+    const { saveDescription } = useSections([]);
   
   // Added states to track active sections for resources and descriptions
   const [activeResourceSection, setActiveResourceSection] = useState<{sectionId: string, lectureId: string} | null>(null);
@@ -206,6 +210,23 @@ export default function SectionItem({
     setShowActionButtons(false);
   };
 
+
+// With this simplified version:
+// In SectionItem.tsx, add this function:
+const handleSaveDescription = () => {
+  if (!activeDescriptionSection) return;
+  
+  // Save the description to the parent component
+  saveDescription(
+    activeDescriptionSection.sectionId,
+    activeDescriptionSection.lectureId,
+    currentDescription
+  );
+  
+  // Close the description editor
+  setActiveDescriptionSection(null);
+};
+
   const handleAddPractice = (sectionId: string, title: string, description: string) => {
     // Add the lecture with practice content type
     const newLectureId = addLecture(sectionId, 'practice', title);
@@ -244,26 +265,29 @@ export default function SectionItem({
   };
 
   // Custom toggleDescriptionEditor that updates local state
-  const handleToggleDescriptionEditor = (sectionId: string, lectureId: string, currentText: string = "") => {
-    // Check if we're toggling the same lecture
-    if (activeDescriptionSection && 
-        activeDescriptionSection.sectionId === sectionId && 
-        activeDescriptionSection.lectureId === lectureId) {
-      // Toggle off
-      setActiveDescriptionSection(null);
-    } else {
-      // Toggle on for a new lecture
-      setActiveDescriptionSection({ sectionId, lectureId });
-      setCurrentDescription(currentText);
-      // Make sure resource section is closed
-      setActiveResourceSection(null);
+  // Custom toggleDescriptionEditor that updates local state
+const handleToggleDescriptionEditor = (sectionId: string, lectureId: string, currentText: string = "") => {
+  // Check if we're toggling the same lecture
+  if (activeDescriptionSection && 
+      activeDescriptionSection.sectionId === sectionId && 
+      activeDescriptionSection.lectureId === lectureId) {
+    // Toggle off
+    setActiveDescriptionSection(null);
+  } else {
+    // Toggle on for a new lecture
+    setActiveDescriptionSection({ sectionId, lectureId });
+    if (updateCurrentDescription) {
+      updateCurrentDescription(currentText);
     }
-    
-    // Also call the parent toggle if it exists
-    if (toggleDescriptionEditor) {
-      toggleDescriptionEditor(sectionId, lectureId, currentText);
-    }
-  };
+    // Make sure resource section is closed
+    setActiveResourceSection(null);
+  }
+  
+  // Also call the parent toggle if it exists
+  if (toggleDescriptionEditor) {
+    toggleDescriptionEditor(sectionId, lectureId, currentText);
+  }
+};
 
   // Handle description update
   const updateCurrentDescription = (description: string) => {
@@ -271,12 +295,7 @@ export default function SectionItem({
   };
 
   // Handle description save
-  const saveDescription = () => {
-    // This would typically update the description in your data store
-    console.log("Saving description:", currentDescription);
-    // Close the description editor
-    setActiveDescriptionSection(null);
-  };
+  // In your parent component
 
   // Render lecture items based on their content type
   const renderLectureItem = (lecture: Lecture, lectureIndex: number) => {
@@ -388,35 +407,35 @@ export default function SectionItem({
     
     return (
       <LectureItem
-        key={lecture.id}
-        lecture={lecture}
-        lectureIndex={lectureIndex}
-        totalLectures={section.lectures.length}
-        sectionId={section.id}
-        editingLectureId={editingLectureId}
-        setEditingLectureId={setEditingLectureId}
-        updateLectureName={updateLectureName}
-        deleteLecture={deleteLecture}
-        moveLecture={moveLecture}
-        toggleContentSection={toggleContentSection}
-        toggleAddResourceModal={handleToggleAddResourceModal}
-        toggleDescriptionEditor={handleToggleDescriptionEditor}
-        activeContentSection={activeContentSection}
-        activeResourceSection={activeResourceSection}
-        activeDescriptionSection={activeDescriptionSection}
-        isDragging={isDragging}
-        handleDragStart={handleDragStart}
-        handleDragOver={handleDragOver}
-        handleDrop={handleDrop}
-        handleDragEnd={handleDragEnd}
-        handleDragLeave={handleDragLeave}
-        draggedLecture={draggedLecture}
-        dragTarget={dragTarget}
-        sections={[section]}
-        updateCurrentDescription={updateCurrentDescription}
-        saveDescription={saveDescription}
-        currentDescription={currentDescription}
-      />
+  key={lecture.id}
+  lecture={lecture}
+  lectureIndex={lectureIndex}
+  totalLectures={section.lectures.length}
+  sectionId={section.id}
+  editingLectureId={editingLectureId}
+  setEditingLectureId={setEditingLectureId}
+  updateLectureName={updateLectureName}
+  deleteLecture={deleteLecture}
+  moveLecture={moveLecture}
+  toggleContentSection={toggleContentSection}
+  toggleAddResourceModal={handleToggleAddResourceModal}
+  toggleDescriptionEditor={handleToggleDescriptionEditor}
+  activeContentSection={activeContentSection}
+  activeResourceSection={activeResourceSection}
+  activeDescriptionSection={activeDescriptionSection}
+  isDragging={isDragging}
+  handleDragStart={handleDragStart}
+  handleDragOver={handleDragOver}
+  handleDrop={handleDrop}
+  handleDragEnd={handleDragEnd}
+  handleDragLeave={handleDragLeave}
+  draggedLecture={draggedLecture}
+  dragTarget={dragTarget}
+  sections={[section]} // Pass the current section if needed
+  updateCurrentDescription={updateCurrentDescription}
+  saveDescription={handleSaveDescription} // Use the local wrapper function
+  currentDescription={currentDescription}
+/>
     );
   };  
 
