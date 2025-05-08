@@ -139,7 +139,7 @@ const VideoSlideMashupComponent: React.FC = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      <tr className="text-sm text-gray-700">
+                      <tr className="text-sm text-gray-700 font-bold">
                         <td className="py-2">{videoFile?.name || "2025-05-01-025523.webm"}</td>
                         <td className="py-2">Video</td>
                         <td className="py-2">{videoProcessing ? "Processing" : "Ready"}</td>
