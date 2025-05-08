@@ -136,8 +136,6 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
       type: "multiple-choice",
     };
 
-    console.log("what jkkjjk: " + question.correctAnswerIndex);
-
     onSubmit(question);
   };
 
