@@ -447,3 +447,88 @@ export enum CodeLanguageType {
   CSS = "css",
   SQL = "sql"
 }
+
+
+  export interface SelectedVideoDetails {
+    id: string;
+    filename: string;
+    duration: string;
+    thumbnailUrl: string;
+    isDownloadable: boolean;
+    url?: string 
+  }
+  // In your existing VideoContent interface, update the libraryTab:
+  export interface VideoContent {
+    uploadTab: {
+      selectedFile: File | null;
+    };
+    libraryTab: {
+      searchQuery: string;
+      selectedVideo: string | null;
+      videos: StoredVideo[];
+    };
+    activeTab: string;
+    selectedVideoDetails: SelectedVideoDetails | null;
+  }
+
+export interface VideoSlideContent {
+  video: {
+    selectedFile: File | null;
+  };
+  presentation: {
+    selectedFile: File | null;
+  };
+  step: number;
+}
+
+export interface ArticleContent {
+  text: string;
+}
+
+export interface StoredVideo {
+  id: string;
+  filename: string;
+  type: string;
+  status: string;
+  date: string;
+}
+
+// Tab interfaces
+export interface TabInterface {
+  label: string;
+  key: string;
+}
+
+export interface LectureItemProps {
+  lecture: Lecture;
+  lectureIndex: number;
+  totalLectures: number;
+  sectionId: string;
+  editingLectureId: string | null;
+  setEditingLectureId: (id: string | null) => void;
+  updateLectureName: (sectionId: string, lectureId: string, newName: string) => void;
+  deleteLecture: (sectionId: string, lectureId: string) => void;
+  moveLecture: (sectionId: string, lectureId: string, direction: 'up' | 'down') => void;
+  toggleContentSection?: (sectionId: string, lectureId: string) => void;
+  toggleAddResourceModal?: (sectionId: string, lectureId: string) => void;
+  toggleDescriptionEditor?: (sectionId: string, lectureId: string, currentText: string) => void;
+  activeContentSection?: {sectionId: string, lectureId: string} | null;
+  activeResourceSection?: {sectionId: string, lectureId: string} | null;
+  activeDescriptionSection?: {sectionId: string, lectureId: string} | null;
+  isDragging: boolean;
+  handleDragStart: (e: React.DragEvent, sectionId: string, lectureId?: string) => void;
+  handleDragOver: (e: React.DragEvent) => void;
+  handleDrop: (e: React.DragEvent, targetSectionId: string, targetLectureId?: string) => void;
+  handleDragEnd?: () => void;
+  handleDragLeave?: () => void;
+  draggedLecture?: string | null;
+  dragTarget?: {
+    sectionId: string | null;
+    lectureId: string | null;
+  };
+  sections?: any[];
+  updateCurrentDescription?: (description: string) => void;
+  saveDescription?: () => void;
+  currentDescription?: string;
+  children?: React.ReactNode;
+}
