@@ -86,20 +86,26 @@ const toggleDownloadable = () => {
 
 // Function to handle the edit content button click
 const handleEditContent = () => {
-  // Reset the video content to show the tabs again
-  if (toggleContentSection) {
-    // First make sure we're showing the video content type
-    setActiveContentType('video');
-    
-    // Then make sure we're in the content section view
+  // Force set all the required states directly 
+  setActiveContentType('video');
+  setShowContentTypeSelector(false);
+  
+  setVideoContent({
+    ...videoContent,
+    activeTab: 'addFromLibrary',
+    selectedVideoDetails: videoContent.selectedVideoDetails
+  });
+  
+  // If we have access to the activeContentSection state in the parent component
+  // We could directly set it rather than toggling
+  if (activeContentSection && activeContentSection.sectionId === sectionId && 
+      activeContentSection.lectureId === lecture.id) {
+    // It's already expanded, we've set the correct states above
+    console.log("Section already expanded, just updating content type and tab");
+  } else if (toggleContentSection) {
+    // It's collapsed, so we need to expand it
     toggleContentSection(sectionId, lecture.id);
-    
-    // Set the tab to "Add from library" 
-    setVideoContent({
-      ...videoContent,
-      activeTab: 'addFromLibrary',
-      selectedVideoDetails: videoContent.selectedVideoDetails // Keep selected video details
-    });
+    console.log("Section was collapsed, expanding it");
   }
 };
 
