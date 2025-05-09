@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useDropzone } from "react-dropzone";
 import ImageUploadModal from "../modals/ImageUploadModal";
+// import "react-quill/dist/quill.snow.css";
 
 interface RichTextEditorProps {
   value: string;
@@ -28,7 +29,6 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   value,
   onChange,
   type,
-  onImageClick,
   isFocusedAnswerId,
   setFocusedAnswerIndex,
   answerIndex,
@@ -240,6 +240,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
       <ReactQuill
         ref={quillRef}
         value={value}
+        theme="snow"
         onChange={onChange}
         className="my-quill no-border w-[100%]"
         placeholder={getPlaceholder()}

@@ -235,7 +235,7 @@ const VideoSlideMashupComponent: React.FC = () => {
           <div className="flex items-center mb-2 border-b pb-3 border-b-gray-300">
             <div className={`w-8 h-8 flex items-center justify-center text-sm font-bold ${
               presentationUploaded 
-                ? 'bg-green-300 text-gray-800' 
+                ? 'bg-green-500 text-white font-bold' 
                 : presentationFile 
                   ? 'bg-amber-200 text-gray-800' 
                   : 'bg-gray-100 text-gray-700'
