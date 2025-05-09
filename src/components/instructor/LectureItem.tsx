@@ -790,7 +790,7 @@ const handleVideoFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
                           <div className="flex justify-between items-center">
                             {new Date().toLocaleDateString('en-US', {month: '2-digit', day: '2-digit', year: 'numeric'})}
                             <button 
-                              className="text-[#6D28D2] hover:text-[#7D28D2] text-xs font-bold"
+                              className="text-[D28D2] hover:text-[#7D28D2] text-xs font-bold"
                               onClick={() => {
                                 setVideoUploadComplete(false);
                                 setVideoContent({
@@ -831,7 +831,7 @@ const handleVideoFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
                           <div className="flex items-center">
                             <div className="w-full flex items-center">
                               <div className="w-20 bg-gray-200 h-2 overflow-hidden roundedd">
-                                <div className="bg-[#6D28D2] h-2 " style={{ width: `${videoUploadProgress}%` }}></div>
+                                <div className="bg-[D28D2] h-2 " style={{ width: `${videoUploadProgress}%` }}></div>
                               </div>
                               <span className="ml-2 text-xs">{videoUploadProgress}%</span>
                             </div>

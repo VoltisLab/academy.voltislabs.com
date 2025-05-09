@@ -131,7 +131,7 @@ const StudentVideoPreview = ({ videoContent, setShowVideoPreview, lecture }: Chi
                 
                 {/* Video controls */}
                 {(showControls || !playing) && (
-                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-4">
+                  <div className="absolute bottom-5 left-0 right-0 bg-gradient-to-t from-black to-transparent p-4">
                     <div className="flex items-center text-white">
                       <button 
                         className="mr-4"
@@ -145,7 +145,7 @@ const StudentVideoPreview = ({ videoContent, setShowVideoPreview, lecture }: Chi
                             <path d="M18 4H14V20H18V4Z" fill="white"/>
                           </svg>
                         ) : (
-                          <Play className="w-6 h-6" />
+                          <Play className="w-6 h-6 " color="white" />
                         )}
                       </button>
                       
@@ -167,7 +167,7 @@ const StudentVideoPreview = ({ videoContent, setShowVideoPreview, lecture }: Chi
                       
                       <div className="flex items-center">
                         <div className="flex items-center mx-2">
-                          <Volume2 className="w-5 h-5 mr-2" />
+                          <Volume2 className="w-5 h-5 mr-2" color="white" />
                           <div 
                             className="w-16 h-1 bg-gray-600 rounded-full cursor-pointer"
                             onClick={(e) => {
@@ -290,7 +290,7 @@ const StudentVideoPreview = ({ videoContent, setShowVideoPreview, lecture }: Chi
           </div>
           
           {/* Bottom content tabs */}
-          <div className="bg-white border-t border-gray-200" style={{ minHeight: '220px' }}>
+          <div className="bg-white border-t border-gray-200 max-w-[75.5%]" style={{ minHeight: '600px' }}>
             {/* Tabs with Search icon/functionality */}
             <div className="flex items-center border-b border-gray-200">
               <button 
@@ -313,7 +313,7 @@ const StudentVideoPreview = ({ videoContent, setShowVideoPreview, lecture }: Chi
                   ].map(tab => (
                     <button 
                       key={tab.id}
-                      className={`px-6 py-3 text-sm font-medium ${activeTab === tab.id ? 'text-black border-b-2 border-black' : 'text-gray-500 hover:text-gray-700'}`}
+                      className={`px-6 py-3 text-sm font-bold ${activeTab === tab.id ? 'text-gray-700 border-b-2 border-gray-700' : 'text-gray-500 hover:text-gray-800'}`}
                       onClick={() => setActiveTab(tab.id as typeof activeTab)}
                       type="button"
                     >
@@ -355,18 +355,17 @@ const StudentVideoPreview = ({ videoContent, setShowVideoPreview, lecture }: Chi
             {activeTab === 'overview' && (
               <div className="p-6">
                 {/* Rating, Students, and Total section */}
-                <div className="flex items-start mb-6">
-                  <div className="flex items-center mr-8">
-                    <span className="text-amber-500 text-lg font-bold mr-1">0.0</span>
-                    <span className="text-gray-500">★</span>
+                <div className="flex items-center gap-8 mb-6">
+                  <div className="flex flex-col items-center ">
+                    <span className="text-amber-700 text-lg font-bold mr-1">0.0 <span className="text-amber-700">★</span></span>
                     <span className="text-gray-500 text-xs ml-1">(0 ratings)</span>
                   </div>
-                  <div className="mr-8">
-                    <div className="text-gray-700 text-lg">0</div>
+                  <div className="">
+                    <div className="text-gray-700 font-bold">0</div>
                     <div className="text-gray-500 text-xs">Students</div>
                   </div>
                   <div>
-                    <div className="text-gray-700 text-lg">0</div>
+                    <div className="text-gray-700 font-bold">2mins</div>
                     <div className="text-gray-500 text-xs">Total</div>
                   </div>
                 </div>
@@ -384,7 +383,8 @@ const StudentVideoPreview = ({ videoContent, setShowVideoPreview, lecture }: Chi
                 </div>
                 
                 {/* Schedule learning time section */}
-                <div className="mb-8 p-6 border border-gray-200 rounded-lg bg-gray-50">
+                <div className="border-b border-gray-300 mb-8">
+                <div className=" p-6 border border-gray-300 rounded-lg">
                   <div className="flex items-start">
                     <Clock className="text-gray-500 w-5 h-5 mr-3 mt-1" />
                     <div>
@@ -394,43 +394,39 @@ const StudentVideoPreview = ({ videoContent, setShowVideoPreview, lecture }: Chi
                         Set time aside to learn and get reminders using your learning scheduler.
                       </p>
                       <div className="flex">
-                        <button className="bg-purple-600 hover:bg-purple-700 text-white text-sm py-2 px-4 rounded-md mr-3 font-medium">
+                        <button className="bg-[#6D28D2] hover:bg-[#7D28D2] text-white text-sm py-2 px-4 rounded-md mr-3 font-medium">
                           Get started
                         </button>
-                        <button className="text-purple-600 hover:text-purple-700 text-sm py-2 px-4 font-medium">
+                        <button className="text-[#6D28D2] hover:text-[#7D28D2] text-sm py-2 px-4 font-medium">
                           Dismiss
                         </button>
                       </div>
                     </div>
                   </div>
                 </div>
+                </div>
                 
                 {/* By the numbers section */}
-                <div className="mb-8 pb-8 border-b border-gray-200">
-                  <h3 className="font-semibold text-lg mb-4">By the numbers</h3>
-                  <div className="grid grid-cols-2 gap-y-3">
-                    <div>
-                      <p className="text-sm text-gray-700">Skill level: Beginner</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-700">Lectures: 1</p>
-                    </div>
-                    <div>
+                <div className="mb-8 pb-8 border-b border-gray-200 grid grid-cols-3">
+                  <h3 className="text-gray-700 text-sm mb-4">By the numbers</h3>
+
+                    <div className="mr-12">
+                      <p className="text-sm text-gray-700">Skill level:</p>
                       <p className="text-sm text-gray-700">Students: 0</p>
-                    </div>
-                    <div>
                       <p className="text-sm text-gray-700">Languages: English</p>
-                    </div>
-                    <div>
                       <p className="text-sm text-gray-700">Captions: No</p>
                     </div>
-                  </div>
+
+                    <div>
+                       <p className="text-sm text-gray-700">Lectures: 1</p>
+                       <p className="text-sm text-gray-700">Video: 2 total mins</p>
+                    </div>
                 </div>
                 
                 {/* Features section */}
-                <div className="mb-8 pb-8 border-b border-gray-200">
-                  <h3 className="font-semibold text-lg mb-4">Features</h3>
-                  <div className="flex items-center">
+                <div className="mb-8 pb-8 border-b grid grid-cols-3 items-center border-gray-200 mr-7">
+                  <h3 className="text-sm text-gray-700 ">Features</h3>
+                  <div className="flex items-center text-gray-700 font-medium ">
                     <p className="text-sm">Available on </p>
                     <a href="#" className="text-purple-600 mx-1 text-sm font-medium">iOS</a>
                     <p className="text-sm">and</p>
@@ -439,27 +435,27 @@ const StudentVideoPreview = ({ videoContent, setShowVideoPreview, lecture }: Chi
                 </div>
                 
                 {/* Description section */}
-                <div className="mb-8 pb-8 border-b border-gray-200">
-                  <h3 className="font-semibold text-lg mb-4">Description</h3>
-                  <div className="space-y-6">
+                <div className="mb-8 pb-8 border-b border-gray-200 grid grid-cols-3 mr-10 ">
+                  <h3 className="text-sm text-gray-700 ">Description</h3>
+                  <div className="text-sm text-gray-700">
                     <div>
-                      <h4 className="font-medium text-base mb-2">What you'll learn</h4>
+                      <h4 className="font-medium text-sm ">What you'll learn</h4>
                       {/* Content would go here */}
                     </div>
                     <div>
-                      <h4 className="font-medium text-base mb-2">Are there any course requirements or prerequisites?</h4>
+                      <h4 className="font-medium text-sm ">Are there any course requirements or prerequisites?</h4>
                       {/* Content would go here */}
                     </div>
                     <div>
-                      <h4 className="font-medium text-base mb-2">Who this course is for:</h4>
+                      <h4 className="font-medium text-sm">Who this course is for:</h4>
                       {/* Content would go here */}
                     </div>
                   </div>
                 </div>
                 
                 {/* Instructor section */}
-                <div>
-                  <h3 className="font-semibold text-lg mb-4">Instructor</h3>
+                <div className="flex flex-row grid grid-cols-3 mr-10">
+                  <h3 className="text-sm text-gray-700">Instructor</h3>
                   <div className="flex items-center">
                     <div className="w-12 h-12 bg-gray-800 rounded-full flex items-center justify-center text-white font-medium">
                       SS
