@@ -1,28 +1,15 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { ContentItemType, Lecture, ContentType, ResourceTabType } from '@/lib/types';
-import {Plus, Trash2, Edit3, ChevronDown, ChevronUp, Search, X, CircleCheck, FileText, AlignJustify, Play, SquarePlay} from "lucide-react";
-import dynamic from 'next/dynamic';
+import { ContentItemType, ContentType, ResourceTabType, ArticleContent, TabInterface, VideoSlideContent, VideoContent, StoredVideo, LectureItemProps } from '@/lib/types';
+import {Plus, Trash2, Edit3, ChevronDown, ChevronUp, Search, X, CircleCheck, FileText, AlignJustify} from "lucide-react";
 import AddResourceComponent from './AddResourceComponent';
 import DescriptionEditorComponent from './DescriptionEditorComponent';
 import 'react-quill-new/dist/quill.snow.css';
-import { cn } from '@/lib/utils';
+import { ContentSelector } from './ContentSelector';
 import VideoSlideMashupComponent from './VideoAndSlideMashup';
-const ReactQuill = dynamic(() => import('react-quill-new'), { 
-  ssr: false,
-  loading: () => <p>Loading editor...</p>
-});
+import Article from './Article';
+import StudentVideoPreview from './StudentVideoPeview';
+import InstructorVideoPreview from './InstructorVideoPeview';
 
-// Define the toolbar modules for React Quill
-const quillModules = {
-  toolbar: {
-    container: "#custom-toolbar",
-  },
-};
-
-const quillFormats = [
-  "header", "bold", "italic", "underline", "strike",
-  "list", "bullet", "link", "image", "code-block"
-];
 
 interface SelectedVideoDetails {
   id: string;
@@ -30,95 +17,6 @@ interface SelectedVideoDetails {
   duration: string;
   thumbnailUrl: string;
   isDownloadable: boolean;
-}
-
-interface StoredVideo {
-  id: string;
-  filename: string;
-  type: string;
-  status: string;
-  date: string;
-}
-
-// With this interface defined, your VideoContent interface should now look like this:
-interface VideoContent {
-  uploadTab: {
-    selectedFile: File | null;
-  };
-  libraryTab: {
-    searchQuery: string;
-    selectedVideo: string | null;
-    videos: StoredVideo[]; 
-  };
-  activeTab: string;
-  selectedVideoDetails: SelectedVideoDetails | null;
-}
-
-// And your selected video interface:
-interface SelectedVideoDetails {
-  id: string;
-  filename: string;
-  duration: string;
-  thumbnailUrl: string;
-  isDownloadable: boolean;
-}
-
-// Tab interfaces
-interface TabInterface {
-  label: string;
-  key: string;
-}
-
-// Content interfaces for different content types
-
-interface VideoSlideContent {
-  video: {
-    selectedFile: File | null;
-  };
-  presentation: {
-    selectedFile: File | null;
-  };
-  step: number;
-}
-
-interface ArticleContent {
-  text: string;
-}
-
-
-
-interface LectureItemProps {
-  lecture: Lecture;
-  lectureIndex: number;
-  totalLectures: number;
-  sectionId: string;
-  editingLectureId: string | null;
-  setEditingLectureId: (id: string | null) => void;
-  updateLectureName: (sectionId: string, lectureId: string, newName: string) => void;
-  deleteLecture: (sectionId: string, lectureId: string) => void;
-  moveLecture: (sectionId: string, lectureId: string, direction: 'up' | 'down') => void;
-  toggleContentSection?: (sectionId: string, lectureId: string) => void;
-  toggleAddResourceModal?: (sectionId: string, lectureId: string) => void;
-  toggleDescriptionEditor?: (sectionId: string, lectureId: string, currentText: string) => void;
-  activeContentSection?: {sectionId: string, lectureId: string} | null;
-  activeResourceSection?: {sectionId: string, lectureId: string} | null;
-  activeDescriptionSection?: {sectionId: string, lectureId: string} | null;
-  isDragging: boolean;
-  handleDragStart: (e: React.DragEvent, sectionId: string, lectureId?: string) => void;
-  handleDragOver: (e: React.DragEvent) => void;
-  handleDrop: (e: React.DragEvent, targetSectionId: string, targetLectureId?: string) => void;
-  handleDragEnd?: () => void;
-  handleDragLeave?: () => void;
-  draggedLecture?: string | null;
-  dragTarget?: {
-    sectionId: string | null;
-    lectureId: string | null;
-  };
-  sections?: any[];
-  updateCurrentDescription?: (description: string) => void;
-  saveDescription?: () => void;
-  currentDescription?: string;
-  children?: React.ReactNode;
 }
 
 export default function LectureItem({
@@ -157,21 +55,22 @@ export default function LectureItem({
   const [content, setContent] = useState("");
   const [htmlMode, setHtmlMode] = useState(false);
   // Add these to your existing state variables in the LectureItem component
-const [isVideoUploading, setIsVideoUploading] = useState(false);
-const [videoUploadProgress, setVideoUploadProgress] = useState(0);
-const [videoUploadComplete, setVideoUploadComplete] = useState(false);
-
-const [videoSlideStep, setVideoSlideStep] = useState(1);
-const [videoUploading, setVideoUploading] = useState(false);
-const [videoUploaded, setVideoUploaded] = useState(false);
-const [presentationUploading, setPresentationUploading] = useState(false);
-const [presentationUploadProgress, setPresentationUploadProgress] = useState(0);
-const [presentationUploaded, setPresentationUploaded] = useState(false);
-const [currentSlide, setCurrentSlide] = useState(1);
-const [totalSlides, setTotalSlides] = useState(1); // Initialize with 1, will be updated after PDF upload
-const [isFullscreen, setIsFullscreen] = useState(false);
-const [syncComplete, setSyncComplete] = useState(false);
-
+  const [isVideoUploading, setIsVideoUploading] = useState(false);
+  const [videoUploadProgress, setVideoUploadProgress] = useState(0);
+  const [videoUploadComplete, setVideoUploadComplete] = useState(false);
+  const [videoSlideStep, setVideoSlideStep] = useState(1);
+  const [videoUploading, setVideoUploading] = useState(false);
+  const [videoUploaded, setVideoUploaded] = useState(false);
+  const [presentationUploading, setPresentationUploading] = useState(false);
+  const [presentationUploadProgress, setPresentationUploadProgress] = useState(0);
+  const [presentationUploaded, setPresentationUploaded] = useState(false);
+  const [currentSlide, setCurrentSlide] = useState(1);
+  const [totalSlides, setTotalSlides] = useState(1); // Initialize with 1, will be updated after PDF upload
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [syncComplete, setSyncComplete] = useState(false);
+  const [showPreviewDropdown, setShowPreviewDropdown] = useState(false);
+  const [showVideoPreview, setShowVideoPreview] = useState(false);
+  const [previewMode, setPreviewMode] = useState<'instructor' | 'student' | null>(null);
 // Add these handlers for the video and slide mashup
 const toggleDownloadable = () => {
   if (videoContent.selectedVideoDetails) {
@@ -184,10 +83,6 @@ const toggleDownloadable = () => {
     });
   }
 };
-
-const [showPreviewDropdown, setShowPreviewDropdown] = useState(false);
-const [showVideoPreview, setShowVideoPreview] = useState(false);
-const [previewMode, setPreviewMode] = useState<'instructor' | 'student' | null>(null);
 
 // Function to handle the edit content button click
 const handleEditContent = () => {
@@ -208,45 +103,6 @@ const handleEditContent = () => {
   }
 };
 
-const PreviewDropdownButton: React.FC = () => {
-  return (
-    <div className="relative inline-block" id="preview-dropdown">
-      <button 
-        onClick={() => setShowPreviewDropdown(!showPreviewDropdown)}
-        className="bg-[#6D28D2] text-white text-sm font-medium px-4 py-1.5 rounded hover:bg-[#7D28D2] flex items-center"
-      >
-        Preview <ChevronDown className="ml-1 w-4 h-4" />
-      </button>
-      
-      {/* Dropdown menu - using absolute positioning instead of fixed */}
-      {showPreviewDropdown && (
-        <div className="absolute mt-1 right-0 w-40 bg-white border border-gray-200 rounded-md shadow-lg z-50">
-          <ul>
-            <li>
-              <button
-                onClick={() => handlePreviewSelection('instructor')}
-                className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-              >
-                As Instructor
-              </button>
-            </li>
-            <li>
-              <button
-                onClick={() => handlePreviewSelection('student')}
-                className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-              >
-                As Student
-              </button>
-            </li>
-          </ul>
-        </div>
-      )}
-    </div>
-  );
-};
-
-
-
 // For debugging
 useEffect(() => {
   console.log("Show video preview:", showVideoPreview);
@@ -262,113 +118,12 @@ const VideoPreviewPage: React.FC = () => {
   
   // Return the instructor or student view based on preview mode
   if (previewMode === 'student') {
-    return <StudentVideoPreview />;
+    return <StudentVideoPreview videoContent={videoContent} setShowVideoPreview={setShowVideoPreview} lecture={lecture}  />;
   }
   
   // Default to instructor view
   return (
-    <div className="fixed inset-0 bg-white z-[9999] overflow-auto flex">
-      {/* Video player section */}
-      <div className="flex-1 bg-black">
-        <div className="relative w-full h-full flex items-center justify-center">
-          {/* Video player with play button overlay */}
-          <div className="relative w-full max-w-4xl mx-auto">
-            <div className="bg-red-600 w-full" style={{ paddingBottom: '56.25%' }}> {/* 16:9 aspect ratio */}
-              <div className="absolute inset-0 flex items-center justify-center">
-                <button 
-                  className="rounded-full bg-black bg-opacity-70 p-4"
-                  type="button"
-                  aria-label="Play video"
-                >
-                  <Play className="w-8 h-8 text-white" />
-                </button>
-              </div>
-            </div>
-            
-            {/* Video controls */}
-            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-4">
-              <div className="flex items-center text-white">
-                <button 
-                  className="mr-4"
-                  type="button"
-                  aria-label="Play/Pause"
-                >
-                  <Play className="w-6 h-6" />
-                </button>
-                
-                <div className="flex-1 mx-2">
-                  <div className="h-1 bg-gray-600 rounded-full">
-                    <div className="h-1 bg-white rounded-full w-0"></div>
-                  </div>
-                  <div className="flex justify-between text-xs mt-1">
-                    <span>0:00</span>
-                    <span>0:00</span>
-                  </div>
-                </div>
-                
-                <button 
-                  className="ml-4"
-                  type="button"
-                  aria-label="Expand course content"
-                >
-                  <ChevronUp className="w-6 h-6" />
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      {/* Course content sidebar */}
-      <div className="w-80 border-l border-gray-200 flex flex-col">
-        {/* Header with close button */}
-        <div className="flex justify-between items-center border-b border-gray-200 p-4">
-          <h2 className="font-semibold">Course content</h2>
-          <button 
-            onClick={() => setShowVideoPreview(false)} 
-            className="text-gray-500 hover:text-gray-700"
-            type="button"
-            aria-label="Close preview"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-        
-        {/* Section with lecture */}
-        <div className="p-4 border-b border-gray-200">
-          <div className="flex justify-between items-center mb-2">
-            <h3 className="font-semibold">Section 1: Demo Section</h3>
-            <ChevronUp className="w-4 h-4" />
-          </div>
-          <p className="text-sm text-gray-500">0/1 | 2min</p>
-        </div>
-        
-        {/* Lecture item */}
-        <div className="p-4 bg-gray-100 border-l-4 border-indigo-600">
-          <div className="flex items-start">
-            <input type="checkbox" className="mt-1 mr-2" aria-label="Mark lecture as complete" />
-            <div>
-              <p className="font-medium">1. {lecture.name}</p>
-              <div className="flex items-center text-xs text-gray-500 mt-1">
-                <Play className="w-3 h-3 mr-1" />
-                <span>2min</span>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        {/* Bottom navigation buttons */}
-        <div className="mt-auto p-4 border-t border-gray-200">
-          <button 
-            className="bg-indigo-600 text-white w-8 h-8 rounded-full flex items-center justify-center mx-auto"
-            type="button"
-            aria-label="Next lecture"
-          >
-            <ChevronDown className="w-5 h-5" />
-          </button>
-        </div>
-      </div>
-    </div>
+    <InstructorVideoPreview videoContent={videoContent} setShowVideoPreview={setShowVideoPreview} lecture={lecture}  />
   );
 };
 // Handle video upload for video-slide content type
@@ -436,8 +191,6 @@ const selectVideo = (videoId: string) => {
     }
   }
 };
-
-
 
 // Handle presentation (PDF) upload for video-slide content type
 const handlePresentationUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -534,188 +287,6 @@ const toggleFullscreen = () => {
   setIsFullscreen(!isFullscreen);
 };
 
-// This is the StudentVideoPreview component
-
-// Now update your VideoPreviewPage component to conditionally render based on preview mode
-const StudentVideoPreview: React.FC = () => {
-  // Using a proper type-safe useState
-  const [activeTab, setActiveTab] = useState<'overview' | 'notes' | 'announcements' | 'reviews' | 'learning-tools'>('overview');
-  
-  if (!videoContent.selectedVideoDetails) return null;
-  
-  return (
-    <div className="fixed inset-0 z-[9999] bg-white overflow-auto flex flex-col">
-      {/* Video player section */}
-      <div className="flex-1 bg-black">
-        <div className="relative w-full h-full flex items-center justify-center">
-          {/* Video player with play button overlay */}
-          <div className="relative w-full max-w-6xl mx-auto" style={{ height: 'calc(100vh - 260px)' }}>
-            <div className="bg-red-600 absolute inset-0 flex items-center justify-center">
-              <button 
-                className="rounded-full bg-black bg-opacity-70 p-4"
-                type="button"
-                aria-label="Play video"
-              >
-                <Play className="w-8 h-8 text-white" />
-              </button>
-            </div>
-            
-            {/* Video controls */}
-            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-4">
-              <div className="flex items-center text-white">
-                <button 
-                  className="mr-4"
-                  type="button" 
-                  aria-label="Play/Pause"
-                >
-                  <Play className="w-6 h-6" />
-                </button>
-                
-                <div className="flex-1 mx-2">
-                  <div className="h-1 bg-gray-600 rounded-full">
-                    <div className="h-1 bg-white rounded-full w-0"></div>
-                  </div>
-                  <div className="flex justify-between text-xs mt-1">
-                    <span>0:00</span>
-                    <span>{videoContent.selectedVideoDetails.duration}</span>
-                  </div>
-                </div>
-                
-                <div className="flex items-center">
-                  <button 
-                    className="mx-2"
-                    type="button"
-                    aria-label="Playback speed"
-                  >
-                    <span className="text-sm">1x</span>
-                  </button>
-                  <button 
-                    className="mx-2"
-                    type="button"
-                    aria-label="Add note"
-                  >
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M11 5V19M5 11H11H19" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  </button>
-                  <button 
-                    className="ml-2"
-                    type="button"
-                    aria-label="Skip ahead"
-                  >
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M14 9L19 12L14 15V9Z" fill="white"/>
-                      <path d="M19 12H5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      {/* Course content sidebar */}
-      <div className="w-80 bg-white border-l border-gray-200 absolute top-0 right-0 bottom-0 flex flex-col">
-        {/* Header with close button */}
-        <div className="flex justify-between items-center border-b border-gray-200 p-4">
-          <h2 className="font-semibold">Course content</h2>
-          <button 
-            onClick={() => setShowVideoPreview(false)} 
-            className="text-gray-500 hover:text-gray-700"
-            type="button"
-            aria-label="Close preview"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-        
-        {/* Section with lecture */}
-        <div className="p-4 border-b border-gray-200">
-          <div className="flex justify-between items-center mb-2">
-            <h3 className="font-semibold">Section 1: Demo Section</h3>
-            <ChevronUp className="w-4 h-4" />
-          </div>
-          <p className="text-sm text-gray-500">0/1 | 2min</p>
-        </div>
-        
-        {/* Lecture item */}
-        <div className="p-4 bg-gray-100 border-l-4 border-indigo-600">
-          <div className="flex items-start">
-            <input 
-              type="checkbox" 
-              className="mt-1 mr-2" 
-              aria-label="Mark lecture as complete"
-            />
-            <div>
-              <p className="font-medium">1. {lecture.name}</p>
-              <div className="flex items-center text-xs text-gray-500 mt-1">
-                <Play className="w-3 h-3 mr-1" />
-                <span>2min</span>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        {/* Bottom navigation buttons */}
-        <div className="mt-auto p-4 border-t border-gray-200">
-          <button 
-            className="bg-indigo-600 text-white w-8 h-8 rounded-full flex items-center justify-center mx-auto"
-            type="button"
-            aria-label="Next lecture"
-          >
-            <ChevronDown className="w-5 h-5" />
-          </button>
-        </div>
-      </div>
-      
-      {/* Bottom content tabs */}
-      <div className="h-60 bg-white border-t border-gray-200">
-        {/* Tabs */}
-        <div className="flex border-b border-gray-200">
-          {[
-            { id: 'overview', label: 'Overview' },
-            { id: 'notes', label: 'Notes' },
-            { id: 'announcements', label: 'Announcements' },
-            { id: 'reviews', label: 'Reviews' },
-            { id: 'learning-tools', label: 'Learning tools' }
-          ].map(tab => (
-            <button 
-              key={tab.id}
-              className={`px-4 py-3 text-sm font-medium ${activeTab === tab.id ? 'text-black border-b-2 border-black' : 'text-gray-500 hover:text-gray-700'}`}
-              onClick={() => setActiveTab(tab.id as typeof activeTab)}
-              type="button"
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-        
-        {/* Tab content - Overview */}
-        {activeTab === 'overview' && (
-          <div className="p-6 overflow-y-auto h-full">
-            <div className="flex items-center mb-4">
-              <div className="flex items-center mr-8">
-                <span className="text-amber-500 text-xl font-bold mr-1">0.0</span>
-                <span className="text-gray-500">★</span>
-              </div>
-              <div className="mr-8">
-                <div className="text-gray-700 text-sm">0</div>
-                <div className="text-gray-500 text-xs">Students</div>
-              </div>
-              <div>
-                <div className="text-gray-700 text-sm">2 mins</div>
-                <div className="text-gray-500 text-xs">Total</div>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
-
-
 // Add the closing event handler for clicking outside the dropdown
 useEffect(() => {
   const handleClickOutside = (event: MouseEvent): void => {
@@ -811,16 +382,6 @@ const handleVideoFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
   
   // Active content type state
   const [activeContentType, setActiveContentType] = useState<ContentItemType | null>(null);
-  
-  // States for different content types
-  // const [videoContent, setVideoContent] = useState<VideoContent>({
-  //   uploadTab: { selectedFile: null },
-  //   libraryTab: {
-  //     searchQuery: '', selectedVideo: null,
-  //     videos: []
-  //   },
-  //   activeTab: 'uploadVideo'
-  // });
   
   const [videoSlideContent, setVideoSlideContent] = useState<VideoSlideContent>({
     video: { selectedFile: null },
@@ -1004,27 +565,7 @@ const handleVideoFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     console.log("Searching for:", videoContent.libraryTab.searchQuery);
   };
 
-  interface StoredVideo {
-    id: string;
-    filename: string;
-    type: string;
-    status: string;
-    date: string;
-  }
   
-  // In your existing VideoContent interface, update the libraryTab:
-  interface VideoContent {
-    uploadTab: {
-      selectedFile: File | null;
-    };
-    libraryTab: {
-      searchQuery: string;
-      selectedVideo: string | null;
-      videos: StoredVideo[];
-    };
-    activeTab: string;
-    selectedVideoDetails: SelectedVideoDetails | null;
-  }
   
   // Update your initial state in useState hook to include the videos array
   const [videoContent, setVideoContent] = useState<VideoContent>({
@@ -1075,58 +616,6 @@ const handleVideoFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     }
   };
 
-
-  // Component to render selected video
-  const SelectedVideoComponent = () => {
-    const videoDetails = videoContent.selectedVideoDetails;
-    if (!videoDetails) return null;
-    
-    return (
-      <div className="border border-gray-300 rounded-md overflow-hidden mb-4">
-        <div className="flex items-center p-2">
-          <div className="flex-none">
-            <div className="w-24 h-16 bg-gray-800 rounded overflow-hidden mr-3">
-              <img 
-                src={videoDetails.thumbnailUrl} 
-                alt={videoDetails.filename}
-                className="w-full h-full object-cover"
-              />
-            </div>
-          </div>
-          
-          <div className="flex-1">
-            <h3 className="text-sm font-semibold text-gray-800">{videoDetails.filename}</h3>
-            <p className="text-xs text-gray-500">{videoDetails.duration}</p>
-            <button 
-              onClick={handleEditContent}
-              className="text-indigo-600 hover:text-indigo-800 text-xs font-medium flex items-center mt-1"
-            >
-              <Edit3 className="w-3 h-3 mr-1" /> Edit Content
-            </button>
-          </div>
-          
-          <div className="flex flex-col items-center gap-4">
-            <button className="bg-[#6D28D9] text-white text-sm font-medium px-4 py-1.5 rounded hover:bg-[#7D28D9] flex items-center">
-              Preview <ChevronDown className="ml-1 w-4 h-4" />
-            </button>
-            
-            <div className="flex items-center space-x-2">
-              <span className="text-sm text-gray-700">Downloadable:</span>
-              <div 
-                onClick={toggleDownloadable}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ${videoDetails.isDownloadable ? 'bg-indigo-600' : 'bg-gray-200'}`}
-              >
-                <span 
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${videoDetails.isDownloadable ? 'translate-x-6' : 'translate-x-1'}`} 
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
-  
   
   // Function to delete a video from the library
   const deleteVideo = (videoId: string) => {
@@ -1378,90 +867,11 @@ const handleVideoFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
           </div>
         );
         
-  case 'video-slide':
-  return (
-   <VideoSlideMashupComponent/>
-  );
-    
-      
-      case 'article':
-        return (
-          <div className="border border-gray-300 rounded-md p-4">
-  {/* Heading */}
-  <h3 className="text-sm font-semibold text-gray-800 mb-2">Text</h3>
-
-  {/* Editor Container with pink ring */}
-  <div className="focus-within:ring-2 focus-within:ring-[#EC4899] rounded-md transition-all duration-200 border border-gray-300">
-    
-    {/* Custom toolbar container */}
-    <div className="flex justify-between items-center flex-nowrap w-full px-2 py-1 bg-white border-b border-gray-200" id="custom-toolbar">
-
-      
-      {/* Quill formatting buttons */}
-      <div className="flex items-center gap-2 text-sm text-gray-800">
-        <select className="ql-header outline-none border-none bg-transparent" defaultValue="">
-          <option value="">Styles</option>
-          <option value="1">Heading 1</option>
-          <option value="2">Heading 2</option>
-          <option value="3">Heading 3</option>
-        </select>
-        <button className="ql-bold" />
-        <button className="ql-italic" />
-        <button className="ql-list" value="ordered" />
-        <button className="ql-list" value="bullet" />
-        <button className="ql-link" />
-        <button className="ql-image" />
-        <button className="ql-code-block" />
-      </div>
-
-      {/* Edit HTML toggle button */}
-      <div className="shrink-0">
-  <button
-    onClick={() => setHtmlMode(!htmlMode)}
-    className="text-xs font-medium text-gray-800 hover:bg-gray-100 rounded px-3 py-1 whitespace-nowrap"
-  >
-    {htmlMode ? "Live Preview" : "Edit HTML"}
-  </button>
-</div>
-
-    </div>
-
-    {/* Editor Body */}
-    <div
-      className={`h-[66px] px-2 transition-all ${
-        htmlMode ? "bg-[#1A1B1F]" : "bg-white"
-      }`}
-    >
-      <ReactQuill
-        value={content}
-        onChange={setContent}
-        modules={{ toolbar: "#custom-toolbar" }}
-        formats={quillFormats}
-        theme="snow"
-        placeholder="Start writing your article content here..."
-        className={`h-full [&_.ql-editor]:h-full [&_.ql-editor]:p-2 [&_.ql-toolbar]:!border-0 [&_.ql-container]:!border-0 [&_.ql-toolbar_.ql-formats>*]:!border-0 [&_.ql-toolbar_.ql-formats>*]:!shadow-none ${
-          htmlMode
-            ? "!text-white [&_.ql-editor]:text-white [&_.ql-editor]:bg-[#1A1B1F]"
-            : ""
-        }`}
-      />
-    </div>
-  </div>
-
-  {/* Save Button */}
-  <div className="flex justify-end pt-4">
-    <button className="bg-[#6D28D2] text-white text-sm px-4 py-2 rounded hover:bg-[#5b21b6] transition">
-      Save
-    </button>
-  </div>
-</div>
-
-        
-        );
-      default:
-        return null;
-    }
-  };
+  case 'video-slide': return ( <VideoSlideMashupComponent/> );
+  case 'article': return (<Article content={content} setContent={setContent} setHtmlMode={setHtmlMode} htmlMode={htmlMode}  />);
+  default:return null
+}
+};
 
   // Simulate uploading a file for resources
   const triggerFileUpload = (contentType: ContentType) => {
@@ -1723,61 +1133,7 @@ const handleVideoFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
           )}
 
           {showContentTypeSelector && !activeContentType && !isResourceSectionActive && !isDescriptionSectionActive && (
-            <div className="bg-white shadow-sm border border-gray-300 p-2 w-full">          
-              <p className="text-xs sm:text-sm text-gray-600 mb-4 mx-auto text-center">
-                Select the main type of content. Files and links can be added as resources.
-                <a href="#" className="text-indigo-600 hover:text-indigo-700 ml-1">
-                  Learn about content types.
-                </a>
-              </p>
-            
-              <div className="grid grid-cols-3 gap-2 max-w-xs mx-auto">
-                {/* Video Button */}
-                <button
-                  onClick={() => handleContentTypeSelect('video')}
-                  className="flex flex-col border border-gray-300 w-24 h-20"
-                >
-                  <div className="bg-gray-100 flex-1 flex items-center justify-center">
-                    <div className="p-1.5 bg-gray-300 rounded-full">
-                      <Play className="text-white w-4 h-4" />
-                    </div>
-                  </div>
-                  <div className="bg-gray-300 text-center py-1">
-                    <span className="text-xs text-gray-800">Video</span>
-                  </div>
-                </button>
-            
-                {/* Video & Slide Button */}
-                <button
-                  onClick={() => handleContentTypeSelect('video-slide')}
-                  className="flex flex-col border border-gray-300 w-24 h-20"
-                >
-                  <div className="bg-gray-100 flex-1 flex items-center justify-center">
-                    <SquarePlay className="text-gray-400 w-5 h-5" />
-                  </div>
-                  <div className="bg-gray-300 text-center py-1">
-                    <span className="text-xs text-gray-800 leading-tight">
-                      Video & Slide<br />Mashup
-                    </span>
-                  </div>
-                </button>
-            
-                {/* Article Button */}
-                <button
-                  onClick={() => handleContentTypeSelect('article')}
-                  className="flex flex-col border border-gray-300 w-24 h-20"
-                >
-                  <div className="bg-gray-100 flex-1 flex items-center justify-center">
-                    <div className="p-1.5 bg-gray-300 rounded-full">
-                      <FileText className="text-white w-4 h-4" />
-                    </div>
-                  </div>
-                  <div className="bg-gray-300 text-center py-1">
-                    <span className="text-xs text-gray-800">Article</span>
-                  </div>
-                </button>
-              </div>
-            </div>
+            <ContentSelector handleContentTypeSelect={handleContentTypeSelect} />
           )}
           
           {activeContentType && renderContent()}
@@ -1787,7 +1143,7 @@ const handleVideoFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
               {/* This is where we add the selected video component */}
               {videoContent.selectedVideoDetails && (
   <div className="overflow-hidden border-b border-gray-400 mb-4">
-    <div className="flex flex-col sm:flex-row">
+    <div className="flex flex-row justify-between sm:flex-row">
       {/* Left side with thumbnail and video details */}
       <div className="flex items-center py-3">
         {/* Thumbnail */}
@@ -1820,12 +1176,12 @@ const handleVideoFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
       </div>
       
       {/* Right side with Preview button and Downloadable toggle */}
-      <div className="flex flex-col sm:flex-row gap-4 sm:ml-auto items-center py-3">
+      <div className="flex flex-col gap-4 justify-end items-center py-3">
         {/* Preview dropdown button */}
-        <div className="relative inline-block" id="preview-dropdown">
+        <div className="relative inline-flex gap-4" id="preview-dropdown">
           <button 
             onClick={() => setShowPreviewDropdown(!showPreviewDropdown)}
-            className="bg-[#6D28D2] text-white text-sm font-medium px-4 py-1.5 rounded hover:bg-[#7D28D2] flex items-center"
+            className="bg-[#6D28D2] text-white text-sm font-medium ml-16 px-4 py-1.5 rounded hover:bg-[#7D28D2] flex items-center"
             type="button"
           >
             Preview <ChevronDown className="ml-1 w-4 h-4" />
@@ -1859,11 +1215,11 @@ const handleVideoFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
         </div>
         
         <div className="flex items-center space-x-2">
-          <span className="text-sm text-gray-800">Downloadable:</span>
+          <span className="text-sm font-semibold text-gray-800">Downloadable:</span>
           <button
             type="button"
             onClick={toggleDownloadable}
-            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ${videoContent.selectedVideoDetails.isDownloadable ? 'bg-[#6D28D2]' : 'bg-gray-400'}`}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${videoContent.selectedVideoDetails.isDownloadable ? 'bg-[#6D28D2]' : 'bg-gray-400'}`}
             aria-pressed={videoContent.selectedVideoDetails.isDownloadable}
             aria-label={videoContent.selectedVideoDetails.isDownloadable ? 'Disable downloading' : 'Enable downloading'}
           >
@@ -1873,10 +1229,10 @@ const handleVideoFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
           </button>
         </div>
       </div>
+
     </div>
   </div>
 )}
-
               
               {/* Display the lecture description if it exists */}
               {lecture.description && (
