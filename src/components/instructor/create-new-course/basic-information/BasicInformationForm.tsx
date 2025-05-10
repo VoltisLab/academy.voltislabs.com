@@ -5,7 +5,7 @@ import { CourseCategory, GetCategoriesResponse, FormData, CreateCourseBasicInfoV
 import Cookies from "js-cookie";
 import { CREATE_COURSE_BASIC_INFO, GET_CATEGORIES } from "@/api/course/mutation";
 import toast from "react-hot-toast";
-import FormHeader from "./common/FormHeader";
+import FormHeader from "../../layout/FormHeader";
 
 interface BasicInformationFormProps {
   onSaveNext: (courseId: number) => void;

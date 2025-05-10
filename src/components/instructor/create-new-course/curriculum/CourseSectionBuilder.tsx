@@ -6,9 +6,9 @@ import { ContentType, ResourceTabType, Section, CourseSectionInput, LectureInput
 import { useSections } from '@/hooks/useSection';
 import { useFileUpload } from '@/hooks/useFileUpload';
 import { useModal } from '@/hooks/useModal';
-import { ContentTypeSelector } from '../ContentTypeSelector';
-import { ActionButtons } from '../ActionButtons';
-import SectionItem from '../SectionItem';
+import { ContentTypeSelector } from '../../ContentTypeSelector';
+import { ActionButtons } from './components/section/ActionButtons';
+import SectionItem from './components/section/SectionItem';
 import { useCourseSectionsUpdate } from '@/services/courseSectionsService';
 
 interface CourseBuilderProps {

@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { BasicInformationForm } from "@/components/instructor/BasicInformationForm";
-import { AdvanceInformationForm } from "@/components/instructor/AdvanceInformation";
-import { Curriculum } from "@/components/instructor/Curriculum";
+import { BasicInformationForm } from "@/components/instructor/create-new-course/basic-information/BasicInformationForm";
+import { AdvanceInformationForm } from "@/components/instructor/create-new-course/advance-information/AdvancedInformation";
+import { Curriculum } from "@/components/instructor/create-new-course/curriculum/Curriculum";
 import Image from "next/image";
 
 // Define tab interface

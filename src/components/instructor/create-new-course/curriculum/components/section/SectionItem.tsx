@@ -3,15 +3,15 @@ import { Trash2, Edit3, ChevronDown, ChevronUp, Move, Plus, AlignJustify, FileTe
 import { Lecture, ContentItemType } from '@/lib/types';
 // Import the components
 import { ActionButtons } from './ActionButtons';
-import LectureItem from './LectureItem';
-import AssignmentItem from './AssignmentItem';
-import AssignmentForm from './AssignmentForm';
-import QuizForm from './QuizForm';
-import QuizItem from './QuizItem';
-import CodingExerciseForm from './CodingExcerciseForm';
-import CodingExerciseItem from './CodingExcerciseItem';
-import PracticeItem from './PracticeItem';
-import PracticeForm from './PracticeForm';
+import LectureItem from '../lecture/LectureItem';
+import AssignmentItem from '../assignment/AssignmentItem';
+import AssignmentForm from '../assignment/AssignmentForm';
+import QuizForm from '../quiz/QuizForm';
+import QuizItem from '../quiz/QuizItem';
+import CodingExerciseForm from '../code/CodingExcerciseForm';
+import CodingExerciseItem from '../code/CodingExcerciseItem';
+import PracticeItem from '../practice/PracticeItem';
+import PracticeForm from '../practice/PracticeForm';
 import { FaHamburger } from 'react-icons/fa';
 import { useSections } from '@/hooks/useSection';
 

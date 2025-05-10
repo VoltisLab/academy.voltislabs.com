@@ -1,6 +1,6 @@
 import { useState } from "react";
-import FormHeader from "./common/FormHeader";
-import CourseSectionsBuilder from "./forms/CourseSectionsBuilder";
+import FormHeader from "../../layout/FormHeader";
+import CourseSectionsBuilder from "./CourseSectionBuilder";
 interface BasicInformationFormProps {
   onSaveNext: () => void;
   courseId?: number;
