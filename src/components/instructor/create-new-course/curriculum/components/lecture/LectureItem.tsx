@@ -10,7 +10,6 @@ import Article from './Article';
 import StudentVideoPreview from './StudentVideoPeview';
 import InstructorVideoPreview from './InstructorVideoPeview';
 
-
 interface SelectedVideoDetails {
   id: string;
   filename: string;
@@ -54,23 +53,79 @@ export default function LectureItem({
   const [isHovering, setIsHovering] = useState(false);
   const [content, setContent] = useState("");
   const [htmlMode, setHtmlMode] = useState(false);
-  // Add these to your existing state variables in the LectureItem component
   const [isVideoUploading, setIsVideoUploading] = useState(false);
   const [videoUploadProgress, setVideoUploadProgress] = useState(0);
   const [videoUploadComplete, setVideoUploadComplete] = useState(false);
-  const [videoSlideStep, setVideoSlideStep] = useState(1);
-  const [videoUploading, setVideoUploading] = useState(false);
-  const [videoUploaded, setVideoUploaded] = useState(false);
-  const [presentationUploading, setPresentationUploading] = useState(false);
-  const [presentationUploadProgress, setPresentationUploadProgress] = useState(0);
-  const [presentationUploaded, setPresentationUploaded] = useState(false);
-  const [currentSlide, setCurrentSlide] = useState(1);
-  const [totalSlides, setTotalSlides] = useState(1); // Initialize with 1, will be updated after PDF upload
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const [syncComplete, setSyncComplete] = useState(false);
   const [showPreviewDropdown, setShowPreviewDropdown] = useState(false);
   const [showVideoPreview, setShowVideoPreview] = useState(false);
   const [previewMode, setPreviewMode] = useState<'instructor' | 'student' | null>(null);
+  const [showEditLectureForm, setShowEditLectureForm] = useState<boolean>(false);
+  const [editLectureTitle, setEditLectureTitle] = useState<string>("");
+  const lectureFormRef = useRef<HTMLDivElement>(null);
+  const [activeContentType, setActiveContentType] = useState<ContentItemType | null>(null);
+  const [activeResourceTab, setActiveResourceTab] = useState<ResourceTabType>(ResourceTabType.DOWNLOADABLE_FILE);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [videoContent, setVideoContent] = useState<VideoContent>({
+    uploadTab: { selectedFile: null },
+    libraryTab: { 
+      searchQuery: '', 
+      selectedVideo: null,
+      videos: [
+        { id: '1', filename: 'Netflix.mp4', type: 'Video', status: 'Success', date: '05/08/2025' },
+        { id: '2', filename: 'Netflix.mp4', type: 'Video', status: 'Success', date: '05/08/2025' },
+        { id: '3', filename: '2025-05-01-025523.webm', type: 'Video', status: 'Success', date: '05/08/2025' },
+        { id: '4', filename: 'Netflix.mp4', type: 'Video', status: 'Success', date: '05/07/2025' },
+        { id: '5', filename: 'Netflix.mp4', type: 'Video', status: 'Success', date: '05/07/2025' }
+      ]
+    },
+    activeTab: 'uploadVideo',
+    selectedVideoDetails: null
+  });
+  const [videoSlideContent, setVideoSlideContent] = useState<VideoSlideContent>({
+     video: { selectedFile: null },
+     presentation: { selectedFile: null },
+     step: 1
+   });
+   const [articleContent, setArticleContent] = useState<ArticleContent>({
+     text: ''
+   });
+
+// Add this useEffect to initialize the edit form when opened
+useEffect(() => {
+  if (showEditLectureForm) {
+    setEditLectureTitle(lecture.name || " ");
+  }
+}, [showEditLectureForm, lecture.name]);
+
+// Add this function to handle the edit button click
+const handleEditLecture = (e: React.MouseEvent) => {
+  e.stopPropagation();
+  setShowEditLectureForm(true);
+};
+
+// Add this function to save the lecture edit
+const handleSaveLectureEdit = () => {
+  if (editLectureTitle.trim()) {
+    updateLectureName(sectionId, lecture.id, editLectureTitle.trim());
+    setShowEditLectureForm(false);
+  }
+};
+
+// Add this function to cancel the lecture edit
+const handleCancelLectureEdit = () => {
+  setShowEditLectureForm(false);
+};
+
+// Add this to handle Enter key press
+const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  if (e.key === 'Enter' && editLectureTitle.trim()) {
+    e.preventDefault();
+    handleSaveLectureEdit();
+  } else if (e.key === 'Escape') {
+    handleCancelLectureEdit();
+  }
+};
 // Add these handlers for the video and slide mashup
 const toggleDownloadable = () => {
   if (videoContent.selectedVideoDetails) {
@@ -115,9 +170,6 @@ useEffect(() => {
   console.log("Preview mode:", previewMode);
 }, [showVideoPreview, previewMode]);
 
-// Add a z-index to make sure the preview page appears above everything else
-type PreviewMode = 'instructor' | 'student' | null;
-
 // Instructor Preview Component with TypeScript safety
 const VideoPreviewPage: React.FC = () => {
   if (!videoContent.selectedVideoDetails) return null;
@@ -131,41 +183,6 @@ const VideoPreviewPage: React.FC = () => {
   return (
     <InstructorVideoPreview videoContent={videoContent} setShowVideoPreview={setShowVideoPreview} lecture={lecture}  />
   );
-};
-// Handle video upload for video-slide content type
-const handleVideoSlideVideoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-  if (event.target.files && event.target.files.length > 0) {
-    const file = event.target.files[0];
-    
-    // Update the state with the selected file
-    setVideoSlideContent({
-      ...videoSlideContent,
-      video: { selectedFile: file }
-    });
-    
-    // Start the upload process
-    setVideoUploading(true);
-    setVideoUploadProgress(0);
-    
-    // Simulate file upload with progress
-    const interval = setInterval(() => {
-      setVideoUploadProgress(prev => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setTimeout(() => {
-            setVideoUploading(false);
-            setVideoUploaded(true);
-            // Automatically move to step 2 if not already there
-            if (videoSlideStep === 1) {
-              setVideoSlideStep(2);
-            }
-          }, 500);
-          return 100;
-        }
-        return prev + 5; // Increase by 5% each time
-      });
-    }, 200);
-  }
 };
 
 const selectVideo = (videoId: string) => {
@@ -196,101 +213,6 @@ const selectVideo = (videoId: string) => {
       toggleContentSection(sectionId, lecture.id);
     }
   }
-};
-
-// Handle presentation (PDF) upload for video-slide content type
-const handlePresentationUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-  if (event.target.files && event.target.files.length > 0) {
-    const file = event.target.files[0];
-    
-    // Update the state with the selected file
-    setVideoSlideContent({
-      ...videoSlideContent,
-      presentation: { selectedFile: file }
-    });
-    
-    // Start the upload process
-    setPresentationUploading(true);
-    setPresentationUploadProgress(0);
-    
-    // Simulate file upload with progress
-    const interval = setInterval(() => {
-      setPresentationUploadProgress(prev => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setTimeout(() => {
-            setPresentationUploading(false);
-            setPresentationUploaded(true);
-            
-            // Attempt to determine the number of pages in the PDF
-            determinePDFPageCount(file);
-            
-            // Automatically move to step 3 if video is already uploaded
-            if (videoUploaded && videoSlideStep === 2) {
-              setVideoSlideStep(3);
-            }
-          }, 500);
-          return 100;
-        }
-        return prev + 5; // Increase by 5% each time
-      });
-    }, 200);
-  }
-};
-
-
-// Function to determine the number of pages in a PDF
-const determinePDFPageCount = (file: File) => {
-  // If we have access to the PDF.js library, we could use it to accurately count pages
-  // This is a simplified approach that estimates based on file size
-  // In a real implementation, you would use a PDF parsing library
-  
-  const reader = new FileReader();
-  
-  reader.onload = (e) => {
-    if (e.target?.result) {
-      try {
-        // This is a placeholder for PDF page counting logic
-        // In a real implementation, you would use PDF.js or a similar library
-        
-        // For demonstration purposes, we'll set a reasonable number based on file size
-        const fileSize = file.size;
-        const estimatedPages = Math.max(1, Math.min(Math.floor(fileSize / 50000), 30));
-        
-        // If file size is over 50KB, assume multi-page document
-        setTotalSlides(estimatedPages);
-        setCurrentSlide(1);
-        
-        console.log(`Estimated ${estimatedPages} pages for PDF with size ${fileSize} bytes`);
-      } catch (error) {
-        console.error('Error determining PDF page count:', error);
-        setTotalSlides(1); // Default to 1 page on error
-        setCurrentSlide(1);
-      }
-    }
-  };
-  
-  reader.readAsArrayBuffer(file);
-};
-
-// Handle "Use this presentation" button click
-const usePresentation = () => {
-  setSyncComplete(true);
-  setVideoSlideStep(4);
-};
-
-// Slide navigation handlers
-const goToPreviousSlide = () => {
-  setCurrentSlide(prev => Math.max(1, prev - 1));
-};
-
-const goToNextSlide = () => {
-  setCurrentSlide(prev => Math.min(totalSlides, prev + 1));
-};
-
-// Toggle fullscreen
-const toggleFullscreen = () => {
-  setIsFullscreen(!isFullscreen);
 };
 
 // Add the closing event handler for clicking outside the dropdown
@@ -386,24 +308,7 @@ const handleVideoFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
   }
 };
   
-  // Active content type state
-  const [activeContentType, setActiveContentType] = useState<ContentItemType | null>(null);
-  
-  const [videoSlideContent, setVideoSlideContent] = useState<VideoSlideContent>({
-    video: { selectedFile: null },
-    presentation: { selectedFile: null },
-    step: 1
-  });
-  
-  const [articleContent, setArticleContent] = useState<ArticleContent>({
-    text: ''
-  });
-
-  // For resource component
-  const [activeResourceTab, setActiveResourceTab] = useState<ResourceTabType>(ResourceTabType.DOWNLOADABLE_FILE);
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
-
+ 
   // Video tab options
   const videoTabs: TabInterface[] = [
     { label: 'Upload Video', key: 'uploadVideo' },
@@ -415,11 +320,6 @@ const handleVideoFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
       lectureNameInputRef.current.focus();
     }
   }, [editingLectureId, lecture.id]);
-
-  const startEditingLecture = (e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
-    setEditingLectureId(lecture.id);
-  };
 
   // Determine lecture type label based on contentType
   const getLectureTypeLabel = () => {
@@ -434,163 +334,13 @@ const handleVideoFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
       default: return 'Item';
     }
   };
-  
-  const renderLibraryTabImplementation = () => {
-    return (
-      <div className="py-4">
-        {/* Search form */}
-        <form onSubmit={(e) => {
-          e.preventDefault();
-          console.log("Searching for:", videoContent.libraryTab.searchQuery);
-        }} className="mb-4">
-          <div className="flex justify-end gap-2">
-            <div className="w-1/2 relative">
-              <input
-                type="text"
-                placeholder="Search files by name"
-                value={videoContent.libraryTab.searchQuery}
-                onChange={(e) =>
-                  setVideoContent({
-                    ...videoContent,
-                    libraryTab: {
-                      ...videoContent.libraryTab,
-                      searchQuery: e.target.value,
-                    },
-                  })
-                }
-                className="w-full py-2 px-3 border border-gray-400 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-              />
-            </div>
-            <button
-              type="submit"
-              className="p-2 bg-[#6D28D9] text-white rounded-md hover:bg-indigo-700"
-            >
-              <Search className="w-5 h-5" />
-            </button>
-          </div>
-        </form>
-  
-        {/* Table header and results */}
-        <div className="border-b border-gray-300">
-          <div className="grid grid-cols-4 gap-2 md:gap-4 p-3 text-[16px] font-bold border-b border-gray-300">
-            <div>Filename</div>
-            <div>Type</div>
-            <div>Status</div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1">
-                Date <ChevronDown className="w-4 h-4" />
-              </div>
-            </div>
-          </div>
-          
-          {videoContent.libraryTab.videos.map(video => (
-            <div key={video.id} className="grid grid-cols-4 gap-2 md:gap-4 p-3 border-b border-gray-200 hover:bg-gray-50 items-center">
-              <div className="truncate">{video.filename}</div>
-              <div>{video.type}</div>
-              <div className="text-sm font-medium text-green-600">
-                {video.status}
-              </div>
-              <div className="flex items-center justify-between">
-                <div>{video.date}</div>
-                <div>
-                  <button 
-                    onClick={() => selectVideo(video.id)}
-                    className="text-indigo-600 hover:text-indigo-800 text-xs font-medium"
-                  >
-                    Select
-                  </button>
-                  <button 
-                    onClick={() => deleteVideo(video.id)}
-                    className="ml-2 text-indigo-600 hover:text-red-600"
-                  >
-                    <Trash2 className="w-4 h-4 inline-block" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
-  // Handle video file selection
-  const handleVideoFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files && event.target.files.length > 0) {
-      setVideoContent({
-        ...videoContent,
-        uploadTab: { selectedFile: event.target.files[0] }
-      });
-    }
-  };
-  
-  // Handle video slide file selections
-  const handleVideoSlideFileSelect = (type: 'video' | 'presentation', event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files && event.target.files.length > 0) {
-      if (type === 'video') {
-        setVideoSlideContent({
-          ...videoSlideContent,
-          video: { selectedFile: event.target.files[0] }
-        });
-      } else {
-        setVideoSlideContent({
-          ...videoSlideContent,
-          presentation: { selectedFile: event.target.files[0] }
-        });
-      }
-    }
-  };
-  
-  // Handle video slide step navigation
-  const handleVideoSlideStepChange = (step: number) => {
-    setVideoSlideContent({
-      ...videoSlideContent,
-      step
-    });
-  };
-  
-  // Handle article text changes
-  const handleArticleTextChange = (text: string) => {
-    setArticleContent({
-      text
-    });
-  };
-
-  const handleSaveDescription = () => {
-    if (!activeDescriptionSection || !saveDescription) return;
-    
-    // Call the provided saveDescription function
-    saveDescription();
-    
-    // No need to manually close here as the parent component will handle it
-  };
-  
   // Handle search in library tab
   const handleSearchLibrary = (event: React.FormEvent) => {
     event.preventDefault();
     // Implement search functionality here
     console.log("Searching for:", videoContent.libraryTab.searchQuery);
-  };
-
-  
-  
-  // Update your initial state in useState hook to include the videos array
-  const [videoContent, setVideoContent] = useState<VideoContent>({
-    uploadTab: { selectedFile: null },
-    libraryTab: { 
-      searchQuery: '', 
-      selectedVideo: null,
-      videos: [
-        { id: '1', filename: 'Netflix.mp4', type: 'Video', status: 'Success', date: '05/08/2025' },
-        { id: '2', filename: 'Netflix.mp4', type: 'Video', status: 'Success', date: '05/08/2025' },
-        { id: '3', filename: '2025-05-01-025523.webm', type: 'Video', status: 'Success', date: '05/08/2025' },
-        { id: '4', filename: 'Netflix.mp4', type: 'Video', status: 'Success', date: '05/07/2025' },
-        { id: '5', filename: 'Netflix.mp4', type: 'Video', status: 'Success', date: '05/07/2025' }
-      ]
-    },
-    activeTab: 'uploadVideo',
-    selectedVideoDetails: null
-  });
-  
+  };  
+   
   // Updated for clarity - when initializing with handleContentTypeSelect
   const handleContentTypeSelect = (contentType: ContentItemType) => {
     setActiveContentType(contentType);
@@ -621,7 +371,6 @@ const handleVideoFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
       setArticleContent({ text: '' });
     }
   };
-
   
   // Function to delete a video from the library
   const deleteVideo = (videoId: string) => {
@@ -635,7 +384,6 @@ const handleVideoFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     });
   };
   
-
   const isExpanded = activeContentSection?.sectionId === sectionId && 
                      activeContentSection?.lectureId === lecture.id;
 
@@ -741,7 +489,6 @@ const handleVideoFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     );
   };
   
-
   // Helper to render the content based on activeContentType
   const renderContent = () => {
     if (!activeContentType) return null;
@@ -790,7 +537,7 @@ const handleVideoFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
                           <div className="flex justify-between items-center">
                             {new Date().toLocaleDateString('en-US', {month: '2-digit', day: '2-digit', year: 'numeric'})}
                             <button 
-                              className="text-[#6D28D2] hover:text-[#7D28D2] text-xs font-bold"
+                              className="text-[D28D2] hover:text-[#7D28D2] text-xs font-bold"
                               onClick={() => {
                                 setVideoUploadComplete(false);
                                 setVideoContent({
@@ -831,7 +578,7 @@ const handleVideoFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
                           <div className="flex items-center">
                             <div className="w-full flex items-center">
                               <div className="w-20 bg-gray-200 h-2 overflow-hidden roundedd">
-                                <div className="bg-[#6D28D2] h-2 " style={{ width: `${videoUploadProgress}%` }}></div>
+                                <div className="bg-[D28D2] h-2 " style={{ width: `${videoUploadProgress}%` }}></div>
                               </div>
                               <span className="ml-2 text-xs">{videoUploadProgress}%</span>
                             </div>
@@ -896,8 +643,7 @@ const handleVideoFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
       });
     }, 300);
   };
-
-  // Update the main component return JSX to properly show the description text
+  const [maxLength, setMaxLength] = useState(80)
   return (
     <div 
       className={`mb-3 bg-white border border-gray-400 ${isExpanded && "border-b border-gray-500 "}${
@@ -918,8 +664,59 @@ const handleVideoFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
     >
-      {/* Header section - unchanged */}
-      <div className={`flex items-center ${isExpanded && "border-b border-gray-500 "} px-3 py-2 `}>
+
+{showEditLectureForm ? (
+  <div 
+    className="flex items-center justify-center"
+    onClick={() => setShowEditLectureForm(false)}
+  >
+    <div 
+      ref={lectureFormRef}
+      className="bg-white p-6 rounded-lg  w-full max-w-4xl"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <div className="flex items-center mb-4">
+        <div className="bg-black rounded-full flex items-center justify-center mr-2">
+          <CircleCheck className="text-white bg-gray-800 rounded-full" size={14} />
+        </div>
+        <div className="text-sm font-medium">
+          Lecture {lectureIndex + 1}:
+        </div>
+        <div className="flex-1 ml-2">
+          <input
+            type="text"
+            value={editLectureTitle}
+            onChange={(e) => setEditLectureTitle(e.target.value)}
+            onKeyDown={handleKeyDown}
+            className="w-full border border-gray-300 focus:outline-none focus:ring-1 focus:ring-purple-500 px-2 py-1 rounded-md"
+            autoFocus
+            maxLength={80}
+          />
+          <div className="text-right absolute right-13 top-10 font-bold text-sm text-gray-500 mt-1">
+            {maxLength - editLectureTitle.length}
+          </div>
+        </div>
+      </div>
+      <div className="flex justify-end mt-4 space-x-2">
+        <button
+          onClick={handleCancelLectureEdit}
+          className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={handleSaveLectureEdit}
+          disabled={!editLectureTitle.trim()}
+          className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:bg-purple-300"
+        >
+          Save Lecture
+        </button>
+      </div>
+    </div>
+  </div>
+) : (
+  <>
+     <div className={`flex items-center ${isExpanded && "border-b border-gray-500 "} px-3 py-2 `}>
         {/* ... existing header code ... */}
         <div className="flex-1 flex items-center">
           <div className="bg-black rounded-full items-center justify-center mr-2 ">
@@ -947,10 +744,7 @@ const handleVideoFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
               {isHovering && (
                 <div>
                   <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      startEditingLecture(e);
-                    }}
+                    onClick={handleEditLecture}
                     className="p-1 text-gray-400 hover:text-gray-600"
                     aria-label="Edit"
                   >
@@ -994,7 +788,6 @@ const handleVideoFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
               : "text-[#6D28D2] font-medium border-[#6D28D2] hover:bg-indigo-50 rounded "
             } text-xs sm:text-sm px-2 sm:px-3 py-2 flex items-center ml-1 sm:ml-2 border`}
           >
-            {/* ... existing button text ... */}
             {/* This is the content button that changes label based on state */}
             {isResourceSectionActive ? (
               <>
@@ -1239,7 +1032,6 @@ const handleVideoFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     </div>
   </div>
 )}
-              
               {/* Display the lecture description if it exists */}
               {lecture.description && (
                 <div 
@@ -1288,11 +1080,13 @@ const handleVideoFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
 
               {/* Any additional content */}
               {children}
+              
             </div>
           )}
         </div>
       )}
-      {showVideoPreview && <VideoPreviewPage />}
+      {showVideoPreview && <VideoPreviewPage />}</>
+      )}   
     </div>
   );
 }

@@ -2,7 +2,7 @@
 import React, { useState, useRef } from 'react';
 import { Edit3, Trash2, ChevronUp, ChevronDown, Move, Code, ExternalLink } from 'lucide-react';
 import { Lecture } from '@/lib/types';
-import CodeEditorComponent from './CodeEditor';
+import CodeEditorComponent from '../code/CodeEditor';
 
 interface PracticeItemProps {
   lecture: Lecture;

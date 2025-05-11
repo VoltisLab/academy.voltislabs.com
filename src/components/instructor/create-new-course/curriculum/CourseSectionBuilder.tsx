@@ -1,156 +1,23 @@
-// components/CourseBuilder.tsx
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
-import { X, Plus, Info } from 'lucide-react';
-import { ContentType, ResourceTabType, Section, CourseSectionInput, LectureInput } from '@/lib/types';
+import { Plus} from 'lucide-react';
+import { ContentType, ResourceTabType, CourseSectionInput, LectureInput } from '@/lib/types';
 import { useSections } from '@/hooks/useSection';
 import { useFileUpload } from '@/hooks/useFileUpload';
 import { useModal } from '@/hooks/useModal';
-import { ContentTypeSelector } from '../ContentTypeSelector';
-import { ActionButtons } from '../ActionButtons';
-import SectionItem from '../SectionItem';
+import { ContentTypeSelector } from '../../ContentTypeSelector';
+import SectionItem from './components/section/SectionItem';
 import { useCourseSectionsUpdate } from '@/services/courseSectionsService';
+import SectionForm from './components/section/SectionForm';
+import NewFeatureAlert from './NewFeatureAlert';
+import InfoBox from './InfoBox';
 
 interface CourseBuilderProps {
   onSaveNext?: () => void;
   courseId: number | undefined;
 }
 
-// Simple section form (not a modal)
-const SectionForm: React.FC<{
-  onAddSection: (title: string, objective: string) => void;
-  onCancel: () => void;
-}> = ({ onAddSection, onCancel }) => {
-  const [title, setTitle] = useState('');
-  const [objective, setObjective] = useState('');
-  
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (title.trim()) {
-      onAddSection(title, objective);
-    }
-  };
-  
-  return (
-    <div className="relative border border-gray-300 px-6 py-2 mb-2 rounded mt-15">
-      {/* X button positioned at the top right */}
-      <button 
-        onClick={onCancel} 
-        className="absolute -top-6 -left-3 bg-white text-gray-500 hover:text-gray-700"
-        aria-label="Close"
-      >
-        <X className="w-5 h-5" />
-      </button>
-      
-      <div className="mb-6">
-        <div className="flex items-center mb-4">
-          <div className="w-28">
-            <label className="text-md font-bold text-gray-800">New Section:</label>
-          </div>
-          <div className="flex-1 relative">
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Enter a Title"
-              className="w-full border border-gray-500 rounded px-3 py-2 focus:outline-none focus:border-2 focus:border-[#6D28D2] pr-14"
-              maxLength={80}
-            />
-            <div className="absolute right-3 top-1/2 transform font-bold -translate-y-1/2 text-sm text-gray-500">
-              {80 - title.length}
-            </div>
-          </div>
-        </div>
-        
-        <div className="ml-28">
-          <label className="block text-sm font-medium text-gray-800 mb-2">
-            What will students be able to do at the end of this section?
-          </label>
-          <div className="relative">
-            <input
-              value={objective}
-              onChange={(e) => setObjective(e.target.value)}
-              placeholder="Enter a Learning Objective"
-              className="w-full border border-gray-500 rounded px-3 py-2 focus:outline-none focus:border-2 focus:border-[#6D28D2] pr-14"
-              maxLength={200}
-            />
-            <div className="absolute right-3 top-1/2 font-bold transform -translate-y-1/2 text-sm text-gray-500">
-              {200 - objective.length}
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <div className="flex justify-end space-x-3">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded"
-        >
-          Cancel
-        </button>
-        <button
-          type="button"
-          onClick={handleSubmit}
-          className="px-4 py-2 text-sm font-medium bg-[#6D28D2] text-white rounded hover:bg-[#7B3FE4]"
-        >
-          Add Section
-        </button>
-      </div>
-    </div>
-  );
-};
-
-const InfoBox: React.FC<{ onDismiss: () => void }> = ({ onDismiss }) => {
-  return (
-    <div className="flex items-start p-5 bg-white rounded-xl border border-gray-200 mb-6">
-      <div className="flex-shrink-0 mt-0.5 mr-3">
-        <Info className="h-6 w-6 text-[#6D28D2]" />
-      </div>
-      <div className="flex-1">
-        <p className="text-md font-bold text-gray-700">
-          Here's where you add course content—like lectures, course sections, assignments, and more. Click a + icon on the left to get started.
-        </p>
-        <button 
-          onClick={onDismiss} 
-          className="mt-2 px-3 py-2 text-xs font-medium text-[#6D28D2] border border-[#6D28D2] rounded hover:bg-indigo-50"
-        >
-          Dismiss
-        </button>
-      </div>
-    </div>
-  );
-};
-
-const NewFeatureAlert: React.FC<{ onDismiss: () => void }> = ({ onDismiss }) => {
-  return (
-    <div className="bg-gray-100 border border-gray-300  mb-6 overflow-hidden">
-      <div className="flex items-start px-4 py-3">
-        <div className="flex-shrink-0 mr-3">
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-green-300 text-gray-800">
-            New
-          </span>
-        </div>
-        <div className="flex-1">
-          <p className="text-sm font-bold text-gray-700">
-            Check out the latest creation flow improvements, new question types, and AI-assisted features in practice tests.
-          </p>
-          <button 
-            onClick={onDismiss} 
-            className="mt-2 py-2 px-2 text-xs font-medium text-gray-600 hover:bg-gray-200"
-          >
-            Dismiss
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const CourseBuilder: React.FC<CourseBuilderProps> = ({ 
-  onSaveNext, 
-  courseId 
-}) => {
+const CourseBuilder: React.FC<CourseBuilderProps> = ({ onSaveNext, courseId }) => {
   const [editingSectionId, setEditingSectionId] = useState<string | null>(null);
   const [editingLectureId, setEditingLectureId] = useState<string | null>(null);
   const [showContentTypeSelector, setShowContentTypeSelector] = useState<boolean>(false);
@@ -394,6 +261,17 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
           {showNewFeatureAlert && (
             <NewFeatureAlert onDismiss={() => setShowNewFeatureAlert(false)} />
           )}
+
+<button
+  onClick={() => setShowSectionForm(true)}
+  className="relative w-16 h-10 border-2 border-dashed border-gray-300 flex items-center justify-center hover:border-gray-400 hover:bg-gray-50 transition-all duration-200 rounded-r-[100px]"
+  aria-label="Add section"
+>
+  <div className="absolute right-0 top-0 h-full w-4 overflow-hidden">
+    <div className="absolute transform rotate-45 bg-white border-t-2 border-r-2 border-dashed border-gray-300 w-6 h-6 -right-3 top-2"></div>
+  </div>
+  <Plus className="h-6 w-6 text-gray-500" />
+</button>
         </div>
         
         <div className="bg-white border border-gray-200 mb-6 mt-20">

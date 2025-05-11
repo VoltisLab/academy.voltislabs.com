@@ -3,7 +3,7 @@ import { Trash2 } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import "react-quill-new/dist/quill.snow.css";
-import RichTextEditor from "./RichTextEditor";
+import RichTextEditor from "../../../../RichTextEditor";
 
 interface QuestionFormProps {
   onSubmit: (question: any) => void; // rename to be more generic

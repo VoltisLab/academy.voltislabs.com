@@ -114,7 +114,7 @@ export default function DescriptionEditorComponent({
       </div>
 
       <div className="px-4">
-        <div className="focus-within:outline focus-within:outline-2 focus-within:outline-[#6D28D2] rounded-lg">
+        <div className="focus-within:outline focus-within:outline-[#6D28D2] rounded-lg">
           <ReactQuill
             value={currentDescription}
             onChange={(value) => setCurrentDescription(value)}

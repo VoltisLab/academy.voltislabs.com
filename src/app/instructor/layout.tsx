@@ -1,7 +1,7 @@
 "use client";
 
-import DashboardNavbar from "@/components/instructor/DashboardNav";
-import Sidebar from "@/components/instructor/Sidebar";
+import DashboardNavbar from "@/components/instructor/layout/DashboardNav";
+import Sidebar from "@/components/instructor/layout/Sidebar";
 import { AsideProvider } from "@/context/showAsideContext";
 import { ReactNode, Suspense } from "react";
 import { Toaster } from 'react-hot-toast';

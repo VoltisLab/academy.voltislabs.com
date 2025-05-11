@@ -2,15 +2,15 @@
 
 import { MouseEvent, useState } from "react";
 import dynamic from "next/dynamic";
-import FormHeader from "./common/FormHeader";
+import FormHeader from "../../layout/FormHeader";
 import { uploadFile } from "@/services/fileUploadService";
 import { useCourseInfoUpdate } from "@/services/useCourseInfoUpdate";
 import { toast } from "react-hot-toast";
-import CourseObjectivesInput from "./forms/CourseObjectivesInput";
-import CourseThumbnailUploader from "./forms/CourseThumbnailUploader";
+import CourseObjectivesInput from "./components/CourseObjectivesInput";
+import CourseThumbnailUploader from "./components/CourseThumbnailUploader";
 import { BasicInformationFormProps, CourseInfo } from "@/lib/types";
 // Dynamically import CourseDescriptionEditor with SSR disabled
-const CourseDescriptionEditor = dynamic(() => import("./forms/CourseDescriptionEditor"), {
+const CourseDescriptionEditor = dynamic(() => import("./components/CourseDescriptionEditor"), {
   ssr: false,
 });
 

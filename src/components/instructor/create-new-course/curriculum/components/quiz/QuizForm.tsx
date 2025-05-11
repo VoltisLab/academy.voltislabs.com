@@ -2,7 +2,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { BoldIcon, Italic, X } from "lucide-react";
 import ReactQuill from "react-quill-new";
-import RichTextEditor from "./RichTextEditor";
+import RichTextEditor from "../../../../RichTextEditor";
 // import type { ReactQuillProps } from "react-quill";
 
 interface QuizFormProps {

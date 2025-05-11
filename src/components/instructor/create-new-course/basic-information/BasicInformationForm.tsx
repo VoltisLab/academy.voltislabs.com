@@ -5,7 +5,7 @@ import { CourseCategory, GetCategoriesResponse, FormData, CreateCourseBasicInfoV
 import Cookies from "js-cookie";
 import { CREATE_COURSE_BASIC_INFO, GET_CATEGORIES } from "@/api/course/mutation";
 import toast from "react-hot-toast";
-import FormHeader from "./common/FormHeader";
+import FormHeader from "../../layout/FormHeader";
 
 interface BasicInformationFormProps {
   onSaveNext: (courseId: number) => void;
@@ -57,7 +57,7 @@ export const BasicInformationForm = ({ onSaveNext }: BasicInformationFormProps) 
       
       if (errors) {
         console.error("GraphQL errors fetching categories:", errors);
-        throw new Error(errors[0]?.message || "Failed to fetch categories");
+        console.log(errors[0]?.message || "Failed to fetch categories");
       }
       
       if (data && data.categories) {

@@ -16,7 +16,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import LogoutModal from "../modals/LogoutModal";
+import LogoutModal from "../../modals/LogoutModal";
 import { logout } from "@/api/auth/auth";
 import toast from "react-hot-toast";
 // Add custom styles for mobile sidebar transitions with enhanced modern styling
