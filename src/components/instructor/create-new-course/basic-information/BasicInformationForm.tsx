@@ -57,7 +57,7 @@ export const BasicInformationForm = ({ onSaveNext }: BasicInformationFormProps) 
       
       if (errors) {
         console.error("GraphQL errors fetching categories:", errors);
-        throw new Error(errors[0]?.message || "Failed to fetch categories");
+        console.log(errors[0]?.message || "Failed to fetch categories");
       }
       
       if (data && data.categories) {
