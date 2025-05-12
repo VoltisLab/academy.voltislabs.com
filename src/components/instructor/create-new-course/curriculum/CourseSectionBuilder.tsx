@@ -280,8 +280,6 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({ onSaveNext, courseId }) =
           </button>
         </div>
       <div className="p-4 pb-0 shadow-xl px-10">
-        
-        
         <div className="mt-8">
           {showInfoBox && (
             <InfoBox onDismiss={() => setShowInfoBox(false)} />
@@ -301,17 +299,14 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({ onSaveNext, courseId }) =
           {showNewFeatureAlert && (
             <NewFeatureAlert onDismiss={() => setShowNewFeatureAlert(false)} />
           )}
-
-<button
-  onClick={() => setShowSectionForm(true)}
-  className="relative w-16 h-8 border-2 border-dashed border-gray-300 flex items-center justify-center hover:border-gray-400 hover:bg-gray-50 transition-all duration-200 rounded-r-[45px]"
-  aria-label="Add section"
->
- 
-  <Plus className="h-6 w-6 text-gray-500" />
-</button>
+          <button
+            onClick={() => setShowSectionForm(true)}
+            className="relative w-16 h-8 border-2 border-dashed border-gray-300 flex items-center justify-center hover:border-gray-400 hover:bg-gray-50 transition-all duration-200 rounded-r-[45px]"
+            aria-label="Add section"
+          >
+          <Plus className="h-6 w-6 text-gray-500" />
+          </button>
         </div>
-        
         <div className="bg-white border border-gray-200 mb-6 mt-20">
           {/* Render sections */}
           {sections.length > 0 ? (
@@ -348,6 +343,7 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({ onSaveNext, courseId }) =
                 draggedSection={draggedSection}
                 draggedLecture={draggedLecture}
                 dragTarget={dragTarget}
+                saveDescription={saveSectionDescription}
               />
             ))
           ) : (

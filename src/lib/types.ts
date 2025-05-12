@@ -462,17 +462,15 @@ export enum CodeLanguageType {
   }
   // In your existing VideoContent interface, update the libraryTab:
   export interface VideoContent {
-    uploadTab: {
-      selectedFile: File | null;
-    };
-    libraryTab: {
-      searchQuery: string;
-      selectedVideo: string | null;
-      videos: StoredVideo[];
-    };
-    activeTab: string;
-    selectedVideoDetails: SelectedVideoDetails | null;
-  }
+  uploadTab: { selectedFile: File | null };
+  libraryTab: { 
+    searchQuery: string;
+    selectedVideo: string | null;
+    videos: StoredVideo[];
+  };
+  activeTab: string;
+  selectedVideoDetails: SelectedVideoDetails | null;
+}
 
 export interface VideoSlideContent {
   video: {
@@ -494,6 +492,7 @@ export interface StoredVideo {
   type: string;
   status: string;
   date: string;
+  url?: string;
 }
 
 // Tab interfaces
