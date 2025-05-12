@@ -87,21 +87,56 @@ export default function LectureItem({
   const [externalResources, setExternalResources] = useState<ExternalResourceItem[]>([]);
 
   const [videoContent, setVideoContent] = useState<VideoContent>({
-    uploadTab: { selectedFile: null },
-    libraryTab: { 
-      searchQuery: '', 
-      selectedVideo: null,
-      videos: [
-        { id: '1', filename: 'Netflix.mp4', type: 'Video', status: 'Success', date: '05/08/2025' },
-        { id: '2', filename: 'Netflix.mp4', type: 'Video', status: 'Success', date: '05/08/2025' },
-        { id: '3', filename: '2025-05-01-025523.webm', type: 'Video', status: 'Success', date: '05/08/2025' },
-        { id: '4', filename: 'Netflix.mp4', type: 'Video', status: 'Success', date: '05/07/2025' },
-        { id: '5', filename: 'Netflix.mp4', type: 'Video', status: 'Success', date: '05/07/2025' }
-      ]
-    },
-    activeTab: 'uploadVideo',
-    selectedVideoDetails: null
-  });
+  uploadTab: { selectedFile: null },
+  libraryTab: { 
+    searchQuery: '', 
+    selectedVideo: null,
+    videos: [
+      { 
+        id: '1', 
+        filename: 'Netflix.mp4', 
+        type: 'Video', 
+        status: 'Success', 
+        date: '05/08/2025',
+        url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4' // Sample video URL
+      },
+      { 
+        id: '2', 
+        filename: 'Netflix.mp4', 
+        type: 'Video', 
+        status: 'Success', 
+        date: '05/08/2025',
+        url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4' // Sample video URL
+      },
+      { 
+        id: '3', 
+        filename: '2025-05-01-025523.webm', 
+        type: 'Video', 
+        status: 'Success', 
+        date: '05/08/2025',
+        url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4' // Sample video URL
+      },
+      { 
+        id: '4', 
+        filename: 'Netflix.mp4', 
+        type: 'Video', 
+        status: 'Success', 
+        date: '05/07/2025',
+        url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4' // Sample video URL
+      },
+      { 
+        id: '5', 
+        filename: 'Netflix.mp4', 
+        type: 'Video', 
+        status: 'Success', 
+        date: '05/07/2025',
+        url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4' // Sample video URL
+      }
+    ]
+  },
+  activeTab: 'uploadVideo',
+  selectedVideoDetails: null
+});
   const [videoSlideContent, setVideoSlideContent] = useState<VideoSlideContent>({
      video: { selectedFile: null },
      presentation: { selectedFile: null },
@@ -124,6 +159,23 @@ const handleEditLecture = (e: React.MouseEvent) => {
   e.stopPropagation();
   setShowEditLectureForm(true);
 };
+
+const handleSaveArticle = (articleContent: string) => {
+  // Save the article content
+  setArticleContent({ text: articleContent });
+  
+  // Close the content section and show the article summary
+  setActiveContentType(null);
+  
+  // Make sure lecture stays expanded
+  if (toggleContentSection && 
+      (!activeContentSection || 
+       activeContentSection.sectionId !== sectionId || 
+       activeContentSection.lectureId !== lecture.id)) {
+    toggleContentSection(sectionId, lecture.id);
+  }
+};
+
 
 const handleSourceCodeSelect = (file: LibraryFileWithSize) => {
   setSourceCodeFiles([...sourceCodeFiles, { 
@@ -191,6 +243,23 @@ const toggleDownloadable = () => {
   }
 };
 
+useEffect(() => {
+  // Clean up function to revoke object URLs when component unmounts
+  return () => {
+    // Revoke URLs for videos in the library
+    videoContent.libraryTab.videos.forEach(video => {
+      if (video.url && video.url.startsWith('blob:')) {
+        URL.revokeObjectURL(video.url);
+      }
+    });
+    
+    // Revoke URL for selected video if it exists
+    if (videoContent.selectedVideoDetails?.url && videoContent.selectedVideoDetails.url.startsWith('blob:')) {
+      URL.revokeObjectURL(videoContent.selectedVideoDetails.url);
+    }
+  };
+}, []);
+
 // Function to handle the edit content button click
 const handleEditContent = () => {
   // Force set all the required states directly 
@@ -224,17 +293,38 @@ useEffect(() => {
 
 // Instructor Preview Component with TypeScript safety
 const VideoPreviewPage: React.FC = () => {
-  if (!videoContent.selectedVideoDetails) return null;
+  // if (!videoContent.selectedVideoDetails) return null;
   
   // Return the instructor or student view based on preview mode
-  if (previewMode === 'student') {
-    return <StudentVideoPreview videoContent={videoContent} setShowVideoPreview={setShowVideoPreview} lecture={lecture} />;
+  if (videoContent.selectedVideoDetails) {
+    if (previewMode === 'student') {
+      return <StudentVideoPreview videoContent={videoContent} setShowVideoPreview={setShowVideoPreview} lecture={lecture} />;
+    }
+    return <InstructorVideoPreview videoContent={videoContent} setShowVideoPreview={setShowVideoPreview} lecture={lecture} />;
   }
-  
-  // Default to instructor view
-  return (
-    <InstructorVideoPreview videoContent={videoContent} setShowVideoPreview={setShowVideoPreview} lecture={lecture} />
-  );
+
+  if (articleContent.text) {
+    // In a real implementation, you'd have ArticlePreview components for student/instructor
+    // For now, we'll just show a simple preview
+    return (
+      <div className="fixed inset-0 z-[9999] bg-white flex flex-col">
+        <div className="flex justify-between items-center border-b border-gray-200 p-4">
+          <h2 className="font-semibold">Article Preview</h2>
+          <button 
+            onClick={() => setShowVideoPreview(false)} 
+            className="text-gray-500 hover:text-gray-700"
+            type="button"
+            aria-label="Close preview"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        <div className="flex-1 overflow-y-auto p-6">
+          <div dangerouslySetInnerHTML={{ __html: articleContent.text }} />
+        </div>
+      </div>
+    );
+  }
 };
 
 const selectVideo = (videoId: string) => {
@@ -748,7 +838,7 @@ const renderContent = () => {
         </div>
       );
     case 'video-slide': return ( <VideoSlideMashupComponent/> );
-    case 'article': return (<Article content={content} setContent={setContent} setHtmlMode={setHtmlMode} htmlMode={htmlMode} />);
+    case 'article': return (<Article content={content} setContent={setContent} setHtmlMode={setHtmlMode} htmlMode={htmlMode} onSave={handleSaveArticle} />);
     default: return null;
   }
 };
@@ -1262,6 +1352,98 @@ return (
     ))}
   </div>
 )}
+
+{articleContent.text && !videoContent.selectedVideoDetails && (
+      <div className="overflow-hidden border-b border-gray-400 mb-4">
+        <div className="flex flex-row justify-between sm:flex-row items-start">
+          {/* Left side with article icon and details */}
+          <div className="flex items-center py-3">
+            {/* Article icon/thumbnail */}
+            <div className="w-24 h-20 bg-black rounded overflow-hidden mr-3 flex-shrink-0 flex items-center justify-center">
+              <FileText size={60} className="text-white" />
+            </div>
+            
+            {/* Article info */}
+            <div>
+              <h3 className="text-sm font-semibold text-gray-800">
+                Article
+              </h3>
+              <p className="text-xs text-gray-500">
+                {`${articleContent.text.length} characters`}
+              </p>
+              <button 
+                onClick={() => {
+                  setActiveContentType('article');
+                  if (!isExpanded && toggleContentSection) {
+                    toggleContentSection(sectionId, lecture.id);
+                  }
+                }}
+                className="text-[#6D28D2] hover:text-[#7D28D2] text-xs font-medium flex items-center mt-1"
+              >
+                <Edit3 className="w-3 h-3 mr-1" /> Edit Content
+              </button>
+                    <button
+              onClick={() => {
+                // Clear article content
+                setArticleContent({ text: '' });
+                // Set content type to video
+                setActiveContentType('video');
+                if (!isExpanded && toggleContentSection) {
+                  toggleContentSection(sectionId, lecture.id);
+                }
+              }}
+              className="text-[#6D28D2] hover:text-[#7D28D2] text-xs font-medium"
+            >
+              Replace With Video
+            </button>
+            </div>
+          </div>
+          
+          {/* Right side with Preview button and Replace with Video link */}
+          <div className="flex flex-col gap-2 justify-end items-start py-3">
+            {/* Preview dropdown button */}
+            <div className="relative inline-flex gap-4" id="preview-dropdown">
+              <button 
+                onClick={() => setShowPreviewDropdown(!showPreviewDropdown)}
+                className="bg-[#6D28D2] text-white text-sm font-medium ml-16 px-4 py-1.5 rounded hover:bg-[#7D28D2] flex items-center"
+                type="button"
+              >
+                Preview <ChevronDown className="ml-1 w-4 h-4" />
+              </button>
+              
+              {/* Dropdown menu - using absolute positioning */}
+              {showPreviewDropdown && (
+                <div className="absolute mt-1 right-0 w-40 bg-white border border-gray-200 rounded-md shadow-lg z-50">
+                  <ul>
+                    <li>
+                      <button
+                        onClick={() => handlePreviewSelection('instructor')}
+                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        type="button"
+                      >
+                        As Instructor
+                      </button>
+                    </li>
+                    <li>
+                      <button
+                        onClick={() => handlePreviewSelection('student')}
+                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        type="button"
+                      >
+                        As Student
+                      </button>
+                    </li>
+                  </ul>
+                </div>
+              )}
+            </div>
+            
+            {/* Replace with Video link */}
+      
+          </div>
+        </div>
+      </div>
+    )}
 
               
 

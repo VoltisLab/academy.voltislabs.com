@@ -21,11 +21,12 @@ const ReactQuill = dynamic(() => import('react-quill-new'), {
     content: string;
     setContent: React.Dispatch<React.SetStateAction<string>>;
     setHtmlMode: React.Dispatch<React.SetStateAction<boolean>>;
-    htmlMode: boolean
+    htmlMode: boolean;
+    onSave?: (content: string) => void;
   };
   
 
-const Article = ({htmlMode, content, setContent, setHtmlMode}: ChildProps) => {
+const Article = ({htmlMode, content, setContent, setHtmlMode, onSave}: ChildProps) => {
     return (
         <div className="border border-gray-300 rounded-md p-4">
 {/* Heading */}
@@ -91,7 +92,7 @@ const Article = ({htmlMode, content, setContent, setHtmlMode}: ChildProps) => {
 
 {/* Save Button */}
 <div className="flex justify-end pt-4">
-  <button className="bg-[#6D28D2] text-white text-sm px-4 py-2 rounded hover:bg-[#5b21b6] transition">
+  <button   onClick={() => onSave && onSave(content)} className="bg-[#6D28D2] text-white text-sm px-4 py-2 rounded hover:bg-[#5b21b6] transition">
     Save
   </button>
 </div>
