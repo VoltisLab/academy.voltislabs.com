@@ -1,7 +1,10 @@
 "use client";
 import React, { useState, useRef, ChangeEvent, Dispatch, SetStateAction } from 'react';
-import { ContentType, ResourceTabType } from '@/lib/types';
-
+import { ContentType, ResourceTabType, StoredVideo } from '@/lib/types';
+import { Search, ChevronDown, Trash2 } from 'lucide-react';
+interface LibraryFileWithSize extends StoredVideo {
+  size?: string;
+}
 // Define types for the component
 interface ResourceComponentProps {
   // Original props
@@ -12,7 +15,10 @@ interface ResourceComponentProps {
   onSourceFileSelect?: (file: File) => void;
   onExternalResourceAdd?: (title: string, url: string) => void;
   
-  // Add the missing props that are causing errors:
+  // Add the new prop for handling library item selection
+  onLibraryItemSelect?: (item: LibraryFileWithSize) => void;
+  
+  // Other existing props
   activeContentSection?: {sectionId: string, lectureId: string} | null;
   activeResourceTab?: ResourceTabType;
   setActiveResourceTab?: Dispatch<SetStateAction<ResourceTabType>>;
@@ -21,6 +27,7 @@ interface ResourceComponentProps {
   uploadProgress?: number;
   triggerFileUpload?: (contentType: ContentType) => void;
 }
+
 
 // Define the types for the form state
 interface ExternalResourceForm {
@@ -35,6 +42,7 @@ export default function ResourceComponent({
   onFileSelect,
   onSourceFileSelect,
   onExternalResourceAdd,
+  onLibraryItemSelect,
   // Include the new props with default values:
   activeContentSection = null,
   activeResourceTab,
@@ -52,10 +60,43 @@ export default function ResourceComponent({
     title: '',
     url: ''
   });
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [showUploadComplete, setShowUploadComplete] = useState<boolean>(false);
+  const [selectedLibraryItems, setSelectedLibraryItems] = useState<StoredVideo[]>([]);
   
   // Fixed ref types - the issue is resolved by making sure they're correctly typed
   const fileInputRef = useRef<HTMLInputElement>(null);
   const sourceFileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Sample library data for demonstration
+  const libraryFiles = [
+    { id: '1', filename: 'Netflix.mp4', type: 'Video', status: 'Success', date: '05/08/2025' },
+    { id: '2', filename: 'css_tutorial.pdf', type: 'Presentation', status: 'Success', date: '05/08/2025' },
+    { id: '3', filename: '2025-05-01-025523.webm', type: 'Video', status: 'Success', date: '05/08/2025' },
+    { id: '4', filename: 'Backend Software Engineer Practical Test Assignment for Stanley Samuel.pdf', type: 'Presentation', status: 'Success', date: '05/07/2025' },
+    { id: '5', filename: 'css_tutorial.pdf', type: 'Presentation', status: 'Success', date: '05/07/2025' },
+    { id: '6', filename: 'css_tutorial.pdf', type: 'Presentation', status: 'Success', date: '05/07/2025' },
+    { id: '7', filename: 'css_tutorial.pdf', type: 'Presentation', status: 'Success', date: '05/07/2025' },
+    { id: '8', filename: 'Netflix.mp4', type: 'Video', status: 'Success', date: '05/07/2025' },
+    { id: '9', filename: 'Netflix.mp4', type: 'Video', status: 'Success', date: '05/07/2025' },
+    { id: '10', filename: 'Backend Software Engineer Practical Test Assignment for Stanley Samuel.pdf', type: 'Presentation', status: 'Success', date: '05/07/2025' },
+  ];
+
+  // Filter library files based on search query
+  const filteredFiles = libraryFiles.filter(file => 
+    file.filename.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const filesPerPage = 5;
+  const totalPages = Math.ceil(filteredFiles.length / filesPerPage);
+  
+  // Get current files for pagination
+  const indexOfLastFile = currentPage * filesPerPage;
+  const indexOfFirstFile = indexOfLastFile - filesPerPage;
+  const currentFiles = filteredFiles.slice(indexOfFirstFile, indexOfLastFile);
   
   // Update parent component's state if provided
   const handleTabChange = (tab: ResourceTabType) => {
@@ -79,6 +120,7 @@ export default function ResourceComponent({
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const file = e.target.files[0];
+      setSelectedFile(file);
       if (onFileSelect) {
         onFileSelect(file);
       }
@@ -116,6 +158,30 @@ export default function ResourceComponent({
     // Reset form after submission
     setExternalForm({ title: '', url: '' });
   };
+
+  // Handle file upload simulation
+  const handleUpload = () => {
+    if (selectedFile && triggerFileUpload) {
+      triggerFileUpload(ContentType.FILE);
+      
+      // After the upload is "complete" (handled by the parent), show the success status
+      setTimeout(() => {
+        setShowUploadComplete(true);
+      }, 3000);
+    }
+  };
+
+  // Select an item from the library
+  const handleSelectLibraryItem = (item: StoredVideo) => {
+    const itemExists = selectedLibraryItems.some(selected => selected.id === item.id);
+    if (!itemExists) {
+      setSelectedLibraryItems([...selectedLibraryItems, item]);
+      console.log(`Selected library item: ${item.filename}`);
+    }
+  };
+
+
+  
   
   // Custom input styles with focus state
   const inputClasses = "w-full px-3 py-2 border border-gray-500 rounded text-gray-700 focus:outline-none focus:1 focus:ring-[#6D28D2] focus:border-[#6D28D2]";
@@ -172,38 +238,122 @@ export default function ResourceComponent({
         {/* Downloadable File Tab */}
         {currentTab === ResourceTabType.DOWNLOADABLE_FILE && (
           <div>
-            <div className="flex items-center mb-4">
-              {/* Hidden file input element */}
-              <input
-                type="file"
-                ref={fileInputRef}
-                className="hidden"
-                onChange={handleFileChange}
-              />
-              
-              {/* Clickable area for file selection */}
-              <div 
-                className="border border-gray-400 rounded p-2 flex-grow mr-2 cursor-pointer hover:bg-gray-50"
-                onClick={() => handleFileSelection(fileInputRef)}
-              >
-                <p className="text-gray-700">No file selected</p>
+            {showUploadComplete ? (
+              <div className="space-y-4">
+                <div className="border-b border-gray-300 py-2">
+                  <div className="grid grid-cols-4 gap-2 md:gap-4 text-[17px] font-bold text-gray-800 border-b border-gray-300">
+                    <div>Filename</div>
+                    <div>Type</div>
+                    <div>Status</div>
+                    <div>Date</div>
+                  </div>
+                  <div className="grid grid-cols-4 gap-2 md:gap-4 text-sm mt-2 items-center text-gray-700 font-semibold">
+                    <div className="truncate">{selectedFile?.name || "2025-05-01-025523.webm"}</div>
+                    <div>File</div>
+                    <div className="text-green-600">Success</div>
+                    <div className="flex justify-between items-center">
+                      {new Date().toLocaleDateString('en-US', {month: '2-digit', day: '2-digit', year: 'numeric'})}
+                      <button 
+                        className="text-[#6D28D2] hover:text-[#7D28D2] text-xs font-medium"
+                        onClick={() => {
+                          setSelectedFile(null);
+                          setShowUploadComplete(false);
+                        }}
+                      >
+                        Replace
+                      </button>
+                    </div>
+                  </div>
+                  <div className="mt-4">
+                    <div className="flex items-center justify-between">
+                      <div className="w-full bg-gray-200 rounded h-2">
+                        <div className="bg-[#6D28D2] h-2 rounded" style={{ width: '100%' }}></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex justify-end">
+                  <button
+                    onClick={onClose}
+                    className="px-4 py-2 bg-[#6D28D2] text-white rounded text-sm font-medium hover:bg-[#5D18C9]"
+                  >
+                    Done
+                  </button>
+                </div>
               </div>
-              
-              {/* Button also triggers the same file input */}
-              <button
-                type="button"
-                className="px-4 py-2 border border-[#6D28D2] text-[#6D28D2] text-sm font-medium rounded hover:bg-[#6D28D2] hover:text-white whitespace-nowrap"
-                onClick={() => handleFileSelection(fileInputRef)}
-              >
-                Select File
-              </button>
-            </div>
-            
-            <div className="mt-4">
-              <p className="text-sm text-gray-600">
-                <span className="font-bold">Note:</span>  A resource is for any type of document that can be used to help students in the lecture. This file is going to be seen as a lecture extra. Make sure everything is legible and the file size is less than 1 GiB.
-              </p>
-            </div>
+            ) : isUploading ? (
+              <div className="space-y-4">
+                <div className="border-b border-gray-300 py-2">
+                  <div className="grid grid-cols-4 gap-2 md:gap-4 text-[17px] font-bold text-gray-800 border-b border-gray-300">
+                    <div>Filename</div>
+                    <div>Type</div>
+                    <div>Status</div>
+                    <div>Date</div>
+                  </div>
+                  <div className="grid grid-cols-4 gap-2 md:gap-4 text-sm mt-2 items-center">
+                    <div className="truncate">{selectedFile?.name || "2025-05-01-025523.webm"}</div>
+                    <div>File</div>
+                    <div className="flex items-center">
+                      <div className="w-full flex items-center">
+                        <div className="w-20 bg-gray-200 h-2 overflow-hidden rounded">
+                          <div className="bg-[#6D28D2] h-2" style={{ width: `${uploadProgress}%` }}></div>
+                        </div>
+                        <span className="ml-2 text-xs">{uploadProgress}%</span>
+                      </div>
+                    </div>
+                    <div>{new Date().toLocaleDateString('en-US', {month: '2-digit', day: '2-digit', year: 'numeric'})}</div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <div className="flex items-center mb-4">
+                  {/* Hidden file input element */}
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    className="hidden"
+                    onChange={handleFileChange}
+                  />
+                  
+                  {/* Clickable area for file selection */}
+                  <div 
+                    className="border border-gray-400 rounded p-2 flex-grow mr-2 cursor-pointer hover:bg-gray-50"
+                    onClick={() => handleFileSelection(fileInputRef)}
+                  >
+                    <p className="text-gray-700">
+                      {selectedFile ? selectedFile.name : 'No file selected'}
+                    </p>
+                  </div>
+                  
+                  {/* Button also triggers the same file input */}
+                  <button
+                    type="button"
+                    className="px-4 py-2 border border-[#6D28D2] text-[#6D28D2] text-sm font-medium rounded hover:bg-[#6D28D2] hover:text-white whitespace-nowrap"
+                    onClick={() => handleFileSelection(fileInputRef)}
+                  >
+                    Select File
+                  </button>
+                </div>
+
+                {selectedFile && (
+                  <div className="flex justify-end mt-4">
+                    <button
+                      onClick={handleUpload}
+                      className="px-4 py-2 bg-[#6D28D2] text-white rounded text-sm font-medium hover:bg-[#5D18C9]"
+                    >
+                      Upload
+                    </button>
+                  </div>
+                )}
+                
+                <div className="mt-4">
+                  <p className="text-sm text-gray-600">
+                    <span className="font-bold">Note:</span> A resource is for any type of document that can be used to help students in the lecture. This file is going to be seen as a lecture extra. Make sure everything is legible and the file size is less than 1 GiB.
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         )}
         
@@ -257,6 +407,8 @@ export default function ResourceComponent({
                 <input
                   type="text"
                   placeholder="Search files by name"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
                   className={searchInputClasses}
                 />
               </div>
@@ -264,29 +416,105 @@ export default function ResourceComponent({
                 type="button"
                 className="ml-2 px-3 py-2 bg-[#6D28D2] text-white rounded hover:bg-purple-700"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
-                </svg>
+                <Search className="h-5 w-5" />
               </button>
             </div>
             
             <div className="border-b border-gray-300">
-              <div className="grid grid-cols-12 text-left py-2 font-medium text-gray-800 border-b border-gray-300">
-                <div className="col-span-5">Filename</div>
-                <div className="col-span-2">Type</div>
-                <div className="col-span-2">Status</div>
-                <div className="col-span-3 flex items-center">
-                  Date
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                  </svg>
+              <div className="grid grid-cols-4 text-left py-2 font-medium text-gray-800 border-b border-gray-300">
+                <div>Filename</div>
+                <div>Type</div>
+                <div>Status</div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1">
+                    Date <ChevronDown className="w-4 h-4" />
+                  </div>
                 </div>
               </div>
               
-              <div className="py-8 text-center text-gray-600">
-                No results found.
-              </div>
+              {currentFiles.length > 0 ? (
+                currentFiles.map(file => (
+                  <div key={file.id} className="grid grid-cols-4 gap-2 md:gap-4 p-3 border-b border-gray-200 hover:bg-gray-50 items-center">
+                    <div className="truncate">{file.filename}</div>
+                    <div>{file.type}</div>
+                    <div className="text-sm font-medium text-green-800">
+                      {file.status}
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div>{file.date}</div>
+                      <div className="text-indigo-600">
+                      <button 
+  onClick={() => {
+    // Create enhanced item with size information
+    const enhancedItem: LibraryFileWithSize = {
+      ...file,
+      size: file.type === 'Video' ? '01:45' : '1.2 MB'
+    };
+    
+    // Call the onLibraryItemSelect handler if provided
+    if (onLibraryItemSelect) {
+      onLibraryItemSelect(enhancedItem);
+      
+      // Optionally close the modal after selecting
+      if (onClose) {
+        onClose();
+      }
+    }
+  }}
+  className="text-indigo-600 hover:text-indigo-800 text-xs font-medium"
+>
+  Select
+</button>
+                        <button 
+                          className="ml-2 text-indigo-600 hover:text-red-600"
+                        >
+                          <Trash2 className="w-4 h-4 inline-block" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="px-4 py-7 text-center text-gray-500 text-sm">
+                  No results found.
+                </div>
+              )}
             </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex justify-center mt-4 space-x-1">
+                <button
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                  className="p-2 rounded-md border border-[#6D28D2] text-[#6D28D2] disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  &lt;
+                </button>
+                
+                {[...Array(totalPages)].map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setCurrentPage(i + 1)}
+                    className={`w-8 h-8 rounded-full ${
+                      currentPage === i + 1
+                        ? 'bg-[#6D28D2] text-white'
+                        : 'text-[#6D28D2] hover:bg-[#6D28D2]/10'
+                    }`}
+                  >
+                    {i + 1}
+                  </button>
+                ))}
+                
+                <button
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                  className="p-2 rounded-md border border-[#6D28D2] text-[#6D28D2] disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  &gt;
+                </button>
+              </div>
+            )}
           </div>
         )}
         
@@ -329,6 +557,37 @@ export default function ResourceComponent({
           </div>
         )}
       </div>
+
+      {/* Display selected library items (if any) */}
+      {selectedLibraryItems.length > 0 && (
+        <div className="px-4 mt-4 border-t border-gray-200 pt-4">
+          <h3 className="text-sm font-medium text-gray-700 mb-2">Selected Materials</h3>
+          {selectedLibraryItems.map((item) => (
+            <div key={`selected-${item.id}`} className="flex justify-between items-center py-1">
+              <div className="flex items-center">
+                <span className="text-sm text-gray-800">{item.filename} ({item.type === 'Video' ? '01:45' : '1.2 MB'})</span>
+              </div>
+              <button 
+                onClick={() => {
+                  setSelectedLibraryItems(selectedLibraryItems.filter(i => i.id !== item.id));
+                }}
+                className="text-gray-400 hover:text-red-600"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
+          ))}
+          
+          <div className="flex justify-end mt-4">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 bg-[#6D28D2] text-white rounded text-sm font-medium hover:bg-[#5D18C9]"
+            >
+              Done
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

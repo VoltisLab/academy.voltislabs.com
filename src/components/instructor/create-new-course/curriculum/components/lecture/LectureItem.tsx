@@ -19,6 +19,10 @@ interface SelectedVideoDetails {
   isDownloadable: boolean;
 }
 
+interface LibraryFileWithSize extends StoredVideo {
+  size?: string;
+}
+
 export default function LectureItem({
   lecture,
   lectureIndex,
@@ -67,6 +71,7 @@ export default function LectureItem({
   const [activeResourceTab, setActiveResourceTab] = useState<ResourceTabType>(ResourceTabType.DOWNLOADABLE_FILE);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadedFiles, setUploadedFiles] = useState<Array<{name: string, size: string}>>([]);
   const [videoContent, setVideoContent] = useState<VideoContent>({
     uploadTab: { selectedFile: null },
     libraryTab: { 
@@ -91,6 +96,7 @@ export default function LectureItem({
    const [articleContent, setArticleContent] = useState<ArticleContent>({
      text: ''
    });
+   const [selectedResources, setSelectedResources] = useState<StoredVideo[]>([]);
 
 // Add this useEffect to initialize the edit form when opened
 useEffect(() => {
@@ -177,12 +183,12 @@ const VideoPreviewPage: React.FC = () => {
   
   // Return the instructor or student view based on preview mode
   if (previewMode === 'student') {
-    return <StudentVideoPreview videoContent={videoContent} setShowVideoPreview={setShowVideoPreview} lecture={lecture}  />;
+    return <StudentVideoPreview videoContent={videoContent} setShowVideoPreview={setShowVideoPreview} lecture={lecture} />;
   }
   
   // Default to instructor view
   return (
-    <InstructorVideoPreview videoContent={videoContent} setShowVideoPreview={setShowVideoPreview} lecture={lecture}  />
+    <InstructorVideoPreview videoContent={videoContent} setShowVideoPreview={setShowVideoPreview} lecture={lecture} />
   );
 };
 
@@ -191,6 +197,12 @@ const selectVideo = (videoId: string) => {
   const selectedVideo = videoContent.libraryTab.videos.find(v => v.id === videoId);
   
   if (selectedVideo) {
+    // Add to selected resources
+    const videoExists = selectedResources.some(v => v.id === videoId);
+    if (!videoExists) {
+      setSelectedResources([...selectedResources, selectedVideo]);
+    }
+    
     // Create the selected video details with mock data for demo
     const selectedDetails: SelectedVideoDetails = {
       id: selectedVideo.id,
@@ -223,6 +235,10 @@ const selectVideo = (videoId: string) => {
   }
 };
 
+const removeSelectedResource = (videoId: string) => {
+  setSelectedResources(selectedResources.filter(v => v.id !== videoId));
+};
+
 // Add the closing event handler for clicking outside the dropdown
 useEffect(() => {
   const handleClickOutside = (event: MouseEvent): void => {
@@ -253,6 +269,22 @@ const handlePreviewSelection = (mode: 'instructor' | 'student'): void => {
   setShowPreviewDropdown(false);
   setShowVideoPreview(true);
   console.log(`Opening preview in ${mode} mode`);
+};
+
+const handleLibraryItemSelect = (item: LibraryFileWithSize) => {
+  // Add the selected item to your downloadable files list
+  setUploadedFiles([
+    ...uploadedFiles, 
+    { 
+      name: item.filename, 
+      size: item.size || (item.type === 'Video' ? '01:45' : '1.2 MB')
+    }
+  ]);
+  
+  // Close the resource modal
+  if (toggleAddResourceModal) {
+    toggleAddResourceModal(sectionId, lecture.id);
+  }
 };
 
 // Add this function to handle the video file upload and progress
@@ -305,6 +337,9 @@ const handleVideoFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
                   videos: [newVideo, ...prev.libraryTab.videos]
                 }
               }));
+              
+              // Add to uploaded files
+              setUploadedFiles([...uploadedFiles, { name: file.name, size: formatFileSize(file.size) }]);
             }
             
           }, 500);
@@ -315,415 +350,441 @@ const handleVideoFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     }, 200);
   }
 };
+
+const formatFileSize = (bytes: number): string => {
+  if (bytes < 1024) return bytes + ' B';
+  else if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+  else return (bytes / 1048576).toFixed(1) + ' MB';
+};
    
-  // Video tab options
-  const videoTabs: TabInterface[] = [
-    { label: 'Upload Video', key: 'uploadVideo' },
-    { label: 'Add from library', key: 'addFromLibrary' }
-  ];
-
-  useEffect(() => {
-    if (editingLectureId === lecture.id && lectureNameInputRef.current) {
-      lectureNameInputRef.current.focus();
-    }
-  }, [editingLectureId, lecture.id]);
-
-  // Determine lecture type label based on contentType
-  const getLectureTypeLabel = () => {
-    switch (lecture.contentType) {
-      case 'video': return 'Lecture';
-      case 'article': return 'Article';
-      case 'quiz': return 'Quiz';
-      case 'coding-exercise': return 'Coding Exercise';
-      case 'assignment': return 'Assignment';
-      case 'practice': return 'Practice';
-      case 'role-play': return 'Role Play';
-      default: return 'Item';
-    }
-  };
-  // Handle search in library tab
-  const handleSearchLibrary = (event: React.FormEvent) => {
-    event.preventDefault();
-    // Implement search functionality here
-    console.log("Searching for:", videoContent.libraryTab.searchQuery);
-  };  
-   
-  // Updated for clarity - when initializing with handleContentTypeSelect
-  const handleContentTypeSelect = (contentType: ContentItemType) => {
-    setActiveContentType(contentType);
-    setShowContentTypeSelector(false);
-    
-    if (contentType === 'video') {
-      // Keep existing videos in the library when initializing
-      const existingVideos = videoContent.libraryTab.videos;
-      const existingSelectedVideoDetails = videoContent.selectedVideoDetails;
-      
-      setVideoContent({
-        uploadTab: { selectedFile: null },
-        libraryTab: {
-          searchQuery: '',
-          selectedVideo: null,
-          videos: existingVideos // Preserve existing videos
-        },
-        activeTab: 'uploadVideo',
-        selectedVideoDetails: existingSelectedVideoDetails // Preserve selected video details
-      });
-    } else if (contentType === 'video-slide' as ContentItemType) {
-      setVideoSlideContent({
-        video: { selectedFile: null },
-        presentation: { selectedFile: null },
-        step: 1
-      });
-    } else if (contentType === 'article') {
-      setArticleContent({ text: '' });
-    }
-  };
-  
-  // Function to delete a video from the library
-  const deleteVideo = (videoId: string) => {
-    setVideoContent({
-      ...videoContent,
-      libraryTab: {
-        ...videoContent.libraryTab,
-        videos: videoContent.libraryTab.videos.filter(video => video.id !== videoId),
-        selectedVideo: videoContent.libraryTab.selectedVideo === videoId ? null : videoContent.libraryTab.selectedVideo
-      }
-    });
-  };
-  
-  const isExpanded = activeContentSection?.sectionId === sectionId && 
-                     activeContentSection?.lectureId === lecture.id;
-
-  // Determine if the resource section is active for THIS specific lecture
-  const isResourceSectionActive = activeResourceSection?.sectionId === sectionId && 
-                                 activeResourceSection?.lectureId === lecture.id;
-
-  // Determine if the description section is active for THIS specific lecture
-  const isDescriptionSectionActive = activeDescriptionSection?.sectionId === sectionId && 
-                                    activeDescriptionSection?.lectureId === lecture.id;
-
-  // Reset content type when section is collapsed
-  useEffect(() => {
-    if (!isExpanded) {
-      setActiveContentType(null);
-      setShowContentTypeSelector(false);
-    }
-  }, [isExpanded]);
-
-  const renderLibraryTab = () => {
-    const filteredVideos = videoContent.libraryTab.videos.filter(video => 
-      video.filename.toLowerCase().includes(videoContent.libraryTab.searchQuery.toLowerCase())
-    );
-    
-    return (
-      <div className="py-4">
-        {/* Search input (half-width from center to right) */}
-        <form onSubmit={handleSearchLibrary} className="mb-4">
-          <div className="flex justify-end gap-2">
-            <div className="w-1/2 relative">
-              <input
-                type="text"
-                placeholder="Search files by name"
-                value={videoContent.libraryTab.searchQuery}
-                onChange={(e) =>
-                  setVideoContent({
-                    ...videoContent,
-                    libraryTab: {
-                      ...videoContent.libraryTab,
-                      searchQuery: e.target.value,
-                    },
-                  })
-                }
-                className="w-full py-2 px-3 border border-gray-400 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-              />
-            </div>
-            <button
-              type="submit"
-              className="p-2 bg-[#6D28D9] text-white rounded-md hover:bg-indigo-700"
-            >
-              <Search className="w-5 h-5" />
-            </button>
-          </div>
-        </form>
-  
-        {/* Table header and results */}
-        <div className="border-b border-gray-300">
-          <div className="grid grid-cols-4 gap-2 md:gap-4 p-3 text-[16px] font-bold border-b border-gray-300">
-            <div>Filename</div>
-            <div>Type</div>
-            <div>Status</div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1">
-                Date <ChevronDown className="w-4 h-4" />
-              </div>
-            </div>
-          </div>
-          
-          {filteredVideos.length > 0 ? (
-            filteredVideos.map(video => (
-              <div key={video.id} className="grid grid-cols-4 gap-2 md:gap-4 p-3 border-b border-gray-200 hover:bg-gray-50 items-center">
-                <div className="truncate">{video.filename}</div>
-                <div>{video.type}</div>
-                <div className="text-sm font-medium text-green-800">
-                  {video.status}
-                </div>
-                <div className="flex items-center justify-between">
-                  <div>{video.date}</div>
-                  <div className="text-indigo-600">
-                    <button 
-                      onClick={() => selectVideo(video.id)}
-                      className="text-indigo-600 hover:text-indigo-800 text-xs font-medium"
-                    >
-                      Select
-                    </button>
-                    <button 
-                      onClick={() => deleteVideo(video.id)}
-                      className="ml-2 text-indigo-600 hover:text-red-600"
-                    >
-                      <Trash2 className="w-4 h-4 inline-block" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))
-          ) : (
-            <div className="px-4 py-7 text-center text-gray-500 text-sm">
-              No results found.
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  };
-  
-  // Helper to render the content based on activeContentType
-  const renderContent = () => {
-    if (!activeContentType) return null;
-  
-    switch (activeContentType) {
-      case 'video':
-        return (
-          <div className="border border-gray-300 rounded-md">
-            <div className="p-2">
-              {/* Tabs */}
-              <div className="flex border-b border-gray-300">
-                {videoTabs.map((tab) => (
-                  <button
-                    key={tab.key}
-                    className={`py-2 px-4 text-sm ${
-                      videoContent.activeTab === tab.key
-                        ? 'text-gray-800 font-bold border-b-3 border-gray-800'
-                        : 'text-gray-500 hover:text-gray-700 font-semibold'
-                    }`}
-                    onClick={() =>
-                      setVideoContent({ ...videoContent, activeTab: tab.key })
-                    }
-                  >
-                    {tab.label}
-                  </button>
-                ))}
-              </div>
-          
-              {videoContent.activeTab === 'uploadVideo' ? (
-                /* Upload tab content - keep existing implementation */
-                <div className="py-4">
-                  {videoUploadComplete ? (
-                    <div className="space-y-4">
-                      {/* File display with replace button */}
-                      <div className="border-b border-gray-300 py-2 overflow-x-auto">
-                        <div className="grid grid-cols-4 gap-2 md:gap-4 text-[17px] font-bold text-gray-800 border-b border-gray-300 min-w-max">
-                          <div>Filename</div>
-                          <div>Type</div>
-                          <div>Status</div>
-                          <div>Date</div>
-                        </div>
-                        <div className="grid grid-cols-4 gap-2 md:gap-4 text-sm mt-2 items-center text-gray-700 font-semibold min-w-max">
-                          <div className="truncate">{videoContent.uploadTab.selectedFile?.name || "2025-05-01-025523.webm"}</div>
-                          <div>Video</div>
-                          <div>Processing</div>
-                          <div className="flex justify-between items-center">
-                            {new Date().toLocaleDateString('en-US', {month: '2-digit', day: '2-digit', year: 'numeric'})}
-                            <button 
-                              className="text-[D28D2] hover:text-[#7D28D2] text-xs font-bold"
-                              onClick={() => {
-                                setVideoUploadComplete(false);
-                                setVideoContent({
-                                  ...videoContent,
-                                  uploadTab: { selectedFile: null }
-                                });
-                              }}
-                            >
-                              Replace
-                            </button>
-                          </div>
-                        </div>
-                        <div className="mt-4">
-                          <div className="flex items-center justify-between">
-                            <div className="w-full bg-gray-200 rounded h-2">
-                              <div className="bg-gray-500 h-2 rounded" style={{ width: '100%' }}></div>
-                            </div>
-                          </div>
-                          <p className="mt-2 text-xs text-gray-700">
-                            <strong className="font-bold">Note:</strong> <span className="font-semibold">This video is still being processed. We will send you an email when it is ready.</span>
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  ) : isVideoUploading ? (
-                    <div className="space-y-4">
-                      {/* File being uploaded with progress bar */}
-                      <div className="border-b border-gray-300 py-2">
-                        <div className="grid grid-cols-4 gap-2 md:gap-4 text-[17px] font-bold text-gray-800 border-b border-gray-300">
-                          <div>Filename</div>
-                          <div>Type</div>
-                          <div>Status</div>
-                          <div>Date</div>
-                        </div>
-                        <div className="grid grid-cols-4 gap-2 md:gap-4 text-sm mt-2 items-center">
-                          <div className="truncate">{videoContent.uploadTab.selectedFile?.name || "2025-05-01-025523.webm"}</div>
-                          <div>Video</div>
-                          <div className="flex items-center">
-                            <div className="w-full flex items-center">
-                              <div className="w-20 bg-gray-200 h-2 overflow-hidden roundedd">
-                                <div className="bg-[D28D2] h-2 " style={{ width: `${videoUploadProgress}%` }}></div>
-                              </div>
-                              <span className="ml-2 text-xs">{videoUploadProgress}%</span>
-                            </div>
-                          </div>
-                          <div>{new Date().toLocaleDateString('en-US', {month: '2-digit', day: '2-digit', year: 'numeric'})}</div>
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <>
-                      {/* File selection box */}
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-800 font-semibold truncate py-3 border border-gray-400 w-[85%] px-4">
-                          {videoContent.uploadTab.selectedFile
-                            ? videoContent.uploadTab.selectedFile.name
-                            : 'No file selected'}
-                        </span>
-                        <label className="ml-4 px-2 py-3 border border-[#6D28D2] text-sm font-bold text-[#6D28D2] rounded hover:bg-[#6D28D2]/10 cursor-pointer transition">
-                          <input
-                            type="file"
-                            accept="video/*"
-                            onChange={handleVideoFileUpload}
-                            className="hidden"
-                          />
-                          Select Video
-                        </label>
-                      </div>
-                      <p className="mt-2 text-xs text-gray-500 ">
-                        <strong className='font-bold'>Note:</strong> <span className='font-semibold'>All files should be at least 720p and less than 4.0 GB.</span>
-                      </p>
-                    </>
-                  )}
-                </div>
-              ) : (
-                // Render the library tab with stored videos
-                renderLibraryTab()
-              )}
-            </div>
-          </div>
-        );
-  case 'video-slide': return ( <VideoSlideMashupComponent/> );
-  case 'article': return (<Article content={content} setContent={setContent} setHtmlMode={setHtmlMode} htmlMode={htmlMode}  />);
-  default:return null
-}
+// Function to handle saving description
+const handleSaveDescription = () => {
+  if (saveDescription) {
+    saveDescription();
+  }
 };
 
-  // Simulate uploading a file for resources
-  const triggerFileUpload = (contentType: ContentType) => {
-    setIsUploading(true);
-    const interval = setInterval(() => {
-      setUploadProgress(prev => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setTimeout(() => {
-            setIsUploading(false);
-            setUploadProgress(0);
-          }, 500);
-          return 100;
-        }
-        return prev + 10;
-      });
-    }, 300);
-  };
-  const [maxLength, setMaxLength] = useState(80)
-  return (
-    <div 
-      className={`mb-3 bg-white border border-gray-400 ${isExpanded && "border-b border-gray-500 "}${
-        draggedLecture === lecture.id ? 'opacity-50' : ''
-      } ${
-        dragTarget?.lectureId === lecture.id ? 'border-2 border-indigo-500' : ''
-      }`}
-      draggable={true}
-      onDragStart={(e) => handleDragStart(e, sectionId, lecture.id)}
-      onDragEnd={handleDragEnd}
-      onDragOver={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        handleDragOver(e);
-      }}
-      onDragLeave={handleDragLeave}
-      onDrop={(e) => handleDrop(e, sectionId, lecture.id)}
-      onMouseEnter={() => setIsHovering(true)}
-      onMouseLeave={() => setIsHovering(false)}
-    >
+// Video tab options
+const videoTabs: TabInterface[] = [
+  { label: 'Upload Video', key: 'uploadVideo' },
+  { label: 'Add from library', key: 'addFromLibrary' }
+];
 
-{showEditLectureForm ? (
-  <div 
-    className="flex items-center justify-center"
-    onClick={() => setShowEditLectureForm(false)}
-  >
-    <div 
-      ref={lectureFormRef}
-      className="bg-white p-6 rounded-lg  w-full max-w-4xl"
-      onClick={(e) => e.stopPropagation()}
-    >
-      <div className="flex items-center mb-4">
-      <FaCircleCheck  color="black" size={14} className="shrink-0 text-white mr-2" />
-        <div className="text-sm font-medium">
-          Lecture {lectureIndex + 1}:
+useEffect(() => {
+  if (editingLectureId === lecture.id && lectureNameInputRef.current) {
+    lectureNameInputRef.current.focus();
+  }
+}, [editingLectureId, lecture.id]);
+
+// Determine lecture type label based on contentType
+const getLectureTypeLabel = () => {
+  switch (lecture.contentType) {
+    case 'video': return 'Lecture';
+    case 'article': return 'Article';
+    case 'quiz': return 'Quiz';
+    case 'coding-exercise': return 'Coding Exercise';
+    case 'assignment': return 'Assignment';
+    case 'practice': return 'Practice';
+    case 'role-play': return 'Role Play';
+    default: return 'Item';
+  }
+};
+
+// Handle search in library tab
+const handleSearchLibrary = (event: React.FormEvent) => {
+  event.preventDefault();
+  // Implement search functionality here
+  console.log("Searching for:", videoContent.libraryTab.searchQuery);
+};  
+   
+// Updated for clarity - when initializing with handleContentTypeSelect
+const handleContentTypeSelect = (contentType: ContentItemType) => {
+  setActiveContentType(contentType);
+  setShowContentTypeSelector(false);
+  
+  if (contentType === 'video') {
+    // Keep existing videos in the library when initializing
+    const existingVideos = videoContent.libraryTab.videos;
+    const existingSelectedVideoDetails = videoContent.selectedVideoDetails;
+    
+    setVideoContent({
+      uploadTab: { selectedFile: null },
+      libraryTab: {
+        searchQuery: '',
+        selectedVideo: null,
+        videos: existingVideos // Preserve existing videos
+      },
+      activeTab: 'uploadVideo',
+      selectedVideoDetails: existingSelectedVideoDetails // Preserve selected video details
+    });
+  } else if (contentType === 'video-slide' as ContentItemType) {
+    setVideoSlideContent({
+      video: { selectedFile: null },
+      presentation: { selectedFile: null },
+      step: 1
+    });
+  } else if (contentType === 'article') {
+    setArticleContent({ text: '' });
+  }
+};
+
+// Function to delete a video from the library
+const deleteVideo = (videoId: string) => {
+  setVideoContent({
+    ...videoContent,
+    libraryTab: {
+      ...videoContent.libraryTab,
+      videos: videoContent.libraryTab.videos.filter(video => video.id !== videoId),
+      selectedVideo: videoContent.libraryTab.selectedVideo === videoId ? null : videoContent.libraryTab.selectedVideo
+    }
+  });
+};
+  
+const isExpanded = activeContentSection?.sectionId === sectionId && 
+                   activeContentSection?.lectureId === lecture.id;
+
+// Determine if the resource section is active for THIS specific lecture
+const isResourceSectionActive = activeResourceSection?.sectionId === sectionId && 
+                               activeResourceSection?.lectureId === lecture.id;
+
+// Determine if the description section is active for THIS specific lecture
+const isDescriptionSectionActive = activeDescriptionSection?.sectionId === sectionId && 
+                                  activeDescriptionSection?.lectureId === lecture.id;
+
+// Reset content type when section is collapsed
+useEffect(() => {
+  if (!isExpanded) {
+    setActiveContentType(null);
+    setShowContentTypeSelector(false);
+  }
+}, [isExpanded]);
+
+const renderLibraryTab = () => {
+  const filteredVideos = videoContent.libraryTab.videos.filter(video => 
+    video.filename.toLowerCase().includes(videoContent.libraryTab.searchQuery.toLowerCase())
+  );
+  
+  return (
+    <div className="py-4">
+      {/* Search input (half-width from center to right) */}
+      <form onSubmit={handleSearchLibrary} className="mb-4">
+        <div className="flex justify-end gap-2">
+          <div className="w-1/2 relative">
+            <input
+              type="text"
+              placeholder="Search files by name"
+              value={videoContent.libraryTab.searchQuery}
+              onChange={(e) =>
+                setVideoContent({
+                  ...videoContent,
+                  libraryTab: {
+                    ...videoContent.libraryTab,
+                    searchQuery: e.target.value,
+                  },
+                })
+              }
+              className="w-full py-2 px-3 border border-gray-400 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+            />
+          </div>
+          <button
+            type="submit"
+            className="p-2 bg-[#6D28D9] text-white rounded-md hover:bg-indigo-700"
+          >
+            <Search className="w-5 h-5" />
+          </button>
         </div>
-        <div className="flex-1 ml-2">
-          <input
-            type="text"
-            value={editLectureTitle}
-            onChange={(e) => setEditLectureTitle(e.target.value)}
-            onKeyDown={handleKeyDown}
-            className="w-full border border-gray-300 focus:outline-none focus:ring-1 focus:ring-purple-500 px-2 py-1 rounded-md"
-            autoFocus
-            maxLength={80}
-          />
-          <div className="text-right absolute right-13 top-10 font-bold text-sm text-gray-500 mt-1">
-            {maxLength - editLectureTitle.length}
+      </form>
+
+      {/* Table header and results */}
+      <div className="border-b border-gray-300">
+        <div className="grid grid-cols-4 gap-2 md:gap-4 p-3 text-[16px] font-bold border-b border-gray-300">
+          <div>Filename</div>
+          <div>Type</div>
+          <div>Status</div>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1">
+              Date <ChevronDown className="w-4 h-4" />
+            </div>
           </div>
         </div>
-      </div>
-      <div className="flex justify-end mt-4 space-x-2">
-        <button
-          onClick={handleCancelLectureEdit}
-          className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md"
-        >
-          Cancel
-        </button>
-        <button
-          onClick={handleSaveLectureEdit}
-          disabled={!editLectureTitle.trim()}
-          className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:bg-purple-300"
-        >
-          Save Lecture
-        </button>
+        
+        {filteredVideos.length > 0 ? (
+          filteredVideos.map(video => (
+            <div key={video.id} className="grid grid-cols-4 gap-2 md:gap-4 p-3 border-b border-gray-200 hover:bg-gray-50 items-center">
+              <div className="truncate">{video.filename}</div>
+              <div>{video.type}</div>
+              <div className="text-sm font-medium text-green-800">
+                {video.status}
+              </div>
+              <div className="flex items-center justify-between">
+                <div>{video.date}</div>
+                <div className="text-indigo-600">
+                  <button 
+                    onClick={() => selectVideo(video.id)}
+                    className="text-indigo-600 hover:text-indigo-800 text-xs font-medium"
+                  >
+                    Select
+                  </button>
+                  <button 
+                    onClick={() => deleteVideo(video.id)}
+                    className="ml-2 text-indigo-600 hover:text-red-600"
+                  >
+                    <Trash2 className="w-4 h-4 inline-block" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className="px-4 py-7 text-center text-gray-500 text-sm">
+            No results found.
+          </div>
+        )}
       </div>
     </div>
-  </div>
-) : (
-  <>
-     <div className={`flex items-center ${isExpanded && "border-b border-gray-500 "} px-3 py-2 `}>
+  );
+};
+
+// Helper to render the content based on activeContentType
+const renderContent = () => {
+  if (!activeContentType) return null;
+
+  switch (activeContentType) {
+    case 'video':
+      return (
+        <div className="border border-gray-300 rounded-md">
+          <div className="p-2">
+            {/* Tabs */}
+            <div className="flex border-b border-gray-300">
+              {videoTabs.map((tab) => (
+                <button
+                  key={tab.key}
+                  className={`py-2 px-4 text-sm ${
+                    videoContent.activeTab === tab.key
+                      ? 'text-gray-800 font-bold border-b-3 border-gray-800'
+                      : 'text-gray-500 hover:text-gray-700 font-semibold'
+                  }`}
+                  onClick={() =>
+                    setVideoContent({ ...videoContent, activeTab: tab.key })
+                  }
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+        
+            {videoContent.activeTab === 'uploadVideo' ? (
+              /* Upload tab content - keep existing implementation */
+              <div className="py-4">
+                {videoUploadComplete ? (
+                  <div className="space-y-4">
+                    {/* File display with replace button */}
+                    <div className="border-b border-gray-300 py-2 overflow-x-auto">
+                      <div className="grid grid-cols-4 gap-2 md:gap-4 text-[17px] font-bold text-gray-800 border-b border-gray-300 min-w-max">
+                        <div>Filename</div>
+                        <div>Type</div>
+                        <div>Status</div>
+                        <div>Date</div>
+                      </div>
+                      <div className="grid grid-cols-4 gap-2 md:gap-4 text-sm mt-2 items-center text-gray-700 font-semibold min-w-max">
+                        <div className="truncate">{videoContent.uploadTab.selectedFile?.name || "2025-05-01-025523.webm"}</div>
+                        <div>Video</div>
+                        <div>Processing</div>
+                        <div className="flex justify-between items-center">
+                          {new Date().toLocaleDateString('en-US', {month: '2-digit', day: '2-digit', year: 'numeric'})}
+                          <button 
+                            className="text-[#D28D2] hover:text-[#7D28D2] text-xs font-bold"
+                            onClick={() => {
+                              setVideoUploadComplete(false);
+                              setVideoContent({
+                                ...videoContent,
+                                uploadTab: { selectedFile: null }
+                              });
+                            }}
+                          >
+                            Replace
+                          </button>
+                        </div>
+                      </div>
+                      <div className="mt-4">
+                        <div className="flex items-center justify-between">
+                          <div className="w-full bg-gray-200 rounded h-2">
+                            <div className="bg-gray-500 h-2 rounded" style={{ width: '100%' }}></div>
+                          </div>
+                        </div>
+                        <p className="mt-2 text-xs text-gray-700">
+                          <strong className="font-bold">Note:</strong> <span className="font-semibold">This video is still being processed. We will send you an email when it is ready.</span>
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ) : isVideoUploading ? (
+                  <div className="space-y-4">
+                    {/* File being uploaded with progress bar */}
+                    <div className="border-b border-gray-300 py-2">
+                      <div className="grid grid-cols-4 gap-2 md:gap-4 text-[17px] font-bold text-gray-800 border-b border-gray-300">
+                        <div>Filename</div>
+                        <div>Type</div>
+                        <div>Status</div>
+                        <div>Date</div>
+                      </div>
+                      <div className="grid grid-cols-4 gap-2 md:gap-4 text-sm mt-2 items-center">
+                        <div className="truncate">{videoContent.uploadTab.selectedFile?.name || "2025-05-01-025523.webm"}</div>
+                        <div>Video</div>
+                        <div className="flex items-center">
+                          <div className="w-full flex items-center">
+                            <div className="w-20 bg-gray-200 h-2 overflow-hidden rounded">
+                              <div className="bg-[#6D28D9] h-2" style={{ width: `${videoUploadProgress}%` }}></div>
+                            </div>
+                            <span className="ml-2 text-xs">{videoUploadProgress}%</span>
+                          </div>
+                        </div>
+                        <div>{new Date().toLocaleDateString('en-US', {month: '2-digit', day: '2-digit', year: 'numeric'})}</div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    {/* File selection box */}
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-800 font-semibold truncate py-3 border border-gray-400 w-[85%] px-4">
+                        {videoContent.uploadTab.selectedFile
+                          ? videoContent.uploadTab.selectedFile.name
+                          : 'No file selected'}
+                      </span>
+                      <label className="ml-4 px-2 py-3 border border-[#6D28D2] text-sm font-bold text-[#6D28D2] rounded hover:bg-[#6D28D2]/10 cursor-pointer transition">
+                        <input
+                          type="file"
+                          accept="video/*"
+                          onChange={handleVideoFileUpload}
+                          className="hidden"
+                        />
+                        Select Video
+                      </label>
+                    </div>
+                    <p className="mt-2 text-xs text-gray-500 ">
+                      <strong className='font-bold'>Note:</strong> <span className='font-semibold'>All files should be at least 720p and less than 4.0 GB.</span>
+                    </p>
+                  </>
+                )}
+              </div>
+            ) : (
+              // Render the library tab with stored videos
+              renderLibraryTab()
+            )}
+          </div>
+        </div>
+      );
+    case 'video-slide': return ( <VideoSlideMashupComponent/> );
+    case 'article': return (<Article content={content} setContent={setContent} setHtmlMode={setHtmlMode} htmlMode={htmlMode} />);
+    default: return null;
+  }
+};
+
+// Simulate uploading a file for resources
+const triggerFileUpload = (contentType: ContentType) => {
+  setIsUploading(true);
+  const interval = setInterval(() => {
+    setUploadProgress(prev => {
+      if (prev >= 100) {
+        clearInterval(interval);
+        setTimeout(() => {
+          setIsUploading(false);
+          setUploadProgress(0);
+          
+          // Add a new dummy file to the list
+          const filename = contentType === ContentType.VIDEO ? 
+            "2025-05-01-025523.webm" : 
+            "course_materials.pdf";
+            
+          setUploadedFiles([...uploadedFiles, { 
+            name: filename, 
+            size: contentType === ContentType.VIDEO ? "263.5 kB" : "1.2 MB" 
+          }]);
+        }, 500);
+        return 100;
+      }
+      return prev + 10;
+    });
+  }, 300);
+};
+
+const [maxLength, setMaxLength] = useState(80);
+
+return (
+  <div 
+    className={`mb-3 bg-white border border-gray-400 ${isExpanded && "border-b border-gray-500 "}${
+      draggedLecture === lecture.id ? 'opacity-50' : ''
+    } ${
+      dragTarget?.lectureId === lecture.id ? 'border-2 border-indigo-500' : ''
+    }`}
+    draggable={true}
+    onDragStart={(e) => handleDragStart(e, sectionId, lecture.id)}
+    onDragEnd={handleDragEnd}
+    onDragOver={(e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      handleDragOver(e);
+    }}
+    onDragLeave={handleDragLeave}
+    onDrop={(e) => handleDrop(e, sectionId, lecture.id)}
+    onMouseEnter={() => setIsHovering(true)}
+    onMouseLeave={() => setIsHovering(false)}
+  >
+
+  {showEditLectureForm ? (
+    <div 
+      className="flex items-center justify-center"
+      onClick={() => setShowEditLectureForm(false)}
+    >
+      <div 
+        ref={lectureFormRef}
+        className="bg-white p-6 rounded-lg w-full max-w-4xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center mb-4">
+          <FaCircleCheck color="black" size={14} className="shrink-0 text-white mr-2" />
+          <div className="text-sm font-medium">
+            Lecture {lectureIndex + 1}:
+          </div>
+          <div className="flex-1 ml-2">
+            <input
+              type="text"
+              value={editLectureTitle}
+              onChange={(e) => setEditLectureTitle(e.target.value)}
+              onKeyDown={handleKeyDown}
+              className="w-full border border-gray-300 focus:outline-none focus:ring-1 focus:ring-purple-500 px-2 py-1 rounded-md"
+              autoFocus
+              maxLength={80}
+            />
+            <div className="text-right text-sm text-gray-500 mt-1">
+              {maxLength - editLectureTitle.length}
+            </div>
+          </div>
+        </div>
+        <div className="flex justify-end mt-4 space-x-2">
+          <button
+            onClick={handleCancelLectureEdit}
+            className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSaveLectureEdit}
+            disabled={!editLectureTitle.trim()}
+            className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:bg-purple-300"
+          >
+            Save Lecture
+          </button>
+        </div>
+      </div>
+    </div>
+  ) : (
+    <>
+      <div className={`flex items-center ${isExpanded && "border-b border-gray-500 "} px-3 py-2 `}>
         {/* ... existing header code ... */}
         <div className="flex-1 flex items-center">
-        <FaCircleCheck  color="black" size={14} className="shrink-0 text-white mr-2" />
+          <FaCircleCheck color="black" size={14} className="shrink-0 text-white mr-2" />
           {editingLectureId === lecture.id ? (
             <input
               ref={lectureNameInputRef}
@@ -902,21 +963,22 @@ const handleVideoFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
         <div>
           {/* Render Resource Component when active */}
           {isResourceSectionActive && (
-            <AddResourceComponent
-              activeContentSection={activeResourceSection}
-              onClose={() => {
-                if (toggleAddResourceModal) {
-                  toggleAddResourceModal(sectionId, lecture.id);
-                }
-              }}
-              activeResourceTab={activeResourceTab}
-              setActiveResourceTab={setActiveResourceTab}
-              sections={sections}
-              isUploading={isUploading}
-              uploadProgress={uploadProgress}
-              triggerFileUpload={triggerFileUpload}
-            />
-          )}
+  <AddResourceComponent
+    activeContentSection={activeResourceSection}
+    onClose={() => {
+      if (toggleAddResourceModal) {
+        toggleAddResourceModal(sectionId, lecture.id);
+      }
+    }}
+    activeResourceTab={activeResourceTab}
+    setActiveResourceTab={setActiveResourceTab}
+    sections={sections}
+    isUploading={isUploading}
+    uploadProgress={uploadProgress}
+    triggerFileUpload={triggerFileUpload}
+    onLibraryItemSelect={handleLibraryItemSelect}
+  />
+)}
 
           {/* Render Description Component when active */}
           {isDescriptionSectionActive && updateCurrentDescription && saveDescription && (
@@ -929,7 +991,7 @@ const handleVideoFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
               }}
               currentDescription={currentDescription || ''}
               setCurrentDescription={updateCurrentDescription}
-              saveDescription={saveDescription}
+              saveDescription={handleSaveDescription}
             />
           )}
 
@@ -943,112 +1005,152 @@ const handleVideoFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
             <div className="p-4">
               {/* This is where we add the selected video component */}
               {videoContent.selectedVideoDetails && (
-  <div className="overflow-hidden border-b border-gray-400 mb-4">
-    <div className="flex flex-row justify-between sm:flex-row">
-      {/* Left side with thumbnail and video details */}
-      <div className="flex items-center py-3">
-        {/* Thumbnail */}
-        <div className="w-20 h-16 bg-black rounded overflow-hidden mr-3 flex-shrink-0">
-          <img 
-            src="https://via.placeholder.com/160x120/000000/FFFFFF/?text=Video" 
-            alt={videoContent.selectedVideoDetails.filename}
-            className="w-full h-full object-cover"
-            onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
-              // Type-safe error handling for image loading
-              const target = e.target as HTMLImageElement;
-              target.src = 'https://via.placeholder.com/160x120/000000/FFFFFF/?text=Video';
-            }}
-          />
-        </div>
-        
-        {/* Video info */}
-        <div>
-          <h3 className="text-sm font-semibold text-gray-800">
-            {videoContent.selectedVideoDetails.filename}
-          </h3>
-          <p className="text-xs text-gray-500">{videoContent.selectedVideoDetails.duration}</p>
-          <button 
-            onClick={handleEditContent}
-            className="text-[#6D28D2] hover:text-[#7D28D2] text-xs font-medium flex items-center mt-1"
-          >
-            <Edit3 className="w-3 h-3 mr-1" /> Edit Content
-          </button>
-        </div>
-      </div>
-      
-      {/* Right side with Preview button and Downloadable toggle */}
-      <div className="flex flex-col gap-4 justify-end items-center py-3">
-        {/* Preview dropdown button */}
-        <div className="relative inline-flex gap-4" id="preview-dropdown">
-          <button 
-            onClick={() => setShowPreviewDropdown(!showPreviewDropdown)}
-            className="bg-[#6D28D2] text-white text-sm font-medium ml-16 px-4 py-1.5 rounded hover:bg-[#7D28D2] flex items-center"
-            type="button"
-          >
-            Preview <ChevronDown className="ml-1 w-4 h-4" />
-          </button>
-          
-          {/* Dropdown menu - using absolute positioning */}
-          {showPreviewDropdown && (
-            <div className="absolute mt-1 right-0 w-40 bg-white border border-gray-200 rounded-md shadow-lg z-50">
-              <ul>
-                <li>
-                  <button
-                    onClick={() => handlePreviewSelection('instructor')}
-                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    type="button"
-                  >
-                    As Instructor
-                  </button>
-                </li>
-                <li>
-                  <button
-                    onClick={() => handlePreviewSelection('student')}
-                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    type="button"
-                  >
-                    As Student
-                  </button>
-                </li>
-              </ul>
-            </div>
-          )}
-        </div>
-        
-        <div className="flex items-center space-x-2">
-          <span className="text-sm font-semibold text-gray-800">Downloadable:</span>
-          <button
-            type="button"
-            onClick={toggleDownloadable}
-            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${videoContent.selectedVideoDetails.isDownloadable ? 'bg-[#6D28D2]' : 'bg-gray-400'}`}
-            aria-pressed={videoContent.selectedVideoDetails.isDownloadable}
-            aria-label={videoContent.selectedVideoDetails.isDownloadable ? 'Disable downloading' : 'Enable downloading'}
-          >
-            <span 
-              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${videoContent.selectedVideoDetails.isDownloadable ? 'translate-x-6' : 'translate-x-1'}`} 
-            />
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-)}
+                <div className="overflow-hidden border-b border-gray-400 mb-4">
+                  <div className="flex flex-row justify-between sm:flex-row">
+                    {/* Left side with thumbnail and video details */}
+                    <div className="flex items-center py-3">
+                      {/* Thumbnail */}
+                      <div className="w-20 h-16 bg-black rounded overflow-hidden mr-3 flex-shrink-0">
+                        <img 
+                          src="https://via.placeholder.com/160x120/000000/FFFFFF/?text=Video" 
+                          alt={videoContent.selectedVideoDetails.filename}
+                          className="w-full h-full object-cover"
+                          onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
+                            // Type-safe error handling for image loading
+                            const target = e.target as HTMLImageElement;
+                            target.src = 'https://via.placeholder.com/160x120/000000/FFFFFF/?text=Video';
+                          }}
+                        />
+                      </div>
+                      
+                      {/* Video info */}
+                      <div>
+                        <h3 className="text-sm font-semibold text-gray-800">
+                          {videoContent.selectedVideoDetails.filename}
+                        </h3>
+                        <p className="text-xs text-gray-500">{videoContent.selectedVideoDetails.duration}</p>
+                        <button 
+                          onClick={handleEditContent}
+                          className="text-[#6D28D2] hover:text-[#7D28D2] text-xs font-medium flex items-center mt-1"
+                        >
+                          <Edit3 className="w-3 h-3 mr-1" /> Edit Content
+                        </button>
+                      </div>
+                    </div>
+                    
+                    {/* Right side with Preview button and Downloadable toggle */}
+                    <div className="flex flex-col gap-4 justify-end items-center py-3">
+                      {/* Preview dropdown button */}
+                      <div className="relative inline-flex gap-4" id="preview-dropdown">
+                        <button 
+                          onClick={() => setShowPreviewDropdown(!showPreviewDropdown)}
+                          className="bg-[#6D28D2] text-white text-sm font-medium ml-16 px-4 py-1.5 rounded hover:bg-[#7D28D2] flex items-center"
+                          type="button"
+                        >
+                          Preview <ChevronDown className="ml-1 w-4 h-4" />
+                        </button>
+                        
+                        {/* Dropdown menu - using absolute positioning */}
+                        {showPreviewDropdown && (
+                          <div className="absolute mt-1 right-0 w-40 bg-white border border-gray-200 rounded-md shadow-lg z-50">
+                            <ul>
+                              <li>
+                                <button
+                                  onClick={() => handlePreviewSelection('instructor')}
+                                  className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                  type="button"
+                                >
+                                  As Instructor
+                                </button>
+                              </li>
+                              <li>
+                                <button
+                                  onClick={() => handlePreviewSelection('student')}
+                                  className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                  type="button"
+                                >
+                                  As Student
+                                </button>
+                              </li>
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm font-semibold text-gray-800">Downloadable:</span>
+                        <button
+                          type="button"
+                          onClick={toggleDownloadable}
+                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${videoContent.selectedVideoDetails.isDownloadable ? 'bg-[#6D28D2]' : 'bg-gray-400'}`}
+                          aria-pressed={videoContent.selectedVideoDetails.isDownloadable}
+                          aria-label={videoContent.selectedVideoDetails.isDownloadable ? 'Disable downloading' : 'Enable downloading'}
+                        >
+                          <span 
+                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${videoContent.selectedVideoDetails.isDownloadable ? 'translate-x-6' : 'translate-x-1'}`} 
+                          />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {/* Display Downloadable Materials section if files exist */}
+              {(uploadedFiles.length > 0 || selectedResources.length > 0) && (
+                <div className="mb-4">
+                  <h3 className="text-sm font-medium text-gray-700 mb-2">Downloadable materials</h3>
+                  {uploadedFiles.map((file, index) => (
+                    <div key={`file-${index}`} className="flex justify-between items-center py-1">
+                      <div className="flex items-center">
+                        <span className="text-sm text-gray-800">{file.name} ({file.size})</span>
+                      </div>
+                      <button 
+                        onClick={() => {
+                          setUploadedFiles(uploadedFiles.filter((_, i) => i !== index));
+                        }}
+                        className="text-gray-400 hover:text-red-600"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                  
+                  {selectedResources.map(resource => (
+                    <div key={`resource-${resource.id}`} className="flex justify-between items-center py-1">
+                      <div className="flex items-center">
+                        <span className="text-sm text-gray-800">{resource.filename} ({resource.type === 'Video' ? '01:45' : '1.2 MB'})</span>
+                      </div>
+                      <button 
+                        onClick={() => removeSelectedResource(resource.id)}
+                        className="text-gray-400 hover:text-red-600"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
               {/* Display the lecture description if it exists */}
               {lecture.description && (
-      <div 
-        className="text-gray-700 text-sm mb-3 p-2 border-l-2 border-gray-300 cursor-pointer hover:bg-gray-50"
-        onClick={(e) => {
-          e.stopPropagation();
-          if (toggleDescriptionEditor) {
-            toggleDescriptionEditor(sectionId, lecture.id, lecture.description || "");
-          }
-        }}
-        dangerouslySetInnerHTML={{ __html: lecture.description }}
-      />
+      <div className="mb-4">
+        <h3 className="text-sm font-medium text-gray-700 mb-2">Description</h3>
+        <div 
+          className="text-gray-700 text-sm p-2 border-l-2 border-gray-300 cursor-pointer hover:bg-gray-50"
+          onClick={(e) => {
+            e.stopPropagation();
+            if (toggleDescriptionEditor) {
+              toggleDescriptionEditor(sectionId, lecture.id, lecture.description || "");
+            }
+          }}
+          dangerouslySetInnerHTML={{ __html: lecture.description }}
+        />
+      </div>
     )}
 
-    {/* Description button - ONLY show if there's no description */}
-    {!lecture.description && !isDescriptionSectionActive && (
+              {/* Description button - ONLY show if there's no description */}
+              {!lecture.description && !isDescriptionSectionActive && (
       <button
         onClick={(e) => {
           e.stopPropagation();
@@ -1065,19 +1167,19 @@ const handleVideoFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
 
               {/* Resource button - only show if the resource component isn't active */}
               {!isResourceSectionActive && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (toggleAddResourceModal) {
-                      toggleAddResourceModal(sectionId, lecture.id);
-                    }
-                  }}
-                  className={`flex items-center ${!lecture.description ? 'mt-2' : ''} gap-2 py-1.5 sm:py-2 px-2 sm:px-4 text-xs sm:text-sm text-[#6D28D2] font-medium border border-[#6D28D2] rounded-sm hover:bg-gray-50`}
-                >
-                  <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
-                  <span className='font-bold'>Resources</span>
-                </button>
-              )}
+  <button
+    onClick={(e) => {
+      e.stopPropagation();
+      if (toggleAddResourceModal) {
+        toggleAddResourceModal(sectionId, lecture.id);
+      }
+    }}
+    className={`flex items-center ${!lecture.description ? 'mt-2' : ''} gap-2 py-1.5 sm:py-2 px-2 sm:px-4 text-xs sm:text-sm text-[#6D28D2] font-medium border border-[#6D28D2] rounded-sm hover:bg-gray-50`}
+  >
+    <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
+    <span className='font-bold'>Resources</span>
+  </button>
+)}
 
               {/* Any additional content */}
               {children}
@@ -1086,8 +1188,8 @@ const handleVideoFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
           )}
         </div>
       )}
-      {showVideoPreview && <VideoPreviewPage />}</>
-      )}   
-    </div>
-  );
-}
+      {showVideoPreview && <VideoPreviewPage />}
+    </>
+  )}   
+  </div>
+)}
