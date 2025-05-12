@@ -40,6 +40,7 @@ interface SectionItemProps {
   toggleContentSection: (sectionId: string, lectureId: string) => void;
   toggleAddResourceModal: (sectionId: string, lectureId: string) => void;
   toggleDescriptionEditor: (sectionId: string, lectureId: string, currentText: string) => void;
+  saveDescription?: (sectionId: string, lectureId: string, description: string) => void;
   activeContentSection: {sectionId: string, lectureId: string} | null;
   isDragging: boolean;
   handleDragStart: (e: React.DragEvent, sectionId: string, lectureId?: string) => void;
@@ -96,6 +97,7 @@ export default function SectionItem({
   draggedSection,
   draggedLecture,
   dragTarget,
+  saveDescription
 }: SectionItemProps) {
   const sectionNameInputRef = useRef<HTMLInputElement>(null);
   // State for toggling action buttons
@@ -108,7 +110,7 @@ export default function SectionItem({
   const [showEditForm, setShowEditForm] = useState<boolean>(false);
   const [editTitle, setEditTitle] = useState<string>("");
   const [editObjective, setEditObjective] = useState<string>("");
-  const { saveDescription } = useSections([]);
+  
   
   // Added states to track active sections for resources and descriptions
   const [activeResourceSection, setActiveResourceSection] = useState<{sectionId: string, lectureId: string} | null>(null);
@@ -211,19 +213,16 @@ export default function SectionItem({
   };
 
 
-// With this simplified version:
-// In SectionItem.tsx, add this function:
 const handleSaveDescription = () => {
-  if (!activeDescriptionSection) return;
+  if (!activeDescriptionSection || !saveDescription) return;
   
-  // Save the description to the parent component
   saveDescription(
     activeDescriptionSection.sectionId,
     activeDescriptionSection.lectureId,
     currentDescription
   );
   
-  // Close the description editor
+  // Update UI state to reflect the saved description
   setActiveDescriptionSection(null);
 };
 

@@ -589,34 +589,34 @@ const StudentVideoPreview = ({ videoContent, setShowVideoPreview, lecture }: Chi
         {/* Left side - scrollable content (video player + tabs) */}
         <div ref={mainContentRef} className="flex-1 overflow-y-auto" style={{ width: 'calc(100% - 320px)' }}>
           {/* Video player section */}
-          <div className="bg-black relative w-[82vw]" style={{ height: 'calc(100vh - 220px)' }}>
-            <div 
-              ref={playerContainerRef}
-              className="relative w-full h-full flex "
-              onMouseEnter={() => setShowControls(true)}
-              onMouseLeave={() => setShowControls(false)}
-            >
-              {/* Video player */}
-              <div className="relative w-full h-full mx-auto">
-                <ReactPlayer
-                  ref={playerRef}
-                  url={videoContent.selectedVideoDetails.url || "https://www.youtube.com/watch?v=dQw4w9WgXcQ"} // Fallback URL
-                  width="100%"
-                  height="100%"
-                  playing={playing}
-                  volume={volume}
-                  playbackRate={playbackRate}
-                  onProgress={handleProgress}
-                  onDuration={handleDuration}
-                  progressInterval={100}
-                  config={{
-                    file: {
-                      attributes: {
-                        controlsList: 'nodownload'
-                      }
-                    }
-                  }}
-                />
+         <div className="bg-black relative w-[82vw]" style={{ height: 'calc(100vh - 220px)' }}>
+        <div 
+          ref={playerContainerRef}
+          className="relative w-full h-full flex"
+          onMouseEnter={() => setShowControls(true)}
+          onMouseLeave={() => setShowControls(false)}
+        >
+          {/* Video player */}
+          <div className="relative w-full h-full mx-auto">
+            <ReactPlayer
+              ref={playerRef}
+              url={videoContent.selectedVideoDetails?.url || "https://www.youtube.com/watch?v=dQw4w9WgXcQ"} // Use the uploaded video URL
+              width="100%"
+              height="100%"
+              playing={playing}
+              volume={volume}
+              playbackRate={playbackRate}
+              onProgress={handleProgress}
+              onDuration={handleDuration}
+              progressInterval={100}
+              config={{
+                file: {
+                  attributes: {
+                    controlsList: 'nodownload'
+                  }
+                }
+              }}
+            />
                 
                 {/* Play button overlay when paused */}
                 {!playing && (
@@ -636,7 +636,7 @@ const StudentVideoPreview = ({ videoContent, setShowVideoPreview, lecture }: Chi
           </div>
           
           {/* Bottom video controls bar (visible when not in controls overlay) */}
-          <div className="h-12 bg-black w-[82vw] flex items-center px-4 text-white relative">
+          <div className="h-12 bg-black w-[76vw] flex items-center px-4 text-white relative">
             {/* Progress bar at the very top */}
             <div className="absolute top-0 left-0 right-0 h-1 bg-gray-900">
               <div 

@@ -14,11 +14,8 @@ interface ResourceComponentProps {
   onFileSelect?: (file: File) => void;
   onSourceFileSelect?: (file: File) => void;
   onExternalResourceAdd?: (title: string, url: string) => void;
-  
-  // Add the new prop for handling library item selection
+  onSourceCodeSelect?: (item: LibraryFileWithSize) => void;  
   onLibraryItemSelect?: (item: LibraryFileWithSize) => void;
-  
-  // Other existing props
   activeContentSection?: {sectionId: string, lectureId: string} | null;
   activeResourceTab?: ResourceTabType;
   setActiveResourceTab?: Dispatch<SetStateAction<ResourceTabType>>;
@@ -43,6 +40,7 @@ export default function ResourceComponent({
   onSourceFileSelect,
   onExternalResourceAdd,
   onLibraryItemSelect,
+  onSourceCodeSelect,
   // Include the new props with default values:
   activeContentSection = null,
   activeResourceTab,
@@ -64,6 +62,22 @@ export default function ResourceComponent({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [showUploadComplete, setShowUploadComplete] = useState<boolean>(false);
   const [selectedLibraryItems, setSelectedLibraryItems] = useState<StoredVideo[]>([]);
+  const [sourceFile, setSourceFile] = useState<File | null>(null);
+const [isSourceUploading, setIsSourceUploading] = useState<boolean>(false);
+const [sourceUploadProgress, setSourceUploadProgress] = useState<number>(0);
+const [sourceUploadComplete, setSourceUploadComplete] = useState<boolean>(false);
+
+// Update the handleSourceFileChange function
+const handleSourceFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+  if (e.target.files && e.target.files.length > 0) {
+    const file = e.target.files[0];
+    setSourceFile(file);
+    if (onSourceFileSelect) {
+      onSourceFileSelect(file);
+    }
+    console.log("Source file selected:", file);
+  }
+};
   
   // Fixed ref types - the issue is resolved by making sure they're correctly typed
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -128,17 +142,6 @@ export default function ResourceComponent({
     }
   };
   
-  // Handle source file selection
-  const handleSourceFileChange = (e: ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      const file = e.target.files[0];
-      if (onSourceFileSelect) {
-        onSourceFileSelect(file);
-      }
-      console.log("Source file selected:", file);
-    }
-  };
-  
   // Handle external resource form changes
   const handleExternalFormChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -147,17 +150,19 @@ export default function ResourceComponent({
       [name]: value
     }));
   };
-  
-  // Handle external resource submission
+
   const handleExternalResourceSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (onExternalResourceAdd) {
-      onExternalResourceAdd(externalForm.title, externalForm.url);
-    }
-    console.log("External resource added:", externalForm);
-    // Reset form after submission
-    setExternalForm({ title: '', url: '' });
-  };
+  e.preventDefault();
+  
+  // Call the handler if provided
+  if (onExternalResourceAdd) {
+    onExternalResourceAdd(externalForm.title, externalForm.url);
+  }
+  
+  // Reset form after submission
+  setExternalForm({ title: '', url: '' });
+};
+  
 
   // Handle file upload simulation
   const handleUpload = () => {
@@ -519,44 +524,157 @@ export default function ResourceComponent({
         )}
         
         {/* Source Code Tab */}
-        {currentTab === ResourceTabType.SOURCE_CODE && (
-          <div>
-            <div className="flex items-center mb-4">
-              {/* Hidden file input for source code files */}
-              <input
-                type="file"
-                ref={sourceFileInputRef}
-                className="hidden"
-                accept=".py,.rb"
-                onChange={handleSourceFileChange}
-              />
-              
-              {/* Clickable area for source file selection */}
-              <div 
-                className="border border-gray-400 rounded p-2 flex-grow mr-2 cursor-pointer hover:bg-gray-50"
-                onClick={() => handleFileSelection(sourceFileInputRef)}
-              >
-                <p className="text-gray-700">No file selected</p>
-              </div>
-              
-              {/* Button also triggers the same file input */}
-              <button
-                type="button"
-                className="px-4 py-2 text-[#6D28D2] text-sm font-medium border border-[#6D28D2] rounded hover:bg-purple-50 whitespace-nowrap"
-                onClick={() => handleFileSelection(sourceFileInputRef)}
-              >
-                Select File
-              </button>
-            </div>
-            
-            <div className="mt-4">
-              <p className="text-sm text-gray-600">
-                <span className="font-bold">Note:</span> Only available for Python and Ruby for now. You can upload .py and .rb files.
-              </p>
+       {currentTab === ResourceTabType.SOURCE_CODE && (
+  <div>
+    {sourceUploadComplete ? (
+      <div className="space-y-4">
+        <div className="border-b border-gray-300 py-2">
+          <div className="grid grid-cols-4 gap-2 md:gap-4 text-[17px] font-bold text-gray-800 border-b border-gray-300">
+            <div>Filename</div>
+            <div>Type</div>
+            <div>Status</div>
+            <div>Date</div>
+          </div>
+          <div className="grid grid-cols-4 gap-2 md:gap-4 text-sm mt-2 items-center text-gray-700 font-semibold">
+            <div className="truncate">{sourceFile?.name || "find_max.py"}</div>
+            <div>SourceCode</div>
+            <div className="text-green-600">Success</div>
+            <div className="flex justify-between items-center">
+              {new Date().toLocaleDateString('en-US', {month: '2-digit', day: '2-digit', year: 'numeric'})}
             </div>
           </div>
-        )}
+          <div className="mt-4">
+            <div className="flex items-center justify-between">
+              <div className="w-full bg-gray-200 rounded h-2">
+                <div className="bg-[#6D28D2] h-2 rounded" style={{ width: '100%' }}></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="flex justify-end">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 bg-[#6D28D2] text-white rounded text-sm font-medium hover:bg-[#5D18C9]"
+          >
+            Done
+          </button>
+        </div>
       </div>
+    ) : isSourceUploading ? (
+      <div className="space-y-4">
+        <div className="border-b border-gray-300 py-2">
+          <div className="grid grid-cols-4 gap-2 md:gap-4 text-[17px] font-bold text-gray-800 border-b border-gray-300">
+            <div>Filename</div>
+            <div>Type</div>
+            <div>Status</div>
+            <div>Date</div>
+          </div>
+          <div className="grid grid-cols-4 gap-2 md:gap-4 text-sm mt-2 items-center">
+            <div className="truncate">{sourceFile?.name || "find_max.py"}</div>
+            <div>SourceCode</div>
+            <div className="flex items-center">
+              <div className="w-full flex items-center">
+                <div className="w-20 bg-gray-200 h-2 overflow-hidden rounded">
+                  <div className="bg-[#6D28D2] h-2" style={{ width: `${sourceUploadProgress}%` }}></div>
+                </div>
+                <span className="ml-2 text-xs">{sourceUploadProgress}%</span>
+              </div>
+            </div>
+            <div>{new Date().toLocaleDateString('en-US', {month: '2-digit', day: '2-digit', year: 'numeric'})}</div>
+          </div>
+        </div>
+      </div>
+    ) : (
+      <div>
+        <div className="flex items-center mb-4">
+          {/* Hidden file input for source code files */}
+          <input
+            type="file"
+            ref={sourceFileInputRef}
+            className="hidden"
+            accept=".py,.rb"
+            onChange={handleSourceFileChange}
+          />
+          
+          {/* Clickable area for source file selection */}
+          <div 
+            className="border border-gray-400 rounded p-2 flex-grow mr-2 cursor-pointer hover:bg-gray-50"
+            onClick={() => handleFileSelection(sourceFileInputRef)}
+          >
+            <p className="text-gray-700">
+              {sourceFile ? sourceFile.name : 'No file selected'}
+            </p>
+          </div>
+          
+          {/* Button also triggers the same file input */}
+          <button
+            type="button"
+            className="px-4 py-2 text-[#6D28D2] text-sm font-medium border border-[#6D28D2] rounded hover:bg-purple-50 whitespace-nowrap"
+            onClick={() => handleFileSelection(sourceFileInputRef)}
+          >
+            Select File
+          </button>
+        </div>
+        
+        {sourceFile && (
+          <div className="flex justify-end mt-4">
+            <button
+              onClick={() => {
+  // Simulate upload progress
+  setIsSourceUploading(true);
+  const interval = setInterval(() => {
+    setSourceUploadProgress(prev => {
+      if (prev >= 100) {
+        clearInterval(interval);
+        setTimeout(() => {
+          setIsSourceUploading(false);
+          setSourceUploadProgress(0);
+          setSourceUploadComplete(true);
+          
+          if (sourceFile) {
+            // Create a LibraryFileWithSize object
+            const fileItem: LibraryFileWithSize = {
+              id: Date.now().toString(),
+              filename: sourceFile.name,
+              type: 'SourceCode',
+              status: 'Success',
+              date: new Date().toLocaleDateString('en-US', {month: '2-digit', day: '2-digit', year: 'numeric'})
+            };
+            
+            // Call the handler if provided
+            if (onSourceCodeSelect) {
+              onSourceCodeSelect(fileItem);
+              onClose?.(); // Close the modal after selection
+            }
+          }
+        }, 500);
+        return 100;
+      }
+      return prev + 10;
+    });
+  }, 300);
+}}
+              className="px-4 py-2 bg-[#6D28D2] text-white rounded text-sm font-medium hover:bg-[#5D18C9]"
+            >
+              Upload
+            </button>
+          </div>
+        )}
+        
+        <div className="mt-4">
+          <p className="text-sm text-gray-600">
+            <span className="font-bold">Note:</span> Only available for Python and Ruby for now. You can upload .py and .rb files.
+          </p>
+        </div>
+      </div>
+    )}
+  </div>
+)}
+
+        
+      </div>
+
+      
 
       {/* Display selected library items (if any) */}
       {selectedLibraryItems.length > 0 && (

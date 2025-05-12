@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { ContentItemType, ContentType, ResourceTabType, ArticleContent, TabInterface, VideoSlideContent, VideoContent, StoredVideo, LectureItemProps } from '@/lib/types';
-import {Plus, Trash2, Edit3, ChevronDown, ChevronUp, Search, X, CircleCheck, FileText, AlignJustify} from "lucide-react";
+import {Plus, Trash2, Edit3, ChevronDown, ChevronUp, Search, X, FileText, AlignJustify, SquareArrowOutUpRight, FileDown} from "lucide-react";
 import AddResourceComponent from './AddResourceComponent';
 import DescriptionEditorComponent from './DescriptionEditorComponent';
 import 'react-quill-new/dist/quill.snow.css';
@@ -17,10 +17,21 @@ interface SelectedVideoDetails {
   duration: string;
   thumbnailUrl: string;
   isDownloadable: boolean;
+  url?: string;
 }
 
 interface LibraryFileWithSize extends StoredVideo {
   size?: string;
+}
+
+interface SourceCodeFile {
+  name: string;
+  type: string;
+}
+
+interface ExternalResourceItem {
+  title: string;
+  url: string;
 }
 
 export default function LectureItem({
@@ -72,6 +83,9 @@ export default function LectureItem({
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadedFiles, setUploadedFiles] = useState<Array<{name: string, size: string}>>([]);
+  const [sourceCodeFiles, setSourceCodeFiles] = useState<SourceCodeFile[]>([]);
+  const [externalResources, setExternalResources] = useState<ExternalResourceItem[]>([]);
+
   const [videoContent, setVideoContent] = useState<VideoContent>({
     uploadTab: { selectedFile: null },
     libraryTab: { 
@@ -109,6 +123,37 @@ useEffect(() => {
 const handleEditLecture = (e: React.MouseEvent) => {
   e.stopPropagation();
   setShowEditLectureForm(true);
+};
+
+const handleSourceCodeSelect = (file: LibraryFileWithSize) => {
+  setSourceCodeFiles([...sourceCodeFiles, { 
+    name: file.filename, 
+    type: 'SourceCode'
+  }]);
+  
+  // Close the resource modal
+  if (toggleAddResourceModal) {
+    toggleAddResourceModal(sectionId, lecture.id);
+  }
+};
+
+// Add this handler for external resource additions
+const handleExternalResourceAdd = (title: string, url: string) => {
+  setExternalResources([...externalResources, { title, url }]);
+  
+  // Close the resource modal
+  if (toggleAddResourceModal) {
+    toggleAddResourceModal(sectionId, lecture.id);
+  }
+};
+
+// Add these handlers to remove items
+const removeSourceCodeFile = (fileName: string) => {
+  setSourceCodeFiles(sourceCodeFiles.filter(file => file.name !== fileName));
+};
+
+const removeExternalResource = (title: string) => {
+  setExternalResources(externalResources.filter(resource => resource.title !== title));
 };
 
 // Add this function to save the lecture edit
@@ -203,13 +248,14 @@ const selectVideo = (videoId: string) => {
       setSelectedResources([...selectedResources, selectedVideo]);
     }
     
-    // Create the selected video details with mock data for demo
+    // Create the selected video details with the video URL
     const selectedDetails: SelectedVideoDetails = {
       id: selectedVideo.id,
       filename: selectedVideo.filename,
       duration: '01:45', // In a real app, this would come from the video metadata
-      thumbnailUrl: 'https://via.placeholder.com/160x120/000000/FFFFFF/?text=Netflix', // Placeholder
-      isDownloadable: false // Default to false
+      thumbnailUrl: 'https://via.placeholder.com/160x120/000000/FFFFFF/?text=Netflix',
+      isDownloadable: false,
+      url: selectedVideo.url || "https://www.youtube.com/watch?v=dQw4w9WgXcQ" // Use the stored URL or fallback
     };
     
     setVideoContent({
@@ -221,8 +267,7 @@ const selectVideo = (videoId: string) => {
       selectedVideoDetails: selectedDetails
     });
     
-    // IMPORTANT: Don't close the content section - just set activeContentType to null
-    // to show the selected video details instead of the selection interface
+    // Set activeContentType to null to show the selected video details
     setActiveContentType(null);
     
     // Make sure lecture stays expanded
@@ -234,6 +279,7 @@ const selectVideo = (videoId: string) => {
     }
   }
 };
+
 
 const removeSelectedResource = (videoId: string) => {
   setSelectedResources(selectedResources.filter(v => v.id !== videoId));
@@ -292,10 +338,18 @@ const handleVideoFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
   if (event.target.files && event.target.files.length > 0) {
     const file = event.target.files[0];
     
-    // Update the state with the selected file
+    // Create a local URL for the video file that can be used in the player
+    const videoUrl = URL.createObjectURL(file);
+    
+    // Update the state with the selected file and its URL
     setVideoContent({
       ...videoContent,
-      uploadTab: { selectedFile: file }
+      uploadTab: { selectedFile: file },
+      // Add the URL to selectedVideoDetails so it's available when the upload completes
+      selectedVideoDetails: videoContent.selectedVideoDetails ? {
+        ...videoContent.selectedVideoDetails,
+        url: videoUrl // Store the URL to be used by the video player
+      } : null
     });
     
     // Start the upload process
@@ -315,6 +369,16 @@ const handleVideoFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
             // Generate a unique ID based on the filename and current timestamp
             const videoId = `${file.name.replace(/\s+/g, '')}-${Date.now()}`;
             
+            // Create the selected video details with the video URL
+            const selectedDetails: SelectedVideoDetails = {
+              id: videoId,
+              filename: file.name,
+              duration: '01:45', // This would come from the actual video metadata
+              thumbnailUrl: 'https://via.placeholder.com/160x120/000000/FFFFFF/?text=Video',
+              isDownloadable: false,
+              url: videoUrl // Store URL for playback
+            };
+            
             // Check if a video with the same filename already exists
             const existingVideo = videoContent.libraryTab.videos.find(
               v => v.filename === file.name
@@ -327,7 +391,8 @@ const handleVideoFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
                 filename: file.name,
                 type: 'Video',
                 status: 'Success',
-                date: new Date().toLocaleDateString('en-US', {month: '2-digit', day: '2-digit', year: 'numeric'})
+                date: new Date().toLocaleDateString('en-US', {month: '2-digit', day: '2-digit', year: 'numeric'}),
+                url: videoUrl // Store URL in the library as well
               };
               
               setVideoContent(prev => ({
@@ -335,11 +400,18 @@ const handleVideoFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
                 libraryTab: {
                   ...prev.libraryTab,
                   videos: [newVideo, ...prev.libraryTab.videos]
-                }
+                },
+                selectedVideoDetails: selectedDetails // Set selected video details with URL
               }));
               
               // Add to uploaded files
               setUploadedFiles([...uploadedFiles, { name: file.name, size: formatFileSize(file.size) }]);
+            } else {
+              // If it exists, just update the selectedVideoDetails
+              setVideoContent(prev => ({
+                ...prev,
+                selectedVideoDetails: selectedDetails
+              }));
             }
             
           }, 500);
@@ -821,7 +893,7 @@ return (
                     className="p-1 text-gray-400 hover:text-red-600"
                     aria-label="Delete"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Trash2 className="w-4 h-4 text-gray-400 hover:bg-gray-200 p-2 rounded" />
                   </button>
                 </div>
               )}
@@ -977,6 +1049,8 @@ return (
     uploadProgress={uploadProgress}
     triggerFileUpload={triggerFileUpload}
     onLibraryItemSelect={handleLibraryItemSelect}
+    onSourceCodeSelect={handleSourceCodeSelect}  // Add this
+    onExternalResourceAdd={handleExternalResourceAdd}  // Add this
   />
 )}
 
@@ -1095,21 +1169,38 @@ return (
                   </div>
                 </div>
               )}
+
+              {/* Display the lecture description if it exists */}
+              {lecture.description && (
+  <div className="mb-4 border-b border-gray-400 pb-2">
+    <div 
+      className="text-gray-800 text-sm pt-1 pr-1 hover:outline-1 hover:outline-gray-400 border-gray-300 cursor-pointer "
+      onClick={(e) => {
+        e.stopPropagation();
+        if (toggleDescriptionEditor) {
+          toggleDescriptionEditor(sectionId, lecture.id, lecture.description || "");
+        }
+      }}
+      dangerouslySetInnerHTML={{ __html: lecture.description }}
+    />
+  </div>
+)}
               
               {/* Display Downloadable Materials section if files exist */}
               {(uploadedFiles.length > 0 || selectedResources.length > 0) && (
-                <div className="mb-4">
+                <div className="mb-4 border-b border-gray-400 pb-2">
                   <h3 className="text-sm font-bold text-gray-700 mb-2">Downloadable materials</h3>
                   {uploadedFiles.map((file, index) => (
                     <div key={`file-${index}`} className="flex justify-between items-center py-1">
-                      <div className="flex items-center">
+                      <div className="flex items-center text-gray-800">
+                        <FileDown size={13} className='text-gray-800 mr-1'/>
                         <span className="text-sm text-gray-800">{file.name} ({file.size})</span>
                       </div>
                       <button 
                         onClick={() => {
                           setUploadedFiles(uploadedFiles.filter((_, i) => i !== index));
                         }}
-                        className="text-gray-400 hover:text-red-600"
+                        className="text-gray-400 hover:bg-gray-200 p-2 rounded"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -1123,7 +1214,7 @@ return (
                       </div>
                       <button 
                         onClick={() => removeSelectedResource(resource.id)}
-                        className="text-gray-400 hover:text-red-600"
+                        className="text-gray-400 hover:bg-gray-200 p-2 rounded"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -1132,22 +1223,47 @@ return (
                 </div>
               )}
 
-              {/* Display the lecture description if it exists */}
-              {lecture.description && (
-  <div className="mb-4">
-    <h3 className="text-sm font-medium text-gray-700 mb-2">Description</h3>
-    <div 
-      className="text-gray-700 text-sm p-2 border-l-2 border-gray-300 cursor-pointer hover:bg-gray-50"
-      onClick={(e) => {
-        e.stopPropagation();
-        if (toggleDescriptionEditor) {
-          toggleDescriptionEditor(sectionId, lecture.id, lecture.description || "");
-        }
-      }}
-      dangerouslySetInnerHTML={{ __html: lecture.description }}
-    />
+              {sourceCodeFiles.length > 0 && (
+  <div className="mb-4 border-b border-gray-400 pb-2">
+    <h3 className="text-sm font-bold text-gray-700 mb-2">Source Code</h3>
+    {sourceCodeFiles.map((file, index) => (
+      <div key={`sourcecode-${index}`} className="flex justify-between items-center py-1">
+        <div className="flex items-center">
+          <span className="text-sm text-gray-800">{file.name} ({file.type})</span>
+        </div>
+        <button 
+          onClick={() => removeSourceCodeFile(file.name)}
+          className="text-gray-400 hover:bg-gray-200 p-2 rounded"
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
+      </div>
+    ))}
   </div>
 )}
+
+{/* External Resources section - separate from other sections */}
+{externalResources.length > 0 && (
+  <div className="mb-4 border-b border-gray-400 pb-2">
+    <h3 className="text-sm font-bold text-gray-700 mb-2">External Resources</h3>
+    {externalResources.map((resource, index) => (
+      <div key={`resource-${index}`} className="flex justify-between items-center py-1">
+        <div className="flex items-center text-gray-800">
+          <SquareArrowOutUpRight size={13} className='mr-1 text-gray-800'/>
+          <span className="text-sm text-gray-800">{resource.title}</span>
+        </div>
+        <button 
+          onClick={() => removeExternalResource(resource.title)}
+          className="text-gray-400 hover:bg-gray-200 p-2 rounded"
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
+      </div>
+    ))}
+  </div>
+)}
+
+              
 
               {/* Description button - ONLY show if there's no description */}
              {!lecture.description && !isDescriptionSectionActive && (
