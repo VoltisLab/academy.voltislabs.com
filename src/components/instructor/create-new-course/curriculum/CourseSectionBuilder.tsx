@@ -84,12 +84,52 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({ onSaveNext, courseId }) =
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [editingSectionId, editingLectureId]);
+
+  const [activeContentSection, setActiveContentSection] = useState<{
+    sectionId: string;
+    lectureId: string;
+  } | null>(null);
+  
+  const [activeDescriptionSection, setActiveDescriptionSection] = useState<{
+    sectionId: string;
+    lectureId: string;
+  } | null>(null);
+
+  const toggleContentSection = (sectionId: string, lectureId: string) => {
+    // Check if this section is already active
+    if (activeContentSection && 
+        activeContentSection.sectionId === sectionId && 
+        activeContentSection.lectureId === lectureId) {
+      // Close the section
+      setActiveContentSection(null);
+    } else {
+      // Open the section
+      setActiveContentSection({ sectionId, lectureId });
+    }
+  };
   
   // Toggle description editor
-  const toggleDescriptionEditor = (sectionId: string, lectureId: string, currentText: string = "") => {
-    contentSectionModal.toggle(sectionId, lectureId);
-    if (!contentSectionModal.isOpen) {
-      setCurrentDescription(currentText);
+  const toggleDescriptionEditor = (sectionId: string, lectureId: string, description?: string) => {
+    if (activeDescriptionSection && 
+        activeDescriptionSection.sectionId === sectionId && 
+        activeDescriptionSection.lectureId === lectureId) {
+      // Description editor is being closed
+      setActiveDescriptionSection(null);
+      
+      // If this was a save operation, we need to keep the content section open
+      // and ensure content is visible
+      if (description !== undefined && description.trim() !== '') {
+        // Keep content section expanded
+        if (!activeContentSection || 
+            activeContentSection.sectionId !== sectionId || 
+            activeContentSection.lectureId !== lectureId) {
+          setActiveContentSection({ sectionId, lectureId });
+        }
+      }
+    } else {
+      // Description editor is being opened
+      setActiveDescriptionSection({ sectionId, lectureId });
+      setCurrentDescription(description || '');
     }
   };
   
@@ -264,12 +304,10 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({ onSaveNext, courseId }) =
 
 <button
   onClick={() => setShowSectionForm(true)}
-  className="relative w-16 h-10 border-2 border-dashed border-gray-300 flex items-center justify-center hover:border-gray-400 hover:bg-gray-50 transition-all duration-200 rounded-r-[100px]"
+  className="relative w-16 h-8 border-2 border-dashed border-gray-300 flex items-center justify-center hover:border-gray-400 hover:bg-gray-50 transition-all duration-200 rounded-r-[45px]"
   aria-label="Add section"
 >
-  <div className="absolute right-0 top-0 h-full w-4 overflow-hidden">
-    <div className="absolute transform rotate-45 bg-white border-t-2 border-r-2 border-dashed border-gray-300 w-6 h-6 -right-3 top-2"></div>
-  </div>
+ 
   <Plus className="h-6 w-6 text-gray-500" />
 </button>
         </div>

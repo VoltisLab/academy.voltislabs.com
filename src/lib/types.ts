@@ -256,6 +256,7 @@ export interface Section {
   id: string;
 }
 
+
 export interface ContentDropdownState {
   section: number;
   lecture: number;

@@ -18,49 +18,57 @@ export const ContentSelector: React.FC<ContentTypeSelectorProps> = ({ handleCont
     
       <div className="grid grid-cols-3 gap-2 max-w-xs mx-auto">
         {/* Video Button */}
-        <button
-          onClick={() => handleContentTypeSelect('video')}
-          className="flex flex-col border border-gray-300 w-24 h-20"
-        >
-          <div className="bg-gray-100 flex-1 flex items-center justify-center">
-            <div className="p-1.5 bg-gray-300 rounded-full">
-              <Play className="text-white w-4 h-4" />
-            </div>
-          </div>
-          <div className="bg-gray-300 text-center py-1">
-            <span className="text-xs text-gray-800">Video</span>
-          </div>
-        </button>
-    
-        {/* Video & Slide Button */}
-        <button
-          onClick={() => handleContentTypeSelect('video-slide')}
-          className="flex flex-col border border-gray-300 w-24 h-20"
-        >
-          <div className="bg-gray-100 flex-1 flex items-center justify-center">
-            <SquarePlay className="text-gray-400 w-5 h-5" />
-          </div>
-          <div className="bg-gray-300 text-center py-1">
-            <span className="text-xs text-gray-800 leading-tight">
-              Video & Slide<br />Mashup
-            </span>
-          </div>
-        </button>
-    
-        {/* Article Button */}
-        <button
-          onClick={() => handleContentTypeSelect('article')}
-          className="flex flex-col border border-gray-300 w-24 h-20"
-        >
-          <div className="bg-gray-100 flex-1 flex items-center justify-center">
-            <div className="p-1.5 bg-gray-300 rounded-full">
-              <FileText className="text-white w-4 h-4" />
-            </div>
-          </div>
-          <div className="bg-gray-300 text-center py-1">
-            <span className="text-xs text-gray-800">Article</span>
-          </div>
-        </button>
+        {/* Video Button */}
+<button
+  onClick={() => handleContentTypeSelect('video')}
+  className="flex flex-col border border-gray-300 w-24 h-20 group hover:bg-black cursor-pointer rounded-xs transition"
+>
+  <div className="bg-gray-100 group-hover:bg-black flex-1 flex items-center justify-center relative overflow-hidden">
+    <div className="p-1.5 bg-gray-300 group-hover:bg-white rounded-full transition-transform duration-300 group-hover:-translate-y-[150%] absolute">
+      <Play className="text-white group-hover:text-black w-4 h-4" />
+    </div>
+    <div className="p-1.5 bg-gray-300 group-hover:bg-white rounded-full transition-transform duration-300 translate-y-[150%] group-hover:translate-y-0 absolute">
+      <Play className="text-white group-hover:text-black w-4 h-4" />
+    </div>
+  </div>
+  <div className="bg-gray-300 group-hover:bg-black text-center py-1 transition-colors duration-150">
+    <span className="text-xs text-gray-800 group-hover:text-white transition-colors duration-150">Video</span>
+  </div>
+</button>
+
+{/* Video & Slide Button */}
+<button
+  onClick={() => handleContentTypeSelect('video-slide')}
+  className="flex flex-col border border-gray-300 w-24 h-20 group hover:bg-black cursor-pointer rounded-xs transition"
+>
+  <div className="bg-gray-100 group-hover:bg-black flex-1 flex items-center justify-center relative overflow-hidden">
+    <SquarePlay className="text-gray-400 group-hover:text-white w-5 h-5 transition-transform duration-300 group-hover:-translate-y-[150%] absolute" />
+    <SquarePlay className="text-gray-400 group-hover:text-white w-5 h-5 transition-transform duration-300 translate-y-[150%] group-hover:translate-y-0 absolute" />
+  </div>
+  <div className="bg-gray-300 group-hover:bg-black text-center py-1 transition-colors duration-150">
+    <span className="text-xs text-gray-800 group-hover:text-white leading-tight transition-colors duration-150">
+      Video & Slide<br />Mashup
+    </span>
+  </div>
+</button>
+
+{/* Article Button */}
+<button
+  onClick={() => handleContentTypeSelect('article')}
+  className="flex flex-col border border-gray-300 w-24 h-20 group hover:bg-black cursor-pointer rounded-xs transition"
+>
+  <div className="bg-gray-100 group-hover:bg-black flex-1 flex items-center justify-center relative overflow-hidden">
+    <div className="p-1.5 bg-gray-300 group-hover:bg-white rounded-full transition-transform duration-300 group-hover:-translate-y-[150%] absolute">
+      <FileText className="text-white group-hover:text-black w-4 h-4" />
+    </div>
+    <div className="p-1.5 bg-gray-300 group-hover:bg-white rounded-full transition-transform duration-300 translate-y-[150%] group-hover:translate-y-0 absolute">
+      <FileText className="text-white group-hover:text-black w-4 h-4" />
+    </div>
+  </div>
+  <div className="bg-gray-300 group-hover:bg-black text-center py-1 transition-colors duration-150">
+    <span className="text-xs text-gray-800 group-hover:text-white transition-colors duration-150">Article</span>
+  </div>
+</button>
       </div>
     </div>
   );

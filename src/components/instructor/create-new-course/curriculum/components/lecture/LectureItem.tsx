@@ -9,6 +9,7 @@ import VideoSlideMashupComponent from './VideoAndSlideMashup';
 import Article from './Article';
 import StudentVideoPreview from './StudentVideoPeview';
 import InstructorVideoPreview from './InstructorVideoPeview';
+import { FaCircleCheck } from 'react-icons/fa6';
 
 interface SelectedVideoDetails {
   id: string;
@@ -208,8 +209,15 @@ const selectVideo = (videoId: string) => {
       selectedVideoDetails: selectedDetails
     });
     
-    // Close the video selection modal and return to the lecture view
-    if (toggleContentSection) {
+    // IMPORTANT: Don't close the content section - just set activeContentType to null
+    // to show the selected video details instead of the selection interface
+    setActiveContentType(null);
+    
+    // Make sure lecture stays expanded
+    if (toggleContentSection && 
+        (!activeContentSection || 
+         activeContentSection.sectionId !== sectionId || 
+         activeContentSection.lectureId !== lecture.id)) {
       toggleContentSection(sectionId, lecture.id);
     }
   }
@@ -307,8 +315,7 @@ const handleVideoFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     }, 200);
   }
 };
-  
- 
+   
   // Video tab options
   const videoTabs: TabInterface[] = [
     { label: 'Upload Video', key: 'uploadVideo' },
@@ -619,7 +626,6 @@ const handleVideoFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
             </div>
           </div>
         );
-        
   case 'video-slide': return ( <VideoSlideMashupComponent/> );
   case 'article': return (<Article content={content} setContent={setContent} setHtmlMode={setHtmlMode} htmlMode={htmlMode}  />);
   default:return null
@@ -676,9 +682,7 @@ const handleVideoFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
       onClick={(e) => e.stopPropagation()}
     >
       <div className="flex items-center mb-4">
-        <div className="bg-black rounded-full flex items-center justify-center mr-2">
-          <CircleCheck className="text-white bg-gray-800 rounded-full" size={14} />
-        </div>
+      <FaCircleCheck  color="black" size={14} className="shrink-0 text-white mr-2" />
         <div className="text-sm font-medium">
           Lecture {lectureIndex + 1}:
         </div>
@@ -719,9 +723,7 @@ const handleVideoFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
      <div className={`flex items-center ${isExpanded && "border-b border-gray-500 "} px-3 py-2 `}>
         {/* ... existing header code ... */}
         <div className="flex-1 flex items-center">
-          <div className="bg-black rounded-full items-center justify-center mr-2 ">
-            <CircleCheck className="text-white bg-gray-800 rounded-full" size={14} />
-          </div>
+        <FaCircleCheck  color="black" size={14} className="shrink-0 text-white mr-2" />
           {editingLectureId === lecture.id ? (
             <input
               ref={lectureNameInputRef}
@@ -1028,39 +1030,38 @@ const handleVideoFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
           </button>
         </div>
       </div>
-
     </div>
   </div>
 )}
               {/* Display the lecture description if it exists */}
               {lecture.description && (
-                <div 
-                  className="text-gray-700 text-sm mb-3 p-2 border-l-2 border-gray-300 cursor-pointer hover:bg-gray-50"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (toggleDescriptionEditor) {
-                      toggleDescriptionEditor(sectionId, lecture.id, lecture.description || "");
-                    }
-                  }}
-                  dangerouslySetInnerHTML={{ __html: lecture.description }}
-                />
-              )}
+      <div 
+        className="text-gray-700 text-sm mb-3 p-2 border-l-2 border-gray-300 cursor-pointer hover:bg-gray-50"
+        onClick={(e) => {
+          e.stopPropagation();
+          if (toggleDescriptionEditor) {
+            toggleDescriptionEditor(sectionId, lecture.id, lecture.description || "");
+          }
+        }}
+        dangerouslySetInnerHTML={{ __html: lecture.description }}
+      />
+    )}
 
-              {/* Description button - only show if there's no description or if the description component isn't active */}
-              {!lecture.description && !isDescriptionSectionActive && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (toggleDescriptionEditor) {
-                      toggleDescriptionEditor(sectionId, lecture.id, lecture.description || "");
-                    }
-                  }}
-                  className="flex items-center gap-2 py-1.5 sm:py-2 px-2 sm:px-4 text-xs sm:text-sm text-[#6D28D2] font-medium border border-[#6D28D2] rounded-sm hover:bg-gray-50"
-                >
-                  <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
-                  <span className="font-bold">Description</span>
-                </button>
-              )}
+    {/* Description button - ONLY show if there's no description */}
+    {!lecture.description && !isDescriptionSectionActive && (
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          if (toggleDescriptionEditor) {
+            toggleDescriptionEditor(sectionId, lecture.id, lecture.description || "");
+          }
+        }}
+        className="flex items-center gap-2 py-1.5 sm:py-2 px-2 sm:px-4 text-xs sm:text-sm text-[#6D28D2] font-medium border border-[#6D28D2] rounded-sm hover:bg-gray-50"
+      >
+        <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
+        <span className="font-bold">Description</span>
+      </button>
+    )}
 
               {/* Resource button - only show if the resource component isn't active */}
               {!isResourceSectionActive && (
