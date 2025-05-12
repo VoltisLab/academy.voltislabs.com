@@ -1099,7 +1099,7 @@ return (
               {/* Display Downloadable Materials section if files exist */}
               {(uploadedFiles.length > 0 || selectedResources.length > 0) && (
                 <div className="mb-4">
-                  <h3 className="text-sm font-medium text-gray-700 mb-2">Downloadable materials</h3>
+                  <h3 className="text-sm font-bold text-gray-700 mb-2">Downloadable materials</h3>
                   {uploadedFiles.map((file, index) => (
                     <div key={`file-${index}`} className="flex justify-between items-center py-1">
                       <div className="flex items-center">
@@ -1134,36 +1134,36 @@ return (
 
               {/* Display the lecture description if it exists */}
               {lecture.description && (
-      <div className="mb-4">
-        <h3 className="text-sm font-medium text-gray-700 mb-2">Description</h3>
-        <div 
-          className="text-gray-700 text-sm p-2 border-l-2 border-gray-300 cursor-pointer hover:bg-gray-50"
-          onClick={(e) => {
-            e.stopPropagation();
-            if (toggleDescriptionEditor) {
-              toggleDescriptionEditor(sectionId, lecture.id, lecture.description || "");
-            }
-          }}
-          dangerouslySetInnerHTML={{ __html: lecture.description }}
-        />
-      </div>
-    )}
+  <div className="mb-4">
+    <h3 className="text-sm font-medium text-gray-700 mb-2">Description</h3>
+    <div 
+      className="text-gray-700 text-sm p-2 border-l-2 border-gray-300 cursor-pointer hover:bg-gray-50"
+      onClick={(e) => {
+        e.stopPropagation();
+        if (toggleDescriptionEditor) {
+          toggleDescriptionEditor(sectionId, lecture.id, lecture.description || "");
+        }
+      }}
+      dangerouslySetInnerHTML={{ __html: lecture.description }}
+    />
+  </div>
+)}
 
               {/* Description button - ONLY show if there's no description */}
-              {!lecture.description && !isDescriptionSectionActive && (
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          if (toggleDescriptionEditor) {
-            toggleDescriptionEditor(sectionId, lecture.id, lecture.description || "");
-          }
-        }}
-        className="flex items-center gap-2 py-1.5 sm:py-2 px-2 sm:px-4 text-xs sm:text-sm text-[#6D28D2] font-medium border border-[#6D28D2] rounded-sm hover:bg-gray-50"
-      >
-        <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
-        <span className="font-bold">Description</span>
-      </button>
-    )}
+             {!lecture.description && !isDescriptionSectionActive && (
+  <button
+    onClick={(e) => {
+      e.stopPropagation();
+      if (toggleDescriptionEditor) {
+        toggleDescriptionEditor(sectionId, lecture.id, lecture.description || "");
+      }
+    }}
+    className="flex items-center gap-2 py-1.5 sm:py-2 px-2 sm:px-4 text-xs sm:text-sm text-[#6D28D2] font-medium border border-[#6D28D2] rounded-sm hover:bg-gray-50"
+  >
+    <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
+    <span className="font-bold">Description</span>
+  </button>
+)}
 
               {/* Resource button - only show if the resource component isn't active */}
               {!isResourceSectionActive && (

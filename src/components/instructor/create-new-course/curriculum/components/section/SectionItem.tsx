@@ -108,7 +108,7 @@ export default function SectionItem({
   const [showEditForm, setShowEditForm] = useState<boolean>(false);
   const [editTitle, setEditTitle] = useState<string>("");
   const [editObjective, setEditObjective] = useState<string>("");
-    const { saveDescription } = useSections([]);
+  const { saveDescription } = useSections([]);
   
   // Added states to track active sections for resources and descriptions
   const [activeResourceSection, setActiveResourceSection] = useState<{sectionId: string, lectureId: string} | null>(null);

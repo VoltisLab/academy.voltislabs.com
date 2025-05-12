@@ -24,7 +24,9 @@ export interface SignUpResponse {
 }
   
 export interface LoginResponse {
+  isInstructor?: boolean;
     login: {
+      isInstructor?: boolean;
       success: boolean;
       token: string;
       refreshToken: string;

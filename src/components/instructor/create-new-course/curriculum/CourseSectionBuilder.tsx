@@ -110,28 +110,28 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({ onSaveNext, courseId }) =
   
   // Toggle description editor
   const toggleDescriptionEditor = (sectionId: string, lectureId: string, description?: string) => {
-    if (activeDescriptionSection && 
-        activeDescriptionSection.sectionId === sectionId && 
-        activeDescriptionSection.lectureId === lectureId) {
-      // Description editor is being closed
-      setActiveDescriptionSection(null);
-      
-      // If this was a save operation, we need to keep the content section open
-      // and ensure content is visible
-      if (description !== undefined && description.trim() !== '') {
-        // Keep content section expanded
-        if (!activeContentSection || 
-            activeContentSection.sectionId !== sectionId || 
-            activeContentSection.lectureId !== lectureId) {
-          setActiveContentSection({ sectionId, lectureId });
-        }
+  if (activeDescriptionSection && 
+      activeDescriptionSection.sectionId === sectionId && 
+      activeDescriptionSection.lectureId === lectureId) {
+    // Description editor is being closed
+    setActiveDescriptionSection(null);
+    
+    // If this was a save operation, we need to keep the content section open
+    // and ensure content is visible
+    if (description !== undefined && description.trim() !== '') {
+      // Keep content section expanded
+      if (!activeContentSection || 
+          activeContentSection.sectionId !== sectionId || 
+          activeContentSection.lectureId !== lectureId) {
+        setActiveContentSection({ sectionId, lectureId });
       }
-    } else {
-      // Description editor is being opened
-      setActiveDescriptionSection({ sectionId, lectureId });
-      setCurrentDescription(description || '');
     }
-  };
+  } else {
+    // Description editor is being opened
+    setActiveDescriptionSection({ sectionId, lectureId });
+    setCurrentDescription(description || '');
+  }
+};
   
   // Toggle add resource
   const toggleAddResourceModal = (sectionId: string, lectureId: string) => {

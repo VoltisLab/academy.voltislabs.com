@@ -29,7 +29,7 @@ const Header = () => {
     logout()
     window.location.reload()
   }
-
+console.log("user ", userExists)
   return (
     <div>
       <header className="w-full bg-white fixed top-0 left-0 z-50">
@@ -76,7 +76,7 @@ const Header = () => {
             </Link>
             {userExists && (
               <Link
-              href={userExists?.login?.user?.isInstructor? "/instructor" : "/dashboard"}
+              href={userExists?.isInstructor? "/instructor" : "/dashboard"}
               className="text-[#331C1C] font-semibold hover:text-pink-600 transition"
             >
               Dashboard
