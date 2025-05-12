@@ -24,7 +24,9 @@ export interface SignUpResponse {
 }
   
 export interface LoginResponse {
+  isInstructor?: boolean;
     login: {
+      isInstructor?: boolean;
       success: boolean;
       token: string;
       refreshToken: string;
@@ -255,6 +257,7 @@ export interface Section {
   isExpanded?: boolean;
   id: string;
 }
+
 
 export interface ContentDropdownState {
   section: number;

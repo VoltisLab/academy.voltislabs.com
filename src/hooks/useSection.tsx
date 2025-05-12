@@ -302,26 +302,28 @@ export const useSections = (initialSections: Section[] ) => {
   
   // Save description
   const saveDescription = (sectionId: string, lectureId: string, description: string) => {
-    setSections(sections.map(section => {
-      if (section.id === sectionId) {
-        return {
-          ...section,
-          lectures: section.lectures.map(lecture => {
-            if (lecture.id === lectureId) {
-              return {
-                ...lecture,
-                description: description
-              };
-            }
-            return lecture;
-          })
-        };
-      }
-      return section;
-    }));
-    
-    toast.success("Description saved");
-  };
+  // Update sections state with the new description
+  setSections(sections.map(section => {
+    if (section.id === sectionId) {
+      return {
+        ...section,
+        lectures: section.lectures.map(lecture => {
+          if (lecture.id === lectureId) {
+            return {
+              ...lecture,
+              description: description
+            };
+          }
+          return lecture;
+        })
+      };
+    }
+    return section;
+  }));
+  
+  toast.success("Description saved");
+  return description; // Return the description for use in the parent component
+};
   
   // Update lecture with uploaded content
   const updateLectureWithUploadedContent = (

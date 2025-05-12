@@ -261,34 +261,6 @@ const QuizItem: React.FC<QuizItemProps> = ({
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
-                {/* <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    moveLecture(sectionId, lecture.id, "up");
-                  }}
-                  className="text-gray-500 hover:text-gray-700 p-1 transition-opacity"
-                  disabled={lectureIndex === 0}
-                >
-                  <ChevronUp
-                    className={`w-4 h-4 ${
-                      lectureIndex === 0 ? "opacity-50" : ""
-                    }`}
-                  />
-                </button> */}
-                {/* <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    moveLecture(sectionId, lecture.id, "down");
-                  }}
-                  className="text-gray-500 hover:text-gray-700 p-1 transition-opacity"
-                  disabled={lectureIndex === totalLectures - 1}
-                >
-                  <ChevronDown
-                    className={`w-4 h-4 ${
-                      lectureIndex === totalLectures - 1 ? "opacity-50" : ""
-                    }`}
-                  /> 
-                </button>*/}
               </>
             )}
             {!showQuestionTypeSelector && (
