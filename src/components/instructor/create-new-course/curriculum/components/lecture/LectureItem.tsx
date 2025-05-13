@@ -24,12 +24,12 @@ interface LibraryFileWithSize extends StoredVideo {
   size?: string;
 }
 
-export interface SourceCodeFile {
+interface SourceCodeFile {
   name: string;
   type: string;
 }
 
-export interface ExternalResourceItem {
+interface ExternalResourceItem {
   title: string;
   url: string;
 }
@@ -167,12 +167,6 @@ const handleSaveArticle = (articleContent: string) => {
   // Close the content section and show the article summary
   setActiveContentType(null);
   
-  // Set lecture content type to article
-  if (typeof updateLectureName === 'function' && lecture.id) {
-    // In a real implementation, you'd have a separate function to update lecture content type
-    console.log(`Setting lecture ${lecture.id} content type to article`);
-  }
-  
   // Make sure lecture stays expanded
   if (toggleContentSection && 
       (!activeContentSection || 
@@ -181,7 +175,6 @@ const handleSaveArticle = (articleContent: string) => {
     toggleContentSection(sectionId, lecture.id);
   }
 };
-
 
 
 const handleSourceCodeSelect = (file: LibraryFileWithSize) => {
@@ -236,82 +229,6 @@ const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
   } else if (e.key === 'Escape') {
     handleCancelLectureEdit();
   }
-};
-
-const handleContentButtonClick = (e: React.MouseEvent) => {
-  e.stopPropagation();
-  if (!isResourceSectionActive && toggleContentSection) {
-    // Only show content type selector if no content is added yet
-    if (!isContentAdded()) {
-      toggleContentSection(sectionId, lecture.id);
-      if (!isExpanded) {
-        setShowContentTypeSelector(true);
-      } else {
-        setShowContentTypeSelector(false);
-        setActiveContentType(null);
-      }
-    } else if (isExpanded) {
-      // If already expanded with content, just collapse
-      toggleContentSection(sectionId, lecture.id);
-      setShowContentTypeSelector(false);
-      setActiveContentType(null);
-    }
-  }
-};
-
-type PreviewType = 'video' | 'article' | 'quiz' | 'assignment' | 'coding-exercise';
-
-// Update handleContentTypeSelect to auto-hide content button
-const handleContentTypeSelect = (contentType: ContentItemType) => {
-  setActiveContentType(contentType);
-  setShowContentTypeSelector(false);
-  
-  if (contentType === 'video') {
-    // Keep existing videos in the library when initializing
-    const existingVideos = videoContent.libraryTab.videos;
-    const existingSelectedVideoDetails = videoContent.selectedVideoDetails;
-    
-    setVideoContent({
-      uploadTab: { selectedFile: null },
-      libraryTab: {
-        searchQuery: '',
-        selectedVideo: null,
-        videos: existingVideos // Preserve existing videos
-      },
-      activeTab: 'uploadVideo',
-      selectedVideoDetails: existingSelectedVideoDetails // Preserve selected video details
-    });
-  } else if (contentType === 'video-slide' as ContentItemType) {
-    setVideoSlideContent({
-      video: { selectedFile: null },
-      presentation: { selectedFile: null },
-      step: 1
-    });
-  } else if (contentType === 'article') {
-    setArticleContent({ text: '' });
-  }
-  
-  // This ensures the content button is hidden when content type is selected
-  if (toggleContentSection && !isExpanded) {
-    toggleContentSection(sectionId, lecture.id);
-  }
-};
-
-// 2. Update the Preview button functionality to handle all content types
-// Add an interface for all content types
-interface SectionContent {
-  type: PreviewType;
-  id: string;
-  title: string;
-  content: any; // This will be specific to the content type
-}
-
-// Update handlePreviewSelection function to respect content type
-const handlePreviewSelection = (mode: 'instructor' | 'student'): void => {
-  setPreviewMode(mode);
-  setShowPreviewDropdown(false);
-  setShowVideoPreview(true);
-  console.log(`Opening preview in ${mode} mode for ${lecture.contentType || 'video'}`);
 };
 // Add these handlers for the video and slide mashup
 const toggleDownloadable = () => {
@@ -368,87 +285,46 @@ const handleEditContent = () => {
   }
 };
 
+// For debugging
+useEffect(() => {
+  console.log("Show video preview:", showVideoPreview);
+  console.log("Preview mode:", previewMode);
+}, [showVideoPreview, previewMode]);
+
+// Instructor Preview Component with TypeScript safety
 const VideoPreviewPage: React.FC = () => {
-  // Return the instructor or student view based on preview mode and content type
-  const renderContent = () => {
-    // If we have video content, render the video player
-    if (videoContent.selectedVideoDetails) {
-      if (previewMode === 'student') {
-        return <StudentVideoPreview videoContent={videoContent} setShowVideoPreview={setShowVideoPreview} lecture={lecture} />;
-      }
-      return <InstructorVideoPreview videoContent={videoContent} setShowVideoPreview={setShowVideoPreview} lecture={lecture} />;
+  // if (!videoContent.selectedVideoDetails) return null;
+  
+  // Return the instructor or student view based on preview mode
+  if (videoContent.selectedVideoDetails) {
+    if (previewMode === 'student') {
+      return <StudentVideoPreview videoContent={videoContent} setShowVideoPreview={setShowVideoPreview} lecture={lecture} />;
     }
+    return <InstructorVideoPreview videoContent={videoContent} setShowVideoPreview={setShowVideoPreview} lecture={lecture} />;
+  }
 
-    // If we have article content, render the article
-    if (articleContent.text) {
-      return (
-        <div className="fixed inset-0 z-[9999] bg-white flex flex-col">
-          <div className="flex justify-between items-center border-b border-gray-200 p-4">
-            <h2 className="font-semibold">{lecture.name || "Article Preview"}</h2>
-            <button 
-              onClick={() => setShowVideoPreview(false)} 
-              className="text-gray-500 hover:text-gray-700"
-              type="button"
-              aria-label="Close preview"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-          <div className="flex-1 overflow-y-auto p-6">
-            <div dangerouslySetInnerHTML={{ __html: articleContent.text }} />
-            
-            {/* Resources section for article */}
-            {(uploadedFiles.length > 0 || sourceCodeFiles.length > 0 || externalResources.length > 0) && (
-              <div className="mt-8 border-t border-gray-200 pt-6">
-                <h3 className="text-lg font-medium mb-4">Resources for this lecture</h3>
-                
-                {/* Downloadable materials */}
-                {uploadedFiles.map((file, index) => (
-                  <div key={`file-${index}`} className="flex items-center mb-3">
-                    <FileDown className="w-4 h-4 mr-2 text-gray-600" />
-                    <span className="text-gray-800">{file.name}</span>
-                  </div>
-                ))}
-                
-                {/* Source code files */}
-                {sourceCodeFiles.map((file, index) => (
-                  <div key={`sourcecode-${index}`} className="flex items-center mb-3">
-                    <FileText className="w-4 h-4 mr-2 text-gray-600" />
-                    <span className="text-gray-800">{file.name}</span>
-                  </div>
-                ))}
-                
-                {/* External resources */}
-                {externalResources.map((resource, index) => (
-                  <div key={`resource-${index}`} className="flex items-center mb-3">
-                    <SquareArrowOutUpRight className="w-4 h-4 mr-2 text-gray-600" />
-                    <a href={resource.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
-                      {resource.title}
-                    </a>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      );
-    }
-
-    // Default empty state
+  if (articleContent.text) {
+    // In a real implementation, you'd have ArticlePreview components for student/instructor
+    // For now, we'll just show a simple preview
     return (
-      <div className="fixed inset-0 z-[9999] bg-white flex flex-col items-center justify-center">
-        <p className="text-gray-500">No preview content available</p>
-        <button 
-          onClick={() => setShowVideoPreview(false)} 
-          className="mt-4 px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
-        >
-          Close
-        </button>
+      <div className="fixed inset-0 z-[9999] bg-white flex flex-col">
+        <div className="flex justify-between items-center border-b border-gray-200 p-4">
+          <h2 className="font-semibold">Article Preview</h2>
+          <button 
+            onClick={() => setShowVideoPreview(false)} 
+            className="text-gray-500 hover:text-gray-700"
+            type="button"
+            aria-label="Close preview"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        <div className="flex-1 overflow-y-auto p-6">
+          <div dangerouslySetInnerHTML={{ __html: articleContent.text }} />
+        </div>
       </div>
     );
-  };
-
-  return renderContent();
+  }
 };
 
 const selectVideo = (videoId: string) => {
@@ -481,16 +357,10 @@ const selectVideo = (videoId: string) => {
       selectedVideoDetails: selectedDetails
     });
     
-    // Set activeContentType to null to hide the content selector
+    // Set activeContentType to null to show the selected video details
     setActiveContentType(null);
     
-    // Set lecture content type to video
-    if (typeof updateLectureName === 'function' && lecture.id) {
-      // In a real implementation, you'd have a separate function to update lecture content type
-      console.log(`Setting lecture ${lecture.id} content type to video`);
-    }
-    
-    // Make sure lecture stays expanded to show the selected content
+    // Make sure lecture stays expanded
     if (toggleContentSection && 
         (!activeContentSection || 
          activeContentSection.sectionId !== sectionId || 
@@ -499,6 +369,7 @@ const selectVideo = (videoId: string) => {
     }
   }
 };
+
 
 const removeSelectedResource = (videoId: string) => {
   setSelectedResources(selectedResources.filter(v => v.id !== videoId));
@@ -528,6 +399,13 @@ useEffect(() => {
   };
 }, [showPreviewDropdown]);
 
+// Updated handlePreviewSelection function with type safety
+const handlePreviewSelection = (mode: 'instructor' | 'student'): void => {
+  setPreviewMode(mode);
+  setShowPreviewDropdown(false);
+  setShowVideoPreview(true);
+  console.log(`Opening preview in ${mode} mode`);
+};
 
 const handleLibraryItemSelect = (item: LibraryFileWithSize) => {
   // Add the selected item to your downloadable files list
@@ -681,6 +559,36 @@ const handleSearchLibrary = (event: React.FormEvent) => {
   console.log("Searching for:", videoContent.libraryTab.searchQuery);
 };  
    
+// Updated for clarity - when initializing with handleContentTypeSelect
+const handleContentTypeSelect = (contentType: ContentItemType) => {
+  setActiveContentType(contentType);
+  setShowContentTypeSelector(false);
+  
+  if (contentType === 'video') {
+    // Keep existing videos in the library when initializing
+    const existingVideos = videoContent.libraryTab.videos;
+    const existingSelectedVideoDetails = videoContent.selectedVideoDetails;
+    
+    setVideoContent({
+      uploadTab: { selectedFile: null },
+      libraryTab: {
+        searchQuery: '',
+        selectedVideo: null,
+        videos: existingVideos // Preserve existing videos
+      },
+      activeTab: 'uploadVideo',
+      selectedVideoDetails: existingSelectedVideoDetails // Preserve selected video details
+    });
+  } else if (contentType === 'video-slide' as ContentItemType) {
+    setVideoSlideContent({
+      video: { selectedFile: null },
+      presentation: { selectedFile: null },
+      step: 1
+    });
+  } else if (contentType === 'article') {
+    setArticleContent({ text: '' });
+  }
+};
 
 // Function to delete a video from the library
 const deleteVideo = (videoId: string) => {
@@ -963,13 +871,7 @@ const triggerFileUpload = (contentType: ContentType) => {
   }, 300);
 };
 
-const maxLength = 80
-const isContentAdded = (): boolean => {
-  return (
-    !!videoContent.selectedVideoDetails || 
-    !!articleContent.text
-  );
-};
+const [maxLength, setMaxLength] = useState(80);
 
 return (
   <div 
@@ -1093,109 +995,101 @@ return (
           </div>
           
           <button 
-  onClick={(e) => {
-    e.stopPropagation();
-    if (!isResourceSectionActive && toggleContentSection) {
-      // Only show content type selector if no content is added yet
-      if (!isContentAdded()) {
-        toggleContentSection(sectionId, lecture.id);
-        if (!isExpanded) {
-          setShowContentTypeSelector(true);
-        } else {
-          setShowContentTypeSelector(false);
-          setActiveContentType(null);
-        }
-      } else if (isExpanded) {
-        // If already expanded with content, just collapse
-        toggleContentSection(sectionId, lecture.id);
-        setShowContentTypeSelector(false);
-        setActiveContentType(null);
-      }
-    }
-  }}
-  className={`${
-    (showContentTypeSelector && isExpanded) || isResourceSectionActive || activeContentType
-    ? "text-gray-800 font-normal border-b-0 border-l border-t border-r border-gray-400 -mb-[12px] bg-white pb-2" 
-    : "text-[#6D28D2] font-medium border-[#6D28D2] hover:bg-indigo-50 rounded "
-  } text-xs sm:text-sm px-2 sm:px-3 py-2 flex items-center ml-1 sm:ml-2 border ${isContentAdded() && !activeContentType ? 'hidden' : ''}`}
->
-  {/* Button label changes based on state */}
-  {isResourceSectionActive ? (
-    <>
-      <span className='font-bold'>Add Resource</span>
-      <X 
-        className="w-3 h-3 sm:w-4 sm:h-4 ml-1 sm:ml-2" 
-        onClick={(e) => {
-          e.stopPropagation();
-          if (toggleAddResourceModal) {
-            toggleAddResourceModal(sectionId, lecture.id);
-          }
-        }}
-      />
-    </>
-  ) : activeContentType === 'video' ? (
-    <>
-      <span className='font-bold'>Add Video</span>
-      <X 
-        className="w-3 h-3 sm:w-4 sm:h-4 ml-1 sm:ml-2" 
-        onClick={(e) => {
-          e.stopPropagation();
-          setActiveContentType(null);
-          if (toggleContentSection) {
-            toggleContentSection(sectionId, lecture.id);
-          }
-        }}
-      />
-    </>
-  ) : activeContentType === 'video-slide' ? (
-    <>
-      <span className='font-bold'>Add Video & Slide Mashup</span>
-      <X 
-        className="w-3 h-3 sm:w-4 sm:h-4 ml-1 sm:ml-2" 
-        onClick={(e) => {
-          e.stopPropagation();
-          setActiveContentType(null);
-          if (toggleContentSection) {
-            toggleContentSection(sectionId, lecture.id);
-          }
-        }}
-      />
-    </>
-  ) : activeContentType === 'article' ? (
-    <>
-      <span className='font-bold'>Add Article</span>
-      <X 
-        className="w-3 h-3 sm:w-4 sm:h-4 ml-1 sm:ml-2" 
-        onClick={(e) => {
-          e.stopPropagation();
-          setActiveContentType(null);
-          if (toggleContentSection) {
-            toggleContentSection(sectionId, lecture.id);
-          }
-        }}
-      />
-    </>
-  ) : showContentTypeSelector && isExpanded ? (
-    <>
-      <span className='font-bold'>Select content type</span>
-      <X 
-        className="w-3 h-3 sm:w-4 sm:h-4 ml-1 sm:ml-2" 
-        onClick={(e) => {
-          e.stopPropagation();
-          setShowContentTypeSelector(false);
-          if (toggleContentSection) {
-            toggleContentSection(sectionId, lecture.id);
-          }
-        }}
-      />
-    </>
-  ) : (
-    <>
-      <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-0.5 sm:mr-1" /> 
-      <span className='font-bold'>Content</span>
-    </>
-  )}
-</button>
+            onClick={(e) => {
+              e.stopPropagation();
+              if (!isResourceSectionActive && toggleContentSection) {
+                toggleContentSection(sectionId, lecture.id);
+                if (!isExpanded) {
+                  setShowContentTypeSelector(true);
+                } else {
+                  setShowContentTypeSelector(false);
+                  setActiveContentType(null);
+                }
+              }
+            }}
+            className={`${
+              (showContentTypeSelector && isExpanded) || isResourceSectionActive || activeContentType
+              ? "text-gray-800 font-normal border-b-0 border-l border-t border-r border-gray-400 -mb-[12px] bg-white pb-2" 
+              : "text-[#6D28D2] font-medium border-[#6D28D2] hover:bg-indigo-50 rounded "
+            } text-xs sm:text-sm px-2 sm:px-3 py-2 flex items-center ml-1 sm:ml-2 border`}
+          >
+            {/* This is the content button that changes label based on state */}
+            {isResourceSectionActive ? (
+              <>
+                <span className='font-bold'>Add Resource</span>
+                <X 
+                  className="w-3 h-3 sm:w-4 sm:h-4 ml-1 sm:ml-2" 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (toggleAddResourceModal) {
+                      toggleAddResourceModal(sectionId, lecture.id);
+                    }
+                  }}
+                />
+              </>
+            ) : activeContentType === 'video' ? (
+              <>
+                <span className='font-bold'>Add Video</span>
+                <X 
+                  className="w-3 h-3 sm:w-4 sm:h-4 ml-1 sm:ml-2" 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setActiveContentType(null);
+                    if (toggleContentSection) {
+                      toggleContentSection(sectionId, lecture.id);
+                    }
+                  }}
+                />
+              </>
+            ) : activeContentType === 'video-slide' ? (
+              <>
+                <span className='font-bold'>Add Video & Slide Mashup</span>
+                <X 
+                  className="w-3 h-3 sm:w-4 sm:h-4 ml-1 sm:ml-2" 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setActiveContentType(null);
+                    if (toggleContentSection) {
+                      toggleContentSection(sectionId, lecture.id);
+                    }
+                  }}
+                />
+              </>
+            ) : activeContentType === 'article' ? (
+              <>
+                <span className='font-bold'>Add Article</span>
+                <X 
+                  className="w-3 h-3 sm:w-4 sm:h-4 ml-1 sm:ml-2" 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setActiveContentType(null);
+                    if (toggleContentSection) {
+                      toggleContentSection(sectionId, lecture.id);
+                    }
+                  }}
+                />
+              </>
+            ) : showContentTypeSelector && isExpanded ? (
+              <>
+                <span className='font-bold'>Select content type</span>
+                <X 
+                  className="w-3 h-3 sm:w-4 sm:h-4 ml-1 sm:ml-2" 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowContentTypeSelector(false);
+                    if (toggleContentSection) {
+                      toggleContentSection(sectionId, lecture.id);
+                    }
+                  }}
+                />
+              </>
+            ) : (
+              <>
+                <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-0.5 sm:mr-1" /> 
+                <span className='font-bold'>Content</span>
+              </>
+            )}
+          </button>
           
           <button 
             className="p-1 text-gray-400 hover:text-gray-600 ml-1"
@@ -1542,11 +1436,17 @@ return (
                   </ul>
                 </div>
               )}
-            </div>      
+            </div>
+            
+            {/* Replace with Video link */}
+      
           </div>
         </div>
       </div>
     )}
+
+              
+
               {/* Description button - ONLY show if there's no description */}
              {!lecture.description && !isDescriptionSectionActive && (
   <button

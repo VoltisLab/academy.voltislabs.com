@@ -211,7 +211,9 @@ export interface Lecture {
   contentType: ContentItemType;
   isExpanded: boolean;
   questions?: Array<Question>;
-  
+  isCompleted?: boolean;
+  hasResources?: boolean;
+  duration?: string;
   // Code editor related fields
   code?: string;                    // Stores the code content for practice exercises
   codeLanguage?: string;            // Stores the programming language for the code editor
@@ -226,6 +228,23 @@ export interface Lecture {
   // Assignment related fields
   dueDate?: string;
   pointsValue?: number;
+}
+
+
+export interface LibraryFileWithSize extends StoredVideo {
+  size?: string;
+}
+ 
+export type PreviewType = 'video' | 'article' | 'quiz' | 'assignment' | 'coding-exercise';
+
+export interface SourceCodeFile {
+  name: string;
+  type: string;
+}
+
+export interface ExternalResourceItem {
+  title: string;
+  url: string;
 }
 
 // Interface for test cases to validate student code
@@ -433,6 +452,23 @@ export enum ResourceTabType {
   LECTURE_NOTES = "lecture-notes",
   EXTERNAL_RESOURCE = "EXTERNAL_RESOURCE"
 }
+
+export interface ResourcesData {
+  downloadableFiles: Array<{name: string, size: string}>;
+  sourceCodeFiles: SourceCodeFile[];
+  externalResources: ExternalResourceItem[];
+}
+
+export interface SectionItem {
+  id: string;
+  name: string;
+  type: PreviewType;
+  duration: string;
+  hasResources: boolean;
+  isCompleted: boolean;
+  description?: string;
+}
+
 
 // Enum for code language types
 export enum CodeLanguageType {
