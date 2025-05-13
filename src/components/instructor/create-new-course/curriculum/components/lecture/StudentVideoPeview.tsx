@@ -12,12 +12,17 @@ import {
   Globe,
   Plus,
   Edit,
-  Trash2
+  Trash2,
+  FileDown,
+  FileText,
+  SquareArrowOutUpRight,
+  Code
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import ReactPlayer from "react-player";
 import Tippy from "@tippyjs/react";
 import "tippy.js/dist/tippy.css";
+import { ExternalResourceItem, SourceCodeFile } from "./LectureItem";
 
 type ChildProps = {
   videoContent: VideoContent;
@@ -49,6 +54,11 @@ const StudentVideoPreview = ({ videoContent, setShowVideoPreview, lecture }: Chi
   const [volume, setVolume] = useState<number>(0.8);
   const [playbackRate, setPlaybackRate] = useState<number>(1);
   const [showSearch, setShowSearch] = useState<boolean>(false);
+  // Add these in your state declarations section
+const [uploadedFiles, setUploadedFiles] = useState<Array<{name: string, size: string}>>([]);
+const [sourceCodeFiles, setSourceCodeFiles] = useState<SourceCodeFile[]>([]);
+const [externalResources, setExternalResources] = useState<ExternalResourceItem[]>([]);
+const [openResourcesDropdowns, setOpenResourcesDropdowns] = useState<Record<string, boolean>>({});
   
   // Notes specific state
   const [notes, setNotes] = useState<VideoNote[]>([]);
@@ -163,6 +173,131 @@ const StudentVideoPreview = ({ videoContent, setShowVideoPreview, lecture }: Chi
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, [playing, activeTab, isAddingNote]);
+
+  interface ResourcesDropdownProps {
+    resources: {
+      downloadableFiles: Array<{name: string, size: string}>;
+      sourceCodeFiles: SourceCodeFile[];
+      externalResources: ExternalResourceItem[];
+    };
+    isOpen: boolean;
+    toggleOpen: () => void;
+  }
+  
+  const ResourcesDropdown: React.FC<ResourcesDropdownProps> = ({ resources, isOpen, toggleOpen }) => {
+    const hasResources = 
+      resources.downloadableFiles.length > 0 || 
+      resources.sourceCodeFiles.length > 0 || 
+      resources.externalResources.length > 0;
+      
+    if (!hasResources) return null;
+    
+    return (
+      <div className="relative">
+        <button 
+          onClick={toggleOpen}
+          className="flex items-center text-sm text-purple-600 font-medium py-1 px-2"
+        >
+          <span>Resources</span>
+          {isOpen ? <ChevronUp className="w-4 h-4 ml-1" /> : <ChevronDown className="w-4 h-4 ml-1" />}
+        </button>
+        
+        {isOpen && (
+          <div className="absolute right-0 mt-1 w-64 bg-white border border-gray-200 rounded-md shadow-lg z-10">
+            <div className="p-2">
+              {resources.downloadableFiles.map((file, index) => (
+                <div key={`dl-${index}`} className="flex items-center py-1 px-2 hover:bg-gray-50">
+                  <FileDown className="w-4 h-4 mr-2 text-gray-600" />
+                  <span className="text-sm">{file.name}</span>
+                </div>
+              ))}
+              
+              {resources.sourceCodeFiles.map((file, index) => (
+                <div key={`sc-${index}`} className="flex items-center py-1 px-2 hover:bg-gray-50">
+                  <FileText className="w-4 h-4 mr-2 text-gray-600" />
+                  <span className="text-sm">{file.name}</span>
+                </div>
+              ))}
+              
+              {resources.externalResources.map((resource, index) => (
+                <div key={`er-${index}`} className="flex items-center py-1 px-2 hover:bg-gray-50">
+                  <SquareArrowOutUpRight className="w-4 h-4 mr-2 text-gray-600" />
+                  <a href={resource.url} className="text-sm text-blue-600 hover:underline">{resource.title}</a>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+  // Add this near the top of your file, after imports
+type PreviewType = 'video' | 'article' | 'quiz' | 'assignment' | 'coding-exercise';
+
+  const renderSidebarSectionItems = (
+    sectionItems: Array<{
+      id: string;
+      name: string;
+      type: PreviewType;
+      duration?: string;
+      hasResources?: boolean;
+      isActive?: boolean;
+      isCompleted?: boolean;
+    }>,
+    activeItemId: string,
+    onSelectItem: (id: string) => void,
+    toggleResourcesDropdown: (id: string) => void,
+    openResourcesDropdowns: Record<string, boolean>
+  ) => {
+    return (
+      <div className="flex-1 overflow-y-auto">
+        {sectionItems.map((item) => (
+          <div 
+            key={item.id} 
+            className={`p-4 hover:bg-gray-50 cursor-pointer ${item.isActive ? 'bg-gray-100 border-l-4 border-purple-600' : ''}`}
+            onClick={() => onSelectItem(item.id)}
+          >
+            <div className="flex items-start">
+              <input 
+                type="checkbox" 
+                className="mt-1 mr-2" 
+                checked={item.isCompleted}
+                onChange={() => {}}
+                aria-label="Mark as complete"
+              />
+              <div className="flex-1">
+                <p className="font-medium">{item.name}</p>
+                <div className="flex items-center justify-between mt-1">
+                  <div className="flex items-center text-xs text-gray-500">
+                    {item.type === 'video' && <Play className="w-3 h-3 mr-1" />}
+                    {item.type === 'article' && <FileText className="w-3 h-3 mr-1" />}
+                    {item.type === 'quiz' && <Search className="w-3 h-3 mr-1" />}
+                    {item.type === 'assignment' && <Edit className="w-3 h-3 mr-1" />}
+                    {item.type === 'coding-exercise' && <Code className="w-3 h-3 mr-1" />}
+                    <span>{item.duration || '1min'}</span>
+                  </div>
+                  
+                  {item.hasResources && (
+                    <div>
+                      <ResourcesDropdown 
+                        resources={{
+                          downloadableFiles: uploadedFiles,
+                          sourceCodeFiles: sourceCodeFiles,
+                          externalResources: externalResources
+                        }}
+                        isOpen={!!openResourcesDropdowns[item.id]}
+                        toggleOpen={() => toggleResourcesDropdown(item.id)}
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
 
   const renderLearningModal = () => {
     return (
