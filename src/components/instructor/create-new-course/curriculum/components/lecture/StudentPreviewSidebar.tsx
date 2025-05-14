@@ -1,3 +1,5 @@
+// Update StudentPreviewSidebar to dynamically build content from actual section data
+
 import { useState, useEffect } from 'react';
 import { 
   ChevronDown, 
@@ -10,12 +12,10 @@ import {
   SquareArrowOutUpRight,
   FileDown
 } from "lucide-react";
-import { Lecture, Section, SourceCodeFile, ExternalResourceItem } from '@/lib/types';
+import { Lecture, Section, SourceCodeFile, ExternalResource, AttachedFile } from '@/lib/types';
 
-// Define the content item types that can appear in a section
 type ContentItemType = 'video' | 'article' | 'quiz' | 'assignment' | 'coding-exercise';
 
-// Interface for content items shown in the sidebar
 interface ContentItem {
   id: string;
   name: string;
@@ -24,14 +24,11 @@ interface ContentItem {
   hasResources?: boolean;
   isCompleted?: boolean;
   isActive?: boolean;
-  resources?: {
-    downloadableFiles: Array<{name: string, size: string}>;
-    sourceCodeFiles: SourceCodeFile[];
-    externalResources: ExternalResourceItem[];
-  };
+  attachedFiles?: AttachedFile[];
+  externalResources?: ExternalResource[];
+  sourceCodeFiles?: SourceCodeFile[];
 }
 
-// Interface for section with its content items
 interface SectionWithItems {
   id: string;
   name: string;
@@ -54,7 +51,7 @@ interface StudentPreviewSidebarProps {
   }>;
   uploadedFiles?: Array<{name: string, size: string}>;
   sourceCodeFiles?: SourceCodeFile[];
-  externalResources?: ExternalResourceItem[];
+  externalResources?: ExternalResource[];
 }
 
 const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
@@ -83,42 +80,40 @@ const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
 
     // Process sections to format for sidebar display
     const formatted = sections.map(section => {
-      // Gather all content items for this section
+      // Gather all content items for this section - only include what actually exists
       const contentItems: ContentItem[] = [];
       
-      // Add lectures
-      if (section.lectures) {
+      // Only add lectures if they exist
+      if (section.lectures && section.lectures.length > 0) {
         section.lectures.forEach((lecture, index) => {
-          const hasResources = 
-            lecture.resources?.downloadableFiles?.length > 0 || 
-            lecture.resources?.sourceCodeFiles?.length > 0 || 
-            lecture.resources?.externalResources?.length > 0 ||
-            // If lecture doesn't have resources property, check the global resources
-            (uploadedFiles.length > 0 || sourceCodeFiles.length > 0 || externalResources.length > 0);
+          // Check if the lecture actually has resources
+          const hasAttachedFiles = lecture.attachedFiles && lecture.attachedFiles.length > 0;
+          const hasExternalResources = lecture.externalResources && lecture.externalResources.length > 0;
+          const hasSourceCodeFiles = sourceCodeFiles.some(file => file.lectureId === lecture.id);
           
-          // Determine content type based on lecture.contentType
-          let contentType: ContentItemType = 'video';
-          if (lecture.contentType === 'article') contentType = 'article';
+          const hasResources = hasAttachedFiles || hasExternalResources || hasSourceCodeFiles;
+          
+          // Determine content type from the lecture
+          let contentType: ContentItemType = (lecture.contentType as ContentItemType) || 'video';
           
           contentItems.push({
             id: lecture.id,
             name: lecture.name || `Lecture ${index + 1}`,
             type: contentType,
-            duration: '1min', // This would come from actual lecture data
+            duration: lecture.duration || '1min',
             hasResources: hasResources,
-            isCompleted: false, // This would come from user progress data
+            isCompleted: lecture.isCompleted || false,
             isActive: lecture.id === currentLectureId,
-            resources: {
-              downloadableFiles: lecture.resources?.downloadableFiles || uploadedFiles,
-              sourceCodeFiles: lecture.resources?.sourceCodeFiles || sourceCodeFiles,
-              externalResources: lecture.resources?.externalResources || externalResources
-            }
+            attachedFiles: lecture.attachedFiles || [],
+            externalResources: lecture.externalResources || [],
+            // Only include source code files that belong to this lecture
+            sourceCodeFiles: sourceCodeFiles.filter(file => file.lectureId === lecture.id)
           });
         });
       }
       
-      // Add quizzes
-      if (section.quizzes) {
+      // Only add quizzes if they exist
+      if (section.quizzes && section.quizzes.length > 0) {
         section.quizzes.forEach((quiz, index) => {
           contentItems.push({
             id: quiz.id,
@@ -126,13 +121,14 @@ const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
             type: 'quiz',
             duration: '10min',
             isCompleted: false,
-            isActive: false
+            isActive: false,
+            hasResources: false // Quizzes typically don't have resources
           });
         });
       }
       
-      // Add assignments
-      if (section.assignments) {
+      // Only add assignments if they exist
+      if (section.assignments && section.assignments.length > 0) {
         section.assignments.forEach((assignment, index) => {
           contentItems.push({
             id: assignment.id,
@@ -140,13 +136,14 @@ const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
             type: 'assignment',
             duration: '30min',
             isCompleted: false,
-            isActive: false
+            isActive: false,
+            hasResources: false // Assignments typically don't have resources
           });
         });
       }
       
-      // Add coding exercises
-      if (section.codingExercises) {
+      // Only add coding exercises if they exist
+      if (section.codingExercises && section.codingExercises.length > 0) {
         section.codingExercises.forEach((exercise, index) => {
           contentItems.push({
             id: exercise.id,
@@ -154,21 +151,32 @@ const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
             type: 'coding-exercise',
             duration: '15min',
             isCompleted: false,
-            isActive: false
+            isActive: false,
+            hasResources: false // Coding exercises typically don't have resources
           });
         });
       }
       
-      // Calculate total duration and completed items
+      // Calculate total duration and completed items from the actual items
       const totalItems = contentItems.length;
       const completedItems = contentItems.filter(item => item.isCompleted).length;
+      
+      // Calculate total duration in minutes
+      const totalDurationMinutes = contentItems.reduce((total, item) => {
+        // Parse the duration string to extract minutes
+        const durationMatch = item.duration?.match(/(\d+)min/);
+        if (durationMatch && durationMatch[1]) {
+          return total + parseInt(durationMatch[1], 10);
+        }
+        return total;
+      }, 0);
       
       return {
         id: section.id,
         name: section.name || 'Untitled Section',
         contentItems,
-        isExpanded: true, // Default to expanded
-        totalDuration: `${totalItems}min`, // This would be calculated from actual item durations
+        isExpanded: true,
+        totalDuration: `${totalDurationMinutes}min`,
         completedItems
       };
     });
@@ -196,33 +204,35 @@ const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
   const handleSelectItem = (itemId: string) => {
     // In a real app, you would navigate to the selected item
     console.log('Selected item:', itemId);
-    // For now, we just close the preview
+    // For now, we just close the preview if it's not the current item
     if (itemId !== currentLectureId) {
       setShowVideoPreview(false);
     }
   };
 
-  // Component for resource dropdown
+  // Component for resource dropdown - only shows if there are actual resources
   const ResourcesDropdown: React.FC<{
-    resources: {
-      downloadableFiles: Array<{name: string, size: string}>;
-      sourceCodeFiles: SourceCodeFile[];
-      externalResources: ExternalResourceItem[];
-    };
+    item: ContentItem;
     isOpen: boolean;
     toggleOpen: () => void;
-  }> = ({ resources, isOpen, toggleOpen }) => {
-    const hasResources = 
-      resources.downloadableFiles.length > 0 || 
-      resources.sourceCodeFiles.length > 0 || 
-      resources.externalResources.length > 0;
-      
-    if (!hasResources) return null;
+  }> = ({ item, isOpen, toggleOpen }) => {
+    // Check if there are any actual resources to display
+    const hasAttachedFiles = item.attachedFiles && item.attachedFiles.length > 0;
+    const hasExternalResources = item.externalResources && item.externalResources.length > 0;
+    const hasSourceCodeFiles = item.sourceCodeFiles && item.sourceCodeFiles.length > 0;
+    
+    const hasAnyResources = hasAttachedFiles || hasExternalResources || hasSourceCodeFiles;
+    
+    // Don't render anything if there are no resources
+    if (!hasAnyResources) return null;
     
     return (
       <div className="relative">
         <button 
-          onClick={toggleOpen}
+          onClick={(e) => {
+            e.stopPropagation();
+            toggleOpen();
+          }}
           className="flex items-center text-sm text-purple-600 font-medium py-1 px-2"
         >
           <span>Resources</span>
@@ -232,24 +242,34 @@ const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
         {isOpen && (
           <div className="absolute right-0 mt-1 w-64 bg-white border border-gray-200 rounded-md shadow-lg z-10">
             <div className="p-2">
-              {resources.downloadableFiles.map((file, index) => (
+              {/* Only show downloadable files if they exist */}
+              {hasAttachedFiles && item.attachedFiles?.map((file, index) => (
                 <div key={`dl-${index}`} className="flex items-center py-1 px-2 hover:bg-gray-50">
                   <FileDown className="w-4 h-4 mr-2 text-gray-600" />
-                  <span className="text-sm">{file.name}</span>
+                  <span className="text-sm">{file.filename || file.name}</span>
                 </div>
               ))}
               
-              {resources.sourceCodeFiles.map((file, index) => (
+              {/* Only show source code files if they exist */}
+              {hasSourceCodeFiles && item.sourceCodeFiles?.map((file, index) => (
                 <div key={`sc-${index}`} className="flex items-center py-1 px-2 hover:bg-gray-50">
                   <Code className="w-4 h-4 mr-2 text-gray-600" />
-                  <span className="text-sm">{file.name}</span>
+                  <span className="text-sm">{file.name || file.filename}</span>
                 </div>
               ))}
               
-              {resources.externalResources.map((resource, index) => (
+              {/* Only show external resources if they exist */}
+              {hasExternalResources && item.externalResources?.map((resource, index) => (
                 <div key={`er-${index}`} className="flex items-center py-1 px-2 hover:bg-gray-50">
                   <SquareArrowOutUpRight className="w-4 h-4 mr-2 text-gray-600" />
-                  <a href={resource.url} className="text-sm text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">{resource.title}</a>
+                  <a 
+                    href={resource.url} 
+                    className="text-sm text-blue-600 hover:underline" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                  >
+                    {typeof resource.title === 'string' ? resource.title : 'External Resource'}
+                  </a>
                 </div>
               ))}
             </div>
@@ -296,51 +316,48 @@ const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
               </p>
             </div>
             
-            {/* Section content items */}
-            {expandedSections[section.id] && section.contentItems.map((item, index) => (
-              <div 
-                key={item.id} 
-                className={`p-4 ${item.isActive ? 'bg-gray-100 border-l-4 border-purple-600' : 'hover:bg-gray-50'} cursor-pointer`}
-                onClick={() => handleSelectItem(item.id)}
-              >
-                <div className="flex items-start">
-                  <input 
-                    type="checkbox" 
-                    className="mt-1 mr-2" 
-                    checked={item.isCompleted}
-                    onChange={() => {}}
-                    aria-label="Mark as complete"
-                  />
-                  <div className="flex-1">
-                    <p className="font-medium">{index + 1}. {item.name}</p>
-                    <div className="flex items-center justify-between mt-1">
-                      <div className="flex items-center text-xs text-gray-500">
-                        {item.type === 'video' && <Play className="w-3 h-3 mr-1" />}
-                        {item.type === 'article' && <FileText className="w-3 h-3 mr-1" />}
-                        {item.type === 'quiz' && <Search className="w-3 h-3 mr-1" />}
-                        {item.type === 'assignment' && <Edit className="w-3 h-3 mr-1" />}
-                        {item.type === 'coding-exercise' && <Code className="w-3 h-3 mr-1" />}
-                        <span>{item.duration}</span>
-                      </div>
-                      
-                      {item.hasResources && (
-                        <div>
+            {/* Section content items - only show if there are items */}
+            {expandedSections[section.id] && section.contentItems.length > 0 && (
+              section.contentItems.map((item, index) => (
+                <div 
+                  key={item.id} 
+                  className={`p-4 ${item.isActive ? 'bg-gray-100 border-l-4 border-purple-600' : 'hover:bg-gray-50'} cursor-pointer`}
+                  onClick={() => handleSelectItem(item.id)}
+                >
+                  <div className="flex items-start">
+                    <input 
+                      type="checkbox" 
+                      className="mt-1 mr-2" 
+                      checked={item.isCompleted}
+                      onChange={() => {}}
+                      aria-label="Mark as complete"
+                    />
+                    <div className="flex-1">
+                      <p className="font-medium">{index + 1}. {item.name}</p>
+                      <div className="flex items-center justify-between mt-1">
+                        <div className="flex items-center text-xs text-gray-500">
+                          {item.type === 'video' && <Play className="w-3 h-3 mr-1" />}
+                          {item.type === 'article' && <FileText className="w-3 h-3 mr-1" />}
+                          {item.type === 'quiz' && <Search className="w-3 h-3 mr-1" />}
+                          {item.type === 'assignment' && <Edit className="w-3 h-3 mr-1" />}
+                          {item.type === 'coding-exercise' && <Code className="w-3 h-3 mr-1" />}
+                          <span>{item.duration}</span>
+                        </div>
+                        
+                        {/* Only show resources dropdown if the item has resources */}
+                        {item.hasResources && (
                           <ResourcesDropdown 
-                            resources={item.resources || {
-                              downloadableFiles: [],
-                              sourceCodeFiles: [],
-                              externalResources: []
-                            }}
+                            item={item}
                             isOpen={!!openResourcesDropdowns[item.id]}
                             toggleOpen={() => toggleResourcesDropdown(item.id)}
                           />
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         ))}
       </div>

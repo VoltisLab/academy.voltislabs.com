@@ -24,7 +24,9 @@ interface LibraryFileWithSize extends StoredVideo {
   size?: string;
 }
 
-interface SourceCodeFile {
+export interface SourceCodeFile {
+  lectureId: string;
+  filename: string;
   name: string;
   type: string;
 }
@@ -32,6 +34,7 @@ interface SourceCodeFile {
 interface ExternalResourceItem {
   title: string;
   url: string;
+  name: string
 }
 
 export default function LectureItem({
@@ -178,9 +181,11 @@ const handleSaveArticle = (articleContent: string) => {
 
 
 const handleSourceCodeSelect = (file: LibraryFileWithSize) => {
-  setSourceCodeFiles([...sourceCodeFiles, { 
-    name: file.filename, 
-    type: 'SourceCode'
+  setSourceCodeFiles([...sourceCodeFiles, {
+    name: file.filename,
+    type: 'SourceCode',
+    lectureId: lecture.id,
+    filename: file.filename
   }]);
   
   // Close the resource modal
@@ -190,8 +195,8 @@ const handleSourceCodeSelect = (file: LibraryFileWithSize) => {
 };
 
 // Add this handler for external resource additions
-const handleExternalResourceAdd = (title: string, url: string) => {
-  setExternalResources([...externalResources, { title, url }]);
+const handleExternalResourceAdd = (title: string, url: string, name:string) => {
+  setExternalResources([...externalResources, { title, url, name}]);
   
   // Close the resource modal
   if (toggleAddResourceModal) {
@@ -293,38 +298,30 @@ useEffect(() => {
 
 // Instructor Preview Component with TypeScript safety
 const VideoPreviewPage: React.FC = () => {
-  // if (!videoContent.selectedVideoDetails) return null;
+  // Find the current section from the sections array
+  const currentSection = sections.find(section => section.id === sectionId);
   
-  // Return the instructor or student view based on preview mode
-  if (videoContent.selectedVideoDetails) {
+  if (videoContent.selectedVideoDetails || articleContent.text) {
     if (previewMode === 'student') {
-      return <StudentVideoPreview videoContent={videoContent} setShowVideoPreview={setShowVideoPreview} lecture={lecture} />;
+      return <StudentVideoPreview 
+        videoContent={videoContent} 
+        setShowVideoPreview={setShowVideoPreview} 
+        lecture={lecture}
+        uploadedFiles={uploadedFiles}
+        sourceCodeFiles={sourceCodeFiles}
+        externalResources={externalResources}
+        section={currentSection}
+      />;
     }
-    return <InstructorVideoPreview videoContent={videoContent} setShowVideoPreview={setShowVideoPreview} lecture={lecture} />;
+    return <InstructorVideoPreview 
+      videoContent={videoContent} 
+      setShowVideoPreview={setShowVideoPreview} 
+      lecture={lecture}
+      section={currentSection}
+    />;
   }
-
-  if (articleContent.text) {
-    // In a real implementation, you'd have ArticlePreview components for student/instructor
-    // For now, we'll just show a simple preview
-    return (
-      <div className="fixed inset-0 z-[9999] bg-white flex flex-col">
-        <div className="flex justify-between items-center border-b border-gray-200 p-4">
-          <h2 className="font-semibold">Article Preview</h2>
-          <button 
-            onClick={() => setShowVideoPreview(false)} 
-            className="text-gray-500 hover:text-gray-700"
-            type="button"
-            aria-label="Close preview"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-        <div className="flex-1 overflow-y-auto p-6">
-          <div dangerouslySetInnerHTML={{ __html: articleContent.text }} />
-        </div>
-      </div>
-    );
-  }
+  
+  return null;
 };
 
 const selectVideo = (videoId: string) => {

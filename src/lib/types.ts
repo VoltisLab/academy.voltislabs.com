@@ -1,3 +1,4 @@
+import { ReactNode } from "react";
 import { CourseLevelEnum, DurationUnitEnum, LanguageEnum } from "./utils";
 
 // If you don't have this already, make sure these types are defined:
@@ -194,6 +195,7 @@ export type ContentItemType = 'video' | 'article' | 'quiz' | 'coding-exercise' |
 
 // Interface for external resources (links, references, etc.)
 export interface ExternalResource {
+  title: ReactNode;
   url: string;
   name: string;
 }
@@ -238,6 +240,8 @@ export interface LibraryFileWithSize extends StoredVideo {
 export type PreviewType = 'video' | 'article' | 'quiz' | 'assignment' | 'coding-exercise';
 
 export interface SourceCodeFile {
+  lectureId: string;
+  filename: string;
   name: string;
   type: string;
 }
@@ -357,6 +361,8 @@ export interface CodeEditorModalProps {
 }
 
 export interface AttachedFile {
+  size: string;
+  filename: string;
   url: string;
   name: string;
 }

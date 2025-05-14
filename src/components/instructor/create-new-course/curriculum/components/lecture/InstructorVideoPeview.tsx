@@ -23,6 +23,7 @@ type ChildProps = {
   videoContent: VideoContent;
   setShowVideoPreview: React.Dispatch<React.SetStateAction<boolean>>;
   lecture: Lecture;
+  section: any
 };
 
 // Define a type for our notes
