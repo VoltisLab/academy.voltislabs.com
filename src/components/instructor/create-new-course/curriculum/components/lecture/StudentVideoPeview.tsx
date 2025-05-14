@@ -1,4 +1,5 @@
-import { Lecture, VideoContent } from "@/lib/types";
+import { useState, useEffect, useRef } from "react";
+import { Lecture, SourceCodeFile, VideoContent, AttachedFile, ExternalResource } from "@/lib/types";
 import {
   ChevronDown,
   ChevronUp,
@@ -12,17 +13,23 @@ import {
   Globe,
   Plus,
   Edit,
-  Trash2
+  Trash2,
+  FileDown,
+  FileText,
+  SquareArrowOutUpRight,
+  Code
 } from "lucide-react";
-import { useState, useRef, useEffect } from "react";
 import ReactPlayer from "react-player";
-import Tippy from "@tippyjs/react";
-import "tippy.js/dist/tippy.css";
+import StudentPreviewSidebar from "./StudentPreviewSidebar";
 
 type ChildProps = {
   videoContent: VideoContent;
   setShowVideoPreview: React.Dispatch<React.SetStateAction<boolean>>;
   lecture: Lecture;
+  uploadedFiles?: Array<{name: string, size: string}>;
+  sourceCodeFiles?: SourceCodeFile[];
+  externalResources?: ExternalResource[];
+  section?: any
 };
 
 // Define a type for our notes
@@ -36,10 +43,22 @@ type VideoNote = {
   sectionName: string;
   createdAt: Date;
 };
+
 type ModalStep = 1 | 2 | 3;
 type FrequencyType = 'Daily' | 'Weekly' | 'Once';
 
-const StudentVideoPreview = ({ videoContent, setShowVideoPreview, lecture }: ChildProps) => {
+// Define content type for sidebar items
+type ContentItemType = 'video' | 'article' | 'quiz' | 'assignment' | 'coding-exercise';
+
+const StudentVideoPreview = ({ 
+  videoContent, 
+  setShowVideoPreview, 
+  lecture,
+  uploadedFiles = [],
+  sourceCodeFiles = [],
+  externalResources = [],
+  section
+}: ChildProps) => {
   // State management
   const [activeTab, setActiveTab] = useState<'overview' | 'notes' | 'announcements' | 'reviews' | 'learning-tools'>('overview');
   const [playing, setPlaying] = useState<boolean>(false);
@@ -49,6 +68,7 @@ const StudentVideoPreview = ({ videoContent, setShowVideoPreview, lecture }: Chi
   const [volume, setVolume] = useState<number>(0.8);
   const [playbackRate, setPlaybackRate] = useState<number>(1);
   const [showSearch, setShowSearch] = useState<boolean>(false);
+  const [showLearningModal, setShowLearningModal] = useState<boolean>(false);
   
   // Notes specific state
   const [notes, setNotes] = useState<VideoNote[]>([]);
@@ -63,8 +83,8 @@ const StudentVideoPreview = ({ videoContent, setShowVideoPreview, lecture }: Chi
   const [rewindLabel, setRewindLabel] = useState<boolean>(false);
   const [showVolumeSlider, setShowVolumeSlider] = useState<boolean>(false);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
-
-  const [showLearningModal, setShowLearningModal] = useState<boolean>(false);
+  
+  // Learning reminder states
   const [modalStep, setModalStep] = useState<ModalStep>(1);
   const [reminderName, setReminderName] = useState<string>('Learning reminder');
   const [selectedCourse, setSelectedCourse] = useState<string | null>(null);
@@ -72,6 +92,9 @@ const StudentVideoPreview = ({ videoContent, setShowVideoPreview, lecture }: Chi
   const [reminderTime, setReminderTime] = useState<string>('12:00 PM');
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [selectedDays, setSelectedDays] = useState<string[]>([]);
+  const playerRef = useRef<ReactPlayer>(null);
+  const playerContainerRef = useRef<HTMLDivElement>(null);
+  const mainContentRef = useRef<HTMLDivElement>(null);
   
   // Function to handle opening the learning schedule modal
   const handleOpenLearningModal = () => {
@@ -115,19 +138,6 @@ const StudentVideoPreview = ({ videoContent, setShowVideoPreview, lecture }: Chi
       setSelectedDays([...selectedDays, day]);
     }
   };
-
-  // Add this search handling function
-  const handleSearchToggle = () => {
-    setShowSearch(!showSearch);
-    // Reset other states if needed when opening search
-    if (!showSearch) {
-      setActiveTab('overview'); // This ensures we're not showing tab content under search
-    }
-  };
-  
-  const playerRef = useRef<ReactPlayer>(null);
-  const playerContainerRef = useRef<HTMLDivElement>(null);
-  const mainContentRef = useRef<HTMLDivElement>(null);
   
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -164,9 +174,215 @@ const StudentVideoPreview = ({ videoContent, setShowVideoPreview, lecture }: Chi
     };
   }, [playing, activeTab, isAddingNote]);
 
+  // Add this search handling function
+  const handleSearchToggle = () => {
+    setShowSearch(!showSearch);
+    // Reset other states if needed when opening search
+    if (!showSearch) {
+      setActiveTab('overview'); // This ensures we're not showing tab content under search
+    }
+  };
+  
+  // Fix for scroll issue
+  useEffect(() => {
+    // This will prevent the automatic scrolling behavior
+    if (mainContentRef.current) {
+      const mainContent = mainContentRef.current;
+      
+      // Store the scroll position
+      let lastScrollTop = 0;
+      
+      const handleScroll = () => {
+        // Get current scroll position
+        const scrollTop = mainContent.scrollTop;
+        
+        // Store scroll position for later use
+        lastScrollTop = scrollTop;
+      };
+      
+      // Override browser's automatic scroll restoration
+      const handleWheel = (e: WheelEvent) => {
+        // Let the natural scrolling happen, but ensure we're saving position
+        requestAnimationFrame(() => {
+          handleScroll();
+        });
+      };
+      
+      // Add event listeners
+      mainContent.addEventListener('scroll', handleScroll, { passive: true });
+      mainContent.addEventListener('wheel', handleWheel, { passive: true });
+      
+      return () => {
+        mainContent.removeEventListener('scroll', handleScroll);
+        mainContent.removeEventListener('wheel', handleWheel);
+      };
+    }
+  }, []);
+  
+  if (!videoContent.selectedVideoDetails) return null;
+  
+  // Format time in MM:SS format
+  const formatTime = (seconds: number): string => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = Math.floor(seconds % 60);
+    return `${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}`;
+  };
+  
+  const handleProgress = (state: { played: number; playedSeconds: number; loaded: number; loadedSeconds: number }) => {
+    setProgress(state.playedSeconds);
+  };
+  
+  const handleDuration = (duration: number) => {
+    setDuration(duration);
+  };
+  
+  // Note-related functions
+  const handleCreateNote = () => {
+    setIsAddingNote(true);
+    setCurrentNoteContent("");
+    setEditingNoteId(null);
+  };
+  
+  const handleSaveNote = () => {
+    if (editingNoteId) {
+      // Update existing note
+      setNotes(notes.map(note => 
+        note.id === editingNoteId 
+          ? { ...note, content: currentNoteContent } 
+          : note
+      ));
+    } else {
+      // Create new note
+      const newNote: VideoNote = {
+        id: Date.now().toString(),
+        timestamp: progress,
+        formattedTime: formatTime(progress),
+        content: currentNoteContent,
+        lectureId: lecture.id || "default-lecture",
+        lectureName: lecture.name,
+        sectionName: "Demo Section", // This would typically come from your data structure
+        createdAt: new Date()
+      };
+      
+      setNotes([newNote, ...notes]);
+    }
+    
+    setIsAddingNote(false);
+    setCurrentNoteContent("");
+    setEditingNoteId(null);
+  };
+  
+  const handleCancelNote = () => {
+    setIsAddingNote(false);
+    setCurrentNoteContent("");
+    setEditingNoteId(null);
+  };
+  
+  const handleEditNote = (noteId: string) => {
+    const noteToEdit = notes.find(note => note.id === noteId);
+    if (noteToEdit) {
+      setCurrentNoteContent(noteToEdit.content);
+      setEditingNoteId(noteId);
+      setIsAddingNote(true);
+    }
+  };
+  
+  const handleDeleteNote = (noteId: string) => {
+    setNotes(notes.filter(note => note.id !== noteId));
+  };
+  
+  const getSortedNotes = () => {
+    let filteredNotes = [...notes];
+    
+    // Apply lecture filter
+    if (selectedLectureFilter === "Current lecture") {
+      filteredNotes = filteredNotes.filter(note => note.lectureId === lecture.id);
+    }
+    
+    // Apply sort
+    if (selectedSortOption === "Sort by most recent") {
+      filteredNotes.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    } else if (selectedSortOption === "Sort by oldest") {
+      filteredNotes.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+    }
+    
+    return filteredNotes;
+  };
+  
+  // Video controls functions
+  const handleForward = () => {
+    if (playerRef.current) {
+      const newTime = Math.min(duration, progress + 5);
+      playerRef.current.seekTo(newTime / duration);
+      
+      // Show the forward label temporarily
+      setForwardLabel(true);
+      setTimeout(() => {
+        setForwardLabel(false);
+      }, 800);
+    }
+  };
+  
+  const handleRewind = () => {
+    if (playerRef.current) {
+      const newTime = Math.max(0, progress - 5);
+      playerRef.current.seekTo(newTime / duration);
+      
+      // Show the rewind label temporarily
+      setRewindLabel(true);
+      setTimeout(() => {
+        setRewindLabel(false);
+      }, 800);
+    }
+  };
+  
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(err => {
+        console.error(`Error attempting to enable full-screen mode: ${err.message}`);
+      });
+      setIsFullscreen(true);
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+        setIsFullscreen(false);
+      }
+    }
+  };
+  
+  // Update this useEffect to include fullscreen change event listener
+  useEffect(() => {
+    // If the component is mounted, make sure we have our event handlers set up
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.code === "Space") {
+        setPlaying(!playing);
+        e.preventDefault();
+      } else if (e.code === "ArrowRight") {
+        handleForward();
+        e.preventDefault();
+      } else if (e.code === "ArrowLeft") {
+        handleRewind();
+        e.preventDefault();
+      }
+    };
+    
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    
+    document.addEventListener("keydown", handleKeyDown);
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+    };
+  }, [playing]);
+  
+  // Learning modal component
   const renderLearningModal = () => {
     return (
-      <div className="fixed inset-0 z-[10000] backdrop-blur-sm bg-opacity-50 flex items-center justify-center">
+      <div className="fixed inset-0 z-[10000] backdrop-blur-sm bg-black bg-opacity-50 flex items-center justify-center">
         <div className="bg-white rounded-lg w-full max-w-xl shadow-lg">
           <div className="p-4 flex justify-between items-center border-b border-gray-200">
             <h2 className="text-lg font-medium">Learning reminders</h2>
@@ -250,6 +466,7 @@ const StudentVideoPreview = ({ videoContent, setShowVideoPreview, lecture }: Chi
                     <button 
                       className={`px-4 py-2 rounded-full border ${frequency === 'Daily' ? 'bg-purple-100 border-purple-300' : 'border-gray-300'}`}
                       onClick={() => handleFrequencyChange('Daily')}
+                      type="button"
                     >
                       {frequency === 'Daily' && <span className="mr-1">✓</span>}
                       Daily
@@ -257,6 +474,7 @@ const StudentVideoPreview = ({ videoContent, setShowVideoPreview, lecture }: Chi
                     <button 
                       className={`px-4 py-2 rounded-full border ${frequency === 'Weekly' ? 'bg-purple-100 border-purple-300' : 'border-gray-300'}`}
                       onClick={() => handleFrequencyChange('Weekly')}
+                      type="button"
                     >
                       {frequency === 'Weekly' && <span className="mr-1">✓</span>}
                       Weekly
@@ -264,6 +482,7 @@ const StudentVideoPreview = ({ videoContent, setShowVideoPreview, lecture }: Chi
                     <button 
                       className={`px-4 py-2 rounded-full border ${frequency === 'Once' ? 'bg-purple-100 border-purple-300' : 'border-gray-300'}`}
                       onClick={() => handleFrequencyChange('Once')}
+                      type="button"
                     >
                       {frequency === 'Once' && <span className="mr-1">✓</span>}
                       Once
@@ -291,12 +510,13 @@ const StudentVideoPreview = ({ videoContent, setShowVideoPreview, lecture }: Chi
                       {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(day => (
                         <button
                           key={day}
+                          type="button"
                           className={`h-10 w-10 rounded-full border flex items-center justify-center ${
                             selectedDays.includes(day) ? 'bg-purple-100 border-purple-300' : 'border-gray-300'
                           }`}
                           onClick={() => toggleDay(day)}
                         >
-                          <span className="text-sm">{selectedDays.includes(day) ? '✓' : '+'} {day}</span>
+                          <span className="text-sm">{selectedDays.includes(day) ? '✓' : ''} {day}</span>
                         </button>
                       ))}
                     </div>
@@ -325,21 +545,30 @@ const StudentVideoPreview = ({ videoContent, setShowVideoPreview, lecture }: Chi
                 <div className="mb-6">
                   <p className="font-medium mb-3">Add to calendar (optional)</p>
                   <div className="flex space-x-3 mb-4">
-                    <button className="flex items-center px-4 py-2 border border-purple-600 text-purple-600 rounded">
+                    <button
+                      type="button"
+                      className="flex items-center px-4 py-2 border border-purple-600 text-purple-600 rounded"
+                    >
                       <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="#673ab7">
                         <path d="M12.24 10.285V14.4h6.806c-.275 1.765-2.056 5.174-6.806 5.174-4.095 0-7.439-3.389-7.439-7.574s3.345-7.574 7.439-7.574c2.33 0 3.891.989 4.785 1.849l3.254-3.138C18.189 1.186 15.479 0 12.24 0c-6.635 0-12 5.365-12 12s5.365 12 12 12c6.926 0 11.52-4.869 11.52-11.726 0-.788-.085-1.39-.189-1.989H12.24z"/>
                       </svg>
                       <span className="ml-2">Sign in with Google</span>
                     </button>
                     
-                    <button className="flex items-center px-4 py-2 border border-gray-300 rounded">
+                    <button 
+                      type="button"
+                      className="flex items-center px-4 py-2 border border-gray-300 rounded"
+                    >
                       <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M18.71,19.5C17.88,20.74 17,21.95 15.66,21.97C14.32,22 13.89,21.18 12.37,21.18C10.84,21.18 10.37,21.95 9.1,22C7.79,22.05 6.8,20.68 5.96,19.47C4.25,17 2.94,12.45 4.7,9.39C5.57,7.87 7.13,6.91 8.82,6.88C10.1,6.86 11.32,7.75 12.11,7.75C12.89,7.75 14.37,6.68 15.92,6.84C16.57,6.87 18.39,7.1 19.56,8.82C19.47,8.88 17.39,10.1 17.41,12.63C17.44,15.65 20.06,16.66 20.09,16.67C20.06,16.74 19.67,18.11 18.71,19.5M13,3.5C13.73,2.67 14.94,2.04 15.94,2C16.07,3.17 15.6,4.35 14.9,5.19C14.21,6.04 13.07,6.7 11.95,6.61C11.8,5.46 12.36,4.26 13,3.5Z"/>
                       </svg>
                       <span className="ml-2">Apple</span>
                     </button>
                     
-                    <button className="flex items-center px-4 py-2 border border-gray-300 rounded">
+                    <button 
+                      type="button"
+                      className="flex items-center px-4 py-2 border border-gray-300 rounded"
+                    >
                       <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M21.386 12.000c0-1.197-.22-2.403-.662-3.557-.43-1.113-1.057-2.145-1.876-3.022-.8-.86-1.762-1.53-2.816-1.989-1.088-.472-2.229-.704-3.383-.704h-.297c-1.154 0-2.295.232-3.383.704-1.054.459-2.016 1.129-2.816 1.989-.819.877-1.446 1.909-1.876 3.022-.442 1.155-.662 2.360-.662 3.557 0 .64.064 1.275.186 1.900.114.59.274 1.174.48 1.729v2.898c0 .193.123.366.307.43.184.063.387.006.522-.143L7.63 17.29c.43.193.88.357 1.338.487.544.155 1.11.244 1.678.264h.303c1.153 0 2.295-.232 3.383-.704 1.053-.46 2.016-1.13 2.815-1.99.82-.876 1.446-1.908 1.876-3.02.442-1.155.663-2.36.663-3.558zM8.46 11.991c0-.568.456-1.031 1.015-1.031.56 0 1.015.463 1.015 1.031 0 .567-.455 1.031-1.015 1.031-.56 0-1.015-.464-1.015-1.031zm3.015 0c0-.568.456-1.031 1.015-1.031.56 0 1.015.463 1.015 1.031 0 .567-.455 1.031-1.015 1.031-.56 0-1.015-.464-1.015-1.031zm3.016 0c0-.568.455-1.031 1.015-1.031.559 0 1.015.463 1.015 1.031 0 .567-.456 1.031-1.015 1.031-.56 0-1.015-.464-1.015-1.031z"/>
                       </svg>
@@ -360,6 +589,7 @@ const StudentVideoPreview = ({ videoContent, setShowVideoPreview, lecture }: Chi
               <button 
                 onClick={handlePrevious}
                 className="mr-3 text-purple-600 font-medium"
+                type="button"
               >
                 Previous
               </button>
@@ -369,6 +599,7 @@ const StudentVideoPreview = ({ videoContent, setShowVideoPreview, lecture }: Chi
               <button 
                 onClick={handleNext}
                 className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded"
+                type="button"
               >
                 Next
               </button>
@@ -376,6 +607,7 @@ const StudentVideoPreview = ({ videoContent, setShowVideoPreview, lecture }: Chi
               <button 
                 onClick={handleCloseModal}
                 className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded"
+                type="button"
               >
                 Done
               </button>
@@ -386,202 +618,7 @@ const StudentVideoPreview = ({ videoContent, setShowVideoPreview, lecture }: Chi
     );
   };
   
-  // Fix for scroll issue
-  useEffect(() => {
-    // This will prevent the automatic scrolling behavior
-    if (mainContentRef.current) {
-      const mainContent = mainContentRef.current;
-      
-      // Store the scroll position
-      let lastScrollTop = 0;
-      
-      const handleScroll = () => {
-        // Get current scroll position
-        const scrollTop = mainContent.scrollTop;
-        
-        // Store scroll position for later use
-        lastScrollTop = scrollTop;
-      };
-      
-      // Override browser's automatic scroll restoration
-      const handleWheel = (e: WheelEvent) => {
-        // Let the natural scrolling happen, but ensure we're saving position
-        requestAnimationFrame(() => {
-          handleScroll();
-        });
-      };
-      
-      // Add event listeners
-      mainContent.addEventListener('scroll', handleScroll, { passive: true });
-      mainContent.addEventListener('wheel', handleWheel, { passive: true });
-      
-      return () => {
-        mainContent.removeEventListener('scroll', handleScroll);
-        mainContent.removeEventListener('wheel', handleWheel);
-      };
-    }
-  }, []);
-  
-  if (!videoContent.selectedVideoDetails) return null;
-  
-  // Format time in MM:SS format
-  const formatTime = (seconds: number): string => {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = Math.floor(seconds % 60);
-    return `${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}`;
-  };
-  
-  const handleProgress = (state: { played: number; playedSeconds: number; loaded: number; loadedSeconds: number }) => {
-    setProgress(state.playedSeconds);
-  };
-  
-  const handleDuration = (duration: number) => {
-    setDuration(duration);
-  };
-  
-  // Note-related functions
-  const handleCreateNote = () => {
-    setIsAddingNote(true);
-    setCurrentNoteContent("");
-    setEditingNoteId(null);
-  };
-  
-  const handleSaveNote = () => {
-    if (editingNoteId) {
-      // Update existing note
-      setNotes(notes.map(note => 
-        note.id === editingNoteId 
-          ? { ...note, content: currentNoteContent } 
-          : note
-      ));
-    } else {
-      // Create new note
-      const newNote: VideoNote = {
-        id: Date.now().toString(),
-        timestamp: progress,
-        formattedTime: formatTime(progress),
-        content: currentNoteContent,
-        lectureId: lecture.id || "default-lecture",
-        lectureName: lecture.name,
-        sectionName: "vtgui", // This would typically come from your data structure
-        createdAt: new Date()
-      };
-      
-      setNotes([newNote, ...notes]);
-    }
-    
-    setIsAddingNote(false);
-    setCurrentNoteContent("");
-    setEditingNoteId(null);
-  };
-  
-  const handleCancelNote = () => {
-    setIsAddingNote(false);
-    setCurrentNoteContent("");
-    setEditingNoteId(null);
-  };
-  
-  const handleEditNote = (noteId: string) => {
-    const noteToEdit = notes.find(note => note.id === noteId);
-    if (noteToEdit) {
-      setCurrentNoteContent(noteToEdit.content);
-      setEditingNoteId(noteId);
-      setIsAddingNote(true);
-    }
-  };
-  
-  const handleDeleteNote = (noteId: string) => {
-    setNotes(notes.filter(note => note.id !== noteId));
-  };
-  
-  const getSortedNotes = () => {
-    let filteredNotes = [...notes];
-    
-    // Apply lecture filter
-    if (selectedLectureFilter === "Current lecture") {
-      filteredNotes = filteredNotes.filter(note => note.lectureId === lecture.id);
-    }
-    
-    // Apply sort
-    if (selectedSortOption === "Sort by most recent") {
-      filteredNotes.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-    } else if (selectedSortOption === "Sort by oldest") {
-      filteredNotes.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
-    }
-    
-    return filteredNotes;
-  };
-  
-  // Add these functions to handle video controls
-  const handleForward = () => {
-    if (playerRef.current) {
-      const newTime = Math.min(duration, progress + 5);
-      playerRef.current.seekTo(newTime / duration);
-      
-      // Show the forward label temporarily
-      setForwardLabel(true);
-      setTimeout(() => {
-        setForwardLabel(false);
-      }, 800);
-    }
-  };
-  
-  const handleRewind = () => {
-    if (playerRef.current) {
-      const newTime = Math.max(0, progress - 5);
-      playerRef.current.seekTo(newTime / duration);
-      
-      // Show the rewind label temporarily
-      setRewindLabel(true);
-      setTimeout(() => {
-        setRewindLabel(false);
-      }, 800);
-    }
-  };
-  
-  const toggleFullscreen = () => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().catch(err => {
-        console.error(`Error attempting to enable full-screen mode: ${err.message}`);
-      });
-      setIsFullscreen(true);
-    } else {
-      if (document.exitFullscreen) {
-        document.exitFullscreen();
-        setIsFullscreen(false);
-      }
-    }
-  };
-  
-  // Update this useEffect to include fullscreen change event listener
-  useEffect(() => {
-    // If the component is mounted, make sure we have our event handlers set up
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.code === "Space") {
-        setPlaying(!playing);
-        e.preventDefault();
-      } else if (e.code === "ArrowRight") {
-        handleForward();
-        e.preventDefault();
-      } else if (e.code === "ArrowLeft") {
-        handleRewind();
-        e.preventDefault();
-      }
-    };
-    
-    const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
-    };
-    
-    document.addEventListener("keydown", handleKeyDown);
-    document.addEventListener("fullscreenchange", handleFullscreenChange);
-    
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-      document.removeEventListener("fullscreenchange", handleFullscreenChange);
-    };
-  }, [playing]);
-  
+  // Main render method
   return (
     <div className="fixed inset-0 z-[9999] bg-white flex flex-col">
       {/* Main scrollable container for video and tabs */}
@@ -589,35 +626,35 @@ const StudentVideoPreview = ({ videoContent, setShowVideoPreview, lecture }: Chi
         {/* Left side - scrollable content (video player + tabs) */}
         <div ref={mainContentRef} className="flex-1 overflow-y-auto" style={{ width: 'calc(100% - 320px)' }}>
           {/* Video player section */}
-         <div className="bg-black relative w-[82vw]" style={{ height: 'calc(100vh - 220px)' }}>
-        <div 
-          ref={playerContainerRef}
-          className="relative w-full h-full flex"
-          onMouseEnter={() => setShowControls(true)}
-          onMouseLeave={() => setShowControls(false)}
-        >
-          {/* Video player */}
-          <div className="relative w-full h-full mx-auto">
-            <ReactPlayer
-              ref={playerRef}
-              url={videoContent.selectedVideoDetails?.url || "https://www.youtube.com/watch?v=dQw4w9WgXcQ"} // Use the uploaded video URL
-              width="100%"
-              height="100%"
-              playing={playing}
-              volume={volume}
-              playbackRate={playbackRate}
-              onProgress={handleProgress}
-              onDuration={handleDuration}
-              progressInterval={100}
-              config={{
-                file: {
-                  attributes: {
-                    controlsList: 'nodownload'
-                  }
-                }
-              }}
-            />
-                
+          <div className="bg-black relative w-[82vw]" style={{ height: 'calc(100vh - 220px)' }}>
+            <div 
+              ref={playerContainerRef}
+              className="relative w-full h-full flex"
+              onMouseEnter={() => setShowControls(true)}
+              onMouseLeave={() => setShowControls(false)}
+            >
+              {/* Video player */}
+              <div className="relative w-full h-full mx-auto">
+                <ReactPlayer
+                  ref={playerRef}
+                  url={videoContent.selectedVideoDetails?.url || "https://www.youtube.com/watch?v=dQw4w9WgXcQ"} // Use the uploaded video URL
+                  width="100%"
+                  height="100%"
+                  playing={playing}
+                  volume={volume}
+                  playbackRate={playbackRate}
+                  onProgress={handleProgress}
+                  onDuration={handleDuration}
+                  progressInterval={100}
+                  config={{
+                    file: {
+                      attributes: {
+                        controlsList: 'nodownload'
+                      }
+                    }
+                  }}
+                />
+                    
                 {/* Play button overlay when paused */}
                 {!playing && (
                   <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-40">
@@ -720,6 +757,7 @@ const StudentVideoPreview = ({ videoContent, setShowVideoPreview, lecture }: Chi
                   const nextIndex = (currentIndex + 1) % rates.length;
                   setPlaybackRate(rates[nextIndex]);
                 }}
+                type="button"
               >
                 {playbackRate}x
               </button>
@@ -730,6 +768,7 @@ const StudentVideoPreview = ({ videoContent, setShowVideoPreview, lecture }: Chi
                   className="hover:text-gray-300 focus:outline-none"
                   onMouseEnter={() => setShowVolumeSlider(true)}
                   onMouseLeave={() => setShowVolumeSlider(false)}
+                  type="button"
                 >
                   <Volume2 className="w-4 h-4" />
                 </button>
@@ -757,13 +796,14 @@ const StudentVideoPreview = ({ videoContent, setShowVideoPreview, lecture }: Chi
                 )}
               </div>
 
-              <button className="hover:text-gray-300 focus:outline-none">
+              <button className="hover:text-gray-300 focus:outline-none" type="button">
                 <Settings className="w-4 h-4" />
               </button>
 
               <button 
                 className="hover:text-gray-300 focus:outline-none"
                 onClick={toggleFullscreen}
+                type="button"
               >
                 <Maximize className="w-4 h-4" />
               </button>
@@ -774,66 +814,67 @@ const StudentVideoPreview = ({ videoContent, setShowVideoPreview, lecture }: Chi
           <div className="bg-white border-t border-gray-200 max-w-[82vw]" style={{ minHeight: '600px' }}>
             {/* Tabs with Search icon/functionality */}
             <div className="flex items-center border-b border-gray-200">
-  <button 
-    className={`px-4 py-3 text-gray-500 hover:text-gray-700 ${showSearch ? 'text-gray-700 border-b-2 border-gray-700' : ''}`}
-    type="button"
-    aria-label="Search"
-    onClick={handleSearchToggle}
-  >
-    <Search className="w-5 h-5" />
-  </button>
-  
-  {/* Tabs always visible */}
-  {[
-    { id: 'overview', label: 'Overview' },
-    { id: 'notes', label: 'Notes' },
-    { id: 'announcements', label: 'Announcements' },
-    { id: 'reviews', label: 'Reviews' },
-    { id: 'learning-tools', label: 'Learning tools' }
-  ].map(tab => (
-    <button 
-      key={tab.id}
-      className={`px-6 py-3 text-sm font-bold ${activeTab === tab.id && !showSearch ? 'text-gray-700 border-b-2 border-gray-700' : 'text-gray-500 hover:text-gray-800'}`}
-      onClick={() => {
-        setActiveTab(tab.id as typeof activeTab);
-        setShowSearch(false);
-      }}
-      type="button"
-    >
-      {tab.label}
-    </button>
-  ))}
-</div>
+              <button 
+                className={`px-4 py-3 text-gray-500 hover:text-gray-700 ${showSearch ? 'text-gray-700 border-b-2 border-gray-700' : ''}`}
+                type="button"
+                aria-label="Search"
+                onClick={handleSearchToggle}
+              >
+                <Search className="w-5 h-5" />
+              </button>
+              
+              {/* Tabs always visible */}
+              {[
+                { id: 'overview', label: 'Overview' },
+                { id: 'notes', label: 'Notes' },
+                { id: 'announcements', label: 'Announcements' },
+                { id: 'reviews', label: 'Reviews' },
+                { id: 'learning-tools', label: 'Learning tools' }
+              ].map(tab => (
+                <button 
+                  key={tab.id}
+                  className={`px-6 py-3 text-sm font-bold ${activeTab === tab.id && !showSearch ? 'text-gray-700 border-b-2 border-gray-700' : 'text-gray-500 hover:text-gray-800'}`}
+                  onClick={() => {
+                    setActiveTab(tab.id as typeof activeTab);
+                    setShowSearch(false);
+                  }}
+                  type="button"
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
 
-{/* Search interface */}
-{showSearch && (
-  <div className="px-6 py-8">
-    <div className="max-w-2xl mx-auto mb-8">
-      <div className="relative flex items-center">
-        <input 
-          type="text"
-          placeholder="Search course content"
-          className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500"
-          autoFocus
-        />
-        <button 
-          className="absolute right-2 bg-purple-600 hover:bg-purple-700 text-white p-2 rounded-md"
-          aria-label="Search"
-        >
-          <Search className="w-5 h-5" />
-        </button>
-      </div>
-    </div>
-    
-    <div className="text-center py-8">
-      <h3 className="text-xl font-bold mb-2 text-gray-800">Start a new search</h3>
-      <p className="text-gray-600">To find lectures or resources</p>
-    </div>
-  </div>
-)}
+            {/* Search interface */}
+            {showSearch && (
+              <div className="px-6 py-8">
+                <div className="max-w-2xl mx-auto mb-8">
+                  <div className="relative flex items-center">
+                    <input 
+                      type="text"
+                      placeholder="Search course content"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500"
+                      autoFocus
+                    />
+                    <button 
+                      className="absolute right-2 bg-purple-600 hover:bg-purple-700 text-white p-2 rounded-md"
+                      aria-label="Search"
+                      type="button"
+                    >
+                      <Search className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
+                
+                <div className="text-center py-8">
+                  <h3 className="text-xl font-bold mb-2 text-gray-800">Start a new search</h3>
+                  <p className="text-gray-600">To find lectures or resources</p>
+                </div>
+              </div>
+            )}
             
             {/* Tab content - Overview */}
-            {activeTab === 'overview' && (
+            {activeTab === 'overview' && !showSearch && (
               <div className="p-6">
                 {/* Rating, Students, and Total section */}
                 <div className="flex items-center gap-8 mb-6">
@@ -855,7 +896,7 @@ const StudentVideoPreview = ({ videoContent, setShowVideoPreview, lecture }: Chi
                 <div className="mb-6 space-y-3">
                   <div className="flex items-center text-gray-600">
                     <Clock className="w-4 h-4 mr-2" />
-                    <span className="text-sm">Published December 1969</span>
+                    <span className="text-sm">Published May 2025</span>
                   </div>
                   <div className="flex items-center text-gray-600">
                     <Globe className="w-4 h-4 mr-2" />
@@ -865,43 +906,50 @@ const StudentVideoPreview = ({ videoContent, setShowVideoPreview, lecture }: Chi
                 
                 {/* Schedule learning time section */}
                 <div className="border-b border-gray-300 mb-8">
-                <div className=" p-6 border border-gray-300 rounded-lg">
-                  <div className="flex items-start">
-                    <Clock className="text-gray-500 w-5 h-5 mr-3 mt-1" />
-                    <div>
-                      <h4 className="font-medium text-base mb-2">Schedule learning time</h4>
-                      <p className="text-sm text-gray-600 mb-4">
-                        Learning a little each day adds up. Research shows that students who make learning a habit are more likely to reach their goals.
-                        Set time aside to learn and get reminders using your learning scheduler.
-                      </p>
-                      <div className="flex">
-                        <button className="bg-[#6D28D2] hover:bg-[#7D28D2] text-white text-sm py-2 px-4 rounded-md mr-3 font-medium">
-                          Get started
-                        </button>
-                        <button className="text-[#6D28D2] hover:text-[#7D28D2] text-sm py-2 px-4 font-medium">
-                          Dismiss
-                        </button>
+                  <div className="p-6 border border-gray-300 rounded-lg">
+                    <div className="flex items-start">
+                      <Clock className="text-gray-500 w-5 h-5 mr-3 mt-1" />
+                      <div>
+                        <h4 className="font-medium text-base mb-2">Schedule learning time</h4>
+                        <p className="text-sm text-gray-600 mb-4">
+                          Learning a little each day adds up. Research shows that students who make learning a habit are more likely to reach their goals.
+                          Set time aside to learn and get reminders using your learning scheduler.
+                        </p>
+                        <div className="flex">
+                          <button 
+                            type="button"
+                            className="bg-[#6D28D2] hover:bg-[#7D28D2] text-white text-sm py-2 px-4 rounded-md mr-3 font-medium"
+                            onClick={handleOpenLearningModal}
+                          >
+                            Get started
+                          </button>
+                          <button 
+                            type="button"
+                            className="text-[#6D28D2] hover:text-[#7D28D2] text-sm py-2 px-4 font-medium"
+                          >
+                            Dismiss
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
                 </div>
                 
                 {/* By the numbers section */}
                 <div className="mb-8 pb-8 border-b border-gray-200 grid grid-cols-3">
                   <h3 className="text-gray-700 text-sm mb-4">By the numbers</h3>
 
-                    <div className="mr-12">
-                      <p className="text-sm text-gray-700">Skill level:</p>
-                      <p className="text-sm text-gray-700">Students: 0</p>
-                      <p className="text-sm text-gray-700">Languages: English</p>
-                      <p className="text-sm text-gray-700">Captions: No</p>
-                    </div>
+                  <div className="mr-12">
+                    <p className="text-sm text-gray-700">Skill level:</p>
+                    <p className="text-sm text-gray-700">Students: 0</p>
+                    <p className="text-sm text-gray-700">Languages: English</p>
+                    <p className="text-sm text-gray-700">Captions: No</p>
+                  </div>
 
-                    <div>
-                       <p className="text-sm text-gray-700">Lectures: 1</p>
-                       <p className="text-sm text-gray-700">Video: 2 total mins</p>
-                    </div>
+                  <div>
+                    <p className="text-sm text-gray-700">Lectures: {section.lectures ? section.lectures.length : 0}</p>
+                    <p className="text-sm text-gray-700">Video: 2 total mins</p>
+                  </div>
                 </div>
                 
                 {/* Features section */}
@@ -918,7 +966,7 @@ const StudentVideoPreview = ({ videoContent, setShowVideoPreview, lecture }: Chi
                 {/* Description section */}
                 <div className="mb-8 pb-8 border-b border-gray-200 grid grid-cols-3 mr-10 ">
                   <h3 className="text-sm text-gray-700 ">Description</h3>
-                  <div className="text-sm text-gray-700">
+                  <div className="text-sm text-gray-700 col-span-2">
                     <div>
                       <h4 className="font-medium text-sm ">What you'll learn</h4>
                       {/* Content would go here */}
@@ -949,53 +997,8 @@ const StudentVideoPreview = ({ videoContent, setShowVideoPreview, lecture }: Chi
               </div>
             )}
             
-            {/* Tab content - Announcements */}
-            {activeTab === 'announcements' && (
-              <div className="p-6">
-                <div className="text-center py-8">
-                  <h3 className="text-xl font-bold mb-2">No announcements posted yet</h3>
-                  <p className="text-gray-600">
-                    The instructor hasn't added any announcements to this course yet. Announcements 
-                    are used to inform you of updates or additions to the course.
-                  </p>
-                </div>
-              </div>
-            )}
-            
-            {/* Tab content - Reviews */}
-            {activeTab === 'reviews' && (
-              <div className="p-6">
-                <div className="text-center py-8">
-                  <h3 className="text-xl font-bold mb-2">Student feedback</h3>
-                  <p className="text-gray-600">
-                    This course doesn't have any reviews yet.
-                  </p>
-                </div>
-              </div>
-            )}
-   
-            {/* Tab content - Learning tools */}
-{activeTab === 'learning-tools' && (
-  <div className="p-6">
-    <div className="mb-6">
-      <h3 className="text-xl font-bold mb-2">Learning reminders</h3>
-      <p className="text-gray-600 mb-4">
-        Set up push notifications or calendar events to stay on track for your learning goals.
-      </p>
-      
-      <button 
-        className="flex items-center bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md transition-colors"
-        onClick={handleOpenLearningModal}
-      >
-        <Plus className="w-4 h-4 mr-1" />
-        <span>Add a learning reminder</span>
-      </button>
-    </div>
-  </div>
-)}
-            
             {/* Tab content - Notes */}
-            {activeTab === 'notes' && (
+            {activeTab === 'notes' && !showSearch && (
               <div className="p-6 flex flex-col items-center">
                 {/* Note adding/editing interface */}
                 {!isAddingNote ? (
@@ -1012,6 +1015,7 @@ const StudentVideoPreview = ({ videoContent, setShowVideoPreview, lecture }: Chi
                         className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-purple-600" 
                         aria-label="Add note"
                         onClick={handleCreateNote}
+                        type="button"
                       >
                         <Plus className="w-5 h-5" />
                       </button>
@@ -1044,6 +1048,7 @@ const StudentVideoPreview = ({ videoContent, setShowVideoPreview, lecture }: Chi
                       <button 
                         className="text-gray-700 font-medium mr-3 hover:text-gray-900"
                         onClick={handleCancelNote}
+                        type="button"
                       >
                         Cancel
                       </button>
@@ -1051,6 +1056,7 @@ const StudentVideoPreview = ({ videoContent, setShowVideoPreview, lecture }: Chi
                         className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md disabled:bg-purple-300"
                         onClick={handleSaveNote}
                         disabled={!currentNoteContent.trim()}
+                        type="button"
                       >
                         Save note
                       </button>
@@ -1069,6 +1075,7 @@ const StudentVideoPreview = ({ videoContent, setShowVideoPreview, lecture }: Chi
                         setAllLecturesDropdownOpen(!allLecturesDropdownOpen);
                         setSortByDropdownOpen(false);
                       }}
+                      type="button"
                     >
                       <span>{selectedLectureFilter}</span>
                       <ChevronDown className="w-4 h-4 ml-1" />
@@ -1084,6 +1091,7 @@ const StudentVideoPreview = ({ videoContent, setShowVideoPreview, lecture }: Chi
                               setSelectedLectureFilter('All lectures');
                               setAllLecturesDropdownOpen(false);
                             }}
+                            type="button"
                           >
                             All lectures
                           </button>
@@ -1094,6 +1102,7 @@ const StudentVideoPreview = ({ videoContent, setShowVideoPreview, lecture }: Chi
                               setSelectedLectureFilter('Current lecture');
                               setAllLecturesDropdownOpen(false);
                             }}
+                            type="button"
                           >
                             Current lecture
                           </button>
@@ -1111,6 +1120,7 @@ const StudentVideoPreview = ({ videoContent, setShowVideoPreview, lecture }: Chi
                         setSortByDropdownOpen(!sortByDropdownOpen);
                         setAllLecturesDropdownOpen(false);
                       }}
+                      type="button"
                     >
                       <span>{selectedSortOption}</span>
                       <ChevronDown className="w-4 h-4 ml-1" />
@@ -1126,6 +1136,7 @@ const StudentVideoPreview = ({ videoContent, setShowVideoPreview, lecture }: Chi
                               setSelectedSortOption('Sort by most recent');
                               setSortByDropdownOpen(false);
                             }}
+                            type="button"
                           >
                             Sort by most recent
                           </button>
@@ -1136,6 +1147,7 @@ const StudentVideoPreview = ({ videoContent, setShowVideoPreview, lecture }: Chi
                               setSelectedSortOption('Sort by oldest');
                               setSortByDropdownOpen(false);
                             }}
+                            type="button"
                           >
                             Sort by oldest
                           </button>
@@ -1161,12 +1173,14 @@ const StudentVideoPreview = ({ videoContent, setShowVideoPreview, lecture }: Chi
                             <button 
                               className="text-gray-500 hover:text-purple-600 p-1"
                               onClick={() => handleEditNote(note.id)}
+                              type="button"
                             >
                               <Edit className="w-4 h-4" />
                             </button>
                             <button 
                               className="text-gray-500 hover:text-red-600 p-1 ml-1"
                               onClick={() => handleDeleteNote(note.id)}
+                              type="button"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
@@ -1185,60 +1199,69 @@ const StudentVideoPreview = ({ videoContent, setShowVideoPreview, lecture }: Chi
                 )}
               </div>
             )}
+            
+            {/* Tab content - Announcements */}
+            {activeTab === 'announcements' && !showSearch && (
+              <div className="p-6">
+                <div className="text-center py-8">
+                  <h3 className="text-xl font-bold mb-2">No announcements posted yet</h3>
+                  <p className="text-gray-600">
+                    The instructor hasn't added any announcements to this course yet. Announcements 
+                    are used to inform you of updates or additions to the course.
+                  </p>
+                </div>
+              </div>
+            )}
+            
+            {/* Tab content - Reviews */}
+            {activeTab === 'reviews' && !showSearch && (
+              <div className="p-6">
+                <div className="text-center py-8">
+                  <h3 className="text-xl font-bold mb-2">Student feedback</h3>
+                  <p className="text-gray-600">
+                    This course doesn't have any reviews yet.
+                  </p>
+                </div>
+              </div>
+            )}
+            
+            {/* Tab content - Learning tools */}
+            {activeTab === 'learning-tools' && !showSearch && (
+              <div className="p-6">
+                <div className="mb-6">
+                  <h3 className="text-xl font-bold mb-2">Learning reminders</h3>
+                  <p className="text-gray-600 mb-4">
+                    Set up push notifications or calendar events to stay on track for your learning goals.
+                  </p>
+                  
+                  <button 
+                    className="flex items-center bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md transition-colors"
+                    onClick={handleOpenLearningModal}
+                    type="button"
+                  >
+                    <Plus className="w-4 h-4 mr-1" />
+                    <span>Add a learning reminder</span>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
         
-        {/* Right side - Fixed sidebar */}
-        <div className="w-80 bg-white border-l border-gray-200 flex flex-col fixed top-0 right-0 h-full">
-          {/* Header with close button */}
-          <div className="flex justify-between items-center border-b border-gray-200 p-4">
-            <h2 className="font-semibold">Course content</h2>
-            <button 
-              onClick={() => setShowVideoPreview(false)} 
-              className="text-gray-500 hover:text-gray-700"
-              type="button"
-              aria-label="Close preview"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-          
-          {/* Lecture sections container - scrollable */}
-          <div className="flex-1 overflow-y-auto">
-            {/* Section with lecture */}
-            <div className="p-4 border-b border-gray-200">
-              <div className="flex justify-between items-center mb-2">
-                <h3 className="font-semibold">Section 1: ecw</h3>
-                <ChevronUp className="w-4 h-4" />
-              </div>
-              <p className="text-sm text-gray-500">0/1 | 1min</p>
-            </div>
-            
-            {/* Lecture item */}
-            <div className="p-4 bg-gray-100 border-l-4 border-purple-600">
-              <div className="flex items-start">
-                <input 
-                  type="checkbox" 
-                  className="mt-1 mr-2" 
-                  aria-label="Mark lecture as complete"
-                />
-                <div>
-                  <p className="font-medium">1. {lecture.name || "uieosco"}</p>
-                  <div className="flex items-center text-xs text-gray-500 mt-1">
-                    <Play className="w-3 h-3 mr-1" />
-                    <span>1min</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          {/* Bottom navigation with Finish course button */}
-          <div className="p-4 border-t border-gray-200">
-           
-          </div>
-        </div>
+        {/* Right side - Use StudentPreviewSidebar component */}
+         <StudentPreviewSidebar
+          currentLectureId={lecture.id}
+          setShowVideoPreview={setShowVideoPreview}
+          // Pass the actual section - don't hardcode anything
+          sections={section ? [section] : []}
+          // Pass the actual resources
+          uploadedFiles={uploadedFiles}
+          sourceCodeFiles={sourceCodeFiles}
+          externalResources={externalResources}
+        />
       </div>
+      
+      {/* Learning reminder modal */}
       {showLearningModal && renderLearningModal()}
     </div>
   );

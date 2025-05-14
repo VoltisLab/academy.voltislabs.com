@@ -1,4 +1,4 @@
-import { Lecture, OptionType, Section } from "./types";
+import { Lecture, OptionType, PreviewType, Section } from "./types";
 
 export function cn(
   ...classes: (string | boolean | undefined | null)[]
@@ -139,4 +139,18 @@ export const hasContent = (lecture: Lecture): boolean => {
     return Math.random().toString(36).substring(2, 9);
   };
   
-  
+  export function contentItemTypeToPreviewType(contentType: string | undefined): PreviewType {
+  switch (contentType) {
+    case 'video':
+    case 'article':
+    case 'quiz':
+    case 'assignment':
+    case 'coding-exercise':
+    case 'practice':
+    case 'role-play':
+    case 'video-slide':
+      return contentType as PreviewType;
+    default:
+      return 'video'; // Default to video for unknown types
+  }
+}

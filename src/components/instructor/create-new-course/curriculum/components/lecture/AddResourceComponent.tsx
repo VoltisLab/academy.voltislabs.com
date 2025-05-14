@@ -13,7 +13,7 @@ interface ResourceComponentProps {
   setActiveTab?: (tab: ResourceTabType) => void;
   onFileSelect?: (file: File) => void;
   onSourceFileSelect?: (file: File) => void;
-  onExternalResourceAdd?: (title: string, url: string) => void;
+  onExternalResourceAdd?: (title: string, url: string, name: string) => void;
   onSourceCodeSelect?: (item: LibraryFileWithSize) => void;  
   onLibraryItemSelect?: (item: LibraryFileWithSize) => void;
   activeContentSection?: {sectionId: string, lectureId: string} | null;
@@ -156,7 +156,7 @@ const handleSourceFileChange = (e: ChangeEvent<HTMLInputElement>) => {
   
   // Call the handler if provided
   if (onExternalResourceAdd) {
-    onExternalResourceAdd(externalForm.title, externalForm.url);
+    onExternalResourceAdd(externalForm.title, externalForm.url, externalForm.title);
   }
   
   // Reset form after submission
