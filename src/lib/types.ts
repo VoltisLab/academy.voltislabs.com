@@ -361,10 +361,10 @@ export interface CodeEditorModalProps {
 }
 
 export interface AttachedFile {
-  size: string;
-  filename: string;
   url: string;
   name: string;
+  size?: string; // Make optional with ?
+  filename?: string; // Make optional with ?
 }
 
 export interface FileOperation {

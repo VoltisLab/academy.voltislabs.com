@@ -109,7 +109,7 @@ export const useSections = (initialSections: Section[] ) => {
   };
 
   // Add external resource to practice exercise
-  const addExternalResource = (sectionId: string, lectureId: string, url: string, name: string) => {
+  const addExternalResource = (sectionId: string, lectureId: string, url: string, name: string, title: string) => {
     setSections(sections.map(section => {
       if (section.id === sectionId) {
         return {
@@ -117,7 +117,7 @@ export const useSections = (initialSections: Section[] ) => {
           lectures: section.lectures.map(lecture => {
             if (lecture.id === lectureId) {
               const resources = [...(lecture.externalResources || [])];
-              resources.push({ url, name });
+              resources.push({ url, name, title });
               
               return {
                 ...lecture,
