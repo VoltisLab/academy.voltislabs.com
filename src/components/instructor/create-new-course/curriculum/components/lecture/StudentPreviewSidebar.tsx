@@ -1,5 +1,3 @@
-// Update StudentPreviewSidebar to dynamically build content from actual section data
-
 import { useState, useEffect } from 'react';
 import { 
   ChevronDown, 
@@ -9,13 +7,16 @@ import {
   Edit, 
   Code,
   Search,
+  FileDown,
   SquareArrowOutUpRight,
-  FileDown
+  FolderOpen
 } from "lucide-react";
-import { Lecture, Section, SourceCodeFile, ExternalResource, AttachedFile } from '@/lib/types';
+import { Lecture, Section, SourceCodeFile, ExternalResourceItem, AttachedFile } from '@/lib/types';
 
+// Define the ContentItemType properly
 type ContentItemType = 'video' | 'article' | 'quiz' | 'assignment' | 'coding-exercise';
 
+// Define the ContentItem interface that will be used throughout the component
 interface ContentItem {
   id: string;
   name: string;
@@ -24,8 +25,9 @@ interface ContentItem {
   hasResources?: boolean;
   isCompleted?: boolean;
   isActive?: boolean;
+  // Resource references - these will be populated from props
   attachedFiles?: AttachedFile[];
-  externalResources?: ExternalResource[];
+  externalResources?: ExternalResourceItem[];
   sourceCodeFiles?: SourceCodeFile[];
 }
 
@@ -41,6 +43,7 @@ interface SectionWithItems {
 interface StudentPreviewSidebarProps {
   currentLectureId: string;
   setShowVideoPreview: React.Dispatch<React.SetStateAction<boolean>>;
+  onSelectItem?: (itemId: string, itemType: string) => void;
   sections?: Array<{
     id: string;
     name: string;
@@ -49,9 +52,14 @@ interface StudentPreviewSidebarProps {
     assignments?: Array<{id: string, name: string}>;
     codingExercises?: Array<{id: string, name: string}>;
   }>;
-  uploadedFiles?: Array<{name: string, size: string}>;
+  uploadedFiles?: Array<{name: string, size: string, lectureId?: string}>;
   sourceCodeFiles?: SourceCodeFile[];
-  externalResources?: ExternalResource[];
+  externalResources?: Array<{
+    title: string | React.ReactNode;
+    url: string;
+    name: string;
+    lectureId?: string;
+  }>;
 }
 
 const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
@@ -60,7 +68,8 @@ const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
   sections = [],
   uploadedFiles = [],
   sourceCodeFiles = [],
-  externalResources = []
+  externalResources = [],
+  onSelectItem
 }) => {
   // State for managing which resource dropdowns are open
   const [openResourcesDropdowns, setOpenResourcesDropdowns] = useState<Record<string, boolean>>({});
@@ -86,12 +95,42 @@ const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
       // Only add lectures if they exist
       if (section.lectures && section.lectures.length > 0) {
         section.lectures.forEach((lecture, index) => {
-          // Check if the lecture actually has resources
-          const hasAttachedFiles = lecture.attachedFiles && lecture.attachedFiles.length > 0;
-          const hasExternalResources = lecture.externalResources && lecture.externalResources.length > 0;
-          const hasSourceCodeFiles = sourceCodeFiles.some(file => file.lectureId === lecture.id);
+          // UPDATED APPROACH: If first lecture, include all resources without lectureId
+          const isFirstLecture = index === 0;
           
-          const hasResources = hasAttachedFiles || hasExternalResources || hasSourceCodeFiles;
+          // Find attached files for this lecture from uploadedFiles
+          const lectureAttachedFiles: AttachedFile[] = Array.isArray(uploadedFiles) 
+            ? uploadedFiles
+                .filter(file => {
+                  // If lectureId exists, match it; otherwise, include all files for first lecture
+                  return file.lectureId === lecture.id || (isFirstLecture && !file.lectureId);
+                })
+                .map(file => ({
+                  url: "", // Since we don't have URLs in uploadedFiles
+                  name: file.name,
+                  size: file.size
+                }))
+            : [];
+
+          // Find source code files for this lecture from sourceCodeFiles
+          const lectureSourceCodeFiles = Array.isArray(sourceCodeFiles) 
+            ? sourceCodeFiles.filter(file => {
+                return file.lectureId === lecture.id || (isFirstLecture && !file.lectureId);
+              })
+            : [];
+
+          // Find external resources for this lecture from externalResources
+          const lectureExternalResources = Array.isArray(externalResources) 
+            ? externalResources.filter(resource => {
+                return resource.lectureId === lecture.id || (isFirstLecture && !resource.lectureId);
+              })
+            : [];
+
+          // Check if this lecture has any resources
+          const hasAttachedFiles = lectureAttachedFiles.length > 0;
+          const hasSourceCodeFiles = lectureSourceCodeFiles.length > 0;
+          const hasExternalResources = lectureExternalResources.length > 0;
+          const hasResources = hasAttachedFiles || hasSourceCodeFiles || hasExternalResources;
           
           // Determine content type from the lecture
           let contentType: ContentItemType = (lecture.contentType as ContentItemType) || 'video';
@@ -104,10 +143,9 @@ const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
             hasResources: hasResources,
             isCompleted: lecture.isCompleted || false,
             isActive: lecture.id === currentLectureId,
-            attachedFiles: lecture.attachedFiles || [],
-            externalResources: lecture.externalResources || [],
-            // Only include source code files that belong to this lecture
-            sourceCodeFiles: sourceCodeFiles.filter(file => file.lectureId === lecture.id)
+            attachedFiles: lectureAttachedFiles,
+            externalResources: lectureExternalResources,
+            sourceCodeFiles: lectureSourceCodeFiles
           });
         });
       }
@@ -122,7 +160,11 @@ const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
             duration: '10min',
             isCompleted: false,
             isActive: false,
-            hasResources: false // Quizzes typically don't have resources
+            hasResources: false, // Quizzes don't have resources by default
+            // FIXED: Don't add any resources to quizzes
+            attachedFiles: [],
+            externalResources: [],
+            sourceCodeFiles: []
           });
         });
       }
@@ -137,7 +179,11 @@ const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
             duration: '30min',
             isCompleted: false,
             isActive: false,
-            hasResources: false // Assignments typically don't have resources
+            hasResources: false, // Assignments don't have resources by default
+            // FIXED: Don't add any resources to assignments
+            attachedFiles: [],
+            externalResources: [],
+            sourceCodeFiles: []
           });
         });
       }
@@ -152,7 +198,11 @@ const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
             duration: '15min',
             isCompleted: false,
             isActive: false,
-            hasResources: false // Coding exercises typically don't have resources
+            hasResources: false, // Coding exercises don't have resources by default
+            // FIXED: Don't add any resources to coding exercises
+            attachedFiles: [],
+            externalResources: [],
+            sourceCodeFiles: []
           });
         });
       }
@@ -192,86 +242,147 @@ const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
     }));
   };
 
-  // Toggle a resource dropdown
-  const toggleResourcesDropdown = (itemId: string) => {
-    setOpenResourcesDropdowns(prev => ({
-      ...prev,
-      [itemId]: !prev[itemId]
-    }));
+  // Toggle a resource dropdown with proper event handling
+  const toggleResourcesDropdown = (itemId: string, e?: React.MouseEvent) => {
+    // Prevent any event bubbling to parent elements
+    if (e) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+    
+    // Force update with new object to ensure React detects the change
+    setOpenResourcesDropdowns(prev => {
+      const newState = { ...prev };
+      newState[itemId] = !prev[itemId];
+      return newState;
+    });
   };
 
   // Handle selecting an item (when a user clicks on a lecture, quiz, etc.)
-  const handleSelectItem = (itemId: string) => {
-    // In a real app, you would navigate to the selected item
-    console.log('Selected item:', itemId);
-    // For now, we just close the preview if it's not the current item
-    if (itemId !== currentLectureId) {
-      setShowVideoPreview(false);
+const handleSelectItem = (itemId: string) => {
+  // Find the selected item
+  const selectedItem = processedSections
+    .flatMap(section => section.contentItems)
+    .find(item => item.id === itemId);
+  
+  if (selectedItem) {
+    console.log('Selected item:', itemId, 'with type:', selectedItem.type);
+    
+    // Always keep the preview window open regardless of item type
+    
+    // If we have a callback, use it
+    if (onSelectItem) {
+      onSelectItem(itemId, selectedItem.type);
     }
-  };
+    // Remove the else clause that was closing the preview
+  } else {
+    console.error('Item not found:', itemId);
+    // Only close the preview if the item wasn't found at all
+    setShowVideoPreview(false);
+  }
+};
 
-  // Component for resource dropdown - only shows if there are actual resources
+  // Define the ResourcesDropdown component with consolidated resources
   const ResourcesDropdown: React.FC<{
     item: ContentItem;
     isOpen: boolean;
-    toggleOpen: () => void;
+    toggleOpen: (e?: React.MouseEvent) => void;
   }> = ({ item, isOpen, toggleOpen }) => {
     // Check if there are any actual resources to display
-    const hasAttachedFiles = item.attachedFiles && item.attachedFiles.length > 0;
-    const hasExternalResources = item.externalResources && item.externalResources.length > 0;
-    const hasSourceCodeFiles = item.sourceCodeFiles && item.sourceCodeFiles.length > 0;
+    const hasAttachedFiles = Array.isArray(item.attachedFiles) && item.attachedFiles.length > 0;
+    const hasExternalResources = Array.isArray(item.externalResources) && item.externalResources.length > 0;
+    const hasSourceCodeFiles = Array.isArray(item.sourceCodeFiles) && item.sourceCodeFiles.length > 0;
+    
+    console.log('ResourcesDropdown render:', {
+      itemId: item.id,
+      isOpen: isOpen,
+      hasAttachedFiles,
+      hasExternalResources,
+      hasSourceCodeFiles,
+      attachedFiles: item.attachedFiles,
+      externalResources: item.externalResources,
+      sourceCodeFiles: item.sourceCodeFiles
+    });
     
     const hasAnyResources = hasAttachedFiles || hasExternalResources || hasSourceCodeFiles;
     
     // Don't render anything if there are no resources
     if (!hasAnyResources) return null;
     
+    // Handler to stop propagation and toggle dropdown
+    const handleButtonClick = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      e.preventDefault();
+      toggleOpen(e);
+    };
+    
     return (
-      <div className="relative">
+      <div className="relative" onClick={(e) => e.stopPropagation()}>
         <button 
-          onClick={(e) => {
-            e.stopPropagation();
-            toggleOpen();
-          }}
-          className="flex items-center text-sm text-purple-600 font-medium py-1 px-2"
+          onClick={handleButtonClick}
+          className="flex items-center border rounded-md text-sm text-purple-700 font-normal py-1 px-2"
+          type="button"
         >
-          <span>Resources</span>
+          <div className='flex items-center'>
+            <FolderOpen className='mr-1 ' size={14} />
+            <span>Resources</span>
+          </div>
           {isOpen ? <ChevronUp className="w-4 h-4 ml-1" /> : <ChevronDown className="w-4 h-4 ml-1" />}
         </button>
         
         {isOpen && (
-          <div className="absolute right-0 mt-1 w-64 bg-white border border-gray-200 rounded-md shadow-lg z-10">
+          <div 
+            className="absolute right-0 mt-1 w-64 bg-white border border-gray-200 rounded-md shadow-lg z-50"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="p-2">
-              {/* Only show downloadable files if they exist */}
-              {hasAttachedFiles && item.attachedFiles?.map((file, index) => (
-                <div key={`dl-${index}`} className="flex items-center py-1 px-2 hover:bg-gray-50">
-                  <FileDown className="w-4 h-4 mr-2 text-gray-600" />
-                  <span className="text-sm">{file.filename || file.name}</span>
-                </div>
-              ))}
+              {/* Show all resources in a single dropdown */}
               
-              {/* Only show source code files if they exist */}
-              {hasSourceCodeFiles && item.sourceCodeFiles?.map((file, index) => (
-                <div key={`sc-${index}`} className="flex items-center py-1 px-2 hover:bg-gray-50">
-                  <Code className="w-4 h-4 mr-2 text-gray-600" />
-                  <span className="text-sm">{file.name || file.filename}</span>
+              {/* Attached Files Section */}
+              {hasAttachedFiles && (
+                <div className="mb-2">
+                  {item.attachedFiles && item.attachedFiles.map((file, index) => (
+                    <div key={`dl-${index}`} className="flex items-center py-1 px-2 hover:bg-gray-50">
+                      <FileDown className="w-4 h-4 mr-2 text-gray-600" />
+                      <span className="text-sm">{file.name || file.filename || 'File'}</span>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              )}
               
-              {/* Only show external resources if they exist */}
-              {hasExternalResources && item.externalResources?.map((resource, index) => (
-                <div key={`er-${index}`} className="flex items-center py-1 px-2 hover:bg-gray-50">
-                  <SquareArrowOutUpRight className="w-4 h-4 mr-2 text-gray-600" />
-                  <a 
-                    href={resource.url} 
-                    className="text-sm text-blue-600 hover:underline" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                  >
-                    {typeof resource.title === 'string' ? resource.title : 'External Resource'}
-                  </a>
+              {/* Source Code Files Section */}
+              {hasSourceCodeFiles && (
+                <div className="mb-2">
+                  {item.sourceCodeFiles && item.sourceCodeFiles.map((file, index) => (
+                    <div key={`sc-${index}`} className="flex items-center py-1 px-2 hover:bg-gray-50">
+                      <Code className="w-4 h-4 mr-2 text-gray-600" />
+                      <span className="text-sm">{file.name || file.filename || 'Source Code'}</span>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              )}
+              
+              {/* External Resources Section */}
+              {hasExternalResources && (
+                <div>
+                  {item.externalResources && item.externalResources.map((resource, index) => (
+                    <div key={`er-${index}`} className="flex items-center py-1 px-2 hover:bg-gray-50">
+                      <SquareArrowOutUpRight className="w-4 h-4 mr-2 text-gray-600" />
+                      <a 
+                        href={resource.url} 
+                        className="text-sm text-blue-600 hover:underline" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {typeof resource.title === 'string' 
+                          ? resource.title 
+                          : (resource.name || 'External Resource')}
+                      </a>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -316,7 +427,7 @@ const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
               </p>
             </div>
             
-            {/* Section content items - only show if there are items */}
+            {/* Section content items - only show if expanded and if there are items */}
             {expandedSections[section.id] && section.contentItems.length > 0 && (
               section.contentItems.map((item, index) => (
                 <div 
@@ -349,7 +460,7 @@ const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
                           <ResourcesDropdown 
                             item={item}
                             isOpen={!!openResourcesDropdowns[item.id]}
-                            toggleOpen={() => toggleResourcesDropdown(item.id)}
+                            toggleOpen={(e) => toggleResourcesDropdown(item.id, e)}
                           />
                         )}
                       </div>

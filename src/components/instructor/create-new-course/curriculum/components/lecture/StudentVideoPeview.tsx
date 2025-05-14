@@ -22,6 +22,8 @@ import {
 import ReactPlayer from "react-player";
 import StudentPreviewSidebar from "./StudentPreviewSidebar";
 
+import { ArticleContent } from "@/lib/types"; // Add this import
+
 type ChildProps = {
   videoContent: VideoContent;
   setShowVideoPreview: React.Dispatch<React.SetStateAction<boolean>>;
@@ -29,9 +31,9 @@ type ChildProps = {
   uploadedFiles?: Array<{name: string, size: string}>;
   sourceCodeFiles?: SourceCodeFile[];
   externalResources?: ExternalResource[];
-  section?: any
+  section?: any;
+  articleContent?: ArticleContent; // Add this line
 };
-
 // Define a type for our notes
 type VideoNote = {
   id: string;
@@ -69,6 +71,56 @@ const StudentVideoPreview = ({
   const [playbackRate, setPlaybackRate] = useState<number>(1);
   const [showSearch, setShowSearch] = useState<boolean>(false);
   const [showLearningModal, setShowLearningModal] = useState<boolean>(false);
+  const [activeItemId, setActiveItemId] = useState<string>(lecture.id);
+const [activeItemType, setActiveItemType] = useState<string>(lecture.contentType || 'video');
+// First, let's create a union type for the selected item
+type SelectedItemType = Lecture | Quiz | Assignment | CodingExercise;
+
+// Define interfaces for the missing types (if they're not already defined in your codebase)
+interface Quiz {
+  id: string;
+  name: string;
+  description?: string;
+  // Add other properties as needed
+}
+
+interface Assignment {
+  id: string;
+  name: string;
+  description?: string;
+  // Add other properties as needed
+}
+
+interface CodingExercise {
+  id: string;
+  name: string;
+  description?: string;
+  // Add other properties as needed
+}
+
+// Add this state variable with the proper type
+const [selectedItemData, setSelectedItemData] = useState<SelectedItemType | null>(lecture);
+
+// Fix the handleItemSelect function
+const handleItemSelect = (itemId: string, itemType: string) => {
+  console.log(`Selected item: ${itemId}, type: ${itemType}`);
+  setActiveItemId(itemId);
+  setActiveItemType(itemType);
+  
+  // Find the selected item from the sections data with proper typing
+  const selectedItem: SelectedItemType | undefined = 
+    section?.lectures?.find((l: Lecture) => l.id === itemId) || 
+    section?.quizzes?.find((q: Quiz) => q.id === itemId) ||
+    section?.assignments?.find((a: Assignment) => a.id === itemId) ||
+    section?.codingExercises?.find((e: CodingExercise) => e.id === itemId);
+    
+  console.log('Selected item data:', selectedItem);
+  
+  // Store the selected item data for use in the UI (if it exists)
+  if (selectedItem) {
+    setSelectedItemData(selectedItem);
+  }
+};
   
   // Notes specific state
   const [notes, setNotes] = useState<VideoNote[]>([]);
@@ -117,6 +169,23 @@ const StudentVideoPreview = ({
       // Here you would typically save the reminder
     }
   };
+
+  type ExternalResource = {
+  title: string | React.ReactNode;
+  url: string;
+  name: string;
+};
+
+// Ensure the ChildProps type has proper definitions for the resources
+type ChildProps = {
+  videoContent: VideoContent;
+  setShowVideoPreview: React.Dispatch<React.SetStateAction<boolean>>;
+  lecture: Lecture;
+  uploadedFiles?: Array<{name: string, size: string}>;
+  sourceCodeFiles?: SourceCodeFile[];
+  externalResources?: ExternalResource[];
+  section?: any
+};
 
   // Function to handle previous button in modal
   const handlePrevious = () => {
@@ -619,60 +688,154 @@ const StudentVideoPreview = ({
   };
   
   // Main render method
-  return (
-    <div className="fixed inset-0 z-[9999] bg-white flex flex-col">
-      {/* Main scrollable container for video and tabs */}
-      <div className="flex flex-1 h-full overflow-hidden">
-        {/* Left side - scrollable content (video player + tabs) */}
-        <div ref={mainContentRef} className="flex-1 overflow-y-auto" style={{ width: 'calc(100% - 320px)' }}>
-          {/* Video player section */}
-          <div className="bg-black relative w-[82vw]" style={{ height: 'calc(100vh - 220px)' }}>
-            <div 
-              ref={playerContainerRef}
-              className="relative w-full h-full flex"
-              onMouseEnter={() => setShowControls(true)}
-              onMouseLeave={() => setShowControls(false)}
-            >
-              {/* Video player */}
-              <div className="relative w-full h-full mx-auto">
-                <ReactPlayer
-                  ref={playerRef}
-                  url={videoContent.selectedVideoDetails?.url || "https://www.youtube.com/watch?v=dQw4w9WgXcQ"} // Use the uploaded video URL
-                  width="100%"
-                  height="100%"
-                  playing={playing}
-                  volume={volume}
-                  playbackRate={playbackRate}
-                  onProgress={handleProgress}
-                  onDuration={handleDuration}
-                  progressInterval={100}
-                  config={{
-                    file: {
-                      attributes: {
-                        controlsList: 'nodownload'
+  // Updated StudentVideoPreview component return statement
+return (
+  <div className="fixed inset-0 z-[9999] bg-white flex flex-col">
+    <div className="flex flex-1 h-full overflow-hidden">
+      {/* Main scrollable container */}
+      <div ref={mainContentRef} className="flex-1 overflow-y-auto" style={{ width: 'calc(100% - 320px)' }}>
+        {/* This section conditionally renders based on activeItemType */}
+        <div className="top-content-area">
+          {activeItemType === 'quiz' ? (
+  // Quiz view - using actual data from selected quiz
+  <div className="p-6">
+    <h1 className="text-2xl font-bold mb-4">
+      {selectedItemData?.name || "Quiz"}
+    </h1>
+    <div className="mb-4 text-sm text-gray-700">Quiz | 0 questions</div>
+    <p className="mb-8">{selectedItemData?.description || "This quiz will test your knowledge of the course material."}</p>
+    
+    <div className="flex space-x-4">
+      <button 
+        className="bg-[#6D28D2] hover:bg-[#7D28D2] text-white text-sm py-2 px-4 rounded-md font-medium"
+        type="button"
+      >
+        Start quiz
+      </button>
+      <button 
+        className="text-gray-600 text-sm py-2 px-4 rounded-md font-medium"
+        type="button"
+      >
+        Skip quiz
+      </button>
+    </div>
+  </div>
+) : activeItemType === 'coding-exercise' ? (
+  // Coding exercise view - using actual data from selected coding exercise
+  <div className="flex" style={{ height: 'calc(100vh - 220px)' }}>
+    <div className="w-64 bg-white border-r border-gray-200">
+      <div className="p-4 border-b border-gray-200">
+        <h2 className="font-semibold">Instructions</h2>
+      </div>
+      <div className="p-4">
+        <h3 className="font-bold mb-3">
+          {selectedItemData?.name || "Coding Exercise"}
+        </h3>
+        <div className="text-sm text-gray-700 mt-2">
+          {selectedItemData?.description || "Complete the exercise by writing the required code."}
+        </div>
+      </div>
+    </div>
+    <div className="flex-1 bg-gray-900 flex flex-col">
+      <div className="flex-1 flex items-center justify-center text-white">
+        <p>Code Editor Interface</p>
+      </div>
+      <div className="p-4 border-t border-gray-700 flex items-center space-x-4">
+        <button 
+          className="bg-white text-gray-800 rounded px-4 py-2 text-sm font-medium flex items-center"
+          type="button"
+        >
+          <span className="mr-2">▶</span> Run tests
+        </button>
+        <button 
+          className="text-white text-sm font-medium"
+          type="button"
+        >
+          Reset
+        </button>
+        <div className="flex-1"></div>
+        <div className="text-sm text-gray-400">All changes saved | Line 1, Column 1</div>
+      </div>
+    </div>
+  </div>
+) : activeItemType === 'assignment' ? (
+  // Assignment view - using actual data from selected assignment
+  <div className="p-6" style={{ height: 'calc(100vh - 220px)' }}>
+    <h1 className="text-2xl font-bold mb-6">
+      {selectedItemData?.name || "Assignment"}
+    </h1>
+    
+    <div className="text-gray-700 mb-8">
+      {selectedItemData?.description || "Complete this assignment according to the instructions."}
+    </div>
+    
+    <div className="flex justify-end space-x-4 mt-8">
+      <button 
+        className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-md font-medium"
+        type="button"
+      >
+        Skip assignment
+      </button>
+      <button 
+        className="bg-[#6D28D2] hover:bg-[#7D28D2] text-white px-4 py-2 rounded-md font-medium"
+        type="button"
+      >
+        Start assignment
+      </button>
+    </div>
+  </div>
+          ) : (
+            // Default: Video or article content - just the video player
+            <div className="bg-black relative w-[82vw]" style={{ height: 'calc(100vh - 220px)' }}>
+              <div 
+                ref={playerContainerRef}
+                className="relative w-full h-full flex"
+                onMouseEnter={() => setShowControls(true)}
+                onMouseLeave={() => setShowControls(false)}
+              >
+                {/* Video player */}
+                <div className="relative w-full h-full mx-auto">
+                  <ReactPlayer
+                    ref={playerRef}
+                    url={videoContent.selectedVideoDetails?.url || "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}
+                    width="100%"
+                    height="100%"
+                    playing={playing}
+                    volume={volume}
+                    playbackRate={playbackRate}
+                    onProgress={handleProgress}
+                    onDuration={handleDuration}
+                    progressInterval={100}
+                    config={{
+                      file: {
+                        attributes: {
+                          controlsList: 'nodownload'
+                        }
                       }
-                    }
-                  }}
-                />
-                    
-                {/* Play button overlay when paused */}
-                {!playing && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-40">
-                    <button 
-                      className="rounded-full bg-black bg-opacity-70 p-4 hover:bg-opacity-90 transition-all"
-                      type="button"
-                      aria-label="Play video"
-                      onClick={() => setPlaying(true)}
-                    >
-                      <Play size={80} className="p-3 rounded-full bg-gray-800 text-white" />
-                    </button>
-                  </div>
-                )}
+                    }}
+                  />
+                      
+                  {/* Play button overlay when paused */}
+                  {!playing && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-40">
+                      <button 
+                        className="rounded-full bg-black bg-opacity-70 p-4 hover:bg-opacity-90 transition-all"
+                        type="button"
+                        aria-label="Play video"
+                        onClick={() => setPlaying(true)}
+                      >
+                        <Play size={80} className="p-3 rounded-full bg-gray-800 text-white" />
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-          
-          {/* Bottom video controls bar (visible when not in controls overlay) */}
+          )}
+        </div>
+        
+        {/* Bottom video controls - only show for video content type */}
+        {(activeItemType === 'video' || activeItemType === 'article') && (
           <div className="h-12 bg-black w-[76vw] flex items-center px-4 text-white relative">
             {/* Progress bar at the very top */}
             <div className="absolute top-0 left-0 right-0 h-1 bg-gray-900">
@@ -740,7 +903,7 @@ const StudentVideoPreview = ({
               <div className="text-xs mx-2 flex items-center space-x-1 font-medium">
                 <span>{formatTime(progress)}</span>
                 <span className="text-gray-400">/</span>
-                <span className="text-gray-400">{videoContent.selectedVideoDetails.duration || formatTime(duration)}</span>
+                <span className="text-gray-400">{videoContent.selectedVideoDetails?.duration || formatTime(duration)}</span>
               </div>
             </div>
 
@@ -809,462 +972,375 @@ const StudentVideoPreview = ({
               </button>
             </div>
           </div>
-          
-          {/* Bottom content tabs */}
-          <div className="bg-white border-t border-gray-200 max-w-[82vw]" style={{ minHeight: '600px' }}>
-            {/* Tabs with Search icon/functionality */}
-            <div className="flex items-center border-b border-gray-200">
+        )}
+        
+        {/* Bottom content tabs - ALWAYS SHOW THESE */}
+        <div className="bg-white border-t border-gray-200 max-w-[82vw]" style={{ minHeight: '200px' }}>
+          {/* Tabs with Search icon/functionality */}
+          <div className="flex items-center border-b border-gray-200">
+            <button 
+              className={`px-4 py-3 text-gray-500 hover:text-gray-700 ${showSearch ? 'text-gray-700 border-b-2 border-gray-700' : ''}`}
+              type="button"
+              aria-label="Search"
+              onClick={handleSearchToggle}
+            >
+              <Search className="w-5 h-5" />
+            </button>
+            
+            {/* Tabs always visible */}
+            {[
+              { id: 'overview', label: 'Overview' },
+              { id: 'notes', label: 'Notes' },
+              { id: 'announcements', label: 'Announcements' },
+              { id: 'reviews', label: 'Reviews' },
+              { id: 'learning-tools', label: 'Learning tools' }
+            ].map(tab => (
               <button 
-                className={`px-4 py-3 text-gray-500 hover:text-gray-700 ${showSearch ? 'text-gray-700 border-b-2 border-gray-700' : ''}`}
+                key={tab.id}
+                className={`px-6 py-3 text-sm font-bold ${activeTab === tab.id && !showSearch ? 'text-gray-700 border-b-2 border-gray-700' : 'text-gray-500 hover:text-gray-800'}`}
+                onClick={() => {
+                  setActiveTab(tab.id as typeof activeTab);
+                  setShowSearch(false);
+                }}
                 type="button"
-                aria-label="Search"
-                onClick={handleSearchToggle}
               >
-                <Search className="w-5 h-5" />
+                {tab.label}
               </button>
-              
-              {/* Tabs always visible */}
-              {[
-                { id: 'overview', label: 'Overview' },
-                { id: 'notes', label: 'Notes' },
-                { id: 'announcements', label: 'Announcements' },
-                { id: 'reviews', label: 'Reviews' },
-                { id: 'learning-tools', label: 'Learning tools' }
-              ].map(tab => (
-                <button 
-                  key={tab.id}
-                  className={`px-6 py-3 text-sm font-bold ${activeTab === tab.id && !showSearch ? 'text-gray-700 border-b-2 border-gray-700' : 'text-gray-500 hover:text-gray-800'}`}
-                  onClick={() => {
-                    setActiveTab(tab.id as typeof activeTab);
-                    setShowSearch(false);
-                  }}
-                  type="button"
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
+            ))}
+          </div>
 
-            {/* Search interface */}
-            {showSearch && (
-              <div className="px-6 py-8">
-                <div className="max-w-2xl mx-auto mb-8">
-                  <div className="relative flex items-center">
-                    <input 
-                      type="text"
-                      placeholder="Search course content"
-                      className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500"
-                      autoFocus
-                    />
-                    <button 
-                      className="absolute right-2 bg-purple-600 hover:bg-purple-700 text-white p-2 rounded-md"
-                      aria-label="Search"
-                      type="button"
-                    >
-                      <Search className="w-5 h-5" />
-                    </button>
-                  </div>
-                </div>
-                
-                <div className="text-center py-8">
-                  <h3 className="text-xl font-bold mb-2 text-gray-800">Start a new search</h3>
-                  <p className="text-gray-600">To find lectures or resources</p>
-                </div>
-              </div>
-            )}
-            
-            {/* Tab content - Overview */}
-            {activeTab === 'overview' && !showSearch && (
-              <div className="p-6">
-                {/* Rating, Students, and Total section */}
-                <div className="flex items-center gap-8 mb-6">
-                  <div className="flex flex-col items-center ">
-                    <span className="text-amber-700 text-lg font-bold mr-1">0.0 <span className="text-amber-700">★</span></span>
-                    <span className="text-gray-500 text-xs ml-1">(0 ratings)</span>
-                  </div>
-                  <div className="">
-                    <div className="text-gray-700 font-bold">0</div>
-                    <div className="text-gray-500 text-xs">Students</div>
-                  </div>
-                  <div>
-                    <div className="text-gray-700 font-bold">2mins</div>
-                    <div className="text-gray-500 text-xs">Total</div>
-                  </div>
-                </div>
-                
-                {/* Published date and language */}
-                <div className="mb-6 space-y-3">
-                  <div className="flex items-center text-gray-600">
-                    <Clock className="w-4 h-4 mr-2" />
-                    <span className="text-sm">Published May 2025</span>
-                  </div>
-                  <div className="flex items-center text-gray-600">
-                    <Globe className="w-4 h-4 mr-2" />
-                    <span className="text-sm">English</span>
-                  </div>
-                </div>
-                
-                {/* Schedule learning time section */}
-                <div className="border-b border-gray-300 mb-8">
-                  <div className="p-6 border border-gray-300 rounded-lg">
-                    <div className="flex items-start">
-                      <Clock className="text-gray-500 w-5 h-5 mr-3 mt-1" />
-                      <div>
-                        <h4 className="font-medium text-base mb-2">Schedule learning time</h4>
-                        <p className="text-sm text-gray-600 mb-4">
-                          Learning a little each day adds up. Research shows that students who make learning a habit are more likely to reach their goals.
-                          Set time aside to learn and get reminders using your learning scheduler.
-                        </p>
-                        <div className="flex">
-                          <button 
-                            type="button"
-                            className="bg-[#6D28D2] hover:bg-[#7D28D2] text-white text-sm py-2 px-4 rounded-md mr-3 font-medium"
-                            onClick={handleOpenLearningModal}
-                          >
-                            Get started
-                          </button>
-                          <button 
-                            type="button"
-                            className="text-[#6D28D2] hover:text-[#7D28D2] text-sm py-2 px-4 font-medium"
-                          >
-                            Dismiss
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* By the numbers section */}
-                <div className="mb-8 pb-8 border-b border-gray-200 grid grid-cols-3">
-                  <h3 className="text-gray-700 text-sm mb-4">By the numbers</h3>
-
-                  <div className="mr-12">
-                    <p className="text-sm text-gray-700">Skill level:</p>
-                    <p className="text-sm text-gray-700">Students: 0</p>
-                    <p className="text-sm text-gray-700">Languages: English</p>
-                    <p className="text-sm text-gray-700">Captions: No</p>
-                  </div>
-
-                  <div>
-                    <p className="text-sm text-gray-700">Lectures: {section.lectures ? section.lectures.length : 0}</p>
-                    <p className="text-sm text-gray-700">Video: 2 total mins</p>
-                  </div>
-                </div>
-                
-                {/* Features section */}
-                <div className="mb-8 pb-8 border-b grid grid-cols-3 items-center border-gray-200 mr-7">
-                  <h3 className="text-sm text-gray-700 ">Features</h3>
-                  <div className="flex items-center text-gray-700 font-medium ">
-                    <p className="text-sm">Available on </p>
-                    <a href="#" className="text-purple-600 mx-1 text-sm font-medium">iOS</a>
-                    <p className="text-sm">and</p>
-                    <a href="#" className="text-purple-600 mx-1 text-sm font-medium">Android</a>
-                  </div>
-                </div>
-                
-                {/* Description section */}
-                <div className="mb-8 pb-8 border-b border-gray-200 grid grid-cols-3 mr-10 ">
-                  <h3 className="text-sm text-gray-700 ">Description</h3>
-                  <div className="text-sm text-gray-700 col-span-2">
-                    <div>
-                      <h4 className="font-medium text-sm ">What you'll learn</h4>
-                      {/* Content would go here */}
-                    </div>
-                    <div>
-                      <h4 className="font-medium text-sm ">Are there any course requirements or prerequisites?</h4>
-                      {/* Content would go here */}
-                    </div>
-                    <div>
-                      <h4 className="font-medium text-sm">Who this course is for:</h4>
-                      {/* Content would go here */}
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Instructor section */}
-                <div className="grid grid-cols-3 mr-10">
-                  <h3 className="text-sm text-gray-700">Instructor</h3>
-                  <div className="flex items-center">
-                    <div className="w-12 h-12 bg-gray-800 rounded-full flex items-center justify-center text-white font-medium">
-                      SS
-                    </div>
-                    <div className="ml-3">
-                      <h4 className="font-medium">Stanley Samuel</h4>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-            
-            {/* Tab content - Notes */}
-            {activeTab === 'notes' && !showSearch && (
-              <div className="p-6 flex flex-col items-center">
-                {/* Note adding/editing interface */}
-                {!isAddingNote ? (
-                  <div className="mb-4 w-full max-w-3xl">
-                    <div className="relative">
-                      <input 
-                        type="text" 
-                        placeholder={`Create a new note at ${formatTime(progress)}`}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500" 
-                        onClick={handleCreateNote} 
-                        readOnly
-                      />
-                      <button 
-                        className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-purple-600" 
-                        aria-label="Add note"
-                        onClick={handleCreateNote}
-                        type="button"
-                      >
-                        <Plus className="w-5 h-5" />
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="mb-4 w-full max-w-3xl">
-                    <div className="bg-black text-white text-sm px-3 py-1 rounded-t-md inline-block">
-                      {formatTime(progress)}
-                    </div>
-                    <div className="border border-purple-200 rounded-md p-2 rounded-tl-none">
-                      <div className="border-b border-gray-200 pb-2 mb-2 flex items-center">
-                        <button className="px-2 py-1 text-sm">Styles</button>
-                        <button className="px-2 py-1 text-sm font-bold">B</button>
-                        <button className="px-2 py-1 text-sm italic">I</button>
-                        <button className="px-2 py-1 text-sm">≡</button>
-                        <button className="px-2 py-1 text-sm">≡</button>
-                        <button className="px-2 py-1 text-sm">&lt;&gt;</button>
-                        <div className="ml-auto text-gray-400 text-sm">1000</div>
-                      </div>
-                      <textarea 
-                        className="w-full min-h-32 resize-none focus:outline-none focus:ring-0 border-0 p-2" 
-                        value={currentNoteContent}
-                        onChange={(e) => setCurrentNoteContent(e.target.value)}
-                        placeholder="Enter your note here..."
-                        autoFocus
-                      />
-                    </div>
-                    <div className="flex justify-end mt-2">
-                      <button 
-                        className="text-gray-700 font-medium mr-3 hover:text-gray-900"
-                        onClick={handleCancelNote}
-                        type="button"
-                      >
-                        Cancel
-                      </button>
-                      <button 
-                        className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md disabled:bg-purple-300"
-                        onClick={handleSaveNote}
-                        disabled={!currentNoteContent.trim()}
-                        type="button"
-                      >
-                        Save note
-                      </button>
-                    </div>
-                  </div>
-                )}
-                
-                {/* Filter dropdowns */}
-                <div className="flex space-x-2 mb-6 w-full max-w-3xl">
-                  {/* All lectures dropdown */}
-                  <div className="relative">
-                    <button 
-                      className="flex items-center px-3 py-1.5 text-sm border border-[#6D28D2] text-[#6D28D2] rounded-md font-medium"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setAllLecturesDropdownOpen(!allLecturesDropdownOpen);
-                        setSortByDropdownOpen(false);
-                      }}
-                      type="button"
-                    >
-                      <span>{selectedLectureFilter}</span>
-                      <ChevronDown className="w-4 h-4 ml-1" />
-                    </button>
-                    
-                    {allLecturesDropdownOpen && (
-                      <div className="absolute top-full left-0 mt-1 bg-white rounded-md shadow-lg z-10 w-48">
-                        <div className="p-2">
-                          <button 
-                            className={`block w-full text-left px-3 py-2 text-sm rounded-md `}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedLectureFilter('All lectures');
-                              setAllLecturesDropdownOpen(false);
-                            }}
-                            type="button"
-                          >
-                            All lectures
-                          </button>
-                          <button 
-                            className={`block w-full text-left px-3 py-2 text-sm rounded-md`}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedLectureFilter('Current lecture');
-                              setAllLecturesDropdownOpen(false);
-                            }}
-                            type="button"
-                          >
-                            Current lecture
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* Sort by dropdown */}
-                  <div className="relative">
-                    <button 
-                      className="flex items-center px-3 py-1.5 text-sm border border-[#6D28D2] rounded-md text-[#6D28D2] font-medium"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSortByDropdownOpen(!sortByDropdownOpen);
-                        setAllLecturesDropdownOpen(false);
-                      }}
-                      type="button"
-                    >
-                      <span>{selectedSortOption}</span>
-                      <ChevronDown className="w-4 h-4 ml-1" />
-                    </button>
-                    
-                    {sortByDropdownOpen && (
-                      <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg z-10 w-48">
-                        <div className="p-2">
-                          <button 
-                            className={`block w-full text-left px-3 py-2 text-sm rounded-md `}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedSortOption('Sort by most recent');
-                              setSortByDropdownOpen(false);
-                            }}
-                            type="button"
-                          >
-                            Sort by most recent
-                          </button>
-                          <button 
-                            className={`block w-full text-left px-3 py-2 text-sm rounded-md `}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedSortOption('Sort by oldest');
-                              setSortByDropdownOpen(false);
-                            }}
-                            type="button"
-                          >
-                            Sort by oldest
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-                
-                {/* Notes list or empty state */}
-                {getSortedNotes().length > 0 ? (
-                  <div className="w-full max-w-3xl">
-                    {getSortedNotes().map(note => (
-                      <div key={note.id} className="mb-4">
-                        <div className="flex items-center mb-2">
-                          <div className="bg-black text-white text-xs px-2 py-1 rounded-sm mr-3">
-                            {note.formattedTime}
-                          </div>
-                          <div className="text-sm text-gray-700 font-medium mr-2">
-                            {note.sectionName && `${note.sectionName}.`} {note.lectureName}
-                          </div>
-                          <div className="ml-auto flex">
-                            <button 
-                              className="text-gray-500 hover:text-purple-600 p-1"
-                              onClick={() => handleEditNote(note.id)}
-                              type="button"
-                            >
-                              <Edit className="w-4 h-4" />
-                            </button>
-                            <button 
-                              className="text-gray-500 hover:text-red-600 p-1 ml-1"
-                              onClick={() => handleDeleteNote(note.id)}
-                              type="button"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </div>
-                        <div className="bg-gray-50 p-4 rounded-md">
-                          <p className="text-sm text-gray-700">{note.content}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center justify-center h-32 text-center">
-                    <p className="text-gray-600 mb-2">Click the "Create a new note" box, the "+" button, or press "B" to make your first note.</p>
-                  </div>
-                )}
-              </div>
-            )}
-            
-            {/* Tab content - Announcements */}
-            {activeTab === 'announcements' && !showSearch && (
-              <div className="p-6">
-                <div className="text-center py-8">
-                  <h3 className="text-xl font-bold mb-2">No announcements posted yet</h3>
-                  <p className="text-gray-600">
-                    The instructor hasn't added any announcements to this course yet. Announcements 
-                    are used to inform you of updates or additions to the course.
-                  </p>
-                </div>
-              </div>
-            )}
-            
-            {/* Tab content - Reviews */}
-            {activeTab === 'reviews' && !showSearch && (
-              <div className="p-6">
-                <div className="text-center py-8">
-                  <h3 className="text-xl font-bold mb-2">Student feedback</h3>
-                  <p className="text-gray-600">
-                    This course doesn't have any reviews yet.
-                  </p>
-                </div>
-              </div>
-            )}
-            
-            {/* Tab content - Learning tools */}
-            {activeTab === 'learning-tools' && !showSearch && (
-              <div className="p-6">
-                <div className="mb-6">
-                  <h3 className="text-xl font-bold mb-2">Learning reminders</h3>
-                  <p className="text-gray-600 mb-4">
-                    Set up push notifications or calendar events to stay on track for your learning goals.
-                  </p>
-                  
+          {/* Search interface */}
+          {showSearch && (
+            <div className="px-6 py-8">
+              <div className="max-w-2xl mx-auto mb-8">
+                <div className="relative flex items-center">
+                  <input 
+                    type="text"
+                    placeholder="Search course content"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500"
+                    autoFocus
+                  />
                   <button 
-                    className="flex items-center bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md transition-colors"
-                    onClick={handleOpenLearningModal}
+                    className="absolute right-2 bg-purple-600 hover:bg-purple-700 text-white p-2 rounded-md"
+                    aria-label="Search"
                     type="button"
                   >
-                    <Plus className="w-4 h-4 mr-1" />
-                    <span>Add a learning reminder</span>
+                    <Search className="w-5 h-5" />
                   </button>
                 </div>
               </div>
-            )}
-          </div>
+              
+              <div className="text-center py-8">
+                <h3 className="text-xl font-bold mb-2 text-gray-800">Start a new search</h3>
+                <p className="text-gray-600">To find lectures or resources</p>
+              </div>
+            </div>
+          )}
+          
+          {/* Tab content - Overview */}
+          {activeTab === 'overview' && !showSearch && (
+            <div className="p-6">
+              {/* Rating, Students, and Total section */}
+              <div className="flex items-center gap-8 mb-6">
+                <div className="flex flex-col items-center ">
+                  <span className="text-amber-700 text-lg font-bold mr-1">0.0 <span className="text-amber-700">★</span></span>
+                  <span className="text-gray-500 text-xs ml-1">(0 ratings)</span>
+                </div>
+                <div className="">
+                  <div className="text-gray-700 font-bold">0</div>
+                  <div className="text-gray-500 text-xs">Students</div>
+                </div>
+                <div>
+                  <div className="text-gray-700 font-bold">2mins</div>
+                  <div className="text-gray-500 text-xs">Total</div>
+                </div>
+              </div>
+              
+              {/* Published date and language */}
+              <div className="mb-6 space-y-3">
+                <div className="flex items-center text-gray-600">
+                  <Clock className="w-4 h-4 mr-2" />
+                  <span className="text-sm">Published May 2025</span>
+                </div>
+                <div className="flex items-center text-gray-600">
+                  <Globe className="w-4 h-4 mr-2" />
+                  <span className="text-sm">English</span>
+                </div>
+              </div>
+              
+              {/* Rest of the overview content... */}
+              {/* ... */}
+            </div>
+          )}
+          
+          {/* Tab content - Notes */}
+          {/* Tab content - Notes */}
+{activeTab === 'notes' && !showSearch && (
+  <div className="p-6 flex flex-col items-center">
+    {/* Note adding/editing interface */}
+    {!isAddingNote ? (
+      <div className="mb-4 w-full max-w-3xl">
+        <div className="relative">
+          <input 
+            type="text" 
+            placeholder={`Create a new note at ${formatTime(progress)}`}
+            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500" 
+            onClick={handleCreateNote} 
+            readOnly
+          />
+          <button 
+            className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-purple-600" 
+            aria-label="Add note"
+            onClick={handleCreateNote}
+            type="button"
+          >
+            <Plus className="w-5 h-5" />
+          </button>
         </div>
+      </div>
+    ) : (
+      <div className="mb-4 w-full max-w-3xl">
+        <div className="bg-black text-white text-sm px-3 py-1 rounded-t-md inline-block">
+          {formatTime(progress)}
+        </div>
+        <div className="border border-purple-200 rounded-md p-2 rounded-tl-none">
+          <div className="border-b border-gray-200 pb-2 mb-2 flex items-center">
+            <button className="px-2 py-1 text-sm">Styles</button>
+            <button className="px-2 py-1 text-sm font-bold">B</button>
+            <button className="px-2 py-1 text-sm italic">I</button>
+            <button className="px-2 py-1 text-sm">≡</button>
+            <button className="px-2 py-1 text-sm">≡</button>
+            <button className="px-2 py-1 text-sm">&lt;&gt;</button>
+            <div className="ml-auto text-gray-400 text-sm">1000</div>
+          </div>
+          <textarea 
+            className="w-full min-h-32 resize-none focus:outline-none focus:ring-0 border-0 p-2" 
+            value={currentNoteContent}
+            onChange={(e) => setCurrentNoteContent(e.target.value)}
+            placeholder="Enter your note here..."
+            autoFocus
+          />
+        </div>
+        <div className="flex justify-end mt-2">
+          <button 
+            className="text-gray-700 font-medium mr-3 hover:text-gray-900"
+            onClick={handleCancelNote}
+            type="button"
+          >
+            Cancel
+          </button>
+          <button 
+            className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md disabled:bg-purple-300"
+            onClick={handleSaveNote}
+            disabled={!currentNoteContent.trim()}
+            type="button"
+          >
+            Save note
+          </button>
+        </div>
+      </div>
+    )}
+    
+    {/* Filter dropdowns */}
+    <div className="flex space-x-2 mb-6 w-full max-w-3xl">
+      {/* All lectures dropdown */}
+      <div className="relative">
+        <button 
+          className="flex items-center px-3 py-1.5 text-sm border border-[#6D28D2] text-[#6D28D2] rounded-md font-medium"
+          onClick={(e) => {
+            e.stopPropagation();
+            setAllLecturesDropdownOpen(!allLecturesDropdownOpen);
+            setSortByDropdownOpen(false);
+          }}
+          type="button"
+        >
+          <span>{selectedLectureFilter}</span>
+          <ChevronDown className="w-4 h-4 ml-1" />
+        </button>
         
-        {/* Right side - Use StudentPreviewSidebar component */}
-         <StudentPreviewSidebar
-          currentLectureId={lecture.id}
-          setShowVideoPreview={setShowVideoPreview}
-          // Pass the actual section - don't hardcode anything
-          sections={section ? [section] : []}
-          // Pass the actual resources
-          uploadedFiles={uploadedFiles}
-          sourceCodeFiles={sourceCodeFiles}
-          externalResources={externalResources}
-        />
+        {allLecturesDropdownOpen && (
+          <div className="absolute top-full left-0 mt-1 bg-white rounded-md shadow-lg z-10 w-48">
+            <div className="p-2">
+              <button 
+                className={`block w-full text-left px-3 py-2 text-sm rounded-md `}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedLectureFilter('All lectures');
+                  setAllLecturesDropdownOpen(false);
+                }}
+                type="button"
+              >
+                All lectures
+              </button>
+              <button 
+                className={`block w-full text-left px-3 py-2 text-sm rounded-md`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedLectureFilter('Current lecture');
+                  setAllLecturesDropdownOpen(false);
+                }}
+                type="button"
+              >
+                Current lecture
+              </button>
+            </div>
+          </div>
+        )}
       </div>
       
-      {/* Learning reminder modal */}
-      {showLearningModal && renderLearningModal()}
+      {/* Sort by dropdown */}
+      <div className="relative">
+        <button 
+          className="flex items-center px-3 py-1.5 text-sm border border-[#6D28D2] rounded-md text-[#6D28D2] font-medium"
+          onClick={(e) => {
+            e.stopPropagation();
+            setSortByDropdownOpen(!sortByDropdownOpen);
+            setAllLecturesDropdownOpen(false);
+          }}
+          type="button"
+        >
+          <span>{selectedSortOption}</span>
+          <ChevronDown className="w-4 h-4 ml-1" />
+        </button>
+        
+        {sortByDropdownOpen && (
+          <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg z-10 w-48">
+            <div className="p-2">
+              <button 
+                className={`block w-full text-left px-3 py-2 text-sm rounded-md `}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedSortOption('Sort by most recent');
+                  setSortByDropdownOpen(false);
+                }}
+                type="button"
+              >
+                Sort by most recent
+              </button>
+              <button 
+                className={`block w-full text-left px-3 py-2 text-sm rounded-md `}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedSortOption('Sort by oldest');
+                  setSortByDropdownOpen(false);
+                }}
+                type="button"
+              >
+                Sort by oldest
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
-  );
+    
+    {/* Notes list or empty state */}
+    {getSortedNotes().length > 0 ? (
+      <div className="w-full max-w-3xl">
+        {getSortedNotes().map(note => (
+          <div key={note.id} className="mb-4">
+            <div className="flex items-center mb-2">
+              <div className="bg-black text-white text-xs px-2 py-1 rounded-sm mr-3">
+                {note.formattedTime}
+              </div>
+              <div className="text-sm text-gray-700 font-medium mr-2">
+                {note.sectionName && `${note.sectionName}.`} {note.lectureName}
+              </div>
+              <div className="ml-auto flex">
+                <button 
+                  className="text-gray-500 hover:text-purple-600 p-1"
+                  onClick={() => handleEditNote(note.id)}
+                  type="button"
+                >
+                  <Edit className="w-4 h-4" />
+                </button>
+                <button 
+                  className="text-gray-500 hover:text-red-600 p-1 ml-1"
+                  onClick={() => handleDeleteNote(note.id)}
+                  type="button"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+            <div className="bg-gray-50 p-4 rounded-md">
+              <p className="text-sm text-gray-700">{note.content}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    ) : (
+      <div className="flex flex-col items-center justify-center h-32 text-center">
+        <p className="text-gray-600 mb-2">Click the "Create a new note" box, the "+" button, or press "B" to make your first note.</p>
+      </div>
+    )}
+  </div>
+)}
+          
+          {/* Tab content - Announcements */}
+          {activeTab === 'announcements' && !showSearch && (
+            <div className="p-6">
+              <div className="text-center py-8">
+                <h3 className="text-xl font-bold mb-2">No announcements posted yet</h3>
+                <p className="text-gray-600">
+                  The instructor hasn't added any announcements to this course yet. Announcements 
+                  are used to inform you of updates or additions to the course.
+                </p>
+              </div>
+            </div>
+          )}
+          
+          {/* Tab content - Reviews */}
+          {activeTab === 'reviews' && !showSearch && (
+            <div className="p-6">
+              <div className="text-center py-8">
+                <h3 className="text-xl font-bold mb-2">Student feedback</h3>
+                <p className="text-gray-600">
+                  This course doesn't have any reviews yet.
+                </p>
+              </div>
+            </div>
+          )}
+          
+          {/* Tab content - Learning tools */}
+          {activeTab === 'learning-tools' && !showSearch && (
+            <div className="p-6">
+              <div className="mb-6">
+                <h3 className="text-xl font-bold mb-2">Learning reminders</h3>
+                <p className="text-gray-600 mb-4">
+                  Set up push notifications or calendar events to stay on track for your learning goals.
+                </p>
+                
+                <button 
+                  className="flex items-center bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md transition-colors"
+                  onClick={handleOpenLearningModal}
+                  type="button"
+                >
+                  <Plus className="w-4 h-4 mr-1" />
+                  <span>Add a learning reminder</span>
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+      
+      {/* Right sidebar */}
+      <StudentPreviewSidebar
+        currentLectureId={activeItemId}
+        setShowVideoPreview={setShowVideoPreview}
+        sections={section ? [section] : []}
+        uploadedFiles={uploadedFiles}
+        sourceCodeFiles={sourceCodeFiles}
+        externalResources={externalResources}
+        onSelectItem={handleItemSelect}
+      />
+    </div>
+    
+    {/* Learning reminder modal */}
+    {showLearningModal && renderLearningModal()}
+  </div>
+);
 };
 
 export default StudentVideoPreview;
