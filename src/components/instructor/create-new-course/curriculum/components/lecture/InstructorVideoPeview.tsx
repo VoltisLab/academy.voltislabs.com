@@ -40,7 +40,7 @@ type VideoNote = {
 type ModalStep = 1 | 2 | 3;
 type FrequencyType = 'Daily' | 'Weekly' | 'Once';
 
-const InstructorVideoPreview = ({ videoContent, setShowVideoPreview, lecture }: ChildProps) => {
+const InstructorVideoPreview = ({ videoContent, setShowVideoPreview, lecture, section}: ChildProps) => {
   // State management
   const [activeTab, setActiveTab] = useState<'overview' | 'notes' | 'announcements' | 'reviews' | 'learning-tools'>('overview');
   const [playing, setPlaying] = useState<boolean>(false);
