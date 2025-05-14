@@ -120,11 +120,17 @@ const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
             : [];
 
           // Find external resources for this lecture from externalResources
-          const lectureExternalResources = Array.isArray(externalResources) 
-            ? externalResources.filter(resource => {
-                return resource.lectureId === lecture.id || (isFirstLecture && !resource.lectureId);
-              })
-            : [];
+          const lectureExternalResources: ExternalResourceItem[] = Array.isArray(externalResources) 
+  ? externalResources.filter(resource => {
+      return resource.lectureId === lecture.id || (isFirstLecture && !resource.lectureId);
+    }).map(resource => ({
+      // Convert to the proper ExternalResourceItem structure
+      title: typeof resource.title === 'string' ? resource.title : resource.name, // Make sure title is always a string
+      url: resource.url,
+      name: resource.name
+      // Include any other properties required by ExternalResourceItem
+    }))
+  : [];
 
           // Check if this lecture has any resources
           const hasAttachedFiles = lectureAttachedFiles.length > 0;

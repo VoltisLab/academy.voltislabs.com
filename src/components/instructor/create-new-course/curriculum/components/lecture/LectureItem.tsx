@@ -32,12 +32,12 @@ export interface SourceCodeFile {
   type: string;
 }
 
-export interface ExternalResourceItem {
-  title: string | React.ReactNode;
+interface ExternalResourceItem {
+  title: string | React.ReactNode;  // Allow both string and ReactNode
   url: string;
   name: string;
-  // Add the lectureId property
   lectureId?: string;
+  filename?: string;  // Add this if needed based on your usage
 }
 
 export default function LectureItem({
@@ -311,7 +311,9 @@ const VideoPreviewPage: React.FC = () => {
     console.log(`Switching to item ${itemId} of type ${itemType}`);
     setActiveItemId(itemId);
     setActiveItemType(itemType);
+
   };
+  
   
   // Function to find an item by ID across all content types
   const findItemById = (itemId: string): {item: any, type: string} | null => {
