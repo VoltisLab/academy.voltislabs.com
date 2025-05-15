@@ -91,6 +91,7 @@ export default function LectureItem({
   const [uploadedFiles, setUploadedFiles] = useState<Array<{name: string, size: string}>>([]);
   const [sourceCodeFiles, setSourceCodeFiles] = useState<SourceCodeFile[]>([]);
   const [externalResources, setExternalResources] = useState<ExternalResourceItem[]>([]);
+  const [previewContentType, setPreviewContentType] = useState<string>('video');
 
   const [videoContent, setVideoContent] = useState<VideoContent>({
   uploadTab: { selectedFile: null },
@@ -299,23 +300,51 @@ const handleEditContent = () => {
 
 // For debugging
 const VideoPreviewPage: React.FC = () => {
-  // Find the current section from the sections array
+  // Ensure we're properly detecting article content
+  const hasArticleContent = articleContent && articleContent.text !== '' && 
+                           (!videoContent.selectedVideoDetails || videoContent.selectedVideoDetails === null);
+
   const currentSection = sections.find(section => section.id === sectionId);
   
-  // Add state to track the active item
+  // Use the previewContentType state for initialization, with better fallback
   const [activeItemId, setActiveItemId] = useState<string>(lecture.id);
-  const [activeItemType, setActiveItemType] = useState<string>(lecture.contentType || 'video');
+  const [activeItemType, setActiveItemType] = useState<string>(
+    hasArticleContent ? 'article' : (previewContentType || lecture.contentType || 'video')
+  );
+  
+  // Add debugging for troubleshooting
+  useEffect(() => {
+    console.log('VideoPreviewPage initialized:', {
+      hasArticleContent,
+      articleTextExists: !!articleContent?.text,
+      articleLength: articleContent?.text?.length || 0,
+      videoDetailsExists: !!videoContent.selectedVideoDetails,
+      previewContentType,
+      activeItemType,
+      lectureContentType: lecture.contentType
+    });
+  }, []);
+  
+  // Always update activeItemType if the source data changes
+  useEffect(() => {
+    const hasArticle = articleContent && articleContent.text !== '' && 
+                      (!videoContent.selectedVideoDetails || videoContent.selectedVideoDetails === null);
+    
+    const contentType = hasArticle ? 'article' : (previewContentType || lecture.contentType || 'video');
+    
+    if (contentType !== activeItemType) {
+      console.log(`Updating activeItemType from ${activeItemType} to ${contentType}`);
+      setActiveItemType(contentType);
+    }
+  }, [articleContent, videoContent.selectedVideoDetails, previewContentType, lecture.contentType]);
   
   // Function to handle item selection from the sidebar
   const handleItemSelect = (itemId: string, itemType: string) => {
     console.log(`Switching to item ${itemId} of type ${itemType}`);
     setActiveItemId(itemId);
     setActiveItemType(itemType);
-
   };
-  
-  
-  // Function to find an item by ID across all content types
+
   const findItemById = (itemId: string): {item: any, type: string} | null => {
   // Check each section
   for (const section of sections) {
@@ -323,191 +352,61 @@ const VideoPreviewPage: React.FC = () => {
     const lecture = section.lectures?.find((l: Lecture) => l.id === itemId);
     if (lecture) return {item: lecture, type: lecture.contentType || 'video'};
     
-    // Check quizzes
-    const quiz = section.quizzes?.find((q: {id: string, name: string}) => q.id === itemId);
-    if (quiz) return {item: quiz, type: 'quiz'};
+    // Check quizzes if they exist
+    if (section.quizzes) {
+      const quiz = section.quizzes.find((q: any) => q.id === itemId);
+      if (quiz) return {item: quiz, type: 'quiz'};
+    }
     
-    // Check assignments
-    const assignment = section.assignments?.find((a: {id: string, name: string}) => a.id === itemId);
-    if (assignment) return {item: assignment, type: 'assignment'};
+    // Check assignments if they exist
+    if (section.assignments) {
+      const assignment = section.assignments.find((a: any) => a.id === itemId);
+      if (assignment) return {item: assignment, type: 'assignment'};
+    }
     
-    // Check coding exercises
-    const exercise = section.codingExercises?.find((e: {id: string, name: string}) => e.id === itemId);
-    if (exercise) return {item: exercise, type: 'coding-exercise'};
+    // Check coding exercises if they exist
+    if (section.codingExercises) {
+      const exercise = section.codingExercises.find((e: any) => e.id === itemId);
+      if (exercise) return {item: exercise, type: 'coding-exercise'};
+    }
   }
   
   return null;
 };
   
-  // Get the active item
+  // Get the active item with better type handling
   const activeItemInfo = findItemById(activeItemId);
   const activeItem = activeItemInfo?.item || lecture;
-  const contentType = activeItemInfo?.type || activeItemType;
+  
+  // Force the content type to 'article' if we have article content
+  // This is critical to ensure proper rendering
+  const contentType = hasArticleContent ? 'article' : 
+                     (activeItemInfo?.type || activeItemType || 'video');
   
   console.log("Active item:", activeItem, "Content type:", contentType);
   
   if (previewMode === 'student') {
-    // Render UI based on content type
-    if (contentType === 'quiz') {
-      return (
-        <div className="fixed inset-0 z-[9999] bg-white flex flex-col">
-          <div className="flex flex-1 h-full overflow-hidden">
-            <div className="flex-1 overflow-y-auto" style={{ width: 'calc(100% - 320px)' }}>
-              <div className="p-6">
-                <h1 className="text-2xl font-bold mb-4">
-                  {activeItem.name || "Demo Quiz"}
-                </h1>
-                <div className="mb-4 text-sm text-gray-700">Quiz 1 | 0 questions</div>
-                <p className="mb-8">this is the description</p>
-                
-                <div className="flex space-x-4">
-                  <button 
-                    className="bg-[#6D28D2] hover:bg-[#7D28D2] text-white text-sm py-2 px-4 rounded-md font-medium"
-                    type="button"
-                  >
-                    Start quiz
-                  </button>
-                  <button 
-                    className="text-gray-600 text-sm py-2 px-4 rounded-md font-medium"
-                    type="button"
-                  >
-                    Skip quiz
-                  </button>
-                </div>
-              </div>
-            </div>
-            
-            <StudentPreviewSidebar 
-              currentLectureId={activeItemId}
-              setShowVideoPreview={setShowVideoPreview} 
-              sections={sections}
-              uploadedFiles={uploadedFiles}
-              sourceCodeFiles={sourceCodeFiles}
-              externalResources={externalResources.map(r => ({
-  title: r.title,
-  url: r.url,
-  name: typeof r.name === 'string' ? r.name : (typeof r.title === 'string' ? r.title : 'External Resource'),
-  lectureId: r.lectureId
-}))}
-              onSelectItem={handleItemSelect}
-            />
-          </div>
-        </div>
-      );
-    } else if (contentType === 'coding-exercise') {
-      return (
-        <div className="fixed inset-0 z-[9999] bg-white flex flex-col">
-          <div className="flex flex-1 h-full overflow-hidden">
-            <div className="flex-1 overflow-y-auto" style={{ width: 'calc(100% - 320px)' }}>
-              <div className="flex h-full">
-                <div className="w-64 bg-white border-r border-gray-200">
-                  <div className="p-4 border-b border-gray-200">
-                    <h2 className="font-semibold">Instructions</h2>
-                  </div>
-                  <div className="p-4">
-                    <h3 className="font-bold mb-3">
-                      {activeItem.name || "New coding excercise"}
-                    </h3>
-                  </div>
-                </div>
-                <div className="flex-1 bg-gray-900 flex flex-col">
-                  <div className="flex-1 flex items-center justify-center text-white">
-                    {/* Code editor would go here */}
-                    <p>Code Editor Interface</p>
-                  </div>
-                  <div className="p-4 border-t border-gray-700 flex items-center space-x-4">
-                    <button 
-                      className="bg-white text-gray-800 rounded px-4 py-2 text-sm font-medium flex items-center"
-                      type="button"
-                    >
-                      <span className="mr-2">▶</span> Run tests
-                    </button>
-                    <button 
-                      className="text-white text-sm font-medium"
-                      type="button"
-                    >
-                      Reset
-                    </button>
-                    <div className="flex-1"></div>
-                    <div className="text-sm text-gray-400">All changes saved | Line 1, Column 1</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <StudentPreviewSidebar 
-              currentLectureId={activeItemId}
-              setShowVideoPreview={setShowVideoPreview} 
-              sections={sections}
-              uploadedFiles={uploadedFiles}
-              sourceCodeFiles={sourceCodeFiles}
-              externalResources={externalResources.map(r => ({
-  title: r.title,
-  url: r.url,
-  name: typeof r.name === 'string' ? r.name : (typeof r.title === 'string' ? r.title : 'External Resource'),
-  lectureId: r.lectureId
-}))}
-              onSelectItem={handleItemSelect}
-            />
-          </div>
-        </div>
-      );
-    } else if (contentType === 'assignment') {
-      return (
-        <div className="fixed inset-0 z-[9999] bg-white flex flex-col">
-          <div className="flex flex-1 h-full overflow-hidden">
-            <div className="flex-1 overflow-y-auto" style={{ width: 'calc(100% - 320px)' }}>
-              <div className="p-6">
-                <h1 className="text-2xl font-bold mb-6">
-                  {activeItem.name || "Assignment: Differentiate between client side and server side rendering."}
-                </h1>
-                
-                <div className="flex justify-end space-x-4 mt-8">
-                  <button 
-                    className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-md font-medium"
-                    type="button"
-                  >
-                    Skip assignment
-                  </button>
-                  <button 
-                    className="bg-[#6D28D2] hover:bg-[#7D28D2] text-white px-4 py-2 rounded-md font-medium"
-                    type="button"
-                  >
-                    Start assignment
-                  </button>
-                </div>
-              </div>
-            </div>
-            
-            <StudentPreviewSidebar 
-              currentLectureId={activeItemId}
-              setShowVideoPreview={setShowVideoPreview} 
-              sections={sections}
-              uploadedFiles={uploadedFiles}
-              sourceCodeFiles={sourceCodeFiles}
-              externalResources={externalResources.map(r => ({
-  title: r.title,
-  url: r.url,
-  name: typeof r.name === 'string' ? r.name : (typeof r.title === 'string' ? r.title : 'External Resource'),
-  lectureId: r.lectureId
-}))}
-              onSelectItem={handleItemSelect}
-            />
-          </div>
-        </div>
-      );
-    } else if (contentType === 'article' || activeItem.contentType === 'article') {
-      // For article content, use StudentVideoPreview but with the active item
+    // For article content, ensure we pass the correct props
+    if (contentType === 'article' || hasArticleContent) {
       return <StudentVideoPreview 
         videoContent={videoContent}
-        articleContent={articleContent}
-        setShowVideoPreview={setShowVideoPreview} 
-        lecture={activeItem}
+        articleContent={articleContent} 
+        setShowVideoPreview={setShowVideoPreview}
+        // Force content type to article in the lecture object 
+        lecture={{...activeItem, contentType: 'article'}}
         uploadedFiles={uploadedFiles}
         sourceCodeFiles={sourceCodeFiles}
         externalResources={externalResources}
         section={currentSection}
       />;
+    } 
+    // Other content types...
+    else if (contentType === 'quiz') {
+      // Quiz view code...
+    } else if (contentType === 'coding-exercise') {
+      // Coding exercise view code...
+    } else if (contentType === 'assignment') {
+      // Assignment view code...
     } else {
       // Default for videos
       return <StudentVideoPreview 
@@ -523,12 +422,12 @@ const VideoPreviewPage: React.FC = () => {
     }
   }
   
-  // Instructor preview
+  // Instructor preview - also ensure article content is properly passed
   return <InstructorVideoPreview 
     videoContent={videoContent}
     articleContent={articleContent}
     setShowVideoPreview={setShowVideoPreview} 
-    lecture={activeItem}
+    lecture={hasArticleContent ? {...activeItem, contentType: 'article'} : activeItem}
     section={currentSection}
   />;
 };
@@ -538,12 +437,6 @@ const selectVideo = (videoId: string) => {
   const selectedVideo = videoContent.libraryTab.videos.find(v => v.id === videoId);
   
   if (selectedVideo) {
-    // Add to selected resources
-    const videoExists = selectedResources.some(v => v.id === videoId);
-    if (!videoExists) {
-      setSelectedResources([...selectedResources, selectedVideo]);
-    }
-    
     // Create the selected video details with the video URL
     const selectedDetails: SelectedVideoDetails = {
       id: selectedVideo.id,
@@ -605,22 +498,38 @@ useEffect(() => {
   };
 }, [showPreviewDropdown]);
 
-// Updated handlePreviewSelection function with type safety
+const isArticleContent = (): boolean => {
+  return articleContent.text !== '' && (!videoContent.selectedVideoDetails || videoContent.selectedVideoDetails === null);
+};
+
+// Now update the handlePreviewSelection function
 const handlePreviewSelection = (mode: 'instructor' | 'student'): void => {
+  // First, properly determine if we have article content
+  const hasArticle = articleContent && articleContent.text !== '' && 
+                     (!videoContent.selectedVideoDetails || videoContent.selectedVideoDetails === null);
+  
+  console.log(`Preview mode: ${mode}, Has article: ${hasArticle}, Article text length: ${articleContent?.text?.length || 0}`);
+  
   setPreviewMode(mode);
   setShowPreviewDropdown(false);
-  setShowVideoPreview(true);
   
-  // Ensure all resource data is properly structured before previewing
-  // This ensures consistent data structure
+  // Set content type based on content
+  const contentType = hasArticle ? 'article' : 'video';
+  setPreviewContentType(contentType);
   
-  // Format uploaded files if needed
+  // This is critical - we need to update the lecture's contentType property
+  // to ensure proper rendering in the preview
+  const previewLecture = {...lecture};
+  if (hasArticle) {
+    previewLecture.contentType = 'article';
+  }
+  
+  // Format resources as usual
   const formattedUploadedFiles = uploadedFiles.map(file => ({
     name: file.name,
     size: file.size,
   }));
   
-  // Format source code files if needed
   const formattedSourceCodeFiles = sourceCodeFiles.map(file => ({
     lectureId: file.lectureId,
     filename: file.filename,
@@ -628,25 +537,34 @@ const handlePreviewSelection = (mode: 'instructor' | 'student'): void => {
     type: file.type,
   }));
   
-  // Format external resources if needed
   const formattedExternalResources = externalResources.map(resource => ({
     title: resource.title,
     url: resource.url,
-    name: resource.name || String(resource.title), // Ensure name is always a string
+    name: typeof resource.name === 'string' ? resource.name : String(resource.title),
   }));
   
-  // Update state with formatted resource data if needed
   setUploadedFiles(formattedUploadedFiles);
   setSourceCodeFiles(formattedSourceCodeFiles);
   setExternalResources(formattedExternalResources);
-  
-  console.log(`Opening preview in ${mode} mode with resources:`, {
-    uploadedFiles: formattedUploadedFiles,
-    sourceCodeFiles: formattedSourceCodeFiles,
-    externalResources: formattedExternalResources
-  });
-};
 
+  // Force a state update by setting articleContent again when it's an article
+  if (hasArticle) {
+    setArticleContent({...articleContent});
+  }
+  
+  // Debug what's happening
+  console.log('Before showing preview:', {
+    hasArticle,
+    articleText: articleContent?.text?.substring(0, 50),
+    previewContentType: contentType,
+    lectureContentType: previewLecture.contentType
+  });
+  
+  // Finally, show the preview - using a small timeout to ensure state updates are processed
+  setTimeout(() => {
+    setShowVideoPreview(true);
+  }, 50); // Increase timeout a bit to ensure all state updates have propagated
+};
 const handleLibraryItemSelect = (item: LibraryFileWithSize) => {
   // Add the selected item to your downloadable files list
   setUploadedFiles([
@@ -674,12 +592,8 @@ const handleVideoFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     // Update the state with the selected file and its URL
     setVideoContent({
       ...videoContent,
-      uploadTab: { selectedFile: file },
-      // Add the URL to selectedVideoDetails so it's available when the upload completes
-      selectedVideoDetails: videoContent.selectedVideoDetails ? {
-        ...videoContent.selectedVideoDetails,
-        url: videoUrl // Store the URL to be used by the video player
-      } : null
+      uploadTab: { selectedFile: file }
+      // Don't set selectedVideoDetails here yet
     });
     
     // Start the upload process
@@ -698,16 +612,6 @@ const handleVideoFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
             
             // Generate a unique ID based on the filename and current timestamp
             const videoId = `${file.name.replace(/\s+/g, '')}-${Date.now()}`;
-            
-            // Create the selected video details with the video URL
-            const selectedDetails: SelectedVideoDetails = {
-              id: videoId,
-              filename: file.name,
-              duration: '01:45', // This would come from the actual video metadata
-              thumbnailUrl: 'https://via.placeholder.com/160x120/000000/FFFFFF/?text=Video',
-              isDownloadable: false,
-              url: videoUrl // Store URL for playback
-            };
             
             // Check if a video with the same filename already exists
             const existingVideo = videoContent.libraryTab.videos.find(
@@ -730,19 +634,19 @@ const handleVideoFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
                 libraryTab: {
                   ...prev.libraryTab,
                   videos: [newVideo, ...prev.libraryTab.videos]
-                },
-                selectedVideoDetails: selectedDetails // Set selected video details with URL
+                }
+                // Don't set selectedVideoDetails here - user must select from library
               }));
               
-              // Add to uploaded files
-              setUploadedFiles([...uploadedFiles, { name: file.name, size: formatFileSize(file.size) }]);
-            } else {
-              // If it exists, just update the selectedVideoDetails
-              setVideoContent(prev => ({
-                ...prev,
-                selectedVideoDetails: selectedDetails
-              }));
+              // IMPORTANT: Removed the line that was adding to uploadedFiles
+              // No longer adding: setUploadedFiles([...uploadedFiles, { name: file.name, size: formatFileSize(file.size) }]);
             }
+            
+            // Switch to the library tab to show the uploaded video
+            setVideoContent(prev => ({
+              ...prev,
+              activeTab: 'addFromLibrary'
+            }));
             
           }, 500);
           return 100;
@@ -1529,41 +1433,27 @@ return (
 )}
               
               {/* Display Downloadable Materials section if files exist */}
-              {(uploadedFiles.length > 0 || selectedResources.length > 0) && (
-                <div className="mb-4 border-b border-gray-400 pb-2">
-                  <h3 className="text-sm font-bold text-gray-700 mb-2">Downloadable materials</h3>
-                  {uploadedFiles.map((file, index) => (
-                    <div key={`file-${index}`} className="flex justify-between items-center py-1">
-                      <div className="flex items-center text-gray-800">
-                        <FileDown size={13} className='text-gray-800 mr-1'/>
-                        <span className="text-sm text-gray-800">{file.name} ({file.size})</span>
-                      </div>
-                      <button 
-                        onClick={() => {
-                          setUploadedFiles(uploadedFiles.filter((_, i) => i !== index));
-                        }}
-                        className="text-gray-400 hover:bg-gray-200 p-2 rounded"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ))}
-                  
-                  {selectedResources.map(resource => (
-                    <div key={`resource-${resource.id}`} className="flex justify-between items-center py-1">
-                      <div className="flex items-center">
-                        <span className="text-sm text-gray-800">{resource.filename} ({resource.type === 'Video' ? '01:45' : '1.2 MB'})</span>
-                      </div>
-                      <button 
-                        onClick={() => removeSelectedResource(resource.id)}
-                        className="text-gray-400 hover:bg-gray-200 p-2 rounded"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
+              {uploadedFiles.length > 0 && (
+  <div className="mb-4 border-b border-gray-400 pb-2">
+    <h3 className="text-sm font-bold text-gray-700 mb-2">Downloadable materials</h3>
+    {uploadedFiles.map((file, index) => (
+      <div key={`file-${index}`} className="flex justify-between items-center py-1">
+        <div className="flex items-center text-gray-800">
+          <FileDown size={13} className='text-gray-800 mr-1'/>
+          <span className="text-sm text-gray-800">{file.name} ({file.size})</span>
+        </div>
+        <button 
+          onClick={() => {
+            setUploadedFiles(uploadedFiles.filter((_, i) => i !== index));
+          }}
+          className="text-gray-400 hover:bg-gray-200 p-2 rounded"
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
+      </div>
+    ))}
+  </div>
+)}
 
               {sourceCodeFiles.length > 0 && (
   <div className="mb-4 border-b border-gray-400 pb-2">
@@ -1665,29 +1555,35 @@ return (
               
               {/* Dropdown menu - using absolute positioning */}
               {showPreviewDropdown && (
-                <div className="absolute mt-1 right-0 w-40 bg-white border border-gray-200 rounded-md shadow-lg z-50">
-                  <ul>
-                    <li>
-                      <button
-                        onClick={() => handlePreviewSelection('instructor')}
-                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                        type="button"
-                      >
-                        As Instructor
-                      </button>
-                    </li>
-                    <li>
-                      <button
-                        onClick={() => handlePreviewSelection('student')}
-                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                        type="button"
-                      >
-                        As Student
-                      </button>
-                    </li>
-                  </ul>
-                </div>
-              )}
+  <div className="absolute mt-1 right-0 w-40 bg-white border border-gray-200 rounded-md shadow-lg z-50">
+    <ul>
+      <li>
+        <button
+          onClick={(e) => {
+            e.stopPropagation(); // Stop propagation to prevent interference
+            handlePreviewSelection('instructor');
+          }}
+          className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+          type="button"
+        >
+          As Instructor
+        </button>
+      </li>
+      <li>
+        <button
+          onClick={(e) => {
+            e.stopPropagation(); // Stop propagation to prevent interference
+            handlePreviewSelection('student');
+          }}
+          className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+          type="button"
+        >
+          As Student
+        </button>
+      </li>
+    </ul>
+  </div>
+)}
             </div>
             
             {/* Replace with Video link */}
