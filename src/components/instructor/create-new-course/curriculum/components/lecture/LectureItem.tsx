@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { ContentItemType, ContentType, ResourceTabType, ArticleContent, TabInterface, VideoSlideContent, VideoContent, StoredVideo, LectureItemProps } from '@/lib/types';
+import { ContentItemType, ContentType, ResourceTabType, ArticleContent, TabInterface, VideoSlideContent, VideoContent, StoredVideo, LectureItemProps, Lecture } from '@/lib/types';
 import {Plus, Trash2, Edit3, ChevronDown, ChevronUp, Search, X, FileText, AlignJustify, SquareArrowOutUpRight, FileDown} from "lucide-react";
 import AddResourceComponent from './AddResourceComponent';
 import DescriptionEditorComponent from './DescriptionEditorComponent';
@@ -10,6 +10,7 @@ import Article from './Article';
 import StudentVideoPreview from './StudentVideoPeview';
 import InstructorVideoPreview from './InstructorVideoPeview';
 import { FaCircleCheck } from 'react-icons/fa6';
+import StudentPreviewSidebar from './StudentPreviewSidebar';
 
 interface SelectedVideoDetails {
   id: string;
@@ -32,9 +33,11 @@ export interface SourceCodeFile {
 }
 
 interface ExternalResourceItem {
-  title: string;
+  title: string | React.ReactNode;  // Allow both string and ReactNode
   url: string;
-  name: string
+  name: string;
+  lectureId?: string;
+  filename?: string;  // Add this if needed based on your usage
 }
 
 export default function LectureItem({
@@ -209,8 +212,12 @@ const removeSourceCodeFile = (fileName: string) => {
   setSourceCodeFiles(sourceCodeFiles.filter(file => file.name !== fileName));
 };
 
-const removeExternalResource = (title: string) => {
-  setExternalResources(externalResources.filter(resource => resource.title !== title));
+const removeExternalResource = (title: string | React.ReactNode) => {
+  setExternalResources(externalResources.filter(resource => 
+    typeof resource.title === 'string' && typeof title === 'string' 
+      ? resource.title !== title 
+      : String(resource.title) !== String(title)
+  ));
 };
 
 // Add this function to save the lecture edit
@@ -291,37 +298,239 @@ const handleEditContent = () => {
 };
 
 // For debugging
-useEffect(() => {
-  console.log("Show video preview:", showVideoPreview);
-  console.log("Preview mode:", previewMode);
-}, [showVideoPreview, previewMode]);
-
-// Instructor Preview Component with TypeScript safety
 const VideoPreviewPage: React.FC = () => {
   // Find the current section from the sections array
   const currentSection = sections.find(section => section.id === sectionId);
   
-  if (videoContent.selectedVideoDetails || articleContent.text) {
-    if (previewMode === 'student') {
+  // Add state to track the active item
+  const [activeItemId, setActiveItemId] = useState<string>(lecture.id);
+  const [activeItemType, setActiveItemType] = useState<string>(lecture.contentType || 'video');
+  
+  // Function to handle item selection from the sidebar
+  const handleItemSelect = (itemId: string, itemType: string) => {
+    console.log(`Switching to item ${itemId} of type ${itemType}`);
+    setActiveItemId(itemId);
+    setActiveItemType(itemType);
+
+  };
+  
+  
+  // Function to find an item by ID across all content types
+  const findItemById = (itemId: string): {item: any, type: string} | null => {
+  // Check each section
+  for (const section of sections) {
+    // Check lectures
+    const lecture = section.lectures?.find((l: Lecture) => l.id === itemId);
+    if (lecture) return {item: lecture, type: lecture.contentType || 'video'};
+    
+    // Check quizzes
+    const quiz = section.quizzes?.find((q: {id: string, name: string}) => q.id === itemId);
+    if (quiz) return {item: quiz, type: 'quiz'};
+    
+    // Check assignments
+    const assignment = section.assignments?.find((a: {id: string, name: string}) => a.id === itemId);
+    if (assignment) return {item: assignment, type: 'assignment'};
+    
+    // Check coding exercises
+    const exercise = section.codingExercises?.find((e: {id: string, name: string}) => e.id === itemId);
+    if (exercise) return {item: exercise, type: 'coding-exercise'};
+  }
+  
+  return null;
+};
+  
+  // Get the active item
+  const activeItemInfo = findItemById(activeItemId);
+  const activeItem = activeItemInfo?.item || lecture;
+  const contentType = activeItemInfo?.type || activeItemType;
+  
+  console.log("Active item:", activeItem, "Content type:", contentType);
+  
+  if (previewMode === 'student') {
+    // Render UI based on content type
+    if (contentType === 'quiz') {
+      return (
+        <div className="fixed inset-0 z-[9999] bg-white flex flex-col">
+          <div className="flex flex-1 h-full overflow-hidden">
+            <div className="flex-1 overflow-y-auto" style={{ width: 'calc(100% - 320px)' }}>
+              <div className="p-6">
+                <h1 className="text-2xl font-bold mb-4">
+                  {activeItem.name || "Demo Quiz"}
+                </h1>
+                <div className="mb-4 text-sm text-gray-700">Quiz 1 | 0 questions</div>
+                <p className="mb-8">this is the description</p>
+                
+                <div className="flex space-x-4">
+                  <button 
+                    className="bg-[#6D28D2] hover:bg-[#7D28D2] text-white text-sm py-2 px-4 rounded-md font-medium"
+                    type="button"
+                  >
+                    Start quiz
+                  </button>
+                  <button 
+                    className="text-gray-600 text-sm py-2 px-4 rounded-md font-medium"
+                    type="button"
+                  >
+                    Skip quiz
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            <StudentPreviewSidebar 
+              currentLectureId={activeItemId}
+              setShowVideoPreview={setShowVideoPreview} 
+              sections={sections}
+              uploadedFiles={uploadedFiles}
+              sourceCodeFiles={sourceCodeFiles}
+              externalResources={externalResources.map(r => ({
+  title: r.title,
+  url: r.url,
+  name: typeof r.name === 'string' ? r.name : (typeof r.title === 'string' ? r.title : 'External Resource'),
+  lectureId: r.lectureId
+}))}
+              onSelectItem={handleItemSelect}
+            />
+          </div>
+        </div>
+      );
+    } else if (contentType === 'coding-exercise') {
+      return (
+        <div className="fixed inset-0 z-[9999] bg-white flex flex-col">
+          <div className="flex flex-1 h-full overflow-hidden">
+            <div className="flex-1 overflow-y-auto" style={{ width: 'calc(100% - 320px)' }}>
+              <div className="flex h-full">
+                <div className="w-64 bg-white border-r border-gray-200">
+                  <div className="p-4 border-b border-gray-200">
+                    <h2 className="font-semibold">Instructions</h2>
+                  </div>
+                  <div className="p-4">
+                    <h3 className="font-bold mb-3">
+                      {activeItem.name || "New coding excercise"}
+                    </h3>
+                  </div>
+                </div>
+                <div className="flex-1 bg-gray-900 flex flex-col">
+                  <div className="flex-1 flex items-center justify-center text-white">
+                    {/* Code editor would go here */}
+                    <p>Code Editor Interface</p>
+                  </div>
+                  <div className="p-4 border-t border-gray-700 flex items-center space-x-4">
+                    <button 
+                      className="bg-white text-gray-800 rounded px-4 py-2 text-sm font-medium flex items-center"
+                      type="button"
+                    >
+                      <span className="mr-2">▶</span> Run tests
+                    </button>
+                    <button 
+                      className="text-white text-sm font-medium"
+                      type="button"
+                    >
+                      Reset
+                    </button>
+                    <div className="flex-1"></div>
+                    <div className="text-sm text-gray-400">All changes saved | Line 1, Column 1</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <StudentPreviewSidebar 
+              currentLectureId={activeItemId}
+              setShowVideoPreview={setShowVideoPreview} 
+              sections={sections}
+              uploadedFiles={uploadedFiles}
+              sourceCodeFiles={sourceCodeFiles}
+              externalResources={externalResources.map(r => ({
+  title: r.title,
+  url: r.url,
+  name: typeof r.name === 'string' ? r.name : (typeof r.title === 'string' ? r.title : 'External Resource'),
+  lectureId: r.lectureId
+}))}
+              onSelectItem={handleItemSelect}
+            />
+          </div>
+        </div>
+      );
+    } else if (contentType === 'assignment') {
+      return (
+        <div className="fixed inset-0 z-[9999] bg-white flex flex-col">
+          <div className="flex flex-1 h-full overflow-hidden">
+            <div className="flex-1 overflow-y-auto" style={{ width: 'calc(100% - 320px)' }}>
+              <div className="p-6">
+                <h1 className="text-2xl font-bold mb-6">
+                  {activeItem.name || "Assignment: Differentiate between client side and server side rendering."}
+                </h1>
+                
+                <div className="flex justify-end space-x-4 mt-8">
+                  <button 
+                    className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-md font-medium"
+                    type="button"
+                  >
+                    Skip assignment
+                  </button>
+                  <button 
+                    className="bg-[#6D28D2] hover:bg-[#7D28D2] text-white px-4 py-2 rounded-md font-medium"
+                    type="button"
+                  >
+                    Start assignment
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            <StudentPreviewSidebar 
+              currentLectureId={activeItemId}
+              setShowVideoPreview={setShowVideoPreview} 
+              sections={sections}
+              uploadedFiles={uploadedFiles}
+              sourceCodeFiles={sourceCodeFiles}
+              externalResources={externalResources.map(r => ({
+  title: r.title,
+  url: r.url,
+  name: typeof r.name === 'string' ? r.name : (typeof r.title === 'string' ? r.title : 'External Resource'),
+  lectureId: r.lectureId
+}))}
+              onSelectItem={handleItemSelect}
+            />
+          </div>
+        </div>
+      );
+    } else if (contentType === 'article' || activeItem.contentType === 'article') {
+      // For article content, use StudentVideoPreview but with the active item
       return <StudentVideoPreview 
-        videoContent={videoContent} 
+        videoContent={videoContent}
+        articleContent={articleContent}
         setShowVideoPreview={setShowVideoPreview} 
-        lecture={lecture}
+        lecture={activeItem}
+        uploadedFiles={uploadedFiles}
+        sourceCodeFiles={sourceCodeFiles}
+        externalResources={externalResources}
+        section={currentSection}
+      />;
+    } else {
+      // Default for videos
+      return <StudentVideoPreview 
+        videoContent={videoContent}
+        articleContent={articleContent}
+        setShowVideoPreview={setShowVideoPreview} 
+        lecture={activeItem}
         uploadedFiles={uploadedFiles}
         sourceCodeFiles={sourceCodeFiles}
         externalResources={externalResources}
         section={currentSection}
       />;
     }
-    return <InstructorVideoPreview 
-      videoContent={videoContent} 
-      setShowVideoPreview={setShowVideoPreview} 
-      lecture={lecture}
-      section={currentSection}
-    />;
   }
   
-  return null;
+  // Instructor preview
+  return <InstructorVideoPreview 
+    videoContent={videoContent}
+    articleContent={articleContent}
+    setShowVideoPreview={setShowVideoPreview} 
+    lecture={activeItem}
+    section={currentSection}
+  />;
 };
 
 const selectVideo = (videoId: string) => {
@@ -401,7 +610,41 @@ const handlePreviewSelection = (mode: 'instructor' | 'student'): void => {
   setPreviewMode(mode);
   setShowPreviewDropdown(false);
   setShowVideoPreview(true);
-  console.log(`Opening preview in ${mode} mode`);
+  
+  // Ensure all resource data is properly structured before previewing
+  // This ensures consistent data structure
+  
+  // Format uploaded files if needed
+  const formattedUploadedFiles = uploadedFiles.map(file => ({
+    name: file.name,
+    size: file.size,
+  }));
+  
+  // Format source code files if needed
+  const formattedSourceCodeFiles = sourceCodeFiles.map(file => ({
+    lectureId: file.lectureId,
+    filename: file.filename,
+    name: file.name,
+    type: file.type,
+  }));
+  
+  // Format external resources if needed
+  const formattedExternalResources = externalResources.map(resource => ({
+    title: resource.title,
+    url: resource.url,
+    name: resource.name || String(resource.title), // Ensure name is always a string
+  }));
+  
+  // Update state with formatted resource data if needed
+  setUploadedFiles(formattedUploadedFiles);
+  setSourceCodeFiles(formattedSourceCodeFiles);
+  setExternalResources(formattedExternalResources);
+  
+  console.log(`Opening preview in ${mode} mode with resources:`, {
+    uploadedFiles: formattedUploadedFiles,
+    sourceCodeFiles: formattedSourceCodeFiles,
+    externalResources: formattedExternalResources
+  });
 };
 
 const handleLibraryItemSelect = (item: LibraryFileWithSize) => {
@@ -868,7 +1111,16 @@ const triggerFileUpload = (contentType: ContentType) => {
   }, 300);
 };
 
-const [maxLength, setMaxLength] = useState(80);
+const maxLength = 80
+
+const hasExistingContent = (lecture: Lecture): boolean => {
+  return (
+    (lecture.videos && lecture.videos.length > 0) || 
+    (lecture.contentType === 'article') ||
+    (videoContent.selectedVideoDetails !== null) ||
+    (articleContent.text !== '')
+  );
+};
 
 return (
   <div 
@@ -991,7 +1243,8 @@ return (
           <div className={`hidden sm:flex items-center space-x-1 transition-opacity duration-200 ${isHovering ? 'opacity-100' : 'opacity-0'}`}>
           </div>
           
-          <button 
+          {!hasExistingContent(lecture) && (
+            <button 
             onClick={(e) => {
               e.stopPropagation();
               if (!isResourceSectionActive && toggleContentSection) {
@@ -1086,7 +1339,9 @@ return (
                 <span className='font-bold'>Content</span>
               </>
             )}
-          </button>
+          </button>)}
+
+          
           
           <button 
             className="p-1 text-gray-400 hover:text-gray-600 ml-1"

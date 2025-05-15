@@ -1,4 +1,4 @@
-import { Lecture, VideoContent } from "@/lib/types";
+import { ArticleContent, ExternalResource, Lecture, SourceCodeFile, VideoContent } from "@/lib/types";
 import {
   ChevronDown,
   ChevronUp,
@@ -23,7 +23,11 @@ type ChildProps = {
   videoContent: VideoContent;
   setShowVideoPreview: React.Dispatch<React.SetStateAction<boolean>>;
   lecture: Lecture;
-  section: any
+  uploadedFiles?: Array<{name: string, size: string}>;
+  sourceCodeFiles?: SourceCodeFile[];
+  externalResources?: ExternalResource[];
+  section?: any;
+  articleContent?: ArticleContent; // Add this line
 };
 
 // Define a type for our notes

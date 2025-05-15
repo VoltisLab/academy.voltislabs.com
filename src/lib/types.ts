@@ -249,6 +249,7 @@ export interface SourceCodeFile {
 export interface ExternalResourceItem {
   title: string;
   url: string;
+  name: string;
 }
 
 // Interface for test cases to validate student code
@@ -360,6 +361,11 @@ export interface CodeEditorModalProps {
   onSaveCode?: (sectionId: string, lectureId: string, code: string, language: string) => void;
 }
 
+export type ContentButtonProps = {
+  section: Section;
+  lecture: Lecture;
+  onContentTypeSelect: (type: ContentItemType) => void;
+};
 export interface AttachedFile {
   url: string;
   name: string;
