@@ -77,16 +77,33 @@ const StudentVideoPreview = ({
   const [activeTab, setActiveTab] = useState<'overview' | 'notes' | 'announcements' | 'reviews' | 'learning-tools'>('overview');
   // Determine if this is an article based on actual content
   const hasArticleContent = articleContent && articleContent.text !== '' && 
-                           (!videoContent.selectedVideoDetails || videoContent.selectedVideoDetails === null);
-              
-   const [activeItemType, setActiveItemType] = useState<string>(
-    // Check if this is an article based on articleContent
-    (articleContent && articleContent.text !== '' && 
-     (!videoContent.selectedVideoDetails || videoContent.selectedVideoDetails === null))
-      ? 'article' 
-      : (lecture.contentType || 'video')
-  );
-// First, let's create a union type for the selected item
+                         (!videoContent.selectedVideoDetails || videoContent.selectedVideoDetails === null);
+
+// Set activeItemType based on article content
+const [activeItemType, setActiveItemType] = useState<string>(
+  hasArticleContent ? 'article' : (lecture.contentType || 'video')
+);
+
+// Add an effect to update activeItemType if props change
+useEffect(() => {
+  const hasArticle = articleContent && articleContent.text !== '' && 
+                    (!videoContent.selectedVideoDetails || videoContent.selectedVideoDetails === null);
+  
+  console.log('StudentVideoPreview content check:', {
+    hasArticle,
+    articleContentExists: !!articleContent?.text,
+    articleTextLength: articleContent?.text?.length || 0,
+    videoDetailsExists: !!videoContent.selectedVideoDetails,
+    lectureContentType: lecture.contentType,
+    currentActiveItemType: activeItemType
+  });
+  
+  if (hasArticle && activeItemType !== 'article') {
+    setActiveItemType('article');
+  } else if (!hasArticle && activeItemType === 'article' && lecture.contentType !== 'article') {
+    setActiveItemType(lecture.contentType || 'video');
+  }
+}, [articleContent, videoContent.selectedVideoDetails, lecture.contentType]);
 type SelectedItemType = Lecture | Quiz | Assignment | CodingExercise;
 
 // Define interfaces for the missing types (if they're not already defined in your codebase)
@@ -301,7 +318,13 @@ type ChildProps = {
     }
   }, []);
   
-  if (!videoContent.selectedVideoDetails) return null;
+  if (!videoContent.selectedVideoDetails && (!articleContent || !articleContent.text)) {
+  console.log('Early return - no content to display', { 
+    hasVideoContent: !!videoContent.selectedVideoDetails,
+    hasArticleContent: !!(articleContent && articleContent.text) 
+  });
+  return null;
+}
   
   // Format time in MM:SS format
   const formatTime = (seconds: number): string => {
@@ -801,69 +824,119 @@ return (
     </div>
   </div>
           ) : (
-            // Default: Video or article content - just the video player
-            <div className="bg-black relative w-[82vw]" style={{ height: 'calc(100vh - 220px)' }}>
+             <div className="bg-black relative w-[82vw]" style={{ height: 'calc(100vh - 220px)' }}>
               <div 
                 ref={playerContainerRef}
                 className="relative w-full h-full flex"
                 onMouseEnter={() => setShowControls(true)}
                 onMouseLeave={() => setShowControls(false)}
               >
-                {/* Video player */}
-                <div className="relative w-full h-full mx-auto">
-                  {activeItemType === 'article' ? (
-        <div className="bg-white relative w-[82vw]" style={{ height: 'calc(100vh - 220px)' }}>
-          <div className="relative w-full h-full mx-auto px-8 py-6 overflow-y-auto">
-            <h1 className="text-2xl font-bold mb-4">{lecture.name}</h1>
-            <div 
-              className="article-content prose max-w-none"
-              dangerouslySetInnerHTML={{ __html: articleContent?.text || '' }}
-            />
+                <div className="relative w-full h-full mx-auto text-left ">
+                  {activeItemType === 'article' || (articleContent && articleContent.text !== '') ? (
+                    // Article content
+                    <div className="bg-white relative w-full h-full px-52">
+                      <div className="relative w-full h-full px-8 py-6 overflow-y-auto">
+                        <h1 className="text-2xl font-bold mb-4">{lecture.name}</h1>
+                        <div 
+                          className="article-content prose max-w-none"
+                          dangerouslySetInnerHTML={{ __html: articleContent?.text || '' }}
+                        />
+
+                        {(uploadedFiles.length > 0 || sourceCodeFiles.length > 0 || externalResources.length > 0) && (
+        <div className="pt-6">
+          <h2 className="text-xl font-semibold mb-4">Resources for this lecture</h2>
+          
+          <div className="space-y-3">
+            {/* Downloadable Files */}
+            {uploadedFiles.map((file, index) => (
+              <div key={`uploaded-${index}`} className="flex items-center">
+                <FileDown className="w-5 h-5 text-gray-600 mr-2" />
+                <a 
+                  href="#" 
+                  className="text-blue-600 hover:underline font-medium"
+                  onClick={(e) => e.preventDefault()}
+                >
+                  {file.name}
+                </a>
+              </div>
+            ))}
+            
+            {/* Source Code Files */}
+            {sourceCodeFiles.map((file, index) => (
+              <div key={`code-${index}`} className="flex items-center">
+                <Code className="w-5 h-5 text-gray-600 mr-2" />
+                <a 
+                  href="#" 
+                  className="text-blue-600 hover:underline font-medium"
+                  onClick={(e) => e.preventDefault()}
+                >
+                  {file.name || file.filename}
+                </a>
+              </div>
+            ))}
+            
+            {/* External Links */}
+            {externalResources.map((resource, index) => (
+              <div key={`external-${index}`} className="flex items-center">
+                <SquareArrowOutUpRight className="w-5 h-5 text-gray-600 mr-2" />
+                <a 
+                  href={resource.url} 
+                  className="text-blue-600 hover:underline font-medium"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {typeof resource.title === 'string' ? resource.title : resource.name}
+                </a>
+              </div>
+            ))}
           </div>
         </div>
-  ) : (
-    // Video player
-    <ReactPlayer
-      ref={playerRef}
-      url={videoContent.selectedVideoDetails?.url || "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}
-      width="100%"
-      height="100%"
-      playing={playing}
-      volume={volume}
-      playbackRate={playbackRate}
-      onProgress={handleProgress}
-      onDuration={handleDuration}
-      progressInterval={100}
-      config={{
-        file: {
-          attributes: {
-            controlsList: 'nodownload'
-          }
-        }
-      }}
-    />
-  )}
+      )}
+
+
+      
+                      </div>
+
                       
-                  {/* Play button overlay when paused */}
-                  {!playing && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-40">
-                      <button 
-                        className="rounded-full bg-black bg-opacity-70 p-4 hover:bg-opacity-90 transition-all"
-                        type="button"
-                        aria-label="Play video"
-                        onClick={() => setPlaying(true)}
-                      >
-                        <Play size={80} className="p-3 rounded-full bg-gray-800 text-white" />
-                      </button>
                     </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-        
-        {/* Bottom video controls - only show for video content type */}
+                  ) : (
+                    // Video player with overlay
+                    <>
+                      <ReactPlayer
+                        ref={playerRef}
+                        url={videoContent.selectedVideoDetails?.url || "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}
+                        width="100%"
+                        height="100%"
+                        playing={playing}
+                        volume={volume}
+                        playbackRate={playbackRate}
+                        onProgress={handleProgress}
+                        onDuration={handleDuration}
+                        progressInterval={100}
+                        config={{
+                          file: {
+                            attributes: {
+                              controlsList: 'nodownload'
+                            }
+                          }
+                        }}
+                      />
+                      
+                      {/* Play button overlay when paused - only for video content */}
+                      {!playing && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-40">
+                          <button 
+                            className="rounded-full bg-black bg-opacity-70 p-4 hover:bg-opacity-90 transition-all"
+                            type="button"
+                            aria-label="Play video"
+                            onClick={() => setPlaying(true)}
+                          >
+                            <Play size={80} className="p-3 rounded-full bg-gray-800 text-white" />
+                          </button>
+                        </div>
+                      )}
+
+                       {/* Bottom video controls - only show for video content type */}
         {(activeItemType === 'video' || activeItemType === 'article') && (
           <div className="h-12 bg-black w-[82vw] flex items-center px-4 text-white relative">
             {/* Progress bar at the very top */}
@@ -1003,6 +1076,14 @@ return (
           </div>
         )}
         
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </div> 
+       
         {/* Bottom content tabs - ALWAYS SHOW THESE */}
         <div className="bg-white border-t border-gray-200 max-w-[82vw]" style={{ minHeight: '200px' }}>
           {/* Tabs with Search icon/functionality */}
