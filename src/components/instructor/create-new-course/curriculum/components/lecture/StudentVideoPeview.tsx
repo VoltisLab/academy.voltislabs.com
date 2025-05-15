@@ -59,10 +59,11 @@ const StudentVideoPreview = ({
   uploadedFiles = [],
   sourceCodeFiles = [],
   externalResources = [],
-  section
+  section,
+  articleContent = { text: '' }
 }: ChildProps) => {
   // State management
-  const [activeTab, setActiveTab] = useState<'overview' | 'notes' | 'announcements' | 'reviews' | 'learning-tools'>('overview');
+
   const [playing, setPlaying] = useState<boolean>(false);
   const [progress, setProgress] = useState<number>(0);
   const [duration, setDuration] = useState<number>(0);
@@ -72,7 +73,19 @@ const StudentVideoPreview = ({
   const [showSearch, setShowSearch] = useState<boolean>(false);
   const [showLearningModal, setShowLearningModal] = useState<boolean>(false);
   const [activeItemId, setActiveItemId] = useState<string>(lecture.id);
-const [activeItemType, setActiveItemType] = useState<string>(lecture.contentType || 'video');
+  
+  const [activeTab, setActiveTab] = useState<'overview' | 'notes' | 'announcements' | 'reviews' | 'learning-tools'>('overview');
+  // Determine if this is an article based on actual content
+  const hasArticleContent = articleContent && articleContent.text !== '' && 
+                           (!videoContent.selectedVideoDetails || videoContent.selectedVideoDetails === null);
+              
+   const [activeItemType, setActiveItemType] = useState<string>(
+    // Check if this is an article based on articleContent
+    (articleContent && articleContent.text !== '' && 
+     (!videoContent.selectedVideoDetails || videoContent.selectedVideoDetails === null))
+      ? 'article' 
+      : (lecture.contentType || 'video')
+  );
 // First, let's create a union type for the selected item
 type SelectedItemType = Lecture | Quiz | Assignment | CodingExercise;
 
@@ -447,6 +460,8 @@ type ChildProps = {
       document.removeEventListener("fullscreenchange", handleFullscreenChange);
     };
   }, [playing]);
+
+
   
   // Learning modal component
   const renderLearningModal = () => {
@@ -689,6 +704,7 @@ type ChildProps = {
   
   // Main render method
   // Updated StudentVideoPreview component return statement
+
 return (
   <div className="fixed inset-0 z-[9999] bg-white flex flex-col">
     <div className="flex flex-1 h-full overflow-hidden">
@@ -795,25 +811,38 @@ return (
               >
                 {/* Video player */}
                 <div className="relative w-full h-full mx-auto">
-                  <ReactPlayer
-                    ref={playerRef}
-                    url={videoContent.selectedVideoDetails?.url || "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}
-                    width="100%"
-                    height="100%"
-                    playing={playing}
-                    volume={volume}
-                    playbackRate={playbackRate}
-                    onProgress={handleProgress}
-                    onDuration={handleDuration}
-                    progressInterval={100}
-                    config={{
-                      file: {
-                        attributes: {
-                          controlsList: 'nodownload'
-                        }
-                      }
-                    }}
-                  />
+                  {activeItemType === 'article' ? (
+        <div className="bg-white relative w-[82vw]" style={{ height: 'calc(100vh - 220px)' }}>
+          <div className="relative w-full h-full mx-auto px-8 py-6 overflow-y-auto">
+            <h1 className="text-2xl font-bold mb-4">{lecture.name}</h1>
+            <div 
+              className="article-content prose max-w-none"
+              dangerouslySetInnerHTML={{ __html: articleContent?.text || '' }}
+            />
+          </div>
+        </div>
+  ) : (
+    // Video player
+    <ReactPlayer
+      ref={playerRef}
+      url={videoContent.selectedVideoDetails?.url || "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}
+      width="100%"
+      height="100%"
+      playing={playing}
+      volume={volume}
+      playbackRate={playbackRate}
+      onProgress={handleProgress}
+      onDuration={handleDuration}
+      progressInterval={100}
+      config={{
+        file: {
+          attributes: {
+            controlsList: 'nodownload'
+          }
+        }
+      }}
+    />
+  )}
                       
                   {/* Play button overlay when paused */}
                   {!playing && (
@@ -836,7 +865,7 @@ return (
         
         {/* Bottom video controls - only show for video content type */}
         {(activeItemType === 'video' || activeItemType === 'article') && (
-          <div className="h-12 bg-black w-[76vw] flex items-center px-4 text-white relative">
+          <div className="h-12 bg-black w-[82vw] flex items-center px-4 text-white relative">
             {/* Progress bar at the very top */}
             <div className="absolute top-0 left-0 right-0 h-1 bg-gray-900">
               <div 
@@ -1039,41 +1068,128 @@ return (
           
           {/* Tab content - Overview */}
           {activeTab === 'overview' && !showSearch && (
-            <div className="p-6">
-              {/* Rating, Students, and Total section */}
-              <div className="flex items-center gap-8 mb-6">
-                <div className="flex flex-col items-center ">
-                  <span className="text-amber-700 text-lg font-bold mr-1">0.0 <span className="text-amber-700">★</span></span>
-                  <span className="text-gray-500 text-xs ml-1">(0 ratings)</span>
+              <div className="p-6">
+                {/* Rating, Students, and Total section */}
+                <div className="flex items-center gap-8 mb-6">
+                  <div className="flex flex-col items-center ">
+                    <span className="text-amber-700 text-lg font-bold mr-1">0.0 <span className="text-amber-700">★</span></span>
+                    <span className="text-gray-500 text-xs ml-1">(0 ratings)</span>
+                  </div>
+                  <div className="">
+                    <div className="text-gray-700 font-bold">0</div>
+                    <div className="text-gray-500 text-xs">Students</div>
+                  </div>
+                  <div>
+                    <div className="text-gray-700 font-bold">2mins</div>
+                    <div className="text-gray-500 text-xs">Total</div>
+                  </div>
                 </div>
-                <div className="">
-                  <div className="text-gray-700 font-bold">0</div>
-                  <div className="text-gray-500 text-xs">Students</div>
+                
+                {/* Published date and language */}
+                <div className="mb-6 space-y-3">
+                  <div className="flex items-center text-gray-600">
+                    <Clock className="w-4 h-4 mr-2" />
+                    <span className="text-sm">Published May 2025</span>
+                  </div>
+                  <div className="flex items-center text-gray-600">
+                    <Globe className="w-4 h-4 mr-2" />
+                    <span className="text-sm">English</span>
+                  </div>
                 </div>
-                <div>
-                  <div className="text-gray-700 font-bold">2mins</div>
-                  <div className="text-gray-500 text-xs">Total</div>
+                
+                {/* Schedule learning time section */}
+                <div className="border-b border-gray-300 mb-8">
+                  <div className="p-6 border border-gray-300 rounded-lg">
+                    <div className="flex items-start">
+                      <Clock className="text-gray-500 w-5 h-5 mr-3 mt-1" />
+                      <div>
+                        <h4 className="font-medium text-base mb-2">Schedule learning time</h4>
+                        <p className="text-sm text-gray-600 mb-4">
+                          Learning a little each day adds up. Research shows that students who make learning a habit are more likely to reach their goals.
+                          Set time aside to learn and get reminders using your learning scheduler.
+                        </p>
+                        <div className="flex">
+                          <button 
+                            type="button"
+                            className="bg-[#6D28D2] hover:bg-[#7D28D2] text-white text-sm py-2 px-4 rounded-md mr-3 font-medium"
+                            onClick={handleOpenLearningModal}
+                          >
+                            Get started
+                          </button>
+                          <button 
+                            type="button"
+                            className="text-[#6D28D2] hover:text-[#7D28D2] text-sm py-2 px-4 font-medium"
+                          >
+                            Dismiss
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* By the numbers section */}
+                <div className="mb-8 pb-8 border-b border-gray-200 grid grid-cols-3">
+                  <h3 className="text-gray-700 text-sm mb-4">By the numbers</h3>
+
+                  <div className="mr-12">
+                    <p className="text-sm text-gray-700">Skill level:</p>
+                    <p className="text-sm text-gray-700">Students: 0</p>
+                    <p className="text-sm text-gray-700">Languages: English</p>
+                    <p className="text-sm text-gray-700">Captions: No</p>
+                  </div>
+
+                  <div>
+                    <p className="text-sm text-gray-700">Lectures: {section.lectures ? section.lectures.length : 0}</p>
+                    <p className="text-sm text-gray-700">Video: 2 total mins</p>
+                  </div>
+                </div>
+                
+                {/* Features section */}
+                <div className="mb-8 pb-8 border-b grid grid-cols-3 items-center border-gray-200 mr-7">
+                  <h3 className="text-sm text-gray-700 ">Features</h3>
+                  <div className="flex items-center text-gray-700 font-medium ">
+                    <p className="text-sm">Available on </p>
+                    <a href="#" className="text-purple-600 mx-1 text-sm font-medium">iOS</a>
+                    <p className="text-sm">and</p>
+                    <a href="#" className="text-purple-600 mx-1 text-sm font-medium">Android</a>
+                  </div>
+                </div>
+                
+                {/* Description section */}
+                <div className="mb-8 pb-8 border-b border-gray-200 grid grid-cols-3 mr-10 ">
+                  <h3 className="text-sm text-gray-700 ">Description</h3>
+                  <div className="text-sm text-gray-700 col-span-2">
+                    <div>
+                      <h4 className="font-medium text-sm ">What you'll learn</h4>
+                      {/* Content would go here */}
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-sm ">Are there any course requirements or prerequisites?</h4>
+                      {/* Content would go here */}
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-sm">Who this course is for:</h4>
+                      {/* Content would go here */}
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Instructor section */}
+                <div className="grid grid-cols-3 mr-10">
+                  <h3 className="text-sm text-gray-700">Instructor</h3>
+                  <div className="flex items-center">
+                    <div className="w-12 h-12 bg-gray-800 rounded-full flex items-center justify-center text-white font-medium">
+                      SS
+                    </div>
+                    <div className="ml-3">
+                      <h4 className="font-medium">Stanley Samuel</h4>
+                    </div>
+                  </div>
                 </div>
               </div>
-              
-              {/* Published date and language */}
-              <div className="mb-6 space-y-3">
-                <div className="flex items-center text-gray-600">
-                  <Clock className="w-4 h-4 mr-2" />
-                  <span className="text-sm">Published May 2025</span>
-                </div>
-                <div className="flex items-center text-gray-600">
-                  <Globe className="w-4 h-4 mr-2" />
-                  <span className="text-sm">English</span>
-                </div>
-              </div>
-              
-              {/* Rest of the overview content... */}
-              {/* ... */}
-            </div>
-          )}
+            )}
           
-          {/* Tab content - Notes */}
           {/* Tab content - Notes */}
 {activeTab === 'notes' && !showSearch && (
   <div className="p-6 flex flex-col items-center">

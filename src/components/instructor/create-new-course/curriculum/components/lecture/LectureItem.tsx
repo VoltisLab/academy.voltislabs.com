@@ -91,6 +91,7 @@ export default function LectureItem({
   const [uploadedFiles, setUploadedFiles] = useState<Array<{name: string, size: string}>>([]);
   const [sourceCodeFiles, setSourceCodeFiles] = useState<SourceCodeFile[]>([]);
   const [externalResources, setExternalResources] = useState<ExternalResourceItem[]>([]);
+  const [previewContentType, setPreviewContentType] = useState<string>('video');
 
   const [videoContent, setVideoContent] = useState<VideoContent>({
   uploadTab: { selectedFile: null },
@@ -299,20 +300,40 @@ const handleEditContent = () => {
 
 // For debugging
 const VideoPreviewPage: React.FC = () => {
-  // Find the current section from the sections array
+   // Initialize our state variables properly
+  const hasArticleContent = articleContent.text !== '' && (!videoContent.selectedVideoDetails || videoContent.selectedVideoDetails === null);
+
   const currentSection = sections.find(section => section.id === sectionId);
   
-  // Add state to track the active item
+  // Use the previewContentType state for initialization
   const [activeItemId, setActiveItemId] = useState<string>(lecture.id);
-  const [activeItemType, setActiveItemType] = useState<string>(lecture.contentType || 'video');
+  const [activeItemType, setActiveItemType] = useState<string>(previewContentType);
+  
+  // Update when previewContentType changes
+  useEffect(() => {
+    setActiveItemType(previewContentType);
+  }, [previewContentType]);
   
   // Function to handle item selection from the sidebar
   const handleItemSelect = (itemId: string, itemType: string) => {
     console.log(`Switching to item ${itemId} of type ${itemType}`);
     setActiveItemId(itemId);
     setActiveItemType(itemType);
-
   };
+  
+  // Make sure the following useEffect is added to ensure type consistency
+  useEffect(() => {
+    // This ensures that when videoContent or articleContent changes, we update activeItemType
+    const hasArticle = articleContent.text !== '' && (!videoContent.selectedVideoDetails || videoContent.selectedVideoDetails === null);
+    setActiveItemType(hasArticle ? 'article' : 'video');
+  }, [videoContent.selectedVideoDetails, articleContent.text]);
+  
+  // Make sure the following useEffect is added to ensure type consistency
+  useEffect(() => {
+    // This ensures that when videoContent or articleContent changes, we update activeItemType
+    const hasArticle = articleContent.text !== '' && (!videoContent.selectedVideoDetails || videoContent.selectedVideoDetails === null);
+    setActiveItemType(hasArticle ? 'article' : 'video');
+  }, [videoContent.selectedVideoDetails, articleContent.text]);
   
   
   // Function to find an item by ID across all content types
@@ -384,11 +405,11 @@ const VideoPreviewPage: React.FC = () => {
               uploadedFiles={uploadedFiles}
               sourceCodeFiles={sourceCodeFiles}
               externalResources={externalResources.map(r => ({
-  title: r.title,
-  url: r.url,
-  name: typeof r.name === 'string' ? r.name : (typeof r.title === 'string' ? r.title : 'External Resource'),
-  lectureId: r.lectureId
-}))}
+              title: r.title,
+              url: r.url,
+              name: typeof r.name === 'string' ? r.name : (typeof r.title === 'string' ? r.title : 'External Resource'),
+              lectureId: r.lectureId
+            }))}
               onSelectItem={handleItemSelect}
             />
           </div>
@@ -442,11 +463,11 @@ const VideoPreviewPage: React.FC = () => {
               uploadedFiles={uploadedFiles}
               sourceCodeFiles={sourceCodeFiles}
               externalResources={externalResources.map(r => ({
-  title: r.title,
-  url: r.url,
-  name: typeof r.name === 'string' ? r.name : (typeof r.title === 'string' ? r.title : 'External Resource'),
-  lectureId: r.lectureId
-}))}
+              title: r.title,
+              url: r.url,
+              name: typeof r.name === 'string' ? r.name : (typeof r.title === 'string' ? r.title : 'External Resource'),
+              lectureId: r.lectureId
+            }))}
               onSelectItem={handleItemSelect}
             />
           </div>
@@ -486,11 +507,11 @@ const VideoPreviewPage: React.FC = () => {
               uploadedFiles={uploadedFiles}
               sourceCodeFiles={sourceCodeFiles}
               externalResources={externalResources.map(r => ({
-  title: r.title,
-  url: r.url,
-  name: typeof r.name === 'string' ? r.name : (typeof r.title === 'string' ? r.title : 'External Resource'),
-  lectureId: r.lectureId
-}))}
+              title: r.title,
+              url: r.url,
+              name: typeof r.name === 'string' ? r.name : (typeof r.title === 'string' ? r.title : 'External Resource'),
+              lectureId: r.lectureId
+            }))}
               onSelectItem={handleItemSelect}
             />
           </div>
@@ -500,7 +521,7 @@ const VideoPreviewPage: React.FC = () => {
       // For article content, use StudentVideoPreview but with the active item
       return <StudentVideoPreview 
         videoContent={videoContent}
-        articleContent={articleContent}
+        articleContent={articleContent} // Make sure to pass the article content
         setShowVideoPreview={setShowVideoPreview} 
         lecture={activeItem}
         uploadedFiles={uploadedFiles}
@@ -538,12 +559,6 @@ const selectVideo = (videoId: string) => {
   const selectedVideo = videoContent.libraryTab.videos.find(v => v.id === videoId);
   
   if (selectedVideo) {
-    // Add to selected resources
-    const videoExists = selectedResources.some(v => v.id === videoId);
-    if (!videoExists) {
-      setSelectedResources([...selectedResources, selectedVideo]);
-    }
-    
     // Create the selected video details with the video URL
     const selectedDetails: SelectedVideoDetails = {
       id: selectedVideo.id,
@@ -605,22 +620,28 @@ useEffect(() => {
   };
 }, [showPreviewDropdown]);
 
-// Updated handlePreviewSelection function with type safety
+const isArticleContent = (): boolean => {
+  return articleContent.text !== '' && (!videoContent.selectedVideoDetails || videoContent.selectedVideoDetails === null);
+};
+
+// Now update the handlePreviewSelection function
 const handlePreviewSelection = (mode: 'instructor' | 'student'): void => {
   setPreviewMode(mode);
   setShowPreviewDropdown(false);
-  setShowVideoPreview(true);
   
-  // Ensure all resource data is properly structured before previewing
-  // This ensures consistent data structure
+  // Set content type based on current state
+  const contentType = isArticleContent() ? 'article' : 'video';
+  console.log(`Preview mode: ${mode}, Content type: ${contentType}`);
   
-  // Format uploaded files if needed
+  // Update preview content type
+  setPreviewContentType(contentType);
+  
+  // Format resources as usual...
   const formattedUploadedFiles = uploadedFiles.map(file => ({
     name: file.name,
     size: file.size,
   }));
   
-  // Format source code files if needed
   const formattedSourceCodeFiles = sourceCodeFiles.map(file => ({
     lectureId: file.lectureId,
     filename: file.filename,
@@ -628,25 +649,19 @@ const handlePreviewSelection = (mode: 'instructor' | 'student'): void => {
     type: file.type,
   }));
   
-  // Format external resources if needed
   const formattedExternalResources = externalResources.map(resource => ({
     title: resource.title,
     url: resource.url,
-    name: resource.name || String(resource.title), // Ensure name is always a string
+    name: resource.name || String(resource.title),
   }));
   
-  // Update state with formatted resource data if needed
   setUploadedFiles(formattedUploadedFiles);
   setSourceCodeFiles(formattedSourceCodeFiles);
   setExternalResources(formattedExternalResources);
   
-  console.log(`Opening preview in ${mode} mode with resources:`, {
-    uploadedFiles: formattedUploadedFiles,
-    sourceCodeFiles: formattedSourceCodeFiles,
-    externalResources: formattedExternalResources
-  });
+  // Finally, show the preview
+  setShowVideoPreview(true);
 };
-
 const handleLibraryItemSelect = (item: LibraryFileWithSize) => {
   // Add the selected item to your downloadable files list
   setUploadedFiles([
@@ -674,12 +689,8 @@ const handleVideoFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     // Update the state with the selected file and its URL
     setVideoContent({
       ...videoContent,
-      uploadTab: { selectedFile: file },
-      // Add the URL to selectedVideoDetails so it's available when the upload completes
-      selectedVideoDetails: videoContent.selectedVideoDetails ? {
-        ...videoContent.selectedVideoDetails,
-        url: videoUrl // Store the URL to be used by the video player
-      } : null
+      uploadTab: { selectedFile: file }
+      // Don't set selectedVideoDetails here yet
     });
     
     // Start the upload process
@@ -698,16 +709,6 @@ const handleVideoFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
             
             // Generate a unique ID based on the filename and current timestamp
             const videoId = `${file.name.replace(/\s+/g, '')}-${Date.now()}`;
-            
-            // Create the selected video details with the video URL
-            const selectedDetails: SelectedVideoDetails = {
-              id: videoId,
-              filename: file.name,
-              duration: '01:45', // This would come from the actual video metadata
-              thumbnailUrl: 'https://via.placeholder.com/160x120/000000/FFFFFF/?text=Video',
-              isDownloadable: false,
-              url: videoUrl // Store URL for playback
-            };
             
             // Check if a video with the same filename already exists
             const existingVideo = videoContent.libraryTab.videos.find(
@@ -730,19 +731,19 @@ const handleVideoFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
                 libraryTab: {
                   ...prev.libraryTab,
                   videos: [newVideo, ...prev.libraryTab.videos]
-                },
-                selectedVideoDetails: selectedDetails // Set selected video details with URL
+                }
+                // Don't set selectedVideoDetails here - user must select from library
               }));
               
-              // Add to uploaded files
-              setUploadedFiles([...uploadedFiles, { name: file.name, size: formatFileSize(file.size) }]);
-            } else {
-              // If it exists, just update the selectedVideoDetails
-              setVideoContent(prev => ({
-                ...prev,
-                selectedVideoDetails: selectedDetails
-              }));
+              // IMPORTANT: Removed the line that was adding to uploadedFiles
+              // No longer adding: setUploadedFiles([...uploadedFiles, { name: file.name, size: formatFileSize(file.size) }]);
             }
+            
+            // Switch to the library tab to show the uploaded video
+            setVideoContent(prev => ({
+              ...prev,
+              activeTab: 'addFromLibrary'
+            }));
             
           }, 500);
           return 100;
@@ -1529,41 +1530,27 @@ return (
 )}
               
               {/* Display Downloadable Materials section if files exist */}
-              {(uploadedFiles.length > 0 || selectedResources.length > 0) && (
-                <div className="mb-4 border-b border-gray-400 pb-2">
-                  <h3 className="text-sm font-bold text-gray-700 mb-2">Downloadable materials</h3>
-                  {uploadedFiles.map((file, index) => (
-                    <div key={`file-${index}`} className="flex justify-between items-center py-1">
-                      <div className="flex items-center text-gray-800">
-                        <FileDown size={13} className='text-gray-800 mr-1'/>
-                        <span className="text-sm text-gray-800">{file.name} ({file.size})</span>
-                      </div>
-                      <button 
-                        onClick={() => {
-                          setUploadedFiles(uploadedFiles.filter((_, i) => i !== index));
-                        }}
-                        className="text-gray-400 hover:bg-gray-200 p-2 rounded"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ))}
-                  
-                  {selectedResources.map(resource => (
-                    <div key={`resource-${resource.id}`} className="flex justify-between items-center py-1">
-                      <div className="flex items-center">
-                        <span className="text-sm text-gray-800">{resource.filename} ({resource.type === 'Video' ? '01:45' : '1.2 MB'})</span>
-                      </div>
-                      <button 
-                        onClick={() => removeSelectedResource(resource.id)}
-                        className="text-gray-400 hover:bg-gray-200 p-2 rounded"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
+              {uploadedFiles.length > 0 && (
+  <div className="mb-4 border-b border-gray-400 pb-2">
+    <h3 className="text-sm font-bold text-gray-700 mb-2">Downloadable materials</h3>
+    {uploadedFiles.map((file, index) => (
+      <div key={`file-${index}`} className="flex justify-between items-center py-1">
+        <div className="flex items-center text-gray-800">
+          <FileDown size={13} className='text-gray-800 mr-1'/>
+          <span className="text-sm text-gray-800">{file.name} ({file.size})</span>
+        </div>
+        <button 
+          onClick={() => {
+            setUploadedFiles(uploadedFiles.filter((_, i) => i !== index));
+          }}
+          className="text-gray-400 hover:bg-gray-200 p-2 rounded"
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
+      </div>
+    ))}
+  </div>
+)}
 
               {sourceCodeFiles.length > 0 && (
   <div className="mb-4 border-b border-gray-400 pb-2">
