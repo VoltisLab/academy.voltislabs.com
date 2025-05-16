@@ -216,6 +216,8 @@ export interface Lecture {
   isCompleted?: boolean;
   hasResources?: boolean;
   duration?: string;
+  language?:string;
+  version?:string;
   // Code editor related fields
   code?: string;                    // Stores the code content for practice exercises
   codeLanguage?: string;            // Stores the programming language for the code editor

@@ -11,6 +11,7 @@ import { useCourseSectionsUpdate } from '@/services/courseSectionsService';
 import SectionForm from './components/section/SectionForm';
 import NewFeatureAlert from './NewFeatureAlert';
 import InfoBox from './InfoBox';
+import CodingExerciseCreator from './components/code/CodingExcerciseCreator';
 
 interface CourseBuilderProps {
   onSaveNext?: () => void;
@@ -33,6 +34,13 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({ onSaveNext, courseId }) =
     sectionId: string | null;
     lectureId: string | null;
   }>({ sectionId: null, lectureId: null });
+  
+  // New state for coding exercise modal
+  const [showCodingExerciseCreator, setShowCodingExerciseCreator] = useState<boolean>(false);
+  const [currentCodingExercise, setCurrentCodingExercise] = useState<{
+    sectionId: string;
+    lectureId: string;
+  } | null>(null);
   
   const { 
     sections, 
@@ -94,6 +102,45 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({ onSaveNext, courseId }) =
     sectionId: string;
     lectureId: string;
   } | null>(null);
+
+  // New handler for opening the coding exercise creator modal
+  const handleOpenCodingExerciseModal = (sectionId: string, lectureId: string) => {
+    setCurrentCodingExercise({ sectionId, lectureId });
+    setShowCodingExerciseCreator(true);
+  };
+
+  // Handler for saving the coding exercise
+  const handleSaveCodingExercise = (updatedLecture: any) => {
+    if (!currentCodingExercise) return;
+    
+    // Update the sections state with the changes
+    setSections(sections.map(section => {
+      if (section.id === currentCodingExercise.sectionId) {
+        return {
+          ...section,
+          lectures: section.lectures.map(lecture => 
+            lecture.id === updatedLecture.id 
+              ? { 
+                  ...lecture, 
+                  name: updatedLecture.name || lecture.name,
+                  codeLanguage: updatedLecture.codeLanguage,
+                  version: updatedLecture.version,
+                  // Add any other properties that need to be updated
+                } 
+              : lecture
+          )
+        };
+      }
+      return section;
+    }));
+    
+    // Close the modal
+    setShowCodingExerciseCreator(false);
+    setCurrentCodingExercise(null);
+    
+    // Show success message
+    toast.success("Coding exercise updated successfully!");
+  };
 
   const toggleContentSection = (sectionId: string, lectureId: string) => {
     // Check if this section is already active
@@ -268,6 +315,14 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({ onSaveNext, courseId }) =
       toast.error(error instanceof Error ? error.message : "An unexpected error occurred");
     }
   };
+
+  // Function to find lecture data by section and lecture IDs
+  const findLecture = (sectionId: string, lectureId: string) => {
+    const section = sections.find(s => s.id === sectionId);
+    if (!section) return null;
+    
+    return section.lectures.find(l => l.id === lectureId) || null;
+  };
   
   return (
     <div className="xl:max-w-5xl max-w-full mx-auto shadow-xl">
@@ -344,6 +399,8 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({ onSaveNext, courseId }) =
                 draggedLecture={draggedLecture}
                 dragTarget={dragTarget}
                 saveDescription={saveSectionDescription}
+                // Pass the handler for opening the coding exercise modal
+                openCodingExerciseModal={handleOpenCodingExerciseModal}
               />
             ))
           ) : (
@@ -404,6 +461,21 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({ onSaveNext, courseId }) =
         }}
         className="hidden" 
       />
+
+      {/* Render the CodingExerciseCreator modal when active */}
+      {showCodingExerciseCreator && currentCodingExercise && (
+  <div className="fixed inset-0 z-50 bg-black bg-opacity-50 overflow-auto">
+    <CodingExerciseCreator
+      lectureId={currentCodingExercise.lectureId}
+      onClose={() => {
+        setShowCodingExerciseCreator(false);
+        setCurrentCodingExercise(null);
+      }}
+      onSave={handleSaveCodingExercise}
+      initialData={findLecture(currentCodingExercise.sectionId, currentCodingExercise.lectureId) ?? undefined}
+    />
+  </div>
+)}
     </div>
   );
 };

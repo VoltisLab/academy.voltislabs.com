@@ -892,12 +892,7 @@ return (
           </div>
         </div>
       )}
-
-
-      
                       </div>
-
-                      
                     </div>
                   ) : (
                     // Video player with overlay

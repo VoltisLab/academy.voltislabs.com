@@ -16,6 +16,7 @@ import { FaHamburger } from 'react-icons/fa';
 import { useSections } from '@/hooks/useSection';
 
 
+// Updated SectionItemProps interface with the missing property
 interface SectionItemProps {
   section: {
     id: string;
@@ -61,6 +62,9 @@ interface SectionItemProps {
     sectionId: string | null;
     lectureId: string | null;
   };
+  // Add the missing property for opening coding exercise modal
+  openCodingExerciseModal?: (sectionId: string, lectureId: string) => void;
+  
 }
 
 
@@ -97,7 +101,8 @@ export default function SectionItem({
   draggedSection,
   draggedLecture,
   dragTarget,
-  saveDescription
+  saveDescription,
+  openCodingExerciseModal,
 }: SectionItemProps) {
   const sectionNameInputRef = useRef<HTMLInputElement>(null);
   // State for toggling action buttons
@@ -326,29 +331,35 @@ const handleToggleDescriptionEditor = (sectionId: string, lectureId: string, cur
     }
 
     if (lecture.contentType === 'coding-exercise') {
-      return (
-        <CodingExerciseItem
-          key={lecture.id}
-          lecture={lecture}
-          lectureIndex={lectureIndex}
-          totalLectures={section.lectures.length}
-          sectionId={section.id}
-          editingLectureId={editingLectureId}
-          setEditingLectureId={setEditingLectureId}
-          updateLectureName={updateLectureName}
-          deleteLecture={deleteLecture}
-          moveLecture={moveLecture}
-          handleDragStart={handleDragStart}
-          handleDragOver={handleDragOver}
-          handleDrop={handleDrop}
-          isDragging={isDragging}
-          handleDragEnd={handleDragEnd}
-          handleDragLeave={handleDragLeave}
-          draggedLecture={draggedLecture}
-          dragTarget={dragTarget}
-        />
-      );
-    }
+  return (
+    <CodingExerciseItem
+      key={lecture.id}
+      lecture={lecture}
+      lectureIndex={lectureIndex}
+      totalLectures={section.lectures.length}
+      sectionId={section.id}
+      editingLectureId={editingLectureId}
+      setEditingLectureId={setEditingLectureId}
+      updateLectureName={updateLectureName}
+      deleteLecture={deleteLecture}
+      moveLecture={moveLecture}
+      handleDragStart={handleDragStart}
+      handleDragOver={handleDragOver}
+      handleDrop={handleDrop}
+      isDragging={isDragging}
+      handleDragEnd={handleDragEnd}
+      handleDragLeave={handleDragLeave}
+      draggedLecture={draggedLecture}
+      dragTarget={dragTarget}
+      // Add the required prop here
+      customEditHandler={(lectureId) => {
+        if (openCodingExerciseModal) {
+          openCodingExerciseModal(section.id, lectureId);
+        }
+      }}
+    />
+  );
+}
     
     if (lecture.contentType === 'quiz') {
       return (
