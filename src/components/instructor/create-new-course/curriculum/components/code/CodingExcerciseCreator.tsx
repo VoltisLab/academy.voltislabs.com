@@ -584,6 +584,7 @@ const CodingExerciseCreatorWithMonaco: React.FC<CodingExerciseCreatorProps> = ({
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
   const [showVersionDropdown, setShowVersionDropdown] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>('planExercise');
+  const [showTooltip, setShowTooltip] = useState(true);
   const [exerciseTitle, setExerciseTitle] = useState<string>(
     initialData?.name || "Write a python script to implement face recognition."
   );
@@ -725,9 +726,9 @@ const CodingExerciseCreatorWithMonaco: React.FC<CodingExerciseCreatorProps> = ({
   };
 
   return (
-    <div className="flex flex-col h-screen bg-gray-100">
+    <div className="flex flex-col h-screen bg-white">
       {/* Top Navigation Bar */}
-      <div className="flex items-center justify-between p-4 bg-white border-b border-gray-200">
+      <div className="flex items-center justify-between px-4 py-2 bg-white border-b border-gray-200">
         <div className="flex items-center">
           <button 
             className="text-purple-600 flex items-center mr-4"
@@ -738,19 +739,19 @@ const CodingExerciseCreatorWithMonaco: React.FC<CodingExerciseCreatorProps> = ({
           </button>
           <span className="text-gray-700">{exerciseTitle}</span>
         </div>
-        <div className="flex space-x-2">
-          <button className="border border-purple-600 text-purple-600 px-4 py-2 rounded-md flex items-center">
+        <div className="flex gap-2">
+          <button className="border border-purple-600 text-purple-600 px-2 py-1 rounded-md flex items-center">
             <Eye className="w-4 h-4 mr-1" />
             Preview
           </button>
           <button 
-            className="border border-gray-300 text-gray-700 px-4 py-2 rounded-md"
+            className="border border-gray-300 text-gray-700 px-2 py-1 rounded-md"
             onClick={handleSave}
           >
             Save
           </button>
           <button 
-            className="bg-purple-600 text-white px-4 py-2 rounded-md"
+            className="bg-purple-600 text-white px-2 py-1 rounded-md"
             onClick={handleSave}
           >
             Publish
@@ -761,141 +762,145 @@ const CodingExerciseCreatorWithMonaco: React.FC<CodingExerciseCreatorProps> = ({
       {/* Main Content Area */}
       <div className="flex-1 overflow-y-auto">
         {view === 'languageSelection' && (
-          <div className="flex items-center justify-center h-full">
-            <div className="bg-white rounded-lg shadow-md p-6 w-full max-w-lg">
-              <h2 className="text-xl font-medium mb-4">Select language to create coding exercise</h2>
-              
-              <div className="mb-4">
-                <label className="block text-gray-700 mb-2">Coding language</label>
-                <div className="relative">
+          <div className="fixed inset-0 flex items-center justify-center z-40">
+      {/* Backdrop overlay with blur effect */}
+      <div className="fixed inset-0 backdrop-blur-sm bg-transparent bg-opacity-50" onClick={onClose}></div>
+
+      {/* Modal content - keeping your existing structure but with proper z-index */}
+      <div className="relative bg-white rounded-lg shadow-md p-6 w-full max-w-xl z-50">
+        <h2 className="text-xl font-medium mb-4">Select language to create coding exercise</h2>
+        
+        <div className="mb-4">
+          <label className="block text-gray-700 mb-2">Coding language</label>
+          <div className="relative">
+            <button
+              className="w-full flex items-center justify-between bg-white border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
+              onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
+            >
+              {selectedLanguage ? (
+                <div className="flex items-center">
+                  <span>{selectedLanguage.name}</span>
+                  {selectedLanguage.deprecated && (
+                    <span className="ml-2 px-2 py-0.5 bg-gray-200 text-gray-600 text-xs rounded">Deprecated</span>
+                  )}
+                  {selectedLanguage.isNew && (
+                    <span className="ml-2 px-2 py-0.5 bg-blue-100 text-blue-600 text-xs rounded">New</span>
+                  )}
+                </div>
+              ) : (
+                <span>Select</span>
+              )}
+              <ChevronDown className="w-5 h-5 text-gray-400" />
+            </button>
+            
+            {showLanguageDropdown && (
+              <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                {languages.map((language) => (
                   <button
-                    className="w-full flex items-center justify-between bg-white border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                    onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
+                    key={language.id}
+                    className="w-full text-left px-3 py-2 hover:bg-gray-100 flex items-center justify-between"
+                    onClick={() => handleLanguageSelect(language)}
                   >
-                    {selectedLanguage ? (
-                      <div className="flex items-center">
-                        <span>{selectedLanguage.name}</span>
-                        {selectedLanguage.deprecated && (
-                          <span className="ml-2 px-2 py-0.5 bg-gray-200 text-gray-600 text-xs rounded">Deprecated</span>
-                        )}
-                        {selectedLanguage.isNew && (
-                          <span className="ml-2 px-2 py-0.5 bg-blue-100 text-blue-600 text-xs rounded">New</span>
-                        )}
-                      </div>
-                    ) : (
-                      <span>Select</span>
+                    <span>{language.name}</span>
+                    {language.deprecated && (
+                      <span className="px-2 py-0.5 bg-gray-200 text-gray-600 text-xs rounded">Deprecated</span>
                     )}
-                    <ChevronDown className="w-5 h-5 text-gray-400" />
+                    {language.isNew && (
+                      <span className="px-2 py-0.5 bg-blue-100 text-blue-600 text-xs rounded">New</span>
+                    )}
                   </button>
-                  
-                  {showLanguageDropdown && (
-                    <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto">
-                      {languages.map((language) => (
-                        <button
-                          key={language.id}
-                          className="w-full text-left px-3 py-2 hover:bg-gray-100 flex items-center justify-between"
-                          onClick={() => handleLanguageSelect(language)}
-                        >
-                          <span>{language.name}</span>
-                          {language.deprecated && (
-                            <span className="px-2 py-0.5 bg-gray-200 text-gray-600 text-xs rounded">Deprecated</span>
-                          )}
-                          {language.isNew && (
-                            <span className="px-2 py-0.5 bg-blue-100 text-blue-600 text-xs rounded">New</span>
-                          )}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                ))}
               </div>
+            )}
+          </div>
+        </div>
+        
+        {selectedLanguage && selectedLanguage.hasVersions && (
+          <div className="mb-4">
+            <label className="block text-gray-700 mb-2">Version</label>
+            <div className="relative">
+              <button
+                className="w-full flex items-center justify-between bg-white border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                onClick={() => setShowVersionDropdown(!showVersionDropdown)}
+              >
+                {selectedVersion || 'Select Version'}
+                <ChevronDown className="w-5 h-5 text-gray-400" />
+              </button>
               
-              {selectedLanguage && selectedLanguage.hasVersions && (
-                <div className="mb-4">
-                  <label className="block text-gray-700 mb-2">Version</label>
-                  <div className="relative">
+              {showVersionDropdown && (
+                <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg">
+                  {selectedLanguage.versions?.map((version) => (
                     <button
-                      className="w-full flex items-center justify-between bg-white border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                      onClick={() => setShowVersionDropdown(!showVersionDropdown)}
+                      key={version}
+                      className="w-full text-left px-3 py-2 hover:bg-gray-100"
+                      onClick={() => handleVersionSelect(version)}
                     >
-                      {selectedVersion || 'Select Version'}
-                      <ChevronDown className="w-5 h-5 text-gray-400" />
+                      {version}
                     </button>
-                    
-                    {showVersionDropdown && (
-                      <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg">
-                        {selectedLanguage.versions?.map((version) => (
-                          <button
-                            key={version}
-                            className="w-full text-left px-3 py-2 hover:bg-gray-100"
-                            onClick={() => handleVersionSelect(version)}
-                          >
-                            {version}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  {selectedLanguage.additionalInfo && (
-                    <p className="text-sm text-gray-500 mt-1">with {selectedLanguage.additionalInfo}</p>
-                  )}
+                  ))}
                 </div>
               )}
-              
-              {selectedLanguage && selectedLanguage.deprecated && (
-                <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md flex items-start">
-                  <AlertTriangle className="w-5 h-5 text-yellow-500 mt-0.5 mr-2 flex-shrink-0" />
-                  <div>
-                    <p className="font-medium text-gray-800">You've selected a deprecated language</p>
-                    <p className="text-sm text-gray-600 mt-1">
-                      We have introduced a new "Web Development" language option that supports JavaScript coding exercises with up-to-date libraries. For the best experience please select "Web Development" from the language dropdown.
-                    </p>
-                  </div>
-                </div>
-              )}
-              
-              <div className="flex justify-end mt-6 space-x-2">
-                <button 
-                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700"
-                  onClick={onClose}
-                >
-                  Cancel
-                </button>
-                <button
-                  className={`px-4 py-2 rounded-md ${selectedLanguage ? 'bg-purple-600 text-white' : 'bg-purple-300 text-white cursor-not-allowed'}`}
-                  disabled={!selectedLanguage}
-                  onClick={handleStartCreating}
-                >
-                  Start creating
-                </button>
-              </div>
+            </div>
+            {selectedLanguage.additionalInfo && (
+              <p className="text-sm text-gray-500 mt-1">with {selectedLanguage.additionalInfo}</p>
+            )}
+          </div>
+        )}
+        
+        {selectedLanguage && selectedLanguage.deprecated && (
+          <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md flex items-start">
+            <AlertTriangle className="w-5 h-5 text-yellow-500 mt-0.5 mr-2 flex-shrink-0" />
+            <div>
+              <p className="font-medium text-gray-800">You've selected a deprecated language</p>
+              <p className="text-sm text-gray-600 mt-1">
+                We have introduced a new "Web Development" language option that supports JavaScript coding exercises with up-to-date libraries. For the best experience please select "Web Development" from the language dropdown.
+              </p>
             </div>
           </div>
         )}
+        
+        <div className="flex justify-end mt-6 space-x-2">
+          <button 
+            className="px-4 py-2 border border-gray-300 rounded-md text-gray-700"
+            onClick={onClose}
+          >
+            Cancel
+          </button>
+          <button
+            className={`px-4 py-2 rounded-md ${selectedLanguage ? 'bg-purple-600 text-white' : 'bg-purple-300 text-white cursor-not-allowed'}`}
+            disabled={!selectedLanguage}
+            onClick={handleStartCreating}
+          >
+            Start creating
+          </button>
+        </div>
+      </div>
+    </div>
+        )}
 
         {view === 'exercisePlanning' && (
-          <div className="p-6 max-w-4xl mx-auto">
-            <h2 className="text-xl font-medium mb-4">Plan exercise</h2>
+          <div className="p-6 max-w-3xl mx-auto">
+            <h2 className="text-xl text-gray-700 font-bold mb-4">Plan exercise</h2>
             
-            <div className="bg-white p-6 rounded-lg shadow-sm mb-6">
+            <div className="bg-white mb-6">
               <p className="text-gray-700 mb-2">
-                A <span className="font-medium">coding exercise</span> allows your learners to practice a targeted piece of real work and get immediate feedback. We recommend you follow these steps: Plan the exercise, define the solution, and guide learners. This will ensure you frame the problem and provide the needed guidance with the solution in mind.
+                A <span className="font-bold">coding exercise</span> allows your learners to practice a targeted piece of real work and get immediate feedback. We recommend you follow these steps: Plan the exercise, define the solution, and guide learners. This will ensure you frame the problem and provide the needed guidance with the solution in mind.
               </p>
               <a href="#" className="text-purple-600 text-sm hover:underline">Learn more about creating coding exercises</a>
               
               <div className="mt-6">
-                <label className="block text-gray-700 mb-2 font-medium">Exercise title</label>
+                <label className="block text-gray-700 mb-2 font-bold">Exercise title</label>
                 <input
                   type="text"
                   value={exerciseTitle}
                   onChange={(e) => setExerciseTitle(e.target.value)}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="w-full border border-gray-500 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
               </div>
               
               <div className="mt-4">
                 <div className="flex items-center mb-2">
-                  <label className="block text-gray-700 font-medium">Learning objective</label>
+                  <label className="block text-gray-700 font-bold">Learning objective</label>
                   <div className="ml-1 text-gray-400 bg-gray-100 rounded-full w-4 h-4 flex items-center justify-center text-xs">?</div>
                 </div>
                 <div className="relative">
@@ -903,8 +908,8 @@ const CodingExerciseCreatorWithMonaco: React.FC<CodingExerciseCreatorProps> = ({
                     value={learningObjective}
                     onChange={(e) => setLearningObjective(e.target.value)}
                     placeholder="Provide a learning objective for this coding exercise."
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                    rows={4}
+                    className="w-full border border-gray-500 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    rows={3}
                   />
                   <div className="absolute bottom-2 right-2 text-sm text-gray-500">
                     {learningObjective.length}/200
@@ -914,19 +919,7 @@ const CodingExerciseCreatorWithMonaco: React.FC<CodingExerciseCreatorProps> = ({
               </div>
             </div>
             
-            <div className="bg-white p-6 rounded-lg shadow-sm flex items-start">
-              <div className="flex-1">
-                <p className="text-gray-700">
-                  After planning your exercise, you can move to the next step or toggle between any of these options.
-                </p>
-              </div>
-              <button
-                className="bg-purple-600 text-white px-4 py-2 rounded-md ml-4"
-                onClick={() => handleTabChange('authorSolution')}
-              >
-                Get started
-              </button>
-            </div>
+         
           </div>
         )}
 
@@ -1021,10 +1014,11 @@ const CodingExerciseCreatorWithMonaco: React.FC<CodingExerciseCreatorProps> = ({
             )}
           </div>
         )}
+
         
         {/* Instruction popup */}
         {showInstructionPopup && view === 'codeEditor' && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="fixed inset-0 backdrop-blur-sm bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white p-6 rounded-lg shadow-lg max-w-md">
               <div className="flex items-start mb-4">
                 <div className="flex-1">
@@ -1076,7 +1070,7 @@ const CodingExerciseCreatorWithMonaco: React.FC<CodingExerciseCreatorProps> = ({
 
       {/* Bottom Tab Navigation */}
       <div className="border-t border-gray-200 bg-white">
-        <div className="flex relative">
+        <div className="flex relative max-w-2xl mx-auto">
           <button
             className={`flex-1 py-4 text-center relative ${activeTab === 'planExercise' ? 'text-purple-600 font-medium' : 'text-gray-600'}`}
             onClick={() => handleTabChange('planExercise')}
@@ -1084,20 +1078,34 @@ const CodingExerciseCreatorWithMonaco: React.FC<CodingExerciseCreatorProps> = ({
             Plan Exercise
             {activeTab === 'planExercise' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-purple-600"></div>}
           </button>
+          
           <button
             className={`flex-1 py-4 text-center relative ${activeTab === 'authorSolution' ? 'text-purple-600 font-medium' : 'text-gray-600'}`}
             onClick={() => handleTabChange('authorSolution')}
           >
             Author solution
             {activeTab === 'authorSolution' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-purple-600"></div>}
-            {activeTab === 'planExercise' && (
-              <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-white p-2 rounded-lg shadow-lg z-10 w-48 after:content-[''] after:absolute after:bottom-0 after:left-1/2 after:-mb-2 after:border-8 after:border-t-white after:border-r-transparent after:border-b-transparent after:border-l-transparent after:transform after:-translate-x-1/2">
-                <div className="text-center text-sm text-gray-700">
-                  Go to Author solution
+            
+            {/* Tooltip that appears when activeTab is planExercise and showTooltip is true */}
+            {activeTab === 'planExercise' && showTooltip && (
+              <div className="absolute bottom-10 left-1/2 min-w-[200px] transform -translate-x-1/2 bg-white p-3 rounded-lg shadow-lg z-10 w-64 text-left">
+                <p className="text-gray-700 text-sm mb-2">
+                  After planning your exercise, you can move to the next step or toggle between any of these options.
+                </p>
+                <div className="flex justify-end">
+                  <div
+                    className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded-md text-sm"
+                    onClick={() => handleTabChange('authorSolution')}
+                  >
+                    Get started
+                  </div>
                 </div>
+                {/* Triangle pointer at bottom of tooltip */}
+                <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 -mb-2 border-8 border-solid border-t-white border-r-transparent border-b-transparent border-l-transparent"></div>
               </div>
             )}
           </button>
+          
           <button
             className={`flex-1 py-4 text-center relative ${activeTab === 'guideLearners' ? 'text-purple-600 font-medium' : 'text-gray-600'}`}
             onClick={() => handleTabChange('guideLearners')}

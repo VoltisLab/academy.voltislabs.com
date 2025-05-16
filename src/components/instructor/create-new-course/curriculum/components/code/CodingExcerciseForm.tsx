@@ -23,15 +23,14 @@ const CodingExerciseForm: React.FC<CodingExerciseFormProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-lg overflow-hidden border border-gray-200 mb-4">
-      <div className="flex justify-between items-center p-3 bg-gray-50">
-        <h3 className="font-semibold">New Coding Exercise:</h3>
+    <div className=" overflow-hidden mb-4">
+ 
         <button onClick={onCancel} className="text-gray-500 hover:text-gray-700">
           <X className="w-5 h-5" />
         </button>
-      </div>
+
       
-      <div className="p-4">
+      <div className="p-2 ml-10 bg-white border-gray-500 border">
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
             <input
@@ -39,12 +38,12 @@ const CodingExerciseForm: React.FC<CodingExerciseFormProps> = ({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Enter a Title"
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-[#6D28D2]"
               maxLength={100}
               autoFocus
               required
             />
-            <div className="text-right text-xs text-gray-500 mt-1">
+            <div className="absolute right-5 bottom-5 text-xs text-gray-500 mt-1">
               {title.length}/100
             </div>
           </div>
@@ -60,7 +59,7 @@ const CodingExerciseForm: React.FC<CodingExerciseFormProps> = ({
             <button
               type="submit"
               disabled={!title.trim()}
-              className={`xl:px-4 px-2 xl:py-2 py-1 ${!title.trim() ? 'bg-indigo-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'} text-white rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500`}
+              className={`px-2 xl:py-2 py-1 ${!title.trim() ? 'bg-indigo-400 cursor-not-allowed' : 'bg-[#6D28D2] hover:bg-[#7D28D2]'} text-white rounded-md focus:outline-none focus:ring-1 focus:ring-[#6D28D2]`}
             >
               Add Coding Exercise
             </button>
