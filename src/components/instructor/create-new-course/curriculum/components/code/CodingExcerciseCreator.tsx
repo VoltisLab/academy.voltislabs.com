@@ -1,7 +1,9 @@
+
 import React, { useState, useEffect, useRef } from 'react';
-import { Code, AlignJustify, ChevronLeft, ChevronDown, AlertTriangle, Eye, ExternalLink, Play } from "lucide-react";
+import { Code, AlignJustify, ChevronLeft, ChevronDown, ChevronUp, AlertTriangle, Eye, ExternalLink, Play } from "lucide-react";
 import { Lecture, ContentItemType } from '@/lib/types';
 import Editor, { useMonaco, Monaco } from '@monaco-editor/react';
+import InstructionTabs from './InstructionsTab';
 
 // Type definitions
 type Language = {
@@ -15,7 +17,12 @@ type Language = {
 };
 
 type Tab = 'planExercise' | 'authorSolution' | 'guideLearners';
-type View = 'languageSelection' | 'exercisePlanning' | 'codeEditor';
+type View = 'languageSelection' | 'exercisePlanning' | 'codeEditor' | 'guideLearners';
+type TestResult = {
+  name: string;
+  passed: boolean;
+  error?: string;
+};
 
 interface CodingExerciseCreatorProps {
   lectureId: string | null;
@@ -84,24 +91,14 @@ const getDefaultCode = (languageId: string) => {
     return "Face detected"`;
     
     case 'react':
-      return `import React, { useState } from 'react';
+      return `import React from 'react';
 
-function App() {
-  // Example state
-  const [count, setCount] = useState(0);
-
-  return (
-    <div className="container">
-      <h1>Hello React</h1>
-      <p>You clicked {count} times</p>
-      <button onClick={() => setCount(count + 1)}>
-        Click me
-      </button>
-    </div>
-  );
-}
-
-export default App;`;
+// don't change the Component name "App"
+export default class App extends React.Component {
+  render() {
+    // TODO: implement component
+  }
+}`;
     
     case 'javascript':
       return `/**
@@ -181,6 +178,18 @@ public class Solution
             sum += num;
         }
         return sum;
+    }
+}`;
+
+    case 'kotlin':
+      return `class Exercise {
+    /**
+     * Calculate the sum of a list of integers
+     * @param numbers List of integers
+     * @return The sum of all numbers
+     */
+    fun calculateSum(numbers: List<Int>): Int {
+        return numbers.sum()
     }
 }`;
 
@@ -386,6 +395,19 @@ public class SolutionTests
     // Add more test methods here
 }`;
 
+    case 'kotlin':
+      return `import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.Assertions.assertEquals
+
+class Evaluate {
+    @Test
+    fun testExercise() {
+        val exercise = Exercise()
+        val numbers = listOf(1, 2, 3, 4, 5)
+        assertEquals(15, exercise.calculateSum(numbers))
+    }
+}`;
+
     default:
       return `// Write tests for your ${languageId} solution here
 
@@ -586,7 +608,7 @@ const CodingExerciseCreatorWithMonaco: React.FC<CodingExerciseCreatorProps> = ({
   const [activeTab, setActiveTab] = useState<Tab>('planExercise');
   const [showTooltip, setShowTooltip] = useState(true);
   const [exerciseTitle, setExerciseTitle] = useState<string>(
-    initialData?.name || "Write a python script to implement face recognition."
+    initialData?.name || "New coding excercise"
   );
   const [learningObjective, setLearningObjective] = useState<string>("");
   const [showInstructionPopup, setShowInstructionPopup] = useState(true);
@@ -597,6 +619,12 @@ const CodingExerciseCreatorWithMonaco: React.FC<CodingExerciseCreatorProps> = ({
   const [testCode, setTestCode] = useState<string>('// Write your test code here');
   const [testResults, setTestResults] = useState<any>(null);
   const [isRunningTests, setIsRunningTests] = useState<boolean>(false);
+  const [showTerminal, setShowTerminal] = useState<boolean>(false);
+
+  // Instruction state
+  const [instructions, setInstructions] = useState<string>("");
+  const [hints, setHints] = useState<string>("");
+  const [solutionExplanation, setSolutionExplanation] = useState<string>("");
 
   // Sample languages
   const languages: Language[] = [
@@ -666,6 +694,8 @@ const CodingExerciseCreatorWithMonaco: React.FC<CodingExerciseCreatorProps> = ({
     setActiveTab(tab);
     if (tab === 'authorSolution') {
       setView('codeEditor');
+    } else if (tab === 'guideLearners') {
+      setView('guideLearners');
     } else {
       setView('exercisePlanning');
     }
@@ -682,15 +712,18 @@ const CodingExerciseCreatorWithMonaco: React.FC<CodingExerciseCreatorProps> = ({
         name: exerciseTitle,
         codeLanguage: selectedLanguage?.id,
         version: selectedVersion,
-        description: initialData?.description || "",
+        description: instructions || initialData?.description || "",
         code: solutionCode,
-        testCases: [{ id: '1', input: '', expectedOutput: testCode }]
+        testCases: [{ id: '1', input: '', expectedOutput: testCode }],
+        // hints: hints,
+        // solutionExplanation: solutionExplanation
       });
     }
   };
 
   const handleRunTests = async () => {
     setIsRunningTests(true);
+    setShowTerminal(true);
     setTestResults(null);
 
     try {
@@ -700,11 +733,19 @@ const CodingExerciseCreatorWithMonaco: React.FC<CodingExerciseCreatorProps> = ({
       } else {
         // For other languages, we'd need a backend service
         // Here we'll just show a message
-        setTestResults({
-          success: false,
-          message: `Running tests for ${selectedLanguage?.name || 'this language'} requires a backend service. This is a mock implementation.`,
-          results: []
-        });
+        setTimeout(() => {
+          setTestResults({
+            success: Math.random() > 0.3, // 70% chance of success for demo
+            message: `Running tests for ${selectedLanguage?.name || 'this language'} requires a backend service. This is a mock implementation.`,
+            results: [
+              { 
+                name: 'testExercise()', 
+                passed: Math.random() > 0.3, 
+                error: Math.random() > 0.3 ? undefined : 'Expected result but got null' 
+              }
+            ]
+          });
+        }, 1000); // Simulate network delay
       }
     } catch (error) {
       setTestResults({
@@ -740,18 +781,18 @@ const CodingExerciseCreatorWithMonaco: React.FC<CodingExerciseCreatorProps> = ({
           <span className="text-gray-700">{exerciseTitle}</span>
         </div>
         <div className="flex gap-2">
-          <button className="border border-purple-600 text-purple-600 px-2 py-1 rounded-md flex items-center">
+          <button className="border border-purple-600 text-purple-600 px-4 py-2 rounded-md flex items-center">
             <Eye className="w-4 h-4 mr-1" />
             Preview
           </button>
           <button 
-            className="border border-gray-300 text-gray-700 px-2 py-1 rounded-md"
+            className="border border-gray-300 text-gray-700 px-4 py-2 rounded-md"
             onClick={handleSave}
           >
             Save
           </button>
           <button 
-            className="bg-purple-600 text-white px-2 py-1 rounded-md"
+            className="bg-purple-600 text-white px-4 py-2 rounded-md"
             onClick={handleSave}
           >
             Publish
@@ -763,119 +804,119 @@ const CodingExerciseCreatorWithMonaco: React.FC<CodingExerciseCreatorProps> = ({
       <div className="flex-1 overflow-y-auto">
         {view === 'languageSelection' && (
           <div className="fixed inset-0 flex items-center justify-center z-40">
-      {/* Backdrop overlay with blur effect */}
-      <div className="fixed inset-0 backdrop-blur-sm bg-transparent bg-opacity-50" onClick={onClose}></div>
+            {/* Backdrop overlay with blur effect */}
+            <div className="fixed inset-0 backdrop-blur-sm bg-transparent bg-opacity-50" onClick={onClose}></div>
 
-      {/* Modal content - keeping your existing structure but with proper z-index */}
-      <div className="relative bg-white rounded-lg shadow-md p-6 w-full max-w-xl z-50">
-        <h2 className="text-xl font-medium mb-4">Select language to create coding exercise</h2>
-        
-        <div className="mb-4">
-          <label className="block text-gray-700 mb-2">Coding language</label>
-          <div className="relative">
-            <button
-              className="w-full flex items-center justify-between bg-white border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
-              onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
-            >
-              {selectedLanguage ? (
-                <div className="flex items-center">
-                  <span>{selectedLanguage.name}</span>
-                  {selectedLanguage.deprecated && (
-                    <span className="ml-2 px-2 py-0.5 bg-gray-200 text-gray-600 text-xs rounded">Deprecated</span>
-                  )}
-                  {selectedLanguage.isNew && (
-                    <span className="ml-2 px-2 py-0.5 bg-blue-100 text-blue-600 text-xs rounded">New</span>
-                  )}
-                </div>
-              ) : (
-                <span>Select</span>
-              )}
-              <ChevronDown className="w-5 h-5 text-gray-400" />
-            </button>
-            
-            {showLanguageDropdown && (
-              <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto">
-                {languages.map((language) => (
-                  <button
-                    key={language.id}
-                    className="w-full text-left px-3 py-2 hover:bg-gray-100 flex items-center justify-between"
-                    onClick={() => handleLanguageSelect(language)}
-                  >
-                    <span>{language.name}</span>
-                    {language.deprecated && (
-                      <span className="px-2 py-0.5 bg-gray-200 text-gray-600 text-xs rounded">Deprecated</span>
-                    )}
-                    {language.isNew && (
-                      <span className="px-2 py-0.5 bg-blue-100 text-blue-600 text-xs rounded">New</span>
-                    )}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-        
-        {selectedLanguage && selectedLanguage.hasVersions && (
-          <div className="mb-4">
-            <label className="block text-gray-700 mb-2">Version</label>
-            <div className="relative">
-              <button
-                className="w-full flex items-center justify-between bg-white border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                onClick={() => setShowVersionDropdown(!showVersionDropdown)}
-              >
-                {selectedVersion || 'Select Version'}
-                <ChevronDown className="w-5 h-5 text-gray-400" />
-              </button>
+            {/* Modal content - keeping your existing structure but with proper z-index */}
+            <div className="relative bg-white rounded-lg shadow-md p-6 w-full max-w-xl z-50">
+              <h2 className="text-xl font-medium mb-4">Select language to create coding exercise</h2>
               
-              {showVersionDropdown && (
-                <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg">
-                  {selectedLanguage.versions?.map((version) => (
+              <div className="mb-4">
+                <label className="block text-gray-700 mb-2">Coding language</label>
+                <div className="relative">
+                  <button
+                    className="w-full flex items-center justify-between bg-white border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
+                  >
+                    {selectedLanguage ? (
+                      <div className="flex items-center">
+                        <span>{selectedLanguage.name}</span>
+                        {selectedLanguage.deprecated && (
+                          <span className="ml-2 px-2 py-0.5 bg-gray-200 text-gray-600 text-xs rounded">Deprecated</span>
+                        )}
+                        {selectedLanguage.isNew && (
+                          <span className="ml-2 px-2 py-0.5 bg-blue-100 text-blue-600 text-xs rounded">New</span>
+                        )}
+                      </div>
+                    ) : (
+                      <span>Select</span>
+                    )}
+                    <ChevronDown className="w-5 h-5 text-gray-400" />
+                  </button>
+                  
+                  {showLanguageDropdown && (
+                    <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                      {languages.map((language) => (
+                        <button
+                          key={language.id}
+                          className="w-full text-left px-3 py-2 hover:bg-gray-100 flex items-center justify-between"
+                          onClick={() => handleLanguageSelect(language)}
+                        >
+                          <span>{language.name}</span>
+                          {language.deprecated && (
+                            <span className="px-2 py-0.5 bg-gray-200 text-gray-600 text-xs rounded">Deprecated</span>
+                          )}
+                          {language.isNew && (
+                            <span className="px-2 py-0.5 bg-blue-100 text-blue-600 text-xs rounded">New</span>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              {selectedLanguage && selectedLanguage.hasVersions && (
+                <div className="mb-4">
+                  <label className="block text-gray-700 mb-2">Version</label>
+                  <div className="relative">
                     <button
-                      key={version}
-                      className="w-full text-left px-3 py-2 hover:bg-gray-100"
-                      onClick={() => handleVersionSelect(version)}
+                      className="w-full flex items-center justify-between bg-white border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      onClick={() => setShowVersionDropdown(!showVersionDropdown)}
                     >
-                      {version}
+                      {selectedVersion || 'Select Version'}
+                      <ChevronDown className="w-5 h-5 text-gray-400" />
                     </button>
-                  ))}
+                    
+                    {showVersionDropdown && (
+                      <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg">
+                        {selectedLanguage.versions?.map((version) => (
+                          <button
+                            key={version}
+                            className="w-full text-left px-3 py-2 hover:bg-gray-100"
+                            onClick={() => handleVersionSelect(version)}
+                          >
+                            {version}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  {selectedLanguage.additionalInfo && (
+                    <p className="text-sm text-gray-500 mt-1">with {selectedLanguage.additionalInfo}</p>
+                  )}
                 </div>
               )}
+              
+              {selectedLanguage && selectedLanguage.deprecated && (
+                <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md flex items-start">
+                  <AlertTriangle className="w-5 h-5 text-yellow-500 mt-0.5 mr-2 flex-shrink-0" />
+                  <div>
+                    <p className="font-medium text-gray-800">You've selected a deprecated language</p>
+                    <p className="text-sm text-gray-600 mt-1">
+                      We have introduced a new "Web Development" language option that supports JavaScript coding exercises with up-to-date libraries. For the best experience please select "Web Development" from the language dropdown.
+                    </p>
+                  </div>
+                </div>
+              )}
+              
+              <div className="flex justify-end mt-6 space-x-2">
+                <button 
+                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700"
+                  onClick={onClose}
+                >
+                  Cancel
+                </button>
+                <button
+                  className={`px-4 py-2 rounded-md ${selectedLanguage ? 'bg-purple-600 text-white' : 'bg-purple-300 text-white cursor-not-allowed'}`}
+                  disabled={!selectedLanguage}
+                  onClick={handleStartCreating}
+                >
+                  Start creating
+                </button>
+              </div>
             </div>
-            {selectedLanguage.additionalInfo && (
-              <p className="text-sm text-gray-500 mt-1">with {selectedLanguage.additionalInfo}</p>
-            )}
           </div>
-        )}
-        
-        {selectedLanguage && selectedLanguage.deprecated && (
-          <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md flex items-start">
-            <AlertTriangle className="w-5 h-5 text-yellow-500 mt-0.5 mr-2 flex-shrink-0" />
-            <div>
-              <p className="font-medium text-gray-800">You've selected a deprecated language</p>
-              <p className="text-sm text-gray-600 mt-1">
-                We have introduced a new "Web Development" language option that supports JavaScript coding exercises with up-to-date libraries. For the best experience please select "Web Development" from the language dropdown.
-              </p>
-            </div>
-          </div>
-        )}
-        
-        <div className="flex justify-end mt-6 space-x-2">
-          <button 
-            className="px-4 py-2 border border-gray-300 rounded-md text-gray-700"
-            onClick={onClose}
-          >
-            Cancel
-          </button>
-          <button
-            className={`px-4 py-2 rounded-md ${selectedLanguage ? 'bg-purple-600 text-white' : 'bg-purple-300 text-white cursor-not-allowed'}`}
-            disabled={!selectedLanguage}
-            onClick={handleStartCreating}
-          >
-            Start creating
-          </button>
-        </div>
-      </div>
-    </div>
         )}
 
         {view === 'exercisePlanning' && (
@@ -918,8 +959,50 @@ const CodingExerciseCreatorWithMonaco: React.FC<CodingExerciseCreatorProps> = ({
                 <div className="text-sm text-gray-500 text-right mt-1">Optional</div>
               </div>
             </div>
-            
-         
+          </div>
+        )}
+
+        {view === 'guideLearners' && (
+          <div className="flex h-full">
+            {/* Left side - Instructions */}
+            <div className="w-1/2 border-r border-gray-200">
+              <InstructionTabs 
+                defaultInstructions={instructions}
+                defaultHints={hints}
+                defaultSolutionExplanation={solutionExplanation}
+                onInstructionsChange={setInstructions}
+                onHintsChange={setHints}
+                onSolutionExplanationChange={setSolutionExplanation}
+              />
+            </div>
+
+            {/* Right side - Code preview */}
+            <div className="w-1/2 flex flex-col">
+              <div className="p-4 bg-gray-800 text-white flex items-center">
+                <span className="font-medium">Learner file</span>
+                <div className="ml-1 bg-gray-700 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">?</div>
+                <div className="ml-auto flex space-x-2">
+                  <button className="p-1 hover:bg-gray-700 rounded">
+                    <Code size={18} />
+                  </button>
+                  <button className="p-1 hover:bg-gray-700 rounded">
+                    <ChevronUp size={18} />
+                  </button>
+                </div>
+              </div>
+              <div className="bg-gray-900 text-white p-2 font-mono text-sm">
+                App.js
+              </div>
+              <div className="flex-1 bg-gray-900">
+                <MonacoEditorComponent 
+                  language={getMonacoLanguage(selectedLanguage?.id || 'javascript')} 
+                  value={solutionCode}
+                  onChange={setSolutionCode}
+                  readOnly={true}
+                  isReact={selectedLanguage?.id === 'react'}
+                />
+              </div>
+            </div>
           </div>
         )}
 
@@ -934,12 +1017,15 @@ const CodingExerciseCreatorWithMonaco: React.FC<CodingExerciseCreatorProps> = ({
               <div className="w-1/2 p-2 flex items-center border-l border-gray-700">
                 <span className="mr-2">Evaluation</span>
                 <div className="bg-gray-700 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">?</div>
-                <button className="ml-auto px-2 py-1 bg-gray-700 rounded text-xs">Show preview window</button>
+                <button className="ml-auto px-2 py-1 bg-gray-700 rounded text-xs flex items-center">
+                  <ExternalLink className="w-4 h-4 mr-1" />
+                  Show preview window
+                </button>
               </div>
             </div>
             
-            {/* Fix for the collapsed editor container */}
-            <div className="flex-1 flex" style={{ height: '70vh', minHeight: '500px' }}>
+            {/* Editor container */}
+            <div className="flex-1 flex" style={{ height: 'calc(100vh - 150px)', minHeight: '500px' }}>
               <div className="w-1/2 bg-gray-900 text-gray-200 overflow-auto" style={{ display: 'flex', flexDirection: 'column' }}>
                 <div style={{ flexGrow: 1, height: '100%' }}>
                   <MonacoEditorComponent 
@@ -963,105 +1049,108 @@ const CodingExerciseCreatorWithMonaco: React.FC<CodingExerciseCreatorProps> = ({
               </div>
             </div>
             
-            <div className="bg-gray-900 p-3 border-t border-gray-700 flex items-center justify-between">
+            <div className="p-3 flex items-center justify-between absolute bottom-20 left-4">
               <button 
-                className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-md flex items-center"
+                className="bg-white hover:text-gray-800 text-gray-700 px-4 py-2 rounded-md flex items-center"
                 onClick={handleRunTests}
                 disabled={isRunningTests}
               >
                 <Play className="w-4 h-4 mr-2" />
                 {isRunningTests ? 'Running...' : 'Run tests'}
               </button>
-              
-              {testResults && (
-                <div className={`px-4 py-2 rounded-md ${testResults.success ? 'bg-green-700' : 'bg-red-700'} text-white`}>
-                  {testResults.success ? 'All tests passed!' : 'Tests failed'}
-                </div>
-              )}
             </div>
             
-            {/* Test results panel */}
-            {testResults && (
-              <div className="bg-gray-800 text-white p-4 border-t border-gray-700">
-                <h3 className="font-medium mb-2">Test Results</h3>
-                
-                {testResults.message && (
-                  <div className="mb-2 text-yellow-300">{testResults.message}</div>
-                )}
-                
-                {testResults.error && (
-                  <div className="mb-2 text-red-400">Error: {testResults.error}</div>
-                )}
-                
-                {testResults.results && testResults.results.length > 0 ? (
-                  <div className="space-y-2">
-                    {testResults.results.map((result: any, index: number) => (
-                      <div 
-                        key={index} 
-                        className={`p-2 rounded ${result.passed ? 'bg-green-900' : 'bg-red-900'}`}
-                      >
-                        <div className="font-medium">{result.name}</div>
-                        {!result.passed && result.error && (
-                          <div className="text-red-300 text-sm mt-1">{result.error}</div>
-                        )}
+            {/* Terminal panel */}
+            <div 
+              className={`fixed bottom-0 left-0 right-0 bg-gray-900 text-white border-t border-gray-700 transform transition-transform duration-300 ${
+                showTerminal ? 'translate-y-0' : 'translate-y-full'
+              }`}
+              style={{ maxHeight: '50vh', overflowY: 'auto' }}
+            >
+              {/* Terminal header */}
+              <div className="flex justify-between items-center p-2 bg-gray-800 border-b border-gray-700">
+                <div className="flex items-center space-x-4">
+                  <div className="font-medium">Result</div>
+                  {testResults && (
+                    <div className={`px-2 py-1 rounded text-xs ${testResults.success ? 'bg-green-700' : 'bg-red-700'}`}>
+                      {testResults.success ? 'Success' : 'Failed'}
+                    </div>
+                  )}
+                </div>
+                <button 
+                  className="text-gray-400 hover:text-white"
+                  onClick={() => setShowTerminal(!showTerminal)}
+                >
+                  {showTerminal ? <ChevronDown className="w-5 h-5" /> : <ChevronUp className="w-5 h-5" />}
+                </button>
+              </div>
+              
+              {/* Terminal content */}
+              <div className="p-4">
+                {testResults ? (
+                  <div className="flex">
+                    {/* Left panel - Test cases summary */}
+                    <div className="w-64 border-r border-gray-700 pr-4">
+                      <h3 className="font-medium mb-2">Test Cases</h3>
+                      <div className="text-sm mb-4">
+                        Failed: {testResults.results?.filter((r: TestResult) => !r.passed).length || 0}, 
+                        Passed: {testResults.results?.filter((r: TestResult) => r.passed).length || 0} of {testResults.results?.length || 0} tests
                       </div>
-                    ))}
+                      
+                      {/* List of test cases */}
+                      <div className="space-y-1">
+                        {testResults.results?.map((result: TestResult, index: number) => (
+                          <div 
+                            key={index}
+                            className={`flex items-center p-2 rounded ${result.passed ? 'bg-green-900 bg-opacity-20' : 'bg-red-900 bg-opacity-20'}`}
+                          >
+                            <div className={`w-5 h-5 rounded-full flex items-center justify-center mr-2 ${result.passed ? 'bg-green-600' : 'bg-red-600'}`}>
+                              {result.passed ? '✓' : '✕'}
+                            </div>
+                            <div className="text-sm">{result.name}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    {/* Right panel - Test result details */}
+                    <div className="flex-1 pl-4">
+                      <div className="flex items-center space-x-2 mb-4">
+                        <h3 className="font-medium">Test result</h3>
+                      </div>
+                      
+                      {testResults.message && (
+                        <div className="mb-2 text-yellow-300">{testResults.message}</div>
+                      )}
+                      
+                      {testResults.error && (
+                        <div className="mb-2 text-red-400">Error: {testResults.error}</div>
+                      )}
+                      
+                      {testResults.results?.map((result: TestResult, index: number) => (
+                        <div key={index} className="mb-4">
+                          <div className={`flex items-center mb-2 ${result.passed ? 'text-green-400' : 'text-red-400'}`}>
+                            {result.passed ? (
+                              '✓ Your code passed this test'
+                            ) : (
+                              '✕ Test failed'
+                            )}
+                          </div>
+                          
+                          {!result.passed && result.error && (
+                            <div className="bg-red-900 bg-opacity-20 p-3 rounded text-sm font-mono">
+                              {result.error}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   </div>
+                ) : isRunningTests ? (
+                  <div className="text-gray-400">Running tests...</div>
                 ) : (
-                  <div className="text-gray-400">No test results to display</div>
+                  <div className="text-gray-400">Run tests to see results</div>
                 )}
-              </div>
-            )}
-          </div>
-        )}
-
-        
-        {/* Instruction popup */}
-        {showInstructionPopup && view === 'codeEditor' && (
-          <div className="fixed inset-0 backdrop-blur-sm bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white p-6 rounded-lg shadow-lg max-w-md">
-              <div className="flex items-start mb-4">
-                <div className="flex-1">
-                  {currentPopupStep === 1 && (
-                    <p className="text-gray-700">
-                      Solution files verify the provided evaluation file (unit test) is correct.
-                      Learners are expected to write a similar solution (not necessarily the same) for
-                      provided instructions at the "Guide learners" step.
-                    </p>
-                  )}
-                  {currentPopupStep === 2 && (
-                    <p className="text-gray-700">
-                      Define your solution code that satisfies the tests. This will be used to verify
-                      that your exercise is correctly structured.
-                    </p>
-                  )}
-                  {currentPopupStep === 3 && (
-                    <p className="text-gray-700">
-                      Define your tests that will evaluate student submissions. Make sure to test all
-                      key aspects of the expected solution.
-                    </p>
-                  )}
-                  {currentPopupStep === 4 && (
-                    <p className="text-gray-700">
-                      Click "Save" frequently to preserve your work. When you're ready to make this
-                      exercise available to students, click "Publish".
-                    </p>
-                  )}
-                </div>
-              </div>
-              <div className="flex justify-between items-center">
-                <div className="text-gray-500 text-sm">{currentPopupStep}/4</div>
-                <div className="flex space-x-2">
-                  {currentPopupStep < 4 ? (
-                    <button onClick={dismissPopup} className="px-4 py-1 bg-purple-100 text-purple-600 rounded-md">
-                      Next
-                    </button>
-                  ) : (
-                    <button onClick={dismissPopup} className="px-4 py-1 bg-purple-600 text-white rounded-md">
-                      Dismiss
-                    </button>
-                  )}
-                </div>
               </div>
             </div>
           </div>
@@ -1070,21 +1159,30 @@ const CodingExerciseCreatorWithMonaco: React.FC<CodingExerciseCreatorProps> = ({
 
       {/* Bottom Tab Navigation */}
       <div className="border-t border-gray-200 bg-white">
+        <div className="fixed bottom-4 left-4 rounded border border-purple-600 text-purple-600">
+          <button
+            className="text-center relative text-purple-600 px-4 py-2 font-medium"
+            onClick={() => console.log('Previous')}
+          >
+            Previous
+          </button>
+        </div>
+
         <div className="flex relative max-w-2xl mx-auto">
           <button
-            className={`flex-1 py-4 text-center relative ${activeTab === 'planExercise' ? 'text-purple-600 font-medium' : 'text-gray-600'}`}
+            className={`flex-1 py-4 text-center relative ${activeTab === 'planExercise' ? 'text-gray-800 font-bold' : 'text-gray-500 font-medium'}`}
             onClick={() => handleTabChange('planExercise')}
           >
             Plan Exercise
-            {activeTab === 'planExercise' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-purple-600"></div>}
+            {activeTab === 'planExercise' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-800"></div>}
           </button>
           
           <button
-            className={`flex-1 py-4 text-center relative ${activeTab === 'authorSolution' ? 'text-purple-600 font-medium' : 'text-gray-600'}`}
+            className={`flex-1 py-4 text-center relative ${activeTab === 'authorSolution' ? 'text-gray-800 font-bold' : 'text-gray-500 font-medium'}`}
             onClick={() => handleTabChange('authorSolution')}
           >
             Author solution
-            {activeTab === 'authorSolution' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-purple-600"></div>}
+            {activeTab === 'authorSolution' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-800"></div>}
             
             {/* Tooltip that appears when activeTab is planExercise and showTooltip is true */}
             {activeTab === 'planExercise' && showTooltip && (
@@ -1107,11 +1205,11 @@ const CodingExerciseCreatorWithMonaco: React.FC<CodingExerciseCreatorProps> = ({
           </button>
           
           <button
-            className={`flex-1 py-4 text-center relative ${activeTab === 'guideLearners' ? 'text-purple-600 font-medium' : 'text-gray-600'}`}
+            className={`flex-1 py-4 text-center relative ${activeTab === 'guideLearners' ? 'text-gray-800 font-bold' : 'text-gray-500 font-medium'}`}
             onClick={() => handleTabChange('guideLearners')}
           >
             Guide learners
-            {activeTab === 'guideLearners' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-purple-600"></div>}
+            {activeTab === 'guideLearners' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-800"></div>}
           </button>
         </div>
       </div>
@@ -1119,7 +1217,7 @@ const CodingExerciseCreatorWithMonaco: React.FC<CodingExerciseCreatorProps> = ({
       {/* Next Button (bottom right) */}
       <div className="fixed bottom-4 right-4">
         <button 
-          className="bg-purple-600 text-white px-6 py-2 rounded-md shadow-md"
+          className="bg-purple-600 text-white px-4 py-2 rounded-md shadow-md"
           onClick={handleSave}
         >
           Next
