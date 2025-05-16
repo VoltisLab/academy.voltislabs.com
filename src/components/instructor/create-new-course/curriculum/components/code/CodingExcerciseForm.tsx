@@ -30,21 +30,21 @@ const CodingExerciseForm: React.FC<CodingExerciseFormProps> = ({
         </button>
 
       
-      <div className="p-2 ml-10 bg-white border-gray-500 border">
+      <div className="p-2 ml-8 bg-white border-gray-400 border">
         <form onSubmit={handleSubmit}>
-          <div className="mb-4">
+          <div className="mb-4 relative">
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Enter a Title"
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-[#6D28D2]"
+              className="w-full border border-gray-400 rounded text-gray-700 px-3 py-2 focus:outline-none focus:ring-1 focus:ring-[#6D28D2]"
               maxLength={100}
               autoFocus
               required
             />
-            <div className="absolute right-5 bottom-5 text-xs text-gray-500 mt-1">
-              {title.length}/100
+            <div className="absolute right-2 bottom-2 text-lg text-gray-700 mt-1">
+              {100 - title.length}
             </div>
           </div>
           
@@ -59,7 +59,7 @@ const CodingExerciseForm: React.FC<CodingExerciseFormProps> = ({
             <button
               type="submit"
               disabled={!title.trim()}
-              className={`px-2 xl:py-2 py-1 ${!title.trim() ? 'bg-indigo-400 cursor-not-allowed' : 'bg-[#6D28D2] hover:bg-[#7D28D2]'} text-white rounded-md focus:outline-none focus:ring-1 focus:ring-[#6D28D2]`}
+              className={`px-2 xl:py-2 py-1 ${!title.trim() ? 'bg-[#9E28D2] cursor-not-allowed' : 'bg-[#6D28D2] hover:bg-[#7D28D2]'} text-white rounded-md focus:outline-none focus:ring-1 focus:ring-[#6D28D2]`}
             >
               Add Coding Exercise
             </button>
