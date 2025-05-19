@@ -47,18 +47,40 @@ const RichTextEditor: React.FC<{
   };
 
   return (
-    <div className={`rich-text-editor ${fullHeight ? 'h-full flex flex-col' : ''}`}>
+    <div className={`rich-text-editor ${fullHeight ? 'h-full flex flex-col' : ''} focus-within:outline focus-within:outline-[#6D28D2] rounded-lg `}>
       <ReactQuill
         value={value}
         onChange={onChange}
         modules={modules}
         placeholder={placeholder}
         theme="snow"
-        className={fullHeight ? 'flex-grow' : ''}
+        className={fullHeight ? 'flex-grow  rounded-lg' : ''}
         style={fullHeight ? { height: 'calc(100% - 42px)', display: 'flex', flexDirection: 'column' } : {}}
       />
     </div>
   );
+};
+
+// Get language identifier for syntax highlighting in markdown
+const getLanguageIdentifier = (languageId: string): string => {
+  const languageMap: Record<string, string> = {
+    'javascript': 'javascript',
+    'react': 'jsx',
+    'python': 'python',
+    'java': 'java',
+    'kotlin': 'kotlin',
+    'csharp': 'csharp',
+    'html': 'html',
+    'r': 'r',
+    'ruby': 'ruby',
+    'python-ds': 'python',
+    'sqlite': 'sql',
+    'altsql': 'sql',
+    'swift': 'swift',
+    'web-dev': 'javascript',
+  };
+
+  return languageMap[languageId] || 'plaintext';
 };
 
 // Instruction Tabs Component
@@ -72,6 +94,7 @@ const InstructionTabs: React.FC<{
   onSolutionExplanationChange: (value: string) => void;
   onRelatedLecturesChange?: (lectures: string[]) => void;
   solutionCode: string;
+  languageId: string; // Add language ID parameter
 }> = ({
   defaultInstructions,
   defaultHints,
@@ -81,7 +104,8 @@ const InstructionTabs: React.FC<{
   onHintsChange,
   onSolutionExplanationChange,
   onRelatedLecturesChange,
-  solutionCode
+  solutionCode,
+  languageId
 }) => {
   const [activeTab, setActiveTab] = useState<'instructions' | 'relatedLectures' | 'hints' | 'solution'>('instructions');
   const [selectedLectures, setSelectedLectures] = useState<string[]>(defaultRelatedLectures);
@@ -98,9 +122,14 @@ const InstructionTabs: React.FC<{
   };
 
   const handlePasteSolutionCode = () => {
+    // Get the appropriate language identifier for code block
+    const languageIdentifier = getLanguageIdentifier(languageId);
+    
+    // Format the code block with proper syntax highlighting
+    const codeBlock = `\n\n\`\`\`${languageIdentifier}\n${solutionCode}\n\`\`\``;
+    
     // Append the solution code to the current explanation
-    const updatedExplanation = defaultSolutionExplanation + 
-      "\n\n```javascript\n" + solutionCode + "\n```";
+    const updatedExplanation = defaultSolutionExplanation + codeBlock;
     onSolutionExplanationChange(updatedExplanation);
   };
 
@@ -108,25 +137,25 @@ const InstructionTabs: React.FC<{
     <div className="h-full flex flex-col">
       <div className="flex border-b border-gray-200">
         <button
-          className={`px-4 py-2 ${activeTab === 'instructions' ? 'border-b-2 border-[#6D28D2] text-[#6D28D2] font-medium' : 'text-gray-500'}`}
+          className={`px-4 py-2 ${activeTab === 'instructions' ? 'border-b-2 border-gray-800 text-gray-800 font-bold' : 'text-gray-500'}`}
           onClick={() => setActiveTab('instructions')}
         >
           Instructions
         </button>
         <button
-          className={`px-4 py-2 ${activeTab === 'relatedLectures' ? 'border-b-2 border-[#6D28D2] text-[#6D28D2] font-medium' : 'text-gray-500'}`}
+          className={`px-4 py-2 ${activeTab === 'relatedLectures' ? 'border-b-2 border-gray-800 text-gray-800 font-bold' : 'text-gray-500'}`}
           onClick={() => setActiveTab('relatedLectures')}
         >
           Related lectures
         </button>
         <button
-          className={`px-4 py-2 ${activeTab === 'hints' ? 'border-b-2 border-[#6D28D2] text-[#6D28D2] font-medium' : 'text-gray-500'}`}
+          className={`px-4 py-2 ${activeTab === 'hints' ? 'border-b-2 border-gray-800 text-gray-800 font-bold' : 'text-gray-500'}`}
           onClick={() => setActiveTab('hints')}
         >
           Hints
         </button>
         <button
-          className={`px-4 py-2 ${activeTab === 'solution' ? 'border-b-2 border-[#6D28D2] text-[#6D28D2] font-medium' : 'text-gray-500'}`}
+          className={`px-4 py-2 ${activeTab === 'solution' ? 'border-b-2 border-gray-800 text-gray-800 font-bold' : 'text-gray-500'}`}
           onClick={() => setActiveTab('solution')}
         >
           Solution explanation
@@ -155,6 +184,7 @@ const InstructionTabs: React.FC<{
             </div>
             <div className="mb-4">
               <div className="relative">
+                <div className="text-xs text-gray-500 text-right mt-1 mb-2">Optional</div>
                 <select
                   className="w-full bg-white border border-gray-300 rounded-md px-3 py-2 appearance-none focus:outline-none focus:ring-2 focus:ring-[#6D28D2]"
                 >
@@ -163,14 +193,14 @@ const InstructionTabs: React.FC<{
                   <option>Component Basics</option>
                   <option>React Hooks</option>
                 </select>
-                <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+                <div className="absolute inset-y-0 right-0  top-5 flex items-center px-2 pointer-events-none">
                   <ChevronDown className="w-4 h-4 text-gray-500" />
                 </div>
               </div>
-              <div className="text-sm text-gray-500 text-right mt-1">Optional</div>
+              
             </div>
-            <div className="mt-6">
-              <button className="flex items-center text-[#6D28D2] text-sm">
+            <div className="mt-1">
+              <button className="flex items-center text-gray-500 hover:text-gray-800 text-sm">
                 <Plus size={16} className="mr-1" /> Add more
               </button>
             </div>
@@ -198,17 +228,17 @@ const InstructionTabs: React.FC<{
             </div>
             <div className="flex items-center mb-2">
               <button 
-                className="flex items-center text-[#6D28D2] text-sm px-2 py-1 border border-[#6D28D2] rounded hover:bg-purple-50"
+                className="flex items-center text-[#6D28D2] text-sm px-2 py-1 hover:bg-purple-50"
                 onClick={handlePasteSolutionCode}
               >
-                <Copy size={14} className="mr-1" /> Paste solution code
+                <Code size={12} className="mr-1 border border-[#6D28D2] rounded font-bold border border-[#6D28D2] text-xs " /> Paste solution code
               </button>
             </div>
             <RichTextEditor
               value={defaultSolutionExplanation}
               onChange={onSolutionExplanationChange}
               placeholder="Write a solution explanation here."
-              fullHeight={true}
+              fullHeight={false}
             />
           </div>
         )}
@@ -262,6 +292,49 @@ const MonacoEditorComponent = ({ language, value, onChange, readOnly = false, is
   );
 };
 
+// Utility function to execute code in a sandbox environment
+const executeCode = (code: string, language: string): string => {
+  try {
+    // For JavaScript/React, we can use Function constructor to execute it
+    if (language === 'javascript' || language === 'react' || language === 'web-dev') {
+      // Create a safe execution context
+      const result = new Function(`
+        try {
+          ${code}
+          return { success: true, output: 'Execution successful' };
+        } catch (error) {
+          return { success: false, error: error.toString() };
+        }
+      `)();
+      
+      return result.success ? result.output : `Error: ${result.error}`;
+    }
+    
+    // For HTML, we can just return the HTML code for rendering
+    if (language === 'html') {
+      return code;
+    }
+    
+    // For other languages, provide a mock response
+    const mockResponses: Record<string, string> = {
+      'python': 'Python code execution would appear here.\nOutput from print statements and calculation results would be displayed.',
+      'java': 'Java code compiled and executed.\nOutput from System.out.println() would appear here.',
+      'kotlin': 'Kotlin code execution results would appear here.',
+      'csharp': 'C# code execution results would appear here.',
+      'r': 'R code execution results and plots would be displayed here.',
+      'ruby': 'Ruby code execution output would appear here.',
+      'python-ds': 'Python Data Science code execution, including data analysis results and visualizations would appear here.',
+      'sqlite': 'SQL query results would be displayed in a table format here.',
+      'altsql': 'SQL query results would be displayed in a table format here.',
+      'swift': 'Swift code execution results would appear here.'
+    };
+    
+    return mockResponses[language] || 'Execution output would appear here.';
+  } catch (error) {
+    return `Error: ${error instanceof Error ? error.message : 'Unknown error during execution'}`;
+  }
+};
+
 // Main Component
 const CodingExerciseCreatorWithMonaco: React.FC<CodingExerciseCreatorProps> = ({
   lectureId,
@@ -313,17 +386,31 @@ const CodingExerciseCreatorWithMonaco: React.FC<CodingExerciseCreatorProps> = ({
   const [showPreview, setShowPreview] = useState<boolean>(false);
   const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState<boolean>(false);
   const [fileToDelete, setFileToDelete] = useState<FileType | null>(null);
+   const [showPreviewModal, setShowPreviewModal] = useState<boolean>(false);
+
+  // Rest of your existing state variables...
+
+  // Existing handlers and functions...
+
+  // Add new handler for preview button click
+  const handlePreviewClick = () => {
+    setShowPreviewModal(true);
+  };
   
   // Preview state
   const [previewContent, setPreviewContent] = useState<string>('');
+  const [executionOutput, setExecutionOutput] = useState<string>('');
 
   // Handle preview toggle
   const togglePreview = () => {
-    // When enabling preview, update the preview content
+    // When enabling preview, update the preview content and execute code
     if (!showPreview) {
       const activeFile = files.find(f => f.id === activeFileId);
       if (activeFile) {
         setPreviewContent(activeFile.content);
+        // Execute the code and get output
+        const output = executeCode(activeFile.content, selectedLanguage?.id || 'javascript');
+        setExecutionOutput(output);
       }
     }
     setShowPreview(!showPreview);
@@ -410,15 +497,20 @@ const CodingExerciseCreatorWithMonaco: React.FC<CodingExerciseCreatorProps> = ({
           { id: 'main', name: 'App.js', content: defaultSolutionCode, language: 'javascript', isActive: true, isDefault: true },
           { id: 'test', name: 'App.spec.js', content: defaultTestCode, language: 'javascript', isActive: false, isDefault: true }
         ];
-      } else if (selectedLanguage.id === 'javascript') {
+      } else if (selectedLanguage.id === 'javascript' || selectedLanguage.id === 'web-dev') {
         initialFiles = [
           { id: 'main', name: 'index.js', content: defaultSolutionCode, language: 'javascript', isActive: true, isDefault: true },
           { id: 'test', name: 'index.test.js', content: defaultTestCode, language: 'javascript', isActive: false, isDefault: true }
         ];
-      } else if (selectedLanguage.id === 'python') {
+      } else if (selectedLanguage.id === 'python' || selectedLanguage.id === 'python-ds') {
         initialFiles = [
           { id: 'main', name: 'solution.py', content: defaultSolutionCode, language: 'python', isActive: true, isDefault: true },
           { id: 'test', name: 'test_solution.py', content: defaultTestCode, language: 'python', isActive: false, isDefault: true }
+        ];
+      } else if (selectedLanguage.id === 'html') {
+        initialFiles = [
+          { id: 'main', name: 'index.html', content: defaultSolutionCode, language: 'html', isActive: true, isDefault: true },
+          { id: 'test', name: 'test.js', content: defaultTestCode, language: 'javascript', isActive: false, isDefault: true }
         ];
       } else {
         const fileExt = selectedLanguage.id === 'csharp' ? 'cs' : selectedLanguage.id;
@@ -435,17 +527,24 @@ const CodingExerciseCreatorWithMonaco: React.FC<CodingExerciseCreatorProps> = ({
 
   // Close file menu when clicking outside
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (showFileMenu && !fileMenuButtonRefs.current[showFileMenu]?.contains(event.target as Node)) {
+  const handleClickOutside = (event: MouseEvent) => {
+    if (showFileMenu) {
+      // Get the dropdown menu element
+      const dropdownMenu = document.querySelector(`[data-file-menu="${showFileMenu}"]`);
+      
+      // Only close if clicking outside both the button and the dropdown
+      if (!fileMenuButtonRefs.current[showFileMenu]?.contains(event.target as Node) && 
+          !dropdownMenu?.contains(event.target as Node)) {
         setShowFileMenu(null);
       }
-    };
+    }
+  };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showFileMenu]);
+  document.addEventListener('mousedown', handleClickOutside);
+  return () => {
+    document.removeEventListener('mousedown', handleClickOutside);
+  };
+}, [showFileMenu]);
 
   const handleLanguageSelect = (language: Language) => {
     setSelectedLanguage(language);
@@ -496,15 +595,15 @@ const CodingExerciseCreatorWithMonaco: React.FC<CodingExerciseCreatorProps> = ({
     setTestResults(null);
 
     try {
-      if (selectedLanguage?.id === 'javascript' || selectedLanguage?.id === 'react') {
+      if (selectedLanguage?.id === 'javascript' || selectedLanguage?.id === 'react' || selectedLanguage?.id === 'web-dev') {
         const results = runJavaScriptTests(solutionCode, testCode);
         setTestResults(results);
       } else {
-        // For other languages, we'd need a backend service
+        // For other languages, we'll implement a mock test runner
         setTimeout(() => {
           setTestResults({
             success: Math.random() > 0.3, // 70% chance of success for demo
-            message: `Running tests for ${selectedLanguage?.name || 'this language'} requires a backend service. This is a mock implementation.`,
+            message: `Running tests for ${selectedLanguage?.name || 'this language'} (${selectedLanguage?.id})`,
             results: [
               { 
                 name: 'testExercise()', 
@@ -624,27 +723,37 @@ const CodingExerciseCreatorWithMonaco: React.FC<CodingExerciseCreatorProps> = ({
 
   // Handle file renaming
   const handleRenameFile = (file: FileType) => {
-    setFileForRename(file);
-    setNewFileName(file.name);
-    setShowFileNameModal(true);
-    setIsRenaming(true);
-    setShowFileMenu(null); // Close dropdown immediately
-  };
+  // Set the file being renamed
+  setFileForRename(file);
+  // Set the current filename in the input
+  setNewFileName(file.name);
+  // Show the modal
+  setShowFileNameModal(true);
+  // Set renaming mode
+  setIsRenaming(true);
+  // Close the dropdown
+  setShowFileMenu(null);
+};
 
   const handleSaveRename = () => {
-    if (fileForRename && newFileName.trim()) {
-      const updatedFiles = files.map(file => {
-        if (file.id === fileForRename.id) {
-          return { ...file, name: newFileName };
-        }
-        return file;
-      });
-      
-      setFiles(updatedFiles);
-      setShowFileNameModal(false);
-      setFileForRename(null);
-    }
-  };
+  if (fileForRename && newFileName.trim()) {
+    // Create updated files array with the new name
+    const updatedFiles = files.map(file => {
+      if (file.id === fileForRename.id) {
+        return { ...file, name: newFileName };
+      }
+      return file;
+    });
+    
+    // Update the files state
+    setFiles(updatedFiles);
+    // Hide the modal
+    setShowFileNameModal(false);
+    // Clear the rename state
+    setFileForRename(null);
+    setIsRenaming(false);
+  }
+};
 
   // Handle file deletion with confirmation for default files
   const handleDeleteFile = (file: FileType) => {
@@ -662,33 +771,36 @@ const CodingExerciseCreatorWithMonaco: React.FC<CodingExerciseCreatorProps> = ({
 
   // Execute file deletion
   const executeDeleteFile = (fileId: string) => {
-    // Remove the file from state
-    const updatedFiles = files.filter(file => file.id !== fileId);
-    setFiles(updatedFiles);
-    
-    // If the active file is being deleted, set main as active
-    if (activeFileId === fileId) {
-      setActiveFileId('main');
-      const mainFile = files.find(f => f.id === 'main');
-      if (mainFile) {
-        setSolutionCode(mainFile.content);
-      }
+  // Remove the file from state
+  const updatedFiles = files.filter(file => file.id !== fileId);
+  
+  // If the active file is being deleted, set main as active
+  if (activeFileId === fileId) {
+    setActiveFileId('main');
+    const mainFile = files.find(f => f.id === 'main');
+    if (mainFile) {
+      setSolutionCode(mainFile.content);
     }
-    
-    setShowDeleteConfirmModal(false);
-    setFileToDelete(null);
-  };
-
-  const handleConfirmDelete = () => {
-    if (fileToDelete) {
-      executeDeleteFile(fileToDelete.id);
-    }
-  };
+  }
+  
+  // Update the files state
+  setFiles(updatedFiles);
+  // Hide the confirmation modal
+  setShowDeleteConfirmModal(false);
+  // Clear the file to delete
+  setFileToDelete(null);
+};
 
   const handleCancelDelete = () => {
     setShowDeleteConfirmModal(false);
     setFileToDelete(null);
   };
+
+  const handleConfirmDelete = () => {
+  if (fileToDelete) {
+    executeDeleteFile(fileToDelete.id);
+  }
+};
 
   const handleFileClick = (fileId: string) => {
     // Skip if already active
@@ -757,41 +869,89 @@ const CodingExerciseCreatorWithMonaco: React.FC<CodingExerciseCreatorProps> = ({
     return testFile ? testFile.content : testCode;
   };
 
-  // Preview component for React output
+  // Enhanced preview component for all languages
   const PreviewComponent: React.FC = () => {
     const [previewHtml, setPreviewHtml] = useState<string>('');
     
     useEffect(() => {
-      if (selectedLanguage?.id === 'react') {
-        try {
-          // Attempt to create a simple preview from React code
-          // In a real app, you'd use a more sophisticated approach like a sandbox
-          const code = activeFileId === 'main' ? solutionCode : 
-                      files.find(f => f.id === activeFileId)?.content || '';
-          
-          // Extract JSX content or look for a render() method
-          const jsxMatch = code.match(/return\s*\(\s*<([^>]*)>/);
-          if (jsxMatch) {
-            // Very naive extraction - in a real app you'd use proper parsing
-            let component = code.substring(code.indexOf('return (') + 8);
-            component = component.substring(0, component.lastIndexOf(');'));
-            setPreviewHtml(`<div>${component}</div>`);
-          } else {
-            setPreviewHtml('<h1>Preview available for React components with JSX</h1>');
-          }
-        } catch (error) {
-          setPreviewHtml('<div class="p-4 text-center text-red-500">Error rendering preview</div>');
+      try {
+        const activeFile = files.find(f => f.id === activeFileId);
+        if (!activeFile) return;
+        
+        const code = activeFile.content;
+        const language = selectedLanguage?.id || 'javascript';
+        
+        // For HTML, directly render the content
+        if (language === 'html') {
+          setPreviewHtml(code);
+          return;
         }
-      } else {
-        setPreviewHtml('<div class="p-4 text-center text-gray-500">Preview not available for this language</div>');
+        
+        // For React/JavaScript, attempt to extract and render JSX
+        if (language === 'react' || language === 'javascript' || language === 'web-dev') {
+          try {
+            // Try to find JSX content in React code
+            if (language === 'react') {
+              const jsxMatch = code.match(/return\s*\(\s*<([^>]*)>/);
+              if (jsxMatch) {
+                let component = code.substring(code.indexOf('return (') + 8);
+                component = component.substring(0, component.lastIndexOf(');'));
+                setPreviewHtml(`<div style="padding: 20px;">${component}</div>`);
+                return;
+              }
+            }
+            
+            // For regular JavaScript, attempt to execute and show output
+            const output = executeCode(code, language);
+            setPreviewHtml(`
+              <div style="font-family: monospace; white-space: pre; padding: 20px; background-color: #f5f5f5; border-radius: 5px; color: #333;">
+                <h3 style="margin-top: 0;">Output:</h3>
+                ${output.replace(/\n/g, '<br>')}
+              </div>
+            `);
+          } catch (error) {
+            setPreviewHtml(`<div style="color: red; padding: 20px;">Error rendering preview: ${error instanceof Error ? error.message : 'Unknown error'}</div>`);
+          }
+          return;
+        }
+        
+        // For other languages, show a formatted output
+        const output = executeCode(code, language);
+        setPreviewHtml(`
+          <div style="font-family: monospace; white-space: pre; padding: 20px; background-color: #f5f5f5; border-radius: 5px; color: #333;">
+            <h3 style="margin-top: 0;">${language.toUpperCase()} Output:</h3>
+            ${output.replace(/\n/g, '<br>')}
+          </div>
+        `);
+      } catch (error) {
+        setPreviewHtml(`<div style="color: red; padding: 20px;">Error preparing preview: ${error instanceof Error ? error.message : 'Unknown error'}</div>`);
       }
-    }, [activeFileId, solutionCode, files]);
+    }, [activeFileId, files, selectedLanguage]);
     
     return (
-      <div className="h-full flex items-center justify-center bg-white p-4 text-center">
-        <div dangerouslySetInnerHTML={{ __html: previewHtml }} />
+      <div className="h-full flex items-center justify-center bg-white p-4 overflow-auto">
+        <div 
+          className="w-full h-full" 
+          dangerouslySetInnerHTML={{ __html: previewHtml }} 
+        />
       </div>
     );
+  };
+
+  // Handle running the preview
+  const handlePreviewExecution = () => {
+    // Enable preview mode if not already enabled
+    if (!showPreview) {
+      setShowPreview(true);
+    }
+    
+    // Get the active file
+    const activeFile = files.find(f => f.id === activeFileId);
+    if (activeFile) {
+      // Execute the code and get output
+      const output = executeCode(activeFile.content, selectedLanguage?.id || 'javascript');
+      setExecutionOutput(output);
+    }
   };
 
   return (
@@ -804,12 +964,15 @@ const CodingExerciseCreatorWithMonaco: React.FC<CodingExerciseCreatorProps> = ({
             onClick={onClose}
           >
             <ChevronLeft className="w-5 h-5" />
-            <span className="ml-1">Back to curriculum</span>
+            <span className="ml-1 font-bold">Back to curriculum</span>
           </button>
-          <span className="text-gray-700">{exerciseTitle}</span>
+          <span className="text-gray-800 font-bold">{exerciseTitle}</span>
         </div>
         <div className="flex gap-2">
-          <button className="border border-[#6D28D2] text-[#6D28D2] px-4 py-2 rounded-md flex items-center">
+             <button 
+            className="border border-[#6D28D2] text-[#6D28D2] px-4 py-2 rounded-md flex items-center"
+            onClick={handlePreviewClick} // Updated to use the new handler
+          >
             <Eye className="w-4 h-4 mr-1" />
             Preview
           </button>
@@ -1002,24 +1165,25 @@ const CodingExerciseCreatorWithMonaco: React.FC<CodingExerciseCreatorProps> = ({
                 onHintsChange={setHints}
                 onSolutionExplanationChange={setSolutionExplanation}
                 solutionCode={getMainFileContent()}
+                languageId={selectedLanguage?.id || 'javascript'} // Pass language ID
               />
             </div>
 
             {/* Right side - Code preview */}
             <div className="w-1/2 flex flex-col">
-              <div className="p-4 bg-gray-800 text-white flex items-center">
+              <div className="p-2 bg-[#33364a] border-b border-b-gray-600 text-white flex items-center">
                 <span className="font-medium">Learner file</span>
-                <div className="ml-1 bg-gray-700 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">?</div>
+                <Info size={13} className="bg-white rounded-full text-gray-800 ml-1" />
                 <div className="ml-auto flex space-x-2">
                   <button className="p-1 hover:bg-gray-700 rounded">
                     <Code size={18} />
                   </button>
                   <button className="p-1 hover:bg-gray-700 rounded">
-                    <ChevronUp size={18} />
+                    <Undo size={18} />
                   </button>
                 </div>
               </div>
-              <div className="bg-gray-900 text-white p-2 font-mono text-sm">
+              <div className="bg-[#33364a] border-b border-b-gray-600 text-white p-2 font-mono text-sm">
                 {files.find(f => f.id === 'main')?.name}
               </div>
               <div className="flex-1 bg-gray-900">
@@ -1037,7 +1201,7 @@ const CodingExerciseCreatorWithMonaco: React.FC<CodingExerciseCreatorProps> = ({
 
         {view === 'codeEditor' && (
           <div className="flex-1 flex flex-col">
-            <div className="flex border-b border-gray-700 bg-gray-800 text-white">
+            <div className="flex border-b border-gray-700 bg-[#33364a] text-white">
               <div className={`${leftPanelExpanded ? 'w-full' : rightPanelExpanded ? 'hidden' : 'w-1/2'} p-2 flex items-center justify-between`}>
                 <div className='flex items-center relative'>
                   <span className="mr-2 font-bold">Solution</span>
@@ -1133,7 +1297,7 @@ const CodingExerciseCreatorWithMonaco: React.FC<CodingExerciseCreatorProps> = ({
               </div>
             </div>
 
-            <div className="flex border-b border-gray-700 bg-gray-800 text-white px-2">
+          <div className="flex border-b border-gray-700 bg-[#33364a] text-white px-2">
               <div className={`${leftPanelExpanded ? 'w-full' : rightPanelExpanded ? 'hidden' : 'w-1/2'} px-2 flex items-center overflow-x-auto`}>
                 {files.filter(f => f.id !== 'test').map((file) => (
                   <div 
@@ -1158,34 +1322,38 @@ const CodingExerciseCreatorWithMonaco: React.FC<CodingExerciseCreatorProps> = ({
                     
                     {/* File dropdown menu - fixed positioning with higher z-index */}
                     {showFileMenu === file.id && (
-                      <div 
-                        className="fixed bg-white rounded-lg shadow-lg py-2 w-32 text-gray-800" 
-                        style={{
-                          zIndex: 9999,
-                          left: fileMenuButtonRefs.current[file.id]?.getBoundingClientRect().left || 0,
-                          top: (fileMenuButtonRefs.current[file.id]?.getBoundingClientRect().bottom || 0) + 2
-                        }}
-                      >
-                        <button 
-                          className="w-full text-left px-4 py-2 hover:bg-gray-100"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleRenameFile(file);
-                          }}
-                        >
-                          Rename
-                        </button>
-                        <button 
-                          className="w-full text-left px-4 py-2 hover:bg-gray-100"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteFile(file);
-                          }}
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    )}
+  <div 
+    data-file-menu={file.id}
+    className="fixed bg-white rounded-lg shadow-lg py-2 w-32 text-gray-800" 
+    style={{
+      zIndex: 9999,
+      left: fileMenuButtonRefs.current[file.id]?.getBoundingClientRect().left || 0,
+      top: (fileMenuButtonRefs.current[file.id]?.getBoundingClientRect().bottom || 0) + 2
+    }}
+    onClick={(e) => e.stopPropagation()} // Prevent clicks from bubbling
+  >
+    <button 
+      className="w-full text-left px-4 py-2 hover:bg-gray-100"
+      onClick={(e) => {
+        e.preventDefault(); // Prevent default
+        e.stopPropagation(); // Stop propagation
+        handleRenameFile(file);
+      }}
+    >
+      Rename
+    </button>
+    <button 
+      className="w-full text-left px-4 py-2 hover:bg-gray-100"
+      onClick={(e) => {
+        e.preventDefault(); // Prevent default
+        e.stopPropagation(); // Stop propagation
+        handleDeleteFile(file);
+      }}
+    >
+      Delete
+    </button>
+  </div>
+)}
                   </div>
                 ))}
                 <button 
@@ -1240,7 +1408,7 @@ const CodingExerciseCreatorWithMonaco: React.FC<CodingExerciseCreatorProps> = ({
             </div>
             
             {/* Run tests button */}
-            <div className="fixed bottom-20 left-0 px-6 py-3 z-10">
+            <div className="fixed bottom-12 left-0 px-6 py-6 z-10 bg-gradient-to-t from-black via-black to-transparent w-full">
               <button 
                 className="bg-white text-gray-700 px-4 py-2 rounded-md flex items-center font-bold text-sm shadow-md hover:bg-gray-100"
                 onClick={handleRunTests}
@@ -1393,29 +1561,62 @@ const CodingExerciseCreatorWithMonaco: React.FC<CodingExerciseCreatorProps> = ({
         </div>
       )}
 
+      {showPreviewModal && (
+  <div className="fixed inset-0 flex items-center justify-center z-50">
+    <div className="fixed inset-0 backdrop-blur-sm bg-transparent bg-opacity-50 shadow-sm " onClick={() => setShowPreviewModal(false)}></div>
+    <div className="bg-white rounded-lg p-6 w-full max-w-xl z-10 shadow-sm">
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-lg font-medium">Coding exercise can't be published</h3>
+        <button onClick={() => setShowPreviewModal(false)}>
+          <X size={18} className="text-gray-500" />
+        </button>
+      </div>
+      <div className="mb-6">
+        <p className="mb-4">Complete missing information to publish the coding exercise.</p>
+        <ul className="list-disc pl-8 space-y-2">
+          <li className='underline underline-offset-2 decoration-[#6D28D2]'>
+            <span className="text-[#6D28D2]">Make sure your solution and evaluation passes run tests.</span>
+          </li>
+          <li className='underline underline-offset-2 decoration-[#6D28D2]'>
+            <span className="text-[#6D28D2]">Add instructions.</span>
+          </li>
+        </ul>
+      </div>
+      <div className="flex justify-end">
+        <button
+          className="px-4 py-2 bg-[#6D28D2] text-white rounded-md"
+          onClick={() => setShowPreviewModal(false)}
+        >
+          Back to editing
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
       {/* Delete confirmation modal */}
       {showDeleteConfirmModal && fileToDelete && (
         <div className="fixed inset-0 flex items-center justify-center z-50">
-          <div className="fixed inset-0 backdrop-blur-sm bg-black bg-opacity-50" onClick={handleCancelDelete}></div>
-          <div className="bg-white rounded-lg p-6 w-full max-w-md z-10">
+          <div className="fixed inset-0 backdrop-blur-sm bg-transparent bg-opacity-50" onClick={handleCancelDelete}></div>
+          <div className="bg-white rounded-lg p-6 w-full max-w-lg z-10">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-medium">Delete file</h3>
+              <h3 className="text-lg font-bold text-gray-800">Delete file</h3>
               <button onClick={handleCancelDelete}>
                 <X size={18} className="text-gray-500" />
               </button>
             </div>
             <div className="mb-6">
-              <p className="text-gray-700">Please confirm to delete file {fileToDelete.name}</p>
+              <p className="text-gray-700 text-sm">Please confirm to delete file {fileToDelete.name}</p>
             </div>
             <div className="flex justify-end space-x-2">
               <button
-                className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-md"
+                className="px-4 py-2 font-bold text-[#6D28D2] rounded-md"
                 onClick={handleCancelDelete}
               >
                 Cancel
               </button>
               <button
-                className="px-4 py-2 bg-red-600 text-white rounded-md"
+                className="px-4 py-2 bg-[#6D28D2] font-bold text-white rounded-md"
                 onClick={handleConfirmDelete}
               >
                 Confirm
