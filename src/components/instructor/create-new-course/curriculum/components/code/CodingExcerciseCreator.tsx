@@ -1,20 +1,10 @@
-
 import React, { useState, useEffect, useRef } from 'react';
-import { Code, AlignJustify, ChevronLeft, ChevronDown, ChevronUp, AlertTriangle, Eye, ExternalLink, Play } from "lucide-react";
-import { Lecture, ContentItemType } from '@/lib/types';
-import Editor, { useMonaco, Monaco } from '@monaco-editor/react';
-import InstructionTabs from './InstructionsTab';
-
-// Type definitions
-type Language = {
-  id: string;
-  name: string;
-  deprecated?: boolean;
-  hasVersions?: boolean;
-  versions?: string[];
-  additionalInfo?: string;
-  isNew?: boolean;
-};
+import { Code, ChevronLeft, ChevronDown, ChevronUp, AlertTriangle, Eye, Plus, Info, Undo, Maximize2, Play, ChevronRight, X, MoreVertical } from "lucide-react";
+import { Lecture, ContentItemType, Language } from '@/lib/types';
+import Editor, { useMonaco } from '@monaco-editor/react';
+import { exactDarkTheme, getDefaultCode, getDefaultTests, getMonacoLanguage, languages, runJavaScriptTests } from '@/lib/utils';
+import ReactQuill from 'react-quill-new';
+import 'react-quill-new/dist/quill.snow.css';
 
 type Tab = 'planExercise' | 'authorSolution' | 'guideLearners';
 type View = 'languageSelection' | 'exercisePlanning' | 'codeEditor' | 'guideLearners';
@@ -24,6 +14,14 @@ type TestResult = {
   error?: string;
 };
 
+type FileType = {
+  id: string;
+  name: string;
+  content: string;
+  language: string;
+  isActive?: boolean;
+};
+
 interface CodingExerciseCreatorProps {
   lectureId: string | null;
   onClose: () => void;
@@ -31,495 +29,174 @@ interface CodingExerciseCreatorProps {
   initialData?: Lecture;
 }
 
-// Helper function to map language IDs to Monaco language IDs
-const getMonacoLanguage = (languageId: string): string => {
-  // Map language IDs to Monaco editor language identifiers
-  switch (languageId) {
-    case 'python':
-      return 'python';
-    case 'javascript':
-      return 'javascript';
-    case 'react':
-      return 'javascript'; // We'll configure for JSX separately
-    case 'typescript':
-      return 'typescript';
-    case 'java':
-      return 'java';
-    case 'csharp':
-      return 'csharp';
-    case 'cpp':
-      return 'cpp';
-    case 'ruby':
-      return 'ruby';
-    case 'html':
-      return 'html';
-    case 'css':
-      return 'css';
-    case 'sql':
-    case 'sqlite':
-      return 'sql';
-    case 'swift':
-      return 'swift';
-    case 'kotlin':
-      return 'kotlin';
-    case 'r':
-      return 'r';
-    case 'rust':
-      return 'rust';
-    case 'web-dev':
-      return 'javascript';
-    default:
-      return 'javascript';
-  }
-};
+// Reusable Rich Text Editor Component
+const RichTextEditor: React.FC<{
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+}> = ({ value, onChange, placeholder }) => {
+  const modules = {
+    toolbar: [
+      ['bold', 'italic'],
+      [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+      ['link', 'image'],
+      ['code-block']
+    ]
+  };
 
-// Updated default code templates by language
-const getDefaultCode = (languageId: string) => {
-  switch (languageId) {
-    case 'python':
-      return `def detect_faces(image_path):
-    """
-    Detects faces in an image and returns the result.
-    
-    Args:
-        image_path (str): Path to the image file
-        
-    Returns:
-        The processed image with detected faces
-    """
-    # Your implementation here
-    return "Face detected"`;
-    
-    case 'react':
-      return `import React from 'react';
-
-// don't change the Component name "App"
-export default class App extends React.Component {
-  render() {
-    // TODO: implement component
-  }
-}`;
-    
-    case 'javascript':
-      return `/**
- * Example JavaScript function
- * @param {Array} items - The array of items to process
- * @returns {number} The calculated total
- */
-function calculateTotal(items) {
-  return items.reduce((total, item) => {
-    return total + (item.price * item.quantity);
-  }, 0);
-}
-
-// Example usage
-const cart = [
-  { name: 'Product A', price: 10, quantity: 2 },
-  { name: 'Product B', price: 15, quantity: 1 }
-];
-
-console.log(calculateTotal(cart));`;
-    
-    case 'java':
-      return `public class Solution {
-    /**
-     * Main method to demonstrate functionality
-     */
-    public static void main(String[] args) {
-        System.out.println("Hello Java!");
-        
-        // Example usage
-        int result = calculateSum(new int[]{1, 2, 3, 4, 5});
-        System.out.println("Sum: " + result);
-    }
-    
-    /**
-     * Calculate the sum of an array of integers
-     * @param numbers Array of integers
-     * @return The sum of all numbers
-     */
-    public static int calculateSum(int[] numbers) {
-        int sum = 0;
-        for (int num : numbers) {
-            sum += num;
-        }
-        return sum;
-    }
-}`;
-
-    case 'csharp':
-      return `using System;
-
-public class Solution 
-{
-    /// <summary>
-    /// Main method to demonstrate functionality
-    /// </summary>
-    public static void Main()
-    {
-        Console.WriteLine("Hello C#!");
-        
-        // Example usage
-        int[] numbers = {1, 2, 3, 4, 5};
-        int result = CalculateSum(numbers);
-        Console.WriteLine($"Sum: {result}");
-    }
-    
-    /// <summary>
-    /// Calculate the sum of an array of integers
-    /// </summary>
-    /// <param name="numbers">Array of integers</param>
-    /// <returns>The sum of all numbers</returns>
-    public static int CalculateSum(int[] numbers)
-    {
-        int sum = 0;
-        foreach (int num in numbers)
-        {
-            sum += num;
-        }
-        return sum;
-    }
-}`;
-
-    case 'kotlin':
-      return `class Exercise {
-    /**
-     * Calculate the sum of a list of integers
-     * @param numbers List of integers
-     * @return The sum of all numbers
-     */
-    fun calculateSum(numbers: List<Int>): Int {
-        return numbers.sum()
-    }
-}`;
-
-    case 'html':
-      return `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My HTML Page</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        .container {
-            border: 1px solid #ccc;
-            padding: 20px;
-            border-radius: 8px;
-        }
-        h1 {
-            color: #333;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>Hello HTML!</h1>
-        <p>This is a sample HTML document.</p>
-        <button id="clickMe">Click Me</button>
+  return (
+    <div className="rich-text-editor">
+      <ReactQuill
+        value={value}
+        onChange={onChange}
+        modules={modules}
+        placeholder={placeholder}
+        theme="snow"
+      />
     </div>
-    
-    <script>
-        document.getElementById('clickMe').addEventListener('click', function() {
-            alert('Button clicked!');
-        });
-    </script>
-</body>
-</html>`;
-
-    case 'web-dev':
-      return `// Modern JavaScript/Web Development Example
-import './styles.css';
-
-// DOM Elements
-const app = document.getElementById('app');
-const button = document.createElement('button');
-const counter = document.createElement('p');
-
-// Initialize state
-let count = 0;
-
-// Update UI
-function render() {
-  counter.textContent = \`Count: \${count}\`;
-}
-
-// Event handlers
-button.textContent = 'Increment';
-button.addEventListener('click', () => {
-  count++;
-  render();
-});
-
-// Build UI
-app.appendChild(counter);
-app.appendChild(button);
-
-// Initial render
-render();`;
-
-    default:
-      return `// Write your solution for ${languageId} here
-
-function example() {
-  console.log("This is a sample function");
-  return "Hello, world!";
-}`;
-  }
+  );
 };
 
-// Updated default test templates
-const getDefaultTests = (languageId: string) => {
-  switch (languageId) {
-    case 'python':
-      return `import unittest
-from solution import detect_faces
+// Instruction Tabs Component
+const InstructionTabs: React.FC<{
+  defaultInstructions: string;
+  defaultHints: string;
+  defaultSolutionExplanation: string;
+  defaultRelatedLectures?: string[];
+  onInstructionsChange: (value: string) => void;
+  onHintsChange: (value: string) => void;
+  onSolutionExplanationChange: (value: string) => void;
+  onRelatedLecturesChange?: (lectures: string[]) => void;
+}> = ({
+  defaultInstructions,
+  defaultHints,
+  defaultSolutionExplanation,
+  defaultRelatedLectures = [],
+  onInstructionsChange,
+  onHintsChange,
+  onSolutionExplanationChange,
+  onRelatedLecturesChange
+}) => {
+  const [activeTab, setActiveTab] = useState<'instructions' | 'relatedLectures' | 'hints' | 'solution'>('instructions');
+  const [selectedLectures, setSelectedLectures] = useState<string[]>(defaultRelatedLectures);
 
-class TestFaceDetection(unittest.TestCase):
-    def test_detect_faces_returns_result(self):
-        # Test that the function returns a result
-        result = detect_faces("example.jpg")
-        self.assertIsNotNone(result)
-        
-    # Add more test cases here
+  const handleLectureSelection = (lectureName: string) => {
+    const newSelection = selectedLectures.includes(lectureName)
+      ? selectedLectures.filter(l => l !== lectureName)
+      : [...selectedLectures, lectureName];
     
-if __name__ == '__main__':
-    unittest.main()`;
-    
-    case 'javascript':
-      return `// Test for the calculateTotal function
-describe('calculateTotal', () => {
-  test('should calculate the total correctly', () => {
-    const testCart = [
-      { name: 'Test Product', price: 10, quantity: 2 },
-      { name: 'Another Product', price: 5, quantity: 3 }
-    ];
-    
-    // 10 * 2 + 5 * 3 = 20 + 15 = 35
-    expect(calculateTotal(testCart)).toBe(35);
-  });
-  
-  test('should return 0 for empty array', () => {
-    expect(calculateTotal([])).toBe(0);
-  });
-  
-  // Add more test cases here
-});`;
-    
-    case 'react':
-      return `import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
-import App from './App';
-
-describe('App component', () => {
-  test('renders hello message', () => {
-    render(<App />);
-    const headingElement = screen.getByText(/hello react/i);
-    expect(headingElement).toBeInTheDocument();
-  });
-  
-  test('counter increments when button is clicked', () => {
-    render(<App />);
-    
-    // Initial count should be 0
-    expect(screen.getByText(/you clicked 0 times/i)).toBeInTheDocument();
-    
-    // Click the button
-    fireEvent.click(screen.getByText(/click me/i));
-    
-    // Count should increment to 1
-    expect(screen.getByText(/you clicked 1 times/i)).toBeInTheDocument();
-  });
-});`;
-    
-    case 'java':
-      return `import org.junit.Test;
-import static org.junit.Assert.*;
-
-public class SolutionTest {
-    @Test
-    public void testCalculateSum() {
-        // Test with normal array
-        int[] numbers = {1, 2, 3, 4, 5};
-        assertEquals(15, Solution.calculateSum(numbers));
-        
-        // Test with empty array
-        int[] emptyArray = {};
-        assertEquals(0, Solution.calculateSum(emptyArray));
-        
-        // Test with negative numbers
-        int[] negativeNumbers = {-1, -2, -3};
-        assertEquals(-6, Solution.calculateSum(negativeNumbers));
+    setSelectedLectures(newSelection);
+    if (onRelatedLecturesChange) {
+      onRelatedLecturesChange(newSelection);
     }
-    
-    // Add more test methods here
-}`;
+  };
 
-    case 'csharp':
-      return `using Microsoft.VisualStudio.TestTools.UnitTesting;
+  return (
+    <div className="h-full flex flex-col">
+      <div className="flex border-b border-gray-200">
+        <button
+          className={`px-4 py-2 ${activeTab === 'instructions' ? 'border-b-2 border-[#6D28D2] text-[#6D28D2] font-medium' : 'text-gray-500'}`}
+          onClick={() => setActiveTab('instructions')}
+        >
+          Instructions
+        </button>
+        <button
+          className={`px-4 py-2 ${activeTab === 'relatedLectures' ? 'border-b-2 border-[#6D28D2] text-[#6D28D2] font-medium' : 'text-gray-500'}`}
+          onClick={() => setActiveTab('relatedLectures')}
+        >
+          Related lectures
+        </button>
+        <button
+          className={`px-4 py-2 ${activeTab === 'hints' ? 'border-b-2 border-[#6D28D2] text-[#6D28D2] font-medium' : 'text-gray-500'}`}
+          onClick={() => setActiveTab('hints')}
+        >
+          Hints
+        </button>
+        <button
+          className={`px-4 py-2 ${activeTab === 'solution' ? 'border-b-2 border-[#6D28D2] text-[#6D28D2] font-medium' : 'text-gray-500'}`}
+          onClick={() => setActiveTab('solution')}
+        >
+          Solution explanation
+        </button>
+      </div>
+      
+      <div className="flex-1 p-4 overflow-y-auto">
+        {activeTab === 'instructions' && (
+          <div className="h-full">
+            <div className="text-gray-700 mb-4">
+              <p>Write clear instructions for your exercise. Guide learners on what to implement, but don't give away the solution.</p>
+            </div>
+            <RichTextEditor
+              value={defaultInstructions}
+              onChange={onInstructionsChange}
+              placeholder="Write instructions here."
+            />
+          </div>
+        )}
 
-[TestClass]
-public class SolutionTests
-{
-    [TestMethod]
-    public void CalculateSum_WithNormalArray_ReturnsCorrectSum()
-    {
-        // Arrange
-        int[] numbers = {1, 2, 3, 4, 5};
+        {activeTab === 'relatedLectures' && (
+          <div className="h-full">
+            <div className="text-gray-700 mb-4">
+              <p>Provide lectures as a resource for learners to reference as they attempt the exercise in case they need more information or are unsure where to start. You can add max. 3 related lectures.</p>
+            </div>
+            <div className="mb-4">
+              <div className="relative">
+                <select
+                  className="w-full bg-white border border-gray-300 rounded-md px-3 py-2 appearance-none focus:outline-none focus:ring-2 focus:ring-[#6D28D2]"
+                >
+                  <option>Select</option>
+                  <option>Introduction to React</option>
+                  <option>Component Basics</option>
+                  <option>React Hooks</option>
+                </select>
+                <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+                  <ChevronDown className="w-4 h-4 text-gray-500" />
+                </div>
+              </div>
+              <div className="text-sm text-gray-500 text-right mt-1">Optional</div>
+            </div>
+            <div className="mt-6">
+              <button className="flex items-center text-[#6D28D2] text-sm">
+                <Plus size={16} className="mr-1" /> Add more
+              </button>
+            </div>
+          </div>
+        )}
         
-        // Act
-        int result = Solution.CalculateSum(numbers);
+        {activeTab === 'hints' && (
+          <div className="h-full">
+            <div className="text-gray-700 mb-4">
+              <p>Hints will be unlocked after the second failed attempt of the exercise so that learners can get more support beyond the related lectures and tests. Hints are a way to nudge learners toward the solution without telling them how to solve the problem.</p>
+            </div>
+            <RichTextEditor
+              value={defaultHints}
+              onChange={onHintsChange}
+              placeholder="Write hints here."
+            />
+          </div>
+        )}
         
-        // Assert
-        Assert.AreEqual(15, result);
-    }
-    
-    [TestMethod]
-    public void CalculateSum_WithEmptyArray_ReturnsZero()
-    {
-        // Arrange
-        int[] numbers = new int[0];
-        
-        // Act
-        int result = Solution.CalculateSum(numbers);
-        
-        // Assert
-        Assert.AreEqual(0, result);
-    }
-    
-    // Add more test methods here
-}`;
-
-    case 'kotlin':
-      return `import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.Assertions.assertEquals
-
-class Evaluate {
-    @Test
-    fun testExercise() {
-        val exercise = Exercise()
-        val numbers = listOf(1, 2, 3, 4, 5)
-        assertEquals(15, exercise.calculateSum(numbers))
-    }
-}`;
-
-    default:
-      return `// Write tests for your ${languageId} solution here
-
-describe('Example tests', () => {
-  test('should pass a basic test', () => {
-    // Arrange
-    const expected = 'Hello, world!';
-    
-    // Act
-    const result = example();
-    
-    // Assert
-    expect(result).toBe(expected);
-  });
-  
-  // Add more test cases here
-});`;
-  }
+        {activeTab === 'solution' && (
+          <div className="h-full">
+            <div className="text-gray-700 mb-4">
+              <p>Solution explanation will be unlocked after the third fail attempt. You can paste your solution code here by adding a description of why the code is written a particular way or you can share a step-by-step solution explanation.</p>
+            </div>
+            <RichTextEditor
+              value={defaultSolutionExplanation}
+              onChange={onSolutionExplanationChange}
+              placeholder="Write a solution explanation here."
+            />
+          </div>
+        )}
+      </div>
+    </div>
+  );
 };
 
-// Test runner function for JavaScript
-const runJavaScriptTests = (code: string, tests: string) => {
-  try {
-    // Create a safe evaluation context with limited access
-    const sandbox: any = {
-      console: {
-        log: console.log.bind(console),
-        error: console.error.bind(console),
-        warn: console.warn.bind(console)
-      },
-      setTimeout,
-      clearTimeout,
-      results: [] as any[]
-    };
 
-    // Prepare testing environment
-    const testFramework = `
-      // Simple test framework
-      function describe(desc, fn) { fn(); }
-      function it(name, fn) { test(name, fn); }
-      function test(name, fn) {
-        try {
-          fn();
-          results.push({ name, passed: true });
-        } catch (e) {
-          results.push({ name, passed: false, error: e.message });
-        }
-      }
-      function expect(actual) {
-        return {
-          toBe: (expected) => {
-            if (actual !== expected) throw new Error(\`Expected \${expected} but got \${actual}\`);
-          },
-          toEqual: (expected) => {
-            if (JSON.stringify(actual) !== JSON.stringify(expected)) 
-              throw new Error(\`Expected \${JSON.stringify(expected)} but got \${JSON.stringify(actual)}\`);
-          },
-          toBeTruthy: () => {
-            if (!actual) throw new Error(\`Expected value to be truthy\`);
-          },
-          toBeFalsy: () => {
-            if (actual) throw new Error(\`Expected value to be falsy\`);
-          },
-          toContain: (item) => {
-            if (!actual.includes(item)) throw new Error(\`Expected \${actual} to contain \${item}\`);
-          },
-          toThrow: (expected) => {
-            let threw = false;
-            let error = null;
-            try { actual(); } 
-            catch (e) { threw = true; error = e; }
-            if (!threw) throw new Error(\`Expected function to throw\`);
-            if (expected && !error.message.includes(expected)) 
-              throw new Error(\`Expected error message to include \${expected}\`);
-          }
-        };
-      }
-    `;
-
-    // Build the execution script
-    const executeScript = `
-      ${code}
-      ${testFramework}
-      ${tests}
-      return results;
-    `;
-
-    // Execute in a controlled environment using Function constructor
-    const testRunner = new Function(...Object.keys(sandbox), executeScript);
-    const testResults = testRunner(...Object.values(sandbox));
-
-    return {
-      success: testResults.every((r: any) => r.passed),
-      results: testResults
-    };
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'An error occurred',
-      results: []
-    };
-  }
-};
 
 // Monaco Editor Component
-const MonacoEditorComponent = ({ 
-  language, 
-  value, 
-  onChange, 
-  readOnly = false,
-  isReact = false // New prop to handle React configuration
-}: { 
+const MonacoEditorComponent = ({ language, value, onChange, readOnly = false, isReact = false }: { 
   language: string, 
   value: string, 
   onChange: (value: string) => void,
@@ -530,39 +207,9 @@ const MonacoEditorComponent = ({
   
   useEffect(() => {
     if (monaco) {
-      // You can configure Monaco here if needed
-      // For example, adding custom themes, keybindings, etc.
-      
-      // Example: Setting up a custom theme
-      monaco.editor.defineTheme('myDarkTheme', {
-        base: 'vs-dark',
-        inherit: true,
-        rules: [],
-        colors: {
-          'editor.background': '#1e1e1e',
-          'editor.foreground': '#d4d4d4',
-          'editor.lineHighlightBackground': '#2a2a2a',
-          'editorLineNumber.foreground': '#858585',
-          'editor.selectionBackground': '#264f78',
-          'editorCursor.foreground': '#d4d4d4'
-        }
-      });
-      
-      monaco.editor.setTheme('myDarkTheme');
-      
-      // Configure for React/JSX if needed
-      if (isReact) {
-        monaco.languages.typescript.javascriptDefaults.setCompilerOptions({
-          jsx: monaco.languages.typescript.JsxEmit.React,
-          jsxFactory: 'React.createElement',
-          reactNamespace: 'React',
-          allowNonTsExtensions: true,
-          allowJs: true,
-          target: monaco.languages.typescript.ScriptTarget.ES2020
-        });
-      }
+      monaco.editor.defineTheme('exactDarkTheme', exactDarkTheme);
     }
-  }, [monaco, isReact]);
+  }, [monaco]);
 
   const handleEditorChange = (value: string | undefined) => {
     if (value !== undefined) {
@@ -572,10 +219,11 @@ const MonacoEditorComponent = ({
 
   return (
     <Editor
-      height="100%"
+      height="78vh"
       language={language}
       value={value}
       onChange={handleEditorChange}
+      theme="exactDarkTheme"
       options={{
         minimap: { enabled: false },
         scrollBeyondLastLine: false,
@@ -616,7 +264,9 @@ const CodingExerciseCreatorWithMonaco: React.FC<CodingExerciseCreatorProps> = ({
 
   // Code and test state
   const [solutionCode, setSolutionCode] = useState<string>('// Write your solution code here');
+  const [initialSolutionCode, setInitialSolutionCode] = useState<string>('// Write your solution code here');
   const [testCode, setTestCode] = useState<string>('// Write your test code here');
+  const [initialTestCode, setInitialTestCode] = useState<string>('// Write your test code here');
   const [testResults, setTestResults] = useState<any>(null);
   const [isRunningTests, setIsRunningTests] = useState<boolean>(false);
   const [showTerminal, setShowTerminal] = useState<boolean>(false);
@@ -626,23 +276,56 @@ const CodingExerciseCreatorWithMonaco: React.FC<CodingExerciseCreatorProps> = ({
   const [hints, setHints] = useState<string>("");
   const [solutionExplanation, setSolutionExplanation] = useState<string>("");
 
-  // Sample languages
-  const languages: Language[] = [
-    { id: 'python', name: 'Python', hasVersions: false },
-    { id: 'java', name: 'Java', hasVersions: false },
-    { id: 'javascript', name: 'JavaScript', deprecated: true, hasVersions: true, versions: ['ES6'] },
-    { id: 'react', name: 'React', hasVersions: true, versions: ['18'], additionalInfo: 'with React Testing Library' },
-    { id: 'kotlin', name: 'Kotlin', hasVersions: false },
-    { id: 'csharp', name: 'C#', hasVersions: false },
-    { id: 'html', name: 'HTML', deprecated: true, hasVersions: false },
-    { id: 'r', name: 'R', hasVersions: false },
-    { id: 'ruby', name: 'Ruby', hasVersions: false },
-    { id: 'python-ds', name: 'Python Data Science', hasVersions: false },
-    { id: 'sqlite', name: 'SQLite 3', hasVersions: false },
-    { id: 'altsql', name: 'AltSQL', hasVersions: false },
-    { id: 'swift', name: 'Swift', hasVersions: false },
-    { id: 'web-dev', name: 'Web Development', isNew: true, hasVersions: false },
-  ];
+  // New states for requested features
+  const [leftPanelExpanded, setLeftPanelExpanded] = useState<boolean>(false);
+  const [rightPanelExpanded, setRightPanelExpanded] = useState<boolean>(false);
+  const [showSolutionInfo, setShowSolutionInfo] = useState<boolean>(false);
+  const [showEvaluationInfo, setShowEvaluationInfo] = useState<boolean>(false);
+  const [showFileNameModal, setShowFileNameModal] = useState<boolean>(false);
+  const [newFileName, setNewFileName] = useState<string>('');
+  const [files, setFiles] = useState<FileType[]>([]);
+  const [activeFileId, setActiveFileId] = useState<string>('main');
+  const [showFileMenu, setShowFileMenu] = useState<string | null>(null);
+  const [fileForRename, setFileForRename] = useState<FileType | null>(null);
+  const [isRenaming, setIsRenaming] = useState<boolean>(false);
+  const [showPreview, setShowPreview] = useState<boolean>(false);
+    // Handle preview toggle
+  const togglePreview = () => {
+    setShowPreview(!showPreview);
+  };
+
+  // Handle file creation
+  const handleAddFile = () => {
+    setNewFileName('');
+    setShowFileNameModal(true);
+    setIsRenaming(false);
+  };
+
+  const handleFileNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setNewFileName(e.target.value);
+  };
+
+  const handleCreateFile = () => {
+    if (newFileName.trim()) {
+      const fileId = `file-${Date.now()}`;
+      const fileExt = selectedLanguage?.id === 'csharp' ? 'cs' : (selectedLanguage?.id || 'js');
+      const fileName = newFileName.includes('.') ? newFileName : `${newFileName}.${fileExt}`;
+      
+      const newFile: FileType = {
+        id: fileId,
+        name: fileName,
+        content: '', // Start with a blank file
+        language: getMonacoLanguage(selectedLanguage?.id || 'javascript'),
+        isActive: false
+      };
+      
+      setFiles(prev => [...prev, newFile]);
+      setShowFileNameModal(false);
+    }
+  };
+
+  // Refs for positioning the file menu
+  const fileMenuButtonRefs = useRef<{[key: string]: HTMLButtonElement | null}>({});
 
   useEffect(() => {
     if (selectedLanguage && selectedLanguage.hasVersions) {
@@ -665,16 +348,75 @@ const CodingExerciseCreatorWithMonaco: React.FC<CodingExerciseCreatorProps> = ({
     }
   }, [initialData]);
 
-  // Improved version: Update code templates when language changes
+  // Initialize files based on selected language
   useEffect(() => {
     if (selectedLanguage) {
-      // Set appropriate code templates based on the selected language
-      setSolutionCode(getDefaultCode(selectedLanguage.id));
-      setTestCode(getDefaultTests(selectedLanguage.id));
+      const defaultSolutionCode = getDefaultCode(selectedLanguage.id);
+      const defaultTestCode = getDefaultTests(selectedLanguage.id);
       
-      // Special handling for React will be managed in the MonacoEditorComponent
+      setSolutionCode(defaultSolutionCode);
+      setTestCode(defaultTestCode);
+      setInitialSolutionCode(defaultSolutionCode);
+      setInitialTestCode(defaultTestCode);
+      
+      // Initialize default files based on language
+      let initialFiles: FileType[] = [];
+      
+      if (selectedLanguage.id === 'react') {
+        initialFiles = [
+          { id: 'main', name: 'App.js', content: defaultSolutionCode, language: 'javascript', isActive: true },
+          { id: 'test', name: 'App.spec.js', content: defaultTestCode, language: 'javascript', isActive: false }
+        ];
+      } else if (selectedLanguage.id === 'javascript') {
+        initialFiles = [
+          { id: 'main', name: 'index.js', content: defaultSolutionCode, language: 'javascript', isActive: true },
+          { id: 'test', name: 'index.test.js', content: defaultTestCode, language: 'javascript', isActive: false }
+        ];
+      } else if (selectedLanguage.id === 'python') {
+        initialFiles = [
+          { id: 'main', name: 'solution.py', content: defaultSolutionCode, language: 'python', isActive: true },
+          { id: 'test', name: 'test_solution.py', content: defaultTestCode, language: 'python', isActive: false }
+        ];
+      } else {
+        const fileExt = selectedLanguage.id === 'csharp' ? 'cs' : selectedLanguage.id;
+        initialFiles = [
+          { id: 'main', name: `Solution.${fileExt}`, content: defaultSolutionCode, language: selectedLanguage.id, isActive: true },
+          { id: 'test', name: `Tests.${fileExt}`, content: defaultTestCode, language: selectedLanguage.id, isActive: false }
+        ];
+      }
+      
+      setFiles(initialFiles);
+      setActiveFileId('main');
     }
   }, [selectedLanguage]);
+
+  // Update code when active file changes
+  useEffect(() => {
+    const mainFile = files.find(f => f.id === 'main');
+    const testFile = files.find(f => f.id === 'test');
+    
+    if (mainFile) {
+      setSolutionCode(mainFile.content);
+    }
+    
+    if (testFile) {
+      setTestCode(testFile.content);
+    }
+  }, [files]);
+
+  // Close file menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showFileMenu && !fileMenuButtonRefs.current[showFileMenu]?.contains(event.target as Node)) {
+        setShowFileMenu(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showFileMenu]);
 
   const handleLanguageSelect = (language: Language) => {
     setSelectedLanguage(language);
@@ -707,6 +449,19 @@ const CodingExerciseCreatorWithMonaco: React.FC<CodingExerciseCreatorProps> = ({
 
   const handleSave = () => {
     if (lectureId) {
+      // Update files content before saving
+      const updatedFiles = files.map(file => {
+        if (file.id === 'main') {
+          return { ...file, content: solutionCode };
+        }
+        if (file.id === 'test') {
+          return { ...file, content: testCode };
+        }
+        return file;
+      });
+      
+      setFiles(updatedFiles);
+      
       onSave({
         id: lectureId,
         name: exerciseTitle,
@@ -715,8 +470,7 @@ const CodingExerciseCreatorWithMonaco: React.FC<CodingExerciseCreatorProps> = ({
         description: instructions || initialData?.description || "",
         code: solutionCode,
         testCases: [{ id: '1', input: '', expectedOutput: testCode }],
-        // hints: hints,
-        // solutionExplanation: solutionExplanation
+        // Additional fields could be added here
       });
     }
   };
@@ -766,13 +520,215 @@ const CodingExerciseCreatorWithMonaco: React.FC<CodingExerciseCreatorProps> = ({
     }
   };
 
+  // New handlers for requested features
+  
+  // Handle expand functionality
+  const handleExpandLeft = () => {
+    setLeftPanelExpanded(!leftPanelExpanded);
+    if (rightPanelExpanded) {
+      setRightPanelExpanded(false);
+    }
+  };
+
+  const handleExpandRight = () => {
+    setRightPanelExpanded(!rightPanelExpanded);
+    if (leftPanelExpanded) {
+      setLeftPanelExpanded(false);
+    }
+  };
+
+  // Handle undo functionality
+  const handleUndoLeft = () => {
+    setSolutionCode(initialSolutionCode);
+    
+    // Update files array
+    const updatedFiles = files.map(file => {
+      if (file.id === 'main') {
+        return { ...file, content: initialSolutionCode };
+      }
+      return file;
+    });
+    
+    setFiles(updatedFiles);
+  };
+
+  const handleUndoRight = () => {
+    setTestCode(initialTestCode);
+    
+    // Update files array
+    const updatedFiles = files.map(file => {
+      if (file.id === 'test') {
+        return { ...file, content: initialTestCode };
+      }
+      return file;
+    });
+    
+    setFiles(updatedFiles);
+  };
+
+  // Handle info toggles
+  const toggleSolutionInfo = () => {
+    setShowSolutionInfo(!showSolutionInfo);
+    if (showEvaluationInfo) {
+      setShowEvaluationInfo(false);
+    }
+  };
+
+  const toggleEvaluationInfo = () => {
+    setShowEvaluationInfo(!showEvaluationInfo);
+    if (showSolutionInfo) {
+      setShowSolutionInfo(false);
+    }
+  };
+
+  // Handle file menu toggle with proper positioning
+  const handleFileMenuToggle = (fileId: string) => {
+    if (showFileMenu === fileId) {
+      setShowFileMenu(null);
+    } else {
+      setShowFileMenu(fileId);
+    }
+  };
+
+  // Handle file renaming
+  const handleRenameFile = (file: FileType) => {
+    setFileForRename(file);
+    setNewFileName(file.name);
+    setShowFileNameModal(true);
+    setIsRenaming(true);
+    setShowFileMenu(null);
+  };
+
+  const handleSaveRename = () => {
+    if (fileForRename && newFileName.trim()) {
+      const updatedFiles = files.map(file => {
+        if (file.id === fileForRename.id) {
+          return { ...file, name: newFileName };
+        }
+        return file;
+      });
+      
+      setFiles(updatedFiles);
+      setShowFileNameModal(false);
+      setFileForRename(null);
+    }
+  };
+
+  // Handle file deletion
+  const handleDeleteFile = (fileId: string) => {
+    // Don't allow deleting main or test files
+    if (fileId !== 'main' && fileId !== 'test') {
+      const updatedFiles = files.filter(file => file.id !== fileId);
+      setFiles(updatedFiles);
+      
+      // If the active file is being deleted, set main as active
+      if (activeFileId === fileId) {
+        setActiveFileId('main');
+        const mainFile = files.find(f => f.id === 'main');
+        if (mainFile) {
+          setSolutionCode(mainFile.content);
+        }
+      }
+    }
+    setShowFileMenu(null);
+  };
+
+  const handleFileClick = (fileId: string) => {
+    setActiveFileId(fileId);
+    
+    // Update active states in files
+    const updatedFiles = files.map(file => ({
+      ...file,
+      isActive: file.id === fileId
+    }));
+    
+    setFiles(updatedFiles);
+    
+    // Update editor content based on the selected file
+    const selectedFile = files.find(f => f.id === fileId);
+    if (selectedFile) {
+      if (fileId === 'main') {
+        setSolutionCode(selectedFile.content);
+      } else if (fileId === 'test') {
+        setTestCode(selectedFile.content);
+      } else {
+        // For custom files, update solution code panel
+        setSolutionCode(selectedFile.content);
+      }
+    }
+  };
+
+  // Update files when editor content changes
+  const handleSolutionCodeChange = (value: string) => {
+    setSolutionCode(value);
+    
+    // Update the active file content
+    const activeFile = files.find(f => f.id === activeFileId || f.id === 'main');
+    if (activeFile) {
+      const updatedFiles = files.map(file => {
+        if (file.id === activeFile.id) {
+          return { ...file, content: value };
+        }
+        return file;
+      });
+      
+      setFiles(updatedFiles);
+    }
+  };
+
+  const handleTestCodeChange = (value: string) => {
+    setTestCode(value);
+    
+    // Update the test file content
+    const updatedFiles = files.map(file => {
+      if (file.id === 'test') {
+        return { ...file, content: value };
+      }
+      return file;
+    });
+    
+    setFiles(updatedFiles);
+  };
+
+  // Function to get main file content
+  const getMainFileContent = () => {
+    const mainFile = files.find(f => f.id === 'main');
+    return mainFile ? mainFile.content : solutionCode;
+  };
+
+  // Function to get test file content
+  const getTestFileContent = () => {
+    const testFile = files.find(f => f.id === 'test');
+    return testFile ? testFile.content : testCode;
+  };
+
+  // Preview component for React output
+  const PreviewComponent: React.FC = () => {
+    const [previewHtml, setPreviewHtml] = useState<string>('');
+    
+    useEffect(() => {
+      if (selectedLanguage?.id === 'react') {
+        // Simple preview rendering - in a real app you'd use a more sophisticated approach
+        setPreviewHtml('<h1>Hello, world!</h1>');
+      } else {
+        setPreviewHtml('<div class="p-4 text-center text-gray-500">Preview not available for this language</div>');
+      }
+    }, [solutionCode]);
+    
+    return (
+      <div className="h-full flex items-center justify-center bg-white">
+        <div dangerouslySetInnerHTML={{ __html: previewHtml }} />
+      </div>
+    );
+  };
+
   return (
     <div className="flex flex-col h-screen bg-white">
       {/* Top Navigation Bar */}
       <div className="flex items-center justify-between px-4 py-2 bg-white border-b border-gray-200">
         <div className="flex items-center">
           <button 
-            className="text-purple-600 flex items-center mr-4"
+            className="text-[#6D28D2] flex items-center mr-4"
             onClick={onClose}
           >
             <ChevronLeft className="w-5 h-5" />
@@ -781,7 +737,7 @@ const CodingExerciseCreatorWithMonaco: React.FC<CodingExerciseCreatorProps> = ({
           <span className="text-gray-700">{exerciseTitle}</span>
         </div>
         <div className="flex gap-2">
-          <button className="border border-purple-600 text-purple-600 px-4 py-2 rounded-md flex items-center">
+          <button className="border border-[#6D28D2] text-[#6D28D2] px-4 py-2 rounded-md flex items-center">
             <Eye className="w-4 h-4 mr-1" />
             Preview
           </button>
@@ -792,7 +748,7 @@ const CodingExerciseCreatorWithMonaco: React.FC<CodingExerciseCreatorProps> = ({
             Save
           </button>
           <button 
-            className="bg-purple-600 text-white px-4 py-2 rounded-md"
+            className="bg-[#6D28D2] text-white px-4 py-2 rounded-md"
             onClick={handleSave}
           >
             Publish
@@ -805,22 +761,22 @@ const CodingExerciseCreatorWithMonaco: React.FC<CodingExerciseCreatorProps> = ({
         {view === 'languageSelection' && (
           <div className="fixed inset-0 flex items-center justify-center z-40">
             {/* Backdrop overlay with blur effect */}
-            <div className="fixed inset-0 backdrop-blur-sm bg-transparent bg-opacity-50" onClick={onClose}></div>
+            <div className="fixed inset-0 backdrop-blur-sm bg-opacity-50 " onClick={onClose}></div>
 
             {/* Modal content - keeping your existing structure but with proper z-index */}
-            <div className="relative bg-white rounded-lg shadow-md p-6 w-full max-w-xl z-50">
-              <h2 className="text-xl font-medium mb-4">Select language to create coding exercise</h2>
+            <div className="relative bg-white rounded-lg shadow-lg p-6 w-full max-w-xl z-50">
+              <h2 className="text-md font-bold text-gray-800 mb-4">Select language to create coding exercise</h2>
               
               <div className="mb-4">
-                <label className="block text-gray-700 mb-2">Coding language</label>
+                <label className="block text-gray-800 mb-2 text-xs font-bold">Coding language</label>
                 <div className="relative">
                   <button
-                    className="w-full flex items-center justify-between bg-white border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    className="w-full flex items-center justify-between bg-white  border border-[#6D28D2] rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#6D28D2]"
                     onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
                   >
                     {selectedLanguage ? (
                       <div className="flex items-center">
-                        <span>{selectedLanguage.name}</span>
+                        <span className='text-[#6D28D2]'>{selectedLanguage.name}</span>
                         {selectedLanguage.deprecated && (
                           <span className="ml-2 px-2 py-0.5 bg-gray-200 text-gray-600 text-xs rounded">Deprecated</span>
                         )}
@@ -829,13 +785,13 @@ const CodingExerciseCreatorWithMonaco: React.FC<CodingExerciseCreatorProps> = ({
                         )}
                       </div>
                     ) : (
-                      <span>Select</span>
+                      <span className='text-[#6D28D2]'>Select</span>
                     )}
-                    <ChevronDown className="w-5 h-5 text-gray-400" />
+                    <ChevronDown className="w-5 h-5 text-[#6D28D2]" />
                   </button>
                   
                   {showLanguageDropdown && (
-                    <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                    <div className="absolute z-10 mt-1 w-full text-gray-800 font-bold text-sm bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto">
                       {languages.map((language) => (
                         <button
                           key={language.id}
@@ -858,18 +814,18 @@ const CodingExerciseCreatorWithMonaco: React.FC<CodingExerciseCreatorProps> = ({
               
               {selectedLanguage && selectedLanguage.hasVersions && (
                 <div className="mb-4">
-                  <label className="block text-gray-700 mb-2">Version</label>
+                  <label className="block text-gray-800 mb-2 text-xs font-bold">Version</label>
                   <div className="relative">
                     <button
-                      className="w-full flex items-center justify-between bg-white border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      className="w-full flex items-center text-[#6D28D2] justify-between bg-white border border-[#6D28D2] rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#6D28D2]"
                       onClick={() => setShowVersionDropdown(!showVersionDropdown)}
                     >
                       {selectedVersion || 'Select Version'}
-                      <ChevronDown className="w-5 h-5 text-gray-400" />
+                      <ChevronDown  className="w-5 h-5 text-[#6D28D2]" />
                     </button>
                     
                     {showVersionDropdown && (
-                      <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg">
+                      <div className="absolute z-10 mt-1 w-full text-gray-800 font-bold bg-white border border-gray-200 rounded-md shadow-lg">
                         {selectedLanguage.versions?.map((version) => (
                           <button
                             key={version}
@@ -883,17 +839,17 @@ const CodingExerciseCreatorWithMonaco: React.FC<CodingExerciseCreatorProps> = ({
                     )}
                   </div>
                   {selectedLanguage.additionalInfo && (
-                    <p className="text-sm text-gray-500 mt-1">with {selectedLanguage.additionalInfo}</p>
+                    <p className="text-xs font-medium text-gray-500 mt-1">with {selectedLanguage.additionalInfo}</p>
                   )}
                 </div>
               )}
               
               {selectedLanguage && selectedLanguage.deprecated && (
-                <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md flex items-start">
-                  <AlertTriangle className="w-5 h-5 text-yellow-500 mt-0.5 mr-2 flex-shrink-0" />
+                <div className="mb-4 py-3 px-4 bg-yellow-50 border border-yellow-600 rounded-xl flex items-start">
+                  <AlertTriangle className="w-5 h-5 text-yellow-600 mt-0.5 mr-2 flex-shrink-0" />
                   <div>
                     <p className="font-medium text-gray-800">You've selected a deprecated language</p>
-                    <p className="text-sm text-gray-600 mt-1">
+                    <p className="text-sm mt-1 font-medium text-gray-800">
                       We have introduced a new "Web Development" language option that supports JavaScript coding exercises with up-to-date libraries. For the best experience please select "Web Development" from the language dropdown.
                     </p>
                   </div>
@@ -902,13 +858,13 @@ const CodingExerciseCreatorWithMonaco: React.FC<CodingExerciseCreatorProps> = ({
               
               <div className="flex justify-end mt-6 space-x-2">
                 <button 
-                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700"
+                  className="px-2 py-2 font-bold hover:bg-gray-200 text-gray-800 text-sm"
                   onClick={onClose}
                 >
                   Cancel
                 </button>
                 <button
-                  className={`px-4 py-2 rounded-md ${selectedLanguage ? 'bg-purple-600 text-white' : 'bg-purple-300 text-white cursor-not-allowed'}`}
+                  className={`px-3 py-2 rounded font-bold text-sm ${selectedLanguage ? 'bg-[#6D28D2] text-white' : 'bg-purple-300 text-white cursor-not-allowed'}`}
                   disabled={!selectedLanguage}
                   onClick={handleStartCreating}
                 >
@@ -927,7 +883,7 @@ const CodingExerciseCreatorWithMonaco: React.FC<CodingExerciseCreatorProps> = ({
               <p className="text-gray-700 mb-2">
                 A <span className="font-bold">coding exercise</span> allows your learners to practice a targeted piece of real work and get immediate feedback. We recommend you follow these steps: Plan the exercise, define the solution, and guide learners. This will ensure you frame the problem and provide the needed guidance with the solution in mind.
               </p>
-              <a href="#" className="text-purple-600 text-sm hover:underline">Learn more about creating coding exercises</a>
+              <a href="#" className="text-[#6D28D2] text-sm hover:underline">Learn more about creating coding exercises</a>
               
               <div className="mt-6">
                 <label className="block text-gray-700 mb-2 font-bold">Exercise title</label>
@@ -935,21 +891,21 @@ const CodingExerciseCreatorWithMonaco: React.FC<CodingExerciseCreatorProps> = ({
                   type="text"
                   value={exerciseTitle}
                   onChange={(e) => setExerciseTitle(e.target.value)}
-                  className="w-full border border-gray-500 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="w-full border border-gray-500 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#6D28D2]"
                 />
               </div>
               
               <div className="mt-4">
                 <div className="flex items-center mb-2">
                   <label className="block text-gray-700 font-bold">Learning objective</label>
-                  <div className="ml-1 text-gray-400 bg-gray-100 rounded-full w-4 h-4 flex items-center justify-center text-xs">?</div>
+                  <Info size={13} className="bg-gray-800 ml-1 rounded-full text-white" />
                 </div>
                 <div className="relative">
                   <textarea
                     value={learningObjective}
                     onChange={(e) => setLearningObjective(e.target.value)}
                     placeholder="Provide a learning objective for this coding exercise."
-                    className="w-full border border-gray-500 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    className="w-full border border-gray-500 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#6D28D2]"
                     rows={3}
                   />
                   <div className="absolute bottom-2 right-2 text-sm text-gray-500">
@@ -991,13 +947,13 @@ const CodingExerciseCreatorWithMonaco: React.FC<CodingExerciseCreatorProps> = ({
                 </div>
               </div>
               <div className="bg-gray-900 text-white p-2 font-mono text-sm">
-                App.js
+                {files.find(f => f.id === 'main')?.name}
               </div>
               <div className="flex-1 bg-gray-900">
                 <MonacoEditorComponent 
                   language={getMonacoLanguage(selectedLanguage?.id || 'javascript')} 
-                  value={solutionCode}
-                  onChange={setSolutionCode}
+                  value={getMainFileContent()}
+                  onChange={handleSolutionCodeChange}
                   readOnly={true}
                   isReact={selectedLanguage?.id === 'react'}
                 />
@@ -1009,63 +965,210 @@ const CodingExerciseCreatorWithMonaco: React.FC<CodingExerciseCreatorProps> = ({
         {view === 'codeEditor' && (
           <div className="flex-1 flex flex-col">
             <div className="flex border-b border-gray-700 bg-gray-800 text-white">
-              <div className="w-1/2 p-2 flex items-center">
-                <span className="mr-2">Solution</span>
-                <div className="bg-gray-700 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">?</div>
-                <button className="ml-2 px-2 py-1 bg-gray-700 rounded text-xs">View examples</button>
+              <div className={`${leftPanelExpanded ? 'w-full' : rightPanelExpanded ? 'hidden' : 'w-1/2'} p-2 flex items-center justify-between`}>
+                <div className='flex items-center relative'>
+                  <span className="mr-2 font-bold">Solution</span>
+                  <button 
+                    className="ml-1 rounded-full"
+                    onClick={toggleSolutionInfo}
+                  >
+                    <Info size={13} className="bg-white rounded-full text-gray-800" />
+                  </button>
+                  
+                  {/* Solution Info Popup */}
+                  {showSolutionInfo && (
+                    <div className="absolute top-10 left-0 z-50 bg-white rounded-lg shadow-lg p-5 w-64 text-gray-800">
+                      <p className="text-xs mb-4 text-gray-800 font-bold">
+                       Solution files verify the provided evaluation file (unit test) is correct. Learners are expected to write a similar solution (not necessarily the same) for provided instructions at the "Guide learners" step.
+                      </p>
+                      <div className="flex justify-between">
+                        <button 
+                          className="bg-[#6D28D2] text-white px-1 font-bold py-1 rounded-md text-xs"
+                          onClick={() => window.open('/documentation', '_blank')}
+                        >
+                          View documentation
+                        </button>
+                        <button 
+                          className="border border-gray-300 px-3 py-1 rounded-md text-sm"
+                          onClick={toggleSolutionInfo}
+                        >
+                          Dismiss
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <div className="flex flex-row items-center gap-2">
+                  <button className="px-2 py-1 border border-white rounded text-xs font-bold cursor-pointer">View examples</button>
+                  <button onClick={handleUndoLeft} className="cursor-pointer">
+                    <Undo size={14} color='white' />
+                  </button>
+                  <button onClick={handleExpandLeft} className="cursor-pointer">
+                    <Maximize2 size={14} color='white' />
+                  </button>
+                </div>
               </div>
-              <div className="w-1/2 p-2 flex items-center border-l border-gray-700">
-                <span className="mr-2">Evaluation</span>
-                <div className="bg-gray-700 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">?</div>
-                <button className="ml-auto px-2 py-1 bg-gray-700 rounded text-xs flex items-center">
-                  <ExternalLink className="w-4 h-4 mr-1" />
-                  Show preview window
+              <div className={`${rightPanelExpanded ? 'w-full' : leftPanelExpanded ? 'hidden' : 'w-1/2'} p-2 flex items-center justify-between border-l border-gray-700`}>
+                <div className='flex flex-row items-center relative'>
+                  <span className="mr-2 font-bold">{showPreview ? 'Preview' : 'Evaluation'}</span>
+                  <button 
+                    className="ml-1 rounded-full"
+                    onClick={toggleEvaluationInfo}
+                  >
+                    <Info size={13} className="bg-white rounded-full text-gray-800" />
+                  </button>
+                  
+                  {/* Evaluation Info Popup */}
+                  {showEvaluationInfo && (
+                    <div className="absolute top-10 left-0 z-50 bg-white rounded-lg shadow-lg p-5 w-64 text-gray-800">
+                      <p className="text-xs mb-4 font-bold text-gray-800">
+                        An evaluation file checks whether the learner's solution is correct. Providing multiple test cases, descriptive test names, and assertion messages helps learners troubleshoot and improve their solution.
+                      </p>
+                      <div className="flex justify-between">
+                        <button 
+                          className="bg-[#6D28D2] text-white px-2 font-bold py-1 rounded-md text-xs"
+                          onClick={() => window.open('/documentation', '_blank')}
+                        >
+                          View documentation
+                        </button>
+                        <button 
+                          className="border border-gray-300 px-3 py-1 rounded-md text-sm"
+                          onClick={toggleEvaluationInfo}
+                        >
+                          Dismiss
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <button 
+                  className="px-2 py-1 border border-white rounded text-xs flex items-center font-bold cursor-pointer"
+                  onClick={togglePreview}
+                >
+                  {showPreview ? 'Show evaluation file' : 'Show preview window'}
                 </button>
+                <div className="flex items-center">
+                  <button onClick={handleUndoRight} className="mx-2 cursor-pointer">
+                    <Undo size={14} color='white' />
+                  </button>
+                  <button onClick={handleExpandRight} className="mr-2 cursor-pointer">
+                    <Maximize2 size={14} color='white' />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex border-b border-gray-700 bg-gray-800 text-white px-2">
+              <div className={`${leftPanelExpanded ? 'w-full' : rightPanelExpanded ? 'hidden' : 'w-1/2'} px-2 flex items-center overflow-x-auto`}>
+                {files.filter(f => f.id !== 'test').map((file) => (
+                  <div 
+                    key={file.id}
+                    className="flex items-center mr-2 relative"
+                  >
+                    <div 
+                      className="flex items-center cursor-pointer"
+                      onClick={() => handleFileClick(file.id)}
+                    >
+                      <span className={`font-medium ${file.isActive || (file.id === 'main' && activeFileId === 'main') ? 'border-b-2 border-white pb-2' : ''}`}>
+                        {file.name}
+                      </span>
+                    </div>
+                    <button 
+                      ref={el => fileMenuButtonRefs.current[file.id] = el}
+                      className="ml-1 p-1 hover:bg-gray-700 rounded"
+                      onClick={() => handleFileMenuToggle(file.id)}
+                    >
+                      <MoreVertical size={14} />
+                    </button>
+                    
+                    {/* File dropdown menu - now positioned correctly */}
+                    {showFileMenu === file.id && (
+                      <div className="fixed z-50 bg-white rounded-lg shadow-lg py-2 w-28 text-gray-800">
+                        <button 
+                          className="w-full text-left px-4 py-2 hover:bg-gray-100"
+                          onClick={() => handleRenameFile(file)}
+                        >
+                          Rename
+                        </button>
+                          <button 
+                            className="w-full text-left px-4 py-2 hover:bg-gray-100"
+                            onClick={() => handleDeleteFile(file.id)}
+                          >
+                            Delete
+                          </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+                <button 
+                  className="ml-2 cursor-pointer"
+                  onClick={handleAddFile}
+                >
+                  <Plus size={16} className='bg-white rounded-full text-gray-800' />
+                </button>
+              </div>
+              <div className={`${rightPanelExpanded ? 'w-full' : leftPanelExpanded ? 'hidden' : 'w-1/2'} px-2 flex items-center border-l border-gray-700`}>
+                <div className='flex flex-row'>
+                  <span className="mr-2 font-bold border-b border-b-white pb-2">
+                    {showPreview ? 'Preview' : files.find(f => f.id === 'test')?.name}
+                  </span>
+                </div>
               </div>
             </div>
             
             {/* Editor container */}
             <div className="flex-1 flex" style={{ height: 'calc(100vh - 150px)', minHeight: '500px' }}>
-              <div className="w-1/2 bg-gray-900 text-gray-200 overflow-auto" style={{ display: 'flex', flexDirection: 'column' }}>
+              <div 
+                className={`${leftPanelExpanded ? 'w-full' : rightPanelExpanded ? 'hidden' : 'w-1/2'} bg-gray-900 text-gray-200 overflow-auto`} 
+                style={{ display: 'flex', flexDirection: 'column' }}
+              >
                 <div style={{ flexGrow: 1, height: '100%' }}>
                   <MonacoEditorComponent 
                     language={getMonacoLanguage(selectedLanguage?.id || 'javascript')} 
                     value={solutionCode}
-                    onChange={setSolutionCode}
+                    onChange={handleSolutionCodeChange}
                     isReact={selectedLanguage?.id === 'react'}
                   />
                 </div>
               </div>
               
-              <div className="w-1/2 bg-gray-900 text-gray-200 overflow-auto border-l border-gray-700" style={{ display: 'flex', flexDirection: 'column' }}>
+              <div 
+                className={`${rightPanelExpanded ? 'w-full' : leftPanelExpanded ? 'hidden' : 'w-1/2'} bg-gray-900 text-gray-200 overflow-auto border-l border-gray-700`} 
+                style={{ display: 'flex', flexDirection: 'column' }}
+              >
                 <div style={{ flexGrow: 1, height: '100%' }}>
-                  <MonacoEditorComponent 
-                    language={getMonacoLanguage(selectedLanguage?.id || 'javascript')} 
-                    value={testCode}
-                    onChange={setTestCode}
-                    isReact={selectedLanguage?.id === 'react'}
-                  />
+                  {showPreview ? (
+                    <PreviewComponent />
+                  ) : (
+                    <MonacoEditorComponent 
+                      language={getMonacoLanguage(selectedLanguage?.id || 'javascript')} 
+                      value={testCode}
+                      onChange={handleTestCodeChange}
+                      isReact={selectedLanguage?.id === 'react'}
+                    />
+                  )}
                 </div>
               </div>
             </div>
             
-            <div className="p-3 flex items-center justify-between absolute bottom-20 left-4">
+            {/* Run tests button */}
+            <div className="fixed bottom-20 left-0 px-6 py-3 z-10">
               <button 
-                className="bg-white hover:text-gray-800 text-gray-700 px-4 py-2 rounded-md flex items-center"
+                className="bg-white text-gray-700 px-4 py-2 rounded-md flex items-center font-bold text-sm shadow-md hover:bg-gray-100"
                 onClick={handleRunTests}
                 disabled={isRunningTests}
               >
-                <Play className="w-4 h-4 mr-2" />
+                <Play size={15} className="p-1 bg-gray-800 rounded-full text-white mr-2" />
                 {isRunningTests ? 'Running...' : 'Run tests'}
               </button>
             </div>
             
-            {/* Terminal panel */}
+            {/* Terminal panel - styled as a slide up panel */}
             <div 
-              className={`fixed bottom-0 left-0 right-0 bg-gray-900 text-white border-t border-gray-700 transform transition-transform duration-300 ${
+              className={`fixed left-0 right-0 bottom-0 bg-gray-900 text-white border-t border-gray-700 transform transition-all duration-300 shadow-lg ${
                 showTerminal ? 'translate-y-0' : 'translate-y-full'
               }`}
-              style={{ maxHeight: '50vh', overflowY: 'auto' }}
+              style={{ maxHeight: '40vh' }}
             >
               {/* Terminal header */}
               <div className="flex justify-between items-center p-2 bg-gray-800 border-b border-gray-700">
@@ -1086,7 +1189,7 @@ const CodingExerciseCreatorWithMonaco: React.FC<CodingExerciseCreatorProps> = ({
               </div>
               
               {/* Terminal content */}
-              <div className="p-4">
+              <div className="p-4 overflow-y-auto" style={{ maxHeight: 'calc(40vh - 40px)' }}>
                 {testResults ? (
                   <div className="flex">
                     {/* Left panel - Test cases summary */}
@@ -1157,11 +1260,55 @@ const CodingExerciseCreatorWithMonaco: React.FC<CodingExerciseCreatorProps> = ({
         )}
       </div>
 
+      {/* File name modal - serves both for creating and renaming files */}
+      {showFileNameModal && (
+        <div className="fixed inset-0 flex items-center justify-center z-50">
+          <div className="fixed inset-0 bg-black bg-opacity-50" onClick={() => setShowFileNameModal(false)}></div>
+          <div className="bg-white rounded-lg p-6 w-full max-w-md z-10">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-medium">{isRenaming ? 'Rename file' : 'Enter file name'}</h3>
+              <button onClick={() => setShowFileNameModal(false)}>
+                <X size={18} className="text-gray-500" />
+              </button>
+            </div>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">File name</label>
+              <input
+                type="text"
+                value={newFileName}
+                onChange={handleFileNameChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#6D28D2]"
+                placeholder="e.g. helpers.js"
+              />
+              {newFileName && (
+                <div className="absolute right-3 mt-2 text-gray-500 text-sm">
+                  {newFileName.length}
+                </div>
+              )}
+            </div>
+            <div className="flex justify-end space-x-2">
+              <button
+                className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md"
+                onClick={() => setShowFileNameModal(false)}
+              >
+                Cancel
+              </button>
+              <button
+                className="px-4 py-2 bg-[#6D28D2] text-white rounded-md"
+                onClick={isRenaming ? handleSaveRename : handleCreateFile}
+              >
+                {isRenaming ? 'Save' : 'OK'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Bottom Tab Navigation */}
-      <div className="border-t border-gray-200 bg-white">
-        <div className="fixed bottom-4 left-4 rounded border border-purple-600 text-purple-600">
+      <div className="border-t border-gray-200 bg-white mb-1">
+        <div className="fixed bottom-4 left-4 rounded border border-[#6D28D2] text-[#6D28D2]">
           <button
-            className="text-center relative text-purple-600 px-4 py-2 font-medium"
+            className="text-center relative text-[#6D28D2] px-4 py-2 font-medium"
             onClick={() => console.log('Previous')}
           >
             Previous
@@ -1192,7 +1339,7 @@ const CodingExerciseCreatorWithMonaco: React.FC<CodingExerciseCreatorProps> = ({
                 </p>
                 <div className="flex justify-end">
                   <div
-                    className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded-md text-sm"
+                    className="bg-[#6D28D2] hover:bg-purple-700 text-white px-3 py-1 rounded-md text-sm cursor-pointer"
                     onClick={() => handleTabChange('authorSolution')}
                   >
                     Get started
@@ -1217,7 +1364,7 @@ const CodingExerciseCreatorWithMonaco: React.FC<CodingExerciseCreatorProps> = ({
       {/* Next Button (bottom right) */}
       <div className="fixed bottom-4 right-4">
         <button 
-          className="bg-purple-600 text-white px-4 py-2 rounded-md shadow-md"
+          className="bg-[#6D28D2] text-white px-4 py-2 rounded-md shadow-md"
           onClick={handleSave}
         >
           Next

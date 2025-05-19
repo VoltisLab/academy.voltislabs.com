@@ -584,3 +584,14 @@ export interface LectureItemProps {
   currentDescription?: string;
   children?: React.ReactNode;
 }
+
+// Type definitions
+export type Language = {
+  id: string;
+  name: string;
+  deprecated?: boolean;
+  hasVersions?: boolean;
+  versions?: string[];
+  additionalInfo?: string;
+  isNew?: boolean;
+};
