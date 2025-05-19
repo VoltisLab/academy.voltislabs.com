@@ -216,6 +216,8 @@ export interface Lecture {
   isCompleted?: boolean;
   hasResources?: boolean;
   duration?: string;
+  language?:string;
+  version?:string;
   // Code editor related fields
   code?: string;                    // Stores the code content for practice exercises
   codeLanguage?: string;            // Stores the programming language for the code editor
@@ -582,3 +584,14 @@ export interface LectureItemProps {
   currentDescription?: string;
   children?: React.ReactNode;
 }
+
+// Type definitions
+export type Language = {
+  id: string;
+  name: string;
+  deprecated?: boolean;
+  hasVersions?: boolean;
+  versions?: string[];
+  additionalInfo?: string;
+  isNew?: boolean;
+};

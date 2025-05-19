@@ -1,7 +1,6 @@
-"use client";
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Lecture } from '@/lib/types';
-import { Trash2, Edit3, ChevronDown, ChevronUp, Code } from "lucide-react";
+import { Trash2, Edit3, Code, AlignJustify } from "lucide-react";
 
 interface CodingExerciseItemProps {
   lecture: Lecture;
@@ -16,7 +15,7 @@ interface CodingExerciseItemProps {
   handleDragStart: (e: React.DragEvent, sectionId: string, lectureId?: string) => void;
   handleDragOver: (e: React.DragEvent) => void;
   handleDrop: (e: React.DragEvent, targetSectionId: string, targetLectureId?: string) => void;
-  isDragging?: boolean;
+  isDragging: boolean;
   handleDragEnd?: () => void;
   handleDragLeave?: () => void;
   draggedLecture?: string | null;
@@ -24,6 +23,8 @@ interface CodingExerciseItemProps {
     sectionId: string | null;
     lectureId: string | null;
   };
+  // Modified to be a required prop since we always want to use the modal
+  customEditHandler: (lectureId: string) => void;
 }
 
 const CodingExerciseItem: React.FC<CodingExerciseItemProps> = ({
@@ -43,25 +44,21 @@ const CodingExerciseItem: React.FC<CodingExerciseItemProps> = ({
   handleDragEnd,
   handleDragLeave,
   draggedLecture,
-  dragTarget
+  dragTarget,
+  // Required edit handler for opening the modal
+  customEditHandler
 }) => {
-  const lectureNameInputRef = useRef<HTMLInputElement>(null);
   const [isHovering, setIsHovering] = useState(false);
   
-  useEffect(() => {
-    if (editingLectureId === lecture.id && lectureNameInputRef.current) {
-      lectureNameInputRef.current.focus();
-    }
-  }, [editingLectureId, lecture.id]);
-
-  const startEditingLecture = (e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
-    setEditingLectureId(lecture.id);
+  // Always use the customEditHandler to open the modal
+  const handleEditClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    customEditHandler(lecture.id);
   };
 
   return (
     <div 
-      className={`mb-3 bg-white rounded-lg border border-gray-300 ${
+      className={`mb-3 py-1.5 bg-white border border-gray-500 ${
         draggedLecture === lecture.id ? 'opacity-50' : ''
       } ${
         dragTarget?.lectureId === lecture.id ? 'border-2 border-indigo-500' : ''
@@ -81,84 +78,42 @@ const CodingExerciseItem: React.FC<CodingExerciseItemProps> = ({
     >
       <div className="flex items-center p-2">
         <div className="flex-1 flex items-center">
-          <div className="mr-2 text-gray-600">●</div>
-          {editingLectureId === lecture.id ? (
-            <input
-              ref={lectureNameInputRef}
-              type="text"
-              value={lecture.name}
-              onChange={(e) => updateLectureName(sectionId, lecture.id, e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  setEditingLectureId(null);
-                }
-              }}
-              className="border-gray-300 focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border rounded-md px-2 py-1"
-              onClick={(e) => e.stopPropagation()}
-            />
-          ) : (
-            <div className="flex items-center">
-              <span className="text-green-600 font-medium text-xs">Coding Exercise {lectureIndex + 1}:</span>
-              <span className="ml-1 xl:text-sm text-xs">{lecture.name}</span>
-              <span className="ml-2 px-1 bg-green-100 text-green-800 rounded-full">
+          <div className="mr-1 text-xs text-orange-500">⚠</div>
+          {/* Removed the inline editing input field - we only show the name now */}
+          <div className='flex flex-row gap-1'>
+            <div className="flex items-center text-gray-800">
+              <span className="text-gray-800 font-medium text-sm">Unpublished Coding Exercise </span>
+              <span className="ml-2 px-1 font-medium rounded-full">
                 <Code size={14} />
               </span>
+              <span className="ml-1 xl:text-sm font-medium text-sm">{lecture.name || ''}</span>
             </div>
-          )}
+
+            {isHovering && (
+              <div>
+                {/* Edit button now always triggers the modal */}
+                <button
+                  onClick={handleEditClick}
+                  className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <Edit3 size={14}/>
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    deleteLecture(sectionId, lecture.id);
+                  }}
+                  className="p-1 text-gray-400 hover:text-red-600 transition-colors"
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            )}
+          </div>
         </div>
-        <div className="flex items-center space-x-1">
-          {isHovering && (
-            <>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  startEditingLecture(e);
-                }}
-                className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
-              >
-                <Edit3 className="w-4 h-4" />
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  deleteLecture(sectionId, lecture.id);
-                }}
-                className="p-1 text-gray-400 hover:text-red-600 transition-colors"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  moveLecture(sectionId, lecture.id, 'up');
-                }}
-                className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
-                disabled={lectureIndex === 0}
-              >
-                <ChevronUp className={`w-4 h-4 ${lectureIndex === 0 ? 'opacity-50' : ''}`} />
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  moveLecture(sectionId, lecture.id, 'down');
-                }}
-                className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
-                disabled={lectureIndex === totalLectures - 1}
-              >
-                <ChevronDown className={`w-4 h-4 ${lectureIndex === totalLectures - 1 ? 'opacity-50' : ''}`} />
-              </button>
-            </>
-          )}
-        </div>
-      </div>
-      <div className="px-2 pb-3">
-        <div className="text-xs text-gray-500">
-          {lecture.description ? (
-            <p>{lecture.description}</p>
-          ) : (
-            <p className="italic">No description provided</p>
-          )}
-        </div>
+        {isHovering && (
+          <AlignJustify className="w-5 h-5 text-gray-500 cursor-move" />
+        )}
       </div>
     </div>
   );

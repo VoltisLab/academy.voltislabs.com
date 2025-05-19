@@ -9,7 +9,8 @@ import {
   Search,
   FileDown,
   SquareArrowOutUpRight,
-  FolderOpen
+  FolderOpen,
+  X
 } from "lucide-react";
 import { Lecture, Section, SourceCodeFile, ExternalResourceItem, AttachedFile } from '@/lib/types';
 
@@ -407,7 +408,7 @@ const handleSelectItem = (itemId: string) => {
           type="button"
           aria-label="Close preview"
         >
-          <ChevronDown className="w-5 h-5" />
+          <X className="w-5 h-5" />
         </button>
       </div>
       
@@ -438,7 +439,7 @@ const handleSelectItem = (itemId: string) => {
               section.contentItems.map((item, index) => (
                 <div 
                   key={item.id} 
-                  className={`p-4 ${item.isActive ? 'bg-gray-100 border-l-4 border-purple-600' : 'hover:bg-gray-50'} cursor-pointer`}
+                  className={`p-4 ${item.isActive ? 'bg-gray-50 border-purple-600' : 'hover:bg-gray-300'} cursor-pointer`}
                   onClick={() => handleSelectItem(item.id)}
                 >
                   <div className="flex items-start">
