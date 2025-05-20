@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Code, ChevronLeft, ChevronDown, ChevronUp, AlertTriangle, Eye, Plus, Info, Undo, Maximize2, Play, ChevronRight, X, MoreVertical, Copy } from "lucide-react";
 import { Lecture, ContentItemType, Language } from '@/lib/types';
 import Editor, { useMonaco } from '@monaco-editor/react';
+import { FaCircleCheck } from 'react-icons/fa6';
 import { exactDarkTheme, getDefaultCode, getDefaultTests, getMonacoLanguage, languages, runJavaScriptTests } from '@/lib/utils';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
@@ -1671,21 +1672,25 @@ const isLastTab = () => {
   </div>
 )}
 
-        <div className="flex relative max-w-2xl mx-auto">
-          <button
-            className={`flex-1 py-4 text-center relative ${activeTab === 'planExercise' ? 'text-gray-800 font-bold' : 'text-gray-500 font-medium'}`}
+        <div className="flex relative max-w-2xl mx-auto flex-row gap-4">
+          <div className={`flex flex-row items-center gap-2 px-4 ${activeTab === 'planExercise' ? 'text-gray-800 font-bold border-b border-gray-800 ' : ''}`}>
+            <button
+            className={`flex-1 py-3 text-center relative ${activeTab === 'planExercise' ? 'text-gray-800 font-bold  ' : 'text-gray-500 font-medium'}`}
             onClick={() => handleTabChange('planExercise')}
           >
             Plan Exercise
-            {activeTab === 'planExercise' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-800"></div>}
+            
+           
           </button>
-          
-          <button
+           <FaCircleCheck color="green" size={16} className="shrink-0 text-white " />
+          </div>
+
+           <div className={`flex flex-row items-center gap-2 px-4 ${activeTab === 'authorSolution' ? 'text-gray-800 font-bold border-b border-gray-800 ' : ''}`}>
+             <button
             className={`flex-1 py-4 text-center relative ${activeTab === 'authorSolution' ? 'text-gray-800 font-bold' : 'text-gray-500 font-medium'}`}
             onClick={() => handleTabChange('authorSolution')}
           >
             Author solution
-            {activeTab === 'authorSolution' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-800"></div>}
             
             {/* Tooltip that appears when activeTab is planExercise and showTooltip is true */}
             {activeTab === 'planExercise' && showTooltip && (
@@ -1706,14 +1711,22 @@ const isLastTab = () => {
               </div>
             )}
           </button>
-          
-          <button
+           <FaCircleCheck color="green" size={16} className="shrink-0 text-white " />
+          </div>
+
+           <div className={`flex flex-row items-center gap-2 px-4 ${activeTab === 'guideLearners' ? 'text-gray-800 font-bold border-b border-gray-800 ' : ''}`}>
+            <button
             className={`flex-1 py-4 text-center relative ${activeTab === 'guideLearners' ? 'text-gray-800 font-bold' : 'text-gray-500 font-medium'}`}
             onClick={() => handleTabChange('guideLearners')}
           >
             Guide learners
-            {activeTab === 'guideLearners' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-800"></div>}
+            
           </button>
+           <FaCircleCheck color="green" size={16} className="shrink-0 text-white " />
+          </div>
+          
+          
+          
         </div>
       </div>
 
