@@ -231,7 +231,7 @@ const InstructionTabs: React.FC<{
                 className="flex items-center text-[#6D28D2] text-sm px-2 py-1 hover:bg-purple-50"
                 onClick={handlePasteSolutionCode}
               >
-                <Code size={12} className="mr-1 border border-[#6D28D2] rounded font-bold border border-[#6D28D2] text-xs " /> Paste solution code
+                <Code size={12} className="mr-1 rounded font-bold border border-[#6D28D2] text-xs " /> Paste solution code
               </button>
             </div>
             <RichTextEditor
@@ -733,6 +733,34 @@ const CodingExerciseCreatorWithMonaco: React.FC<CodingExerciseCreatorProps> = ({
   setIsRenaming(true);
   // Close the dropdown
   setShowFileMenu(null);
+};
+
+const tabOrder: Tab[] = ['planExercise', 'authorSolution', 'guideLearners'];
+
+// Function to handle next button click
+const handleNext = () => {
+  const currentIndex = tabOrder.indexOf(activeTab);
+  if (currentIndex < tabOrder.length - 1) {
+    handleTabChange(tabOrder[currentIndex + 1]);
+  }
+};
+
+// Function to handle previous button click
+const handlePrevious = () => {
+  const currentIndex = tabOrder.indexOf(activeTab);
+  if (currentIndex > 0) {
+    handleTabChange(tabOrder[currentIndex - 1]);
+  }
+};
+
+// Function to check if it's the first tab
+const isFirstTab = () => {
+  return activeTab === tabOrder[0];
+};
+
+// Function to check if it's the last tab
+const isLastTab = () => {
+  return activeTab === tabOrder[tabOrder.length - 1];
 };
 
   const handleSaveRename = () => {
@@ -1408,110 +1436,114 @@ const CodingExerciseCreatorWithMonaco: React.FC<CodingExerciseCreatorProps> = ({
             </div>
             
             {/* Run tests button */}
-            <div className="fixed bottom-12 left-0 px-6 py-6 z-10 bg-gradient-to-t from-black via-black to-transparent w-full">
-              <button 
-                className="bg-white text-gray-700 px-4 py-2 rounded-md flex items-center font-bold text-sm shadow-md hover:bg-gray-100"
-                onClick={handleRunTests}
-                disabled={isRunningTests}
-              >
-                <Play size={15} className="p-1 bg-gray-800 rounded-full text-white mr-2" />
-                {isRunningTests ? 'Running...' : 'Run tests'}
-              </button>
-            </div>
+            <div className="fixed bottom-[114px] left-0 px-6 py-10 z-10 bg-gradient-to-t from-black via-black to-transparent w-full">
+  <button 
+    className="bg-white text-gray-700 px-4 py-2 rounded-md flex items-center font-bold text-sm shadow-md hover:bg-gray-100"
+    onClick={handleRunTests}
+    disabled={isRunningTests}
+  >
+    <Play size={15} className="p-1 bg-gray-800 rounded-full text-white mr-2" />
+    {isRunningTests ? 'Running...' : 'Run tests'}
+  </button>
+</div>
             
             {/* Terminal panel - styled as a slide up panel */}
             <div 
-              className={`fixed left-0 right-0 bottom-0 bg-gray-900 text-white border-t border-gray-700 transform transition-all duration-300 shadow-lg ${
-                showTerminal ? 'translate-y-0' : 'translate-y-full'
-              }`}
-              style={{ maxHeight: '40vh' }}
-            >
-              {/* Terminal header */}
-              <div className="flex justify-between items-center p-2 bg-gray-800 border-b border-gray-700">
-                <div className="flex items-center space-x-4">
-                  <div className="font-medium">Result</div>
-                  {testResults && (
-                    <div className={`px-2 py-1 rounded text-xs ${testResults.success ? 'bg-green-700' : 'bg-red-700'}`}>
-                      {testResults.success ? 'Success' : 'Failed'}
-                    </div>
-                  )}
+  className={`fixed left-0 right-0 bg-[#0F0F0F] text-white border-t-2 border-b-2 border-gray-500 transform transition-all duration-300 shadow-lg z-20 ${
+    showTerminal ? 'translate-y-16' : 'translate-y-full'
+  }`}
+  style={{ 
+    height: '50vh',
+    maxHeight: '50vh', 
+    bottom: '115px', // Position it above the bottom navigation bar
+  }}
+>
+  {/* Terminal header */}
+  <div className="flex justify-between items-center p-2 bg-[#33364a] border-b border-gray-700">
+    <div className="flex items-center space-x-4">
+      <div className="font-medium">Result</div>
+      {testResults && (
+        <div className={`px-2 py-1 rounded text-xs ${testResults.success ? 'bg-green-700' : 'bg-red-700'}`}>
+          {testResults.success ? 'Success' : 'Failed'}
+        </div>
+      )}
+    </div>
+    <button 
+      className="text-gray-400 hover:text-white"
+      onClick={() => setShowTerminal(!showTerminal)}
+    >
+      {showTerminal ? <ChevronDown className="w-5 h-5" /> : <ChevronUp className="w-5 h-5" />}
+    </button>
+  </div>
+  
+  {/* Terminal content */}
+  <div className="px-4 overflow-y-auto" style={{ maxHeight: 'calc(40vh - 40px)' }}>
+    {testResults ? (
+      <div className="flex">
+        {/* Left panel - Test cases summary */}
+        <div className="w-64 border-r-2 h-[55vh] border-gray-500 pr-4">
+          <h3 className="font-medium mb-2">Test Cases</h3>
+          <div className="text-sm mb-4">
+            Failed: {testResults.results?.filter((r: TestResult) => !r.passed).length || 0}, 
+            Passed: {testResults.results?.filter((r: TestResult) => r.passed).length || 0} of {testResults.results?.length || 0} tests
+          </div>
+          
+          {/* List of test cases */}
+          <div className="space-y-1">
+            {testResults.results?.map((result: TestResult, index: number) => (
+              <div 
+                key={index}
+                className={`flex items-center p-2 rounded ${result.passed ? 'bg-green-900 bg-opacity-20' : 'bg-red-900 bg-opacity-20'}`}
+              >
+                <div className={`w-5 h-5 rounded-full flex items-center justify-center mr-2 ${result.passed ? 'bg-green-600' : 'bg-red-600'}`}>
+                  {result.passed ? '✓' : '✕'}
                 </div>
-                <button 
-                  className="text-gray-400 hover:text-white"
-                  onClick={() => setShowTerminal(!showTerminal)}
-                >
-                  {showTerminal ? <ChevronDown className="w-5 h-5" /> : <ChevronUp className="w-5 h-5" />}
-                </button>
+                <div className="text-sm">{result.name}</div>
               </div>
-              
-              {/* Terminal content */}
-              <div className="p-4 overflow-y-auto" style={{ maxHeight: 'calc(40vh - 40px)' }}>
-                {testResults ? (
-                  <div className="flex">
-                    {/* Left panel - Test cases summary */}
-                    <div className="w-64 border-r border-gray-700 pr-4">
-                      <h3 className="font-medium mb-2">Test Cases</h3>
-                      <div className="text-sm mb-4">
-                        Failed: {testResults.results?.filter((r: TestResult) => !r.passed).length || 0}, 
-                        Passed: {testResults.results?.filter((r: TestResult) => r.passed).length || 0} of {testResults.results?.length || 0} tests
-                      </div>
-                      
-                      {/* List of test cases */}
-                      <div className="space-y-1">
-                        {testResults.results?.map((result: TestResult, index: number) => (
-                          <div 
-                            key={index}
-                            className={`flex items-center p-2 rounded ${result.passed ? 'bg-green-900 bg-opacity-20' : 'bg-red-900 bg-opacity-20'}`}
-                          >
-                            <div className={`w-5 h-5 rounded-full flex items-center justify-center mr-2 ${result.passed ? 'bg-green-600' : 'bg-red-600'}`}>
-                              {result.passed ? '✓' : '✕'}
-                            </div>
-                            <div className="text-sm">{result.name}</div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                    
-                    {/* Right panel - Test result details */}
-                    <div className="flex-1 pl-4">
-                      <div className="flex items-center space-x-2 mb-4">
-                        <h3 className="font-medium">Test result</h3>
-                      </div>
-                      
-                      {testResults.message && (
-                        <div className="mb-2 text-yellow-300">{testResults.message}</div>
-                      )}
-                      
-                      {testResults.error && (
-                        <div className="mb-2 text-red-400">Error: {testResults.error}</div>
-                      )}
-                      
-                      {testResults.results?.map((result: TestResult, index: number) => (
-                        <div key={index} className="mb-4">
-                          <div className={`flex items-center mb-2 ${result.passed ? 'text-green-400' : 'text-red-400'}`}>
-                            {result.passed ? (
-                              '✓ Your code passed this test'
-                            ) : (
-                              '✕ Test failed'
-                            )}
-                          </div>
-                          
-                          {!result.passed && result.error && (
-                            <div className="bg-red-900 bg-opacity-20 p-3 rounded text-sm font-mono">
-                              {result.error}
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ) : isRunningTests ? (
-                  <div className="text-gray-400">Running tests...</div>
+            ))}
+          </div>
+        </div>
+        
+        {/* Right panel - Test result details */}
+        <div className="flex-1 ">
+          <div className="flex items-center mb-4 pb-2 border-b-2 border-gray-500">
+            <h3 className="font-medium p-2">Test result</h3>
+          </div>
+          
+          {testResults.message && (
+            <div className="mb-2 text-yellow-300 p-2">{testResults.message}</div>
+          )}
+          
+          {testResults.error && (
+            <div className="mb-2 text-red-400 p-2">Error: {testResults.error}</div>
+          )}
+          
+          {testResults.results?.map((result: TestResult, index: number) => (
+            <div key={index} className="mb-4">
+              <div className={`flex items-center mb-2 ${result.passed ? 'text-green-400' : 'text-red-400'}`}>
+                {result.passed ? (
+                  '✓ Your code passed this test'
                 ) : (
-                  <div className="text-gray-400">Run tests to see results</div>
+                  '✕ Test failed'
                 )}
               </div>
+              
+              {!result.passed && result.error && (
+                <div className="bg-red-900 bg-opacity-20 p-3 rounded text-sm font-mono">
+                  {result.error}
+                </div>
+              )}
             </div>
+          ))}
+        </div>
+      </div>
+    ) : isRunningTests ? (
+      <div className="text-gray-400">Running tests...</div>
+    ) : (
+      <div className="text-gray-400">Run tests to see results</div>
+    )}
+  </div>
+</div>
           </div>
         )}
       </div>
@@ -1520,7 +1552,7 @@ const CodingExerciseCreatorWithMonaco: React.FC<CodingExerciseCreatorProps> = ({
       {showFileNameModal && (
         <div className="fixed inset-0 flex items-center justify-center z-50">
           <div className="fixed inset-0 backdrop-blur-sm bg-opacity-50" onClick={() => setShowFileNameModal(false)}></div>
-          <div className="bg-white rounded-lg p-6 w-full max-w-md z-10">
+          <div className="bg-white rounded-lg p-6 w-full max-w-xl z-10">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-medium">{isRenaming ? 'Rename file' : 'Enter file name'}</h3>
               <button onClick={() => setShowFileNameModal(false)}>
@@ -1627,15 +1659,17 @@ const CodingExerciseCreatorWithMonaco: React.FC<CodingExerciseCreatorProps> = ({
       )}
 
       {/* Bottom Tab Navigation */}
-      <div className="border-t border-gray-200 bg-white mb-1">
-        <div className="fixed bottom-4 left-4 rounded border border-[#6D28D2] text-[#6D28D2]">
-          <button
-            className="text-center relative text-[#6D28D2] px-4 py-2 font-medium"
-            onClick={() => console.log('Previous')}
-          >
-            Previous
-          </button>
-        </div>
+      <div className="border-t border-gray-200 bg-white py-2 z-30 relative">
+        {!isFirstTab() && (
+  <div className="fixed bottom-4 left-4 z-30 rounded border border-[#6D28D2] text-[#6D28D2]">
+    <button
+      className="text-center relative text-[#6D28D2] px-4 py-2 font-medium"
+      onClick={handlePrevious}
+    >
+      Previous
+    </button>
+  </div>
+)}
 
         <div className="flex relative max-w-2xl mx-auto">
           <button
@@ -1684,14 +1718,16 @@ const CodingExerciseCreatorWithMonaco: React.FC<CodingExerciseCreatorProps> = ({
       </div>
 
       {/* Next Button (bottom right) */}
-      <div className="fixed bottom-4 right-4">
-        <button 
-          className="bg-[#6D28D2] text-white px-4 py-2 rounded-md shadow-md"
-          onClick={handleSave}
-        >
-          Next
-        </button>
-      </div>
+      {!isLastTab() && (
+  <div className="fixed bottom-4 right-4 z-30">
+    <button 
+      className="bg-[#6D28D2] text-white px-4 py-2 rounded-md shadow-md"
+      onClick={handleNext}
+    >
+      Next
+    </button>
+  </div>
+)}
     </div>
   );
 };

@@ -2,14 +2,17 @@
 
 import DashboardNavbar from "@/components/instructor/layout/DashboardNav";
 import Sidebar from "@/components/instructor/layout/Sidebar";
+import { LoadingProvider } from "@/context/LoadingContext";
 import { AsideProvider } from "@/context/showAsideContext";
 import { ReactNode, Suspense } from "react";
 import { Toaster } from 'react-hot-toast';
 
+
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <AsideProvider>
-      <div className="min-h-screen bg-gray-50">
+     <LoadingProvider>
+       <div className="min-h-screen bg-gray-50">
         <Toaster position="top-center" reverseOrder={false} />
         
         {/* Sidebar component is self-contained with both mobile and desktop versions */}
@@ -24,12 +27,11 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           
           {/* Page Content */}
           <main className="flex-1 overflow-x-hidden md:p-6">
-            <Suspense fallback={<p>Loading module...</p>}>
               {children}
-            </Suspense>
           </main>
         </div>
       </div>
+     </LoadingProvider>
     </AsideProvider>
   );
 }
