@@ -494,7 +494,8 @@ const QuizItem: React.FC<QuizItemProps> = ({
                   </span>
                   <button
                     onClick={() => {
-                      setShowQuestionForm(true);
+                      setShowQuestionTypeSelector(true);
+                      // setShowQuestionForm(true);
                       setShowEditForm(true);
                       setEditingQuestionIndex(null);
                     }}
