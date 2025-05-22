@@ -6,7 +6,7 @@ import "react-quill-new/dist/quill.snow.css";
 import RichTextEditor from "../../../../RichTextEditor";
 
 interface QuestionFormProps {
-  onSubmit: (question: any) => void; // rename to be more generic
+  onSubmit: (question: any) => void;
   onCancel: () => void;
   initialQuestion?: any;
   isEditedForm?: boolean;
@@ -35,26 +35,34 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
   const [hoveredAnswerIndex, setHoveredAnswerIndex] = useState<number | null>(
     null
   );
-
   const [focusedAnswerIndex, setFocusedAnswerIndex] = useState<number | null>(
     null
   );
 
   useEffect(() => {
-    // If we're editing an existing question, populate the form
+    // Reset all form state when initialQuestion changes
     if (initialQuestion) {
       setQuestionText(initialQuestion.text || "");
-      setAnswers(
-        initialQuestion.answers || [
-          { text: "", explanation: "" },
-          { text: "", explanation: "" },
-          { text: "", explanation: "" },
-          { text: "", explanation: "" },
-        ]
-      );
-      setCorrectAnswerIndex(initialQuestion.correctAnswerIndex || null);
+      // Always add one extra empty answer when editing
+      setAnswers([
+        ...(initialQuestion.answers || []),
+        { text: "", explanation: "" },
+      ]);
+      setCorrectAnswerIndex(initialQuestion.correctAnswerIndex ?? null);
       setRelatedLecture(initialQuestion.relatedLecture || "");
+    } else {
+      // Reset to default state when no initial question
+      setQuestionText("");
+      setAnswers([
+        { text: "", explanation: "" },
+        { text: "", explanation: "" },
+        { text: "", explanation: "" },
+        { text: "", explanation: "" },
+      ]);
+      setCorrectAnswerIndex(null);
+      setRelatedLecture("");
     }
+    setError("");
   }, [initialQuestion]);
 
   const addAnswer = () => {
@@ -105,38 +113,57 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
   };
 
   const handleSubmit = () => {
-    // Validate form
+    // Validate question text
     if (!questionText.trim()) {
       setError("Question text is required");
+      toast.error("Question text is required");
       return;
     }
 
-    // Filter out empty answers
-    const validAnswers = answers.filter((answer) => answer.text.trim() !== "");
+    // Filter out empty answers but keep original indices
+    const validAnswers = answers
+      .map((answer, index) => ({ ...answer, originalIndex: index }))
+      .filter((answer) => answer.text.trim() !== "");
 
+    // Validate at least 2 answers
     if (validAnswers.length < 2) {
       setError("At least 2 answers are required");
       toast.error("At least 2 answers are required");
       return;
     }
 
+    // Validate correct answer is selected
     if (correctAnswerIndex === null) {
       setError("You must select a correct answer");
       toast.error("You must select a correct answer");
       return;
     }
 
+    // Validate selected answer isn't empty
+    const selectedAnswer = answers[correctAnswerIndex];
+    if (!selectedAnswer || selectedAnswer.text.trim() === "") {
+      setError("The correct answer cannot be empty");
+      toast.error("The correct answer cannot be empty");
+      return;
+    }
+
+    // Find the new index of the correct answer after filtering
+    const newCorrectIndex = validAnswers.findIndex(
+      (answer) => answer.originalIndex === correctAnswerIndex
+    );
+
     // Create the question object
     const question = {
       ...(isEditedForm && initialQuestion?.id && { id: initialQuestion.id }),
       text: questionText,
-      answers: validAnswers,
-      correctAnswerIndex,
+      answers: validAnswers.map(({ text, explanation }) => ({
+        text,
+        explanation,
+      })),
+      correctAnswerIndex: newCorrectIndex,
       relatedLecture,
       type: "multiple-choice",
     };
-
-    console.log("what jkkjjk: " + question.correctAnswerIndex);
 
     onSubmit(question);
   };
@@ -151,7 +178,6 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
 
       <div className="mb-6">
         <label className="block text-sm font-bold mb-2">Question</label>
-
         <RichTextEditor
           value={questionText}
           onChange={setQuestionText}
@@ -179,9 +205,8 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
                 onChange={() => setCorrectAnswerIndex(index)}
                 className="mr-2 size-5 accent-purple-600"
               />
-
               <div className="flex-1">
-                <div className="mb-2 relative h-fit ">
+                <div className="mb-2 relative h-fit">
                   <div className="flex items-start">
                     <div className="w-full space-y-2">
                       <RichTextEditor
@@ -194,7 +219,6 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
                         setFocusedAnswerIndex={setFocusedAnswerIndex}
                         answerIndex={index}
                       />
-
                       <div className="relative w-[90%] ml-auto">
                         <input
                           type="text"
@@ -210,7 +234,6 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
                         </div>
                       </div>
                     </div>
-
                     <button
                       onClick={() => removeAnswer(index)}
                       className={`text-gray-500 hover:text-red-600 ml-10 mt-2 cursor-pointer ${
@@ -241,7 +264,6 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
           className="w-full border border-zinc-400 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-indigo-500"
         >
           <option value="">-- Select One --</option>
-          {/* Lecture options would be populated here */}
         </select>
         <div className="text-xs text-gray-500 mt-1">
           Select a related video lecture to help students answer this question.
@@ -257,22 +279,6 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
           Save
         </button>
       </div>
-
-      <style jsx>{`
-        /* Custom styling for Quill without toolbar */
-        :global(.no-toolbar-editor .ql-container) {
-          border: none;
-        }
-
-        :global(.no-toolbar-editor .ql-toolbar) {
-          display: none;
-        }
-
-        :global(.no-toolbar-editor .ql-editor) {
-          padding: 0;
-          min-height: 40px;
-        }
-      `}</style>
     </div>
   );
 };

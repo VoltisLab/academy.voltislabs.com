@@ -1,13 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import {
-  Trash2,
-  Edit3,
-  ChevronDown,
-  ChevronUp,
-  Move,
-  X,
-  Plus,
-} from "lucide-react";
+import { Trash2, Edit3, ChevronDown, ChevronUp, X, Plus } from "lucide-react";
 import { Lecture } from "@/lib/types";
 import QuestionForm from "./QuestionForm";
 import QuizPreviewWrapper from "./QuizPreviewWrapper";
@@ -50,15 +42,6 @@ interface QuizItemProps {
     quizId: string,
     questions: any[]
   ) => void;
-  // Add these new props
-  isDragging?: boolean;
-  handleDragEnd?: () => void;
-  handleDragLeave?: () => void;
-  draggedLecture?: string | null;
-  dragTarget?: {
-    sectionId: string | null;
-    lectureId: string | null;
-  };
 }
 
 interface Question {
@@ -76,13 +59,11 @@ interface Question {
 const QuizItem: React.FC<QuizItemProps> = ({
   lecture,
   lectureIndex,
-  totalLectures,
   sectionId,
   editingLectureId,
   setEditingLectureId,
   updateLectureName,
   deleteLecture,
-  moveLecture,
   handleDragStart,
   handleDragOver,
   handleDrop,
@@ -93,31 +74,16 @@ const QuizItem: React.FC<QuizItemProps> = ({
   const [expanded, setExpanded] = useState(false);
   const [isHovering, setIsHovering] = useState(false);
   const [showQuestionForm, setShowQuestionForm] = useState(false);
-  const [showQuestionTypeSelector, setShowQuestionTypeSelector] =
-    useState(false);
+  const [showEditForm, setShowEditForm] = useState(false);
+
   const [questions, setQuestions] = useState<Question[]>(
     lecture.questions || []
   );
-  const [showEditForm, setShowEditForm] = useState(false);
-
-  console.log("Lecture:" + lecture.questions);
-
-  const initialQuestion = {
-    id: "123456",
-    questionText: "What is the capital of Nigeria?",
-    answers: [
-      { text: "Lagos", explanation: "Lagos was the former capital" },
-      { text: "Kano", explanation: "Kano is a major city in the north" },
-      { text: "Abuja", explanation: "Abuja is the current capital" },
-      { text: "Port Harcourt", explanation: "Port Harcourt is an oil city" },
-    ],
-    correctAnswerIndex: 2,
-    relatedLecture: "Nigerian Geography",
-  };
-
   const [editingQuestionIndex, setEditingQuestionIndex] = useState<
     number | null
   >(null);
+  const [showQuestionTypeSelector, setShowQuestionTypeSelector] =
+    useState(false);
 
   useEffect(() => {
     if (editingLectureId === lecture.id && lectureNameInputRef.current) {
@@ -125,7 +91,6 @@ const QuizItem: React.FC<QuizItemProps> = ({
     }
   }, [editingLectureId, lecture.id]);
 
-  // Update local questions state when lecture.questions changes
   useEffect(() => {
     setQuestions(lecture.questions || []);
   }, [lecture.questions]);
@@ -137,48 +102,46 @@ const QuizItem: React.FC<QuizItemProps> = ({
     }
   };
 
-  const handleNewQuestion = () => {
-    setShowQuestionForm(false);
-    setShowQuestionTypeSelector(true);
-  };
-
   const handleAddQuestion = (question: Question) => {
-    const newQuestions = [...questions, { ...question, id: `q-${Date.now()}` }];
+    let newQuestions;
+
+    if (editingQuestionIndex !== null) {
+      // Update existing question
+      newQuestions = [...questions];
+      newQuestions[editingQuestionIndex] = question;
+    } else {
+      // Add new question
+      newQuestions = [...questions, { ...question, id: `q-${Date.now()}` }];
+    }
+
     setQuestions(newQuestions);
-    console.log(newQuestions);
-    // Update questions in parent component if updateQuizQuestions is provided
     if (updateQuizQuestions) {
       updateQuizQuestions(sectionId, lecture.id, newQuestions);
     }
+
+    setShowQuestionForm(false);
+    setShowQuestionTypeSelector(false);
+    setExpanded(true);
+    setShowEditForm(false);
+    setEditingQuestionIndex(null);
   };
 
   const handleDeleteQuestion = (index: number) => {
     const newQuestions = questions.filter((_, idx) => idx !== index);
     setQuestions(newQuestions);
-
-    // Update questions in parent component if updateQuizQuestions is provided
     if (updateQuizQuestions) {
       updateQuizQuestions(sectionId, lecture.id, newQuestions);
     }
   };
 
   const handleEditQuestion = (index: number) => {
-    // setInitialQuestion(questions[index]); // Set the question to be edited
-    // setEditIndex(index); // Also keep track of the index being edited
     setEditingQuestionIndex(index);
-    setShowEditForm(true); // Show the edit form
-  };
-
-  const handleQuestionsButtonClick = () => {
-    setShowQuestionTypeSelector(true);
-  };
-
-  const handleMultipleChoiceClick = () => {
-    // setShowQuestionTypeSelector(false);
     setShowQuestionForm(true);
+    setShowQuestionTypeSelector(false);
+    setExpanded(true);
+    // setShowEditForm(true);
   };
 
-  // Prepare quiz data for the preview component
   const quizData = {
     id: lecture.id,
     name: lecture.name || "New quiz",
@@ -189,10 +152,9 @@ const QuizItem: React.FC<QuizItemProps> = ({
     })),
   };
 
-  // Determine if this is a new quiz with no questions
   const isNewQuiz = questions.length === 0;
 
-  // If this is a collapsed quiz item with no questions, just show minimal UI
+  // Collapsed view for new quizzes
   if (!expanded && isNewQuiz) {
     return (
       <div
@@ -202,7 +164,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
         onDragOver={handleDragOver}
         onDrop={(e) => handleDrop(e, sectionId, lecture.id)}
       >
-        <div className="flex justify-between items-center px-3 cursor-move">
+        <div className="flex justify-between items-center px-3 cursor-move h-11">
           <div className="flex items-center space-x-3" onClick={toggleExpand}>
             <div className="w-max shrink-0 flex items-center gap-3">
               <FaCircleCheck size={16} className="shrink-0" />
@@ -211,7 +173,6 @@ const QuizItem: React.FC<QuizItemProps> = ({
 
             <div className="flex items-center space-x-2">
               <GoQuestion size={12} />
-
               {editingLectureId === lecture.id ? (
                 <input
                   ref={lectureNameInputRef}
@@ -265,10 +226,13 @@ const QuizItem: React.FC<QuizItemProps> = ({
             )}
             {!showQuestionTypeSelector && (
               <button
-                onClick={handleQuestionsButtonClick}
-                className="ml-auto px-3 py-1 border border-purple-600 text-purple-600 bg-purple-50 hover:bg-purple-100 rounded-md flex items-center cursor-pointer"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowQuestionTypeSelector(true);
+                }}
+                className="ml-auto px-3 py-1 border border-purple-600 text-purple-600 bg-purple-50 hover:bg-purple-100 rounded-md flex items-center cursor-pointer text-sm"
               >
-                <Plus className="w-4 h-4 mr-1 " />
+                <Plus className="w-4 h-4 mr-1" />
                 Questions
               </button>
             )}
@@ -290,6 +254,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
                 onClick={() => {
                   setShowQuestionTypeSelector(false);
                   setShowQuestionForm(false);
+                  setShowEditForm(false);
                 }}
                 className="text-gray-500 hover:text-gray-700 cursor-pointer p-1 hover:bg-gray-300 rounded-xs"
               >
@@ -301,20 +266,22 @@ const QuizItem: React.FC<QuizItemProps> = ({
                 <div className="text-center">
                   <div className="flex justify-center">
                     <button
-                      onClick={handleMultipleChoiceClick}
+                      onClick={() => {
+                        setShowQuestionForm(true);
+                        // setShowQuestionTypeSelector(false);
+                      }}
                       className="flex flex-col items-center border group border-gray-300 bg-gray-100 cursor-pointer rounded-xs hover:bg-black hover:text-white text-gray-400 transition"
                     >
                       <div className="p-2 relative overflow-hidden">
                         <GoQuestion
                           size={30}
-                          className="transition-transform duration-300  group-hover:-translate-y-[150%] absolute"
+                          className="transition-transform duration-300 group-hover:-translate-y-[150%] absolute"
                         />
                         <GoQuestion
                           size={30}
-                          className="transition-transform duration-300  translate-y-[150%] group-hover:translate-y-0"
+                          className="transition-transform duration-300 translate-y-[150%] group-hover:translate-y-0"
                         />
                       </div>
-
                       <span className="text-xs py-0.5 duration-150 transition px-2 bg-gray-300 text-black group-hover:bg-black group-hover:text-white">
                         Multiple Choice
                       </span>
@@ -326,51 +293,41 @@ const QuizItem: React.FC<QuizItemProps> = ({
               <div className="border-t border-zinc-400">
                 <QuestionForm
                   onSubmit={handleAddQuestion}
-                  onCancel={() => setShowQuestionForm(false)}
+                  onCancel={() => {
+                    setShowQuestionForm(false);
+                    setShowQuestionTypeSelector(false);
+                  }}
                 />
               </div>
             )}
           </div>
         )}
-
-        {/* Question Form */}
-        {/* {showQuestionForm && (
-          <div className="">
-            <QuestionForm
-              onAddQuestion={handleAddQuestion}
-              onCancel={() => setShowQuestionForm(false)}
-            />
-          </div>
-        )} */}
       </div>
     );
   }
 
+  // Expanded view
   return (
     <div
-      className="mb-3 border rounded-md bg-white overflow-hidden"
+      className="mb-3 border border-zinc-400 rounded-md bg-white overflow-hidden"
       draggable
       onDragStart={(e) => handleDragStart(e, sectionId, lecture.id)}
       onDragOver={handleDragOver}
       onDrop={(e) => handleDrop(e, sectionId, lecture.id)}
     >
       <div
-        className="flex justify-between items-center p-3 cursor-move h-11"
-        onClick={toggleExpand}
+        className="flex justify-between items-center px-3 cursor-move h-11"
         onMouseEnter={() => setIsHovering(true)}
         onMouseLeave={() => setIsHovering(false)}
       >
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-3" onClick={toggleExpand}>
           <div className="w-max shrink-0 flex items-center gap-3">
             <FaCircleCheck size={16} className="shrink-0" />
             <p className="w-max">Quiz {lectureIndex + 1}:</p>
-            <GoQuestion size={12} />
           </div>
 
           <div className="flex items-center space-x-2">
-            {/* <span className="w-4 h-4 rounded-full bg-purple-500 text-white text-center text-xs flex items-center justify-center">
-              Q
-            </span> */}
+            <GoQuestion size={12} />
             {editingLectureId === lecture.id ? (
               <input
                 ref={lectureNameInputRef}
@@ -388,11 +345,14 @@ const QuizItem: React.FC<QuizItemProps> = ({
                 onClick={(e) => e.stopPropagation()}
               />
             ) : (
-              <h4 className="text-sm w-max">{lecture.name || "New quiz"}</h4>
+              <h4 className="font-medium text-sm">
+                {lecture.name || "New quiz"}
+              </h4>
             )}
           </div>
         </div>
-        <div className="flex items-center space-x-2 w-full ml-2">
+
+        <div className="flex items-center  w-full ml-2">
           {isHovering && (
             <>
               <button
@@ -413,222 +373,192 @@ const QuizItem: React.FC<QuizItemProps> = ({
               >
                 <Trash2 className="w-4 h-4" />
               </button>
-              {/* <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  moveLecture(sectionId, lecture.id, "up");
-                }}
-                className="text-gray-500 hover:text-gray-700 p-1 transition-opacity"
-                disabled={lectureIndex === 0}
-              >
-                <ChevronUp
-                  className={`w-4 h-4 ${
-                    lectureIndex === 0 ? "opacity-50" : ""
-                  }`}
-                />
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  moveLecture(sectionId, lecture.id, "down");
-                }}
-                className="text-gray-500 hover:text-gray-700 p-1 transition-opacity"
-                disabled={lectureIndex === totalLectures - 1}
-              >
-                <ChevronDown
-                  className={`w-4 h-4 ${
-                    lectureIndex === totalLectures - 1 ? "opacity-50" : ""
-                  }`}
-                />
-              </button> */}
             </>
           )}
-          {expanded
-            ? !showEditForm && (
-                <button className="cursor-pointer p-1 ml-auto bg-gray-200">
-                  <ChevronUp className="w-5 h-5 text-gray-500" />
-                </button>
-              )
-            : !showEditForm && (
-                <button className="cursor-pointer p-1 ml-auto bg-gray-200">
-                  <ChevronDown className="w-5 h-5 text-gray-500 " />
-                </button>
-              )}
-          <button className="p-1 w-5">
+
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleExpand();
+            }}
+            className="cursor-pointer p-1 ml-auto"
+          >
+            {expanded
+              ? !showEditForm && (
+                  <div className="cursor-pointer p-1 ml-auto rounded hover:bg-gray-200">
+                    <ChevronUp size={20} className=" text-gray-500" />
+                  </div>
+                )
+              : !showEditForm && (
+                  <div className="cursor-pointer p-1 ml-auto rounded hover:bg-gray-200">
+                    <ChevronDown size={20} className=" text-gray-500 " />
+                  </div>
+                )}
+          </button>
+          <button className="w-7 cursor-move hover:bg-gray-200 p-1 rounded">
             {isHovering && (
-              <RxHamburgerMenu className="text-gray-600 cursor-move w-4 h-4" />
+              <RxHamburgerMenu size={20} className="text-gray-500" />
             )}
           </button>
         </div>
       </div>
 
       {expanded && (
-        <div className={`px-3 border-t ${!showEditForm && "py-2"}`}>
-          {isNewQuiz ? (
-            <div className="flex justify-end">
-              <button
-                onClick={handleQuestionsButtonClick}
-                className="px-3 py-1 text-purple-600 border border-purple-300 hover:bg-purple-50 rounded-md flex items-center"
-              >
-                <Plus className="w-4 h-4 mr-1" />
-                Questions
-              </button>
-            </div>
-          ) : (
-            <>
-              {/* Modified header - "New Question" button moved next to "Questions" text */}
+        <div className="border-t border-zinc-400">
+          {showQuestionForm || showQuestionTypeSelector ? (
+            <div className="relative">
+              {showQuestionTypeSelector && (
+                <div className="absolute -translate-y-[97.5%] px-3 py-1 border-x border-t border-zinc-400 right-10 gap-1.5 bg-white z-10 flex items-center">
+                  <span className="font-bold text-sm">Add Multiple Choice</span>
+                  <button
+                    onClick={() => {
+                      setShowQuestionTypeSelector(false);
+                      setShowQuestionForm(false);
+                      setEditingQuestionIndex(null);
+                    }}
+                    className="text-gray-500 hover:text-gray-700 cursor-pointer p-1 hover:bg-gray-300 rounded-xs"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
 
-              {!showEditForm && (
-                <>
-                  <div className="flex items-center mb-3">
-                    <div className="flex-grow flex items-center">
-                      <span className="mr-2">
-                        Questions{" "}
-                        {questions.length > 0 && `(${questions.length})`}
-                      </span>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleNewQuestion();
-                        }}
-                        className="inline-flex items-center border border-purple-600 px-2 py-1 text-sm leading-5 rounded text-purple-600 hover:bg-purple-200 transition cursor-pointer font-bold"
-                      >
-                        New Question
-                      </button>
-                      <div className="ml-auto">
-                        {" "}
-                        <QuizPreviewWrapper quiz={quizData}>
-                          <button
-                            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 transition cursor-pointer"
-                            disabled={questions.length === 0}
-                          >
-                            Preview
-                          </button>
-                        </QuizPreviewWrapper>
+              <div className="relative">
+                <div className="absolute -translate-y-[97.5%] px-3 py-1 border-x border-t border-zinc-400 right-10 gap-1.5 bg-white z-10 flex items-center">
+                  <span className="font-bold text-sm">Add Multiple Choice</span>
+                  <button
+                    onClick={() => {
+                      setShowQuestionTypeSelector(false);
+                      setShowQuestionForm(false);
+                      setShowEditForm(false);
+                    }}
+                    className="text-gray-500 hover:text-gray-700 cursor-pointer p-1 hover:bg-gray-300 rounded-xs"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+                {showQuestionTypeSelector && !showQuestionForm ? (
+                  <div className="p-3 size-full border-t border-zinc-400">
+                    <div className="text-center">
+                      <div className="flex justify-center">
+                        <button
+                          onClick={() => {
+                            setShowQuestionForm(true);
+                            setShowQuestionTypeSelector(false);
+                          }}
+                          className="flex flex-col items-center border group border-gray-300 bg-gray-100 cursor-pointer rounded-xs hover:bg-black hover:text-white text-gray-400 transition"
+                        >
+                          <div className="p-2 relative overflow-hidden">
+                            <GoQuestion
+                              size={30}
+                              className="transition-transform duration-300 group-hover:-translate-y-[150%] absolute"
+                            />
+                            <GoQuestion
+                              size={30}
+                              className="transition-transform duration-300 translate-y-[150%] group-hover:translate-y-0"
+                            />
+                          </div>
+                          <span className="text-xs py-0.5 duration-150 transition px-2 bg-gray-300 text-black group-hover:bg-black group-hover:text-white">
+                            Multiple Choice
+                          </span>
+                        </button>
                       </div>
                     </div>
                   </div>
-
-                  {questions.length > 0 && (
-                    <div className="">
-                      {questions.map((question, index) => (
-                        <div
-                          key={question.id || index}
-                          className="mb-2 rounded h-10 flex items-center"
-                          onMouseEnter={(e) => {
-                            // Find all buttons in this div and make them visible
-                            const buttons =
-                              e.currentTarget.querySelectorAll("button");
-                            buttons.forEach((button) => {
-                              button.classList.remove("hidden");
-                            });
-                          }}
-                          onMouseLeave={(e) => {
-                            // Find all buttons in this div and hide them
-                            const buttons =
-                              e.currentTarget.querySelectorAll("button");
-                            buttons.forEach((button) => {
-                              button.classList.add("hidden");
-                            });
-                          }}
-                        >
-                          <div className="flex justify-between items-center w-full">
-                            <div className="font-medium text-sm ">
-                              {/* Fixed question text to remove p tags */}
-                              {index + 1}.{" "}
-                              {question.text.replace(/<\/?p>/g, "")}
-                              <span className="text-xs text-gray-500 ml-2">
-                                Multiple Choice
-                              </span>
-                            </div>
-                            <div className="flex space-x-2">
-                              <button
-                                className="p-1 text-gray-500 hover:bg-gray-200 rounded transition cursor-pointer"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleEditQuestion(index);
-                                }}
-                              >
-                                <Edit3 className="w-4 h-4" />
-                              </button>
-                              <button
-                                className="p-1 text-gray-500 hover:bg-gray-200 rounded transition cursor-pointer"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDeleteQuestion(index);
-                                }}
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                              <button className="p-1 hover:bg-gray-200 rounded transition cursor-move">
-                                <RxHamburgerMenu className="w-4 h-4  text-gray-500" />
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </>
-              )}
-            </>
-          )}
-
-          {/* Question Type Selector */}
-          {/* {showQuestionTypeSelector && (
-            <div className="mt-3 border-t pt-3 relative">
-              <div className="absolute top-3 right-0 p-2">
-                <button
-                  onClick={() => setShowQuestionTypeSelector(false)}
-                  className="text-gray-500 hover:text-gray-700"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-              <div className="text-center">
-                <h3 className="text-sm text-gray-500 mb-2">
-                  Select question type
-                </h3>
-
-                <div className="flex justify-center">
-                  <button
-                    onClick={handleMultipleChoiceClick}
-                    className="flex flex-col items-center p-4 border border-gray-200 rounded-md hover:border-purple-500 hover:bg-purple-50"
-                  >
-                    <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-2">
-                      <span className="text-2xl">?</span>
-                    </div>
-                    <span className="text-sm font-medium">Multiple Choice</span>
-                  </button>
-                </div>
+                ) : (
+                  <div className="border-t border-zinc-400">
+                    <QuestionForm
+                      key={editingQuestionIndex ?? "new"} // This forces a fresh instance when editing different questions
+                      onSubmit={handleAddQuestion}
+                      onCancel={() => {
+                        setShowQuestionForm(false);
+                        setShowQuestionTypeSelector(false);
+                        setEditingQuestionIndex(null);
+                      }}
+                      isEditedForm={editingQuestionIndex !== null}
+                      initialQuestion={
+                        editingQuestionIndex !== null
+                          ? questions[editingQuestionIndex]
+                          : null
+                      }
+                    />
+                  </div>
+                )}
               </div>
             </div>
-          )} */}
-
-          {/* Editable Question Form */}
-          {showEditForm && (
-            <div className=" relative">
-              <div className="absolute -translate-y-[97.5%] px-3 py-1 border-x border-t border-zinc-400 right-10 gap-1.5 bg-white z-10 flex items-center">
-                <span className="font-bold text-sm">Add Multiple Choice</span>
-                <button
-                  onClick={() => {
-                    setShowQuestionTypeSelector(false);
-                    setShowQuestionForm(false);
-                    setShowEditForm(false);
-                  }}
-                  className="text-gray-500 hover:text-gray-700 cursor-pointer p-1 hover:bg-gray-300 rounded-xs"
-                >
-                  <X className="w-4 h-4" />
-                </button>
+          ) : (
+            <div className="px-3 py-2">
+              <div className="flex justify-between items-center mb-3">
+                <div className="flex items-center">
+                  <span className="mr-2 font-bold">
+                    Questions {questions.length > 0 && `(${questions.length})`}
+                  </span>
+                  <button
+                    onClick={() => {
+                      setShowQuestionTypeSelector(true);
+                      // setShowQuestionForm(true);
+                      setShowEditForm(true);
+                      setEditingQuestionIndex(null);
+                    }}
+                    className="inline-flex items-center border border-purple-600 px-2 py-1 text-sm leading-5 rounded text-purple-600 hover:bg-purple-100 transition cursor-pointer font-medium"
+                  >
+                    New Question
+                  </button>
+                </div>
+                <QuizPreviewWrapper quiz={quizData}>
+                  <button
+                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 transition cursor-pointer"
+                    disabled={questions.length === 0}
+                  >
+                    Preview
+                  </button>
+                </QuizPreviewWrapper>
               </div>
-              <QuestionForm
-                onSubmit={handleAddQuestion}
-                onCancel={() => setShowQuestionForm(false)}
-                isEditedForm={true}
-                initialQuestion={
-                  questions[editingQuestionIndex as number] ?? null
-                }
-              />
+
+              {questions.length === 0 ? (
+                <div className="text-center py-4 bg-gray-50 rounded-lg">
+                  <GoQuestion className="mx-auto h-8 w-8 text-gray-400 mb-2" />
+                  <p className="text-sm text-gray-500">
+                    You haven't added any questions to this quiz yet.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {questions.map((question, index) => (
+                    <div
+                      key={question.id || index}
+                      className="group flex items-center justify-between"
+                    >
+                      <div className="flex py-2 items-center ">
+                        <span className="font-medium text-sm mr-1">
+                          {index + 1}.
+                        </span>
+                        <span className="text-sm">
+                          {question.text.replace(/<\/?p>/g, "")}
+                        </span>
+                        <span className="ml-2 text-sm">(Multiple Choice)</span>
+                      </div>
+                      <div className="flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={() => handleEditQuestion(index)}
+                          className="p-1 text-gray-500 hover:bg-gray-200 rounded"
+                        >
+                          <Edit3 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteQuestion(index)}
+                          className="p-1 text-gray-500 hover:bg-gray-200 rounded"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                        <button className="p-1 hover:bg-gray-200 rounded transition cursor-move">
+                          <RxHamburgerMenu className="w-4 h-4  text-gray-500" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>
