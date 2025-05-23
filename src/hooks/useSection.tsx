@@ -428,8 +428,7 @@ export const useSections = (initialSections: Section[] ) => {
     };
     
     // Update the state with the new sections array
-    setSections(updatedSections);
-    toast.success("Item moved successfully");
+    setSections(updatedSections);   
   };
   
   const updateQuizQuestions = (sectionId: string, quizId: string, questions: Question[]) => {

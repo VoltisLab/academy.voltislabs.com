@@ -231,7 +231,7 @@ const InstructionTabs: React.FC<{
                 className="flex items-center text-[#6D28D2] text-sm px-2 py-1 hover:bg-purple-50"
                 onClick={handlePasteSolutionCode}
               >
-                <Code size={12} className="mr-1 border border-[#6D28D2] rounded font-bold border border-[#6D28D2] text-xs " /> Paste solution code
+                <Code size={12} className="mr-1 rounded font-bold border border-[#6D28D2] text-xs " /> Paste solution code
               </button>
             </div>
             <RichTextEditor

@@ -136,44 +136,40 @@ const SignupModalContent: React.FC<SignupModalProps> = ({
   };
 
   // Handle sending verification code
-  const handleSendCode = async () => {
-    // Validate email first
-    if (!validateField('email', email)) {
-      return;
-    }
-
-    setSendingCode(true);
-    
-    try {
-      const result = await sendVerificationCode(email);
-      
-      if (result.success) {
-        setCodeSent(true);
-        // Set expiry time to 5 minutes from now
-        const expiry = new Date();
-        expiry.setMinutes(expiry.getMinutes() + 5);
-        setCodeExpiry(expiry);
-        setTimeLeft(300); // 5 minutes in seconds
-        
-        // Show success message
-        setErrors(prev => ({ ...prev, emailVerification: "Verification code sent successfully. Code expires in 5 minutes." }));
-      } else {
-        // Handle error
-        setErrors(prev => ({ 
-          ...prev, 
-          emailVerification: result.error || "Failed to send verification code. Please try again." 
-        }));
-      }
-    } catch (error: any) {
-      console.error("Error sending verification code:", error);
-      setErrors(prev => ({ 
-        ...prev, 
-        emailVerification: error.message || "Failed to send verification code. You may have reached the rate limit (3 requests per hour)." 
+const handleSendCode = async () => {
+  // Validate email first
+  if (!validateField('email', email)) {
+    return;
+  }
+  setSendingCode(true);
+  try {
+    const result = await sendVerificationCode(email);
+    if (result.success) {
+      setCodeSent(true);
+      // Set expiry time to 1 minute from now
+      const expiry = new Date();
+      expiry.setMinutes(expiry.getMinutes() + 1);
+      setCodeExpiry(expiry);
+      setTimeLeft(60); // 1 minute in seconds
+      // Show success message
+      setErrors(prev => ({ ...prev, emailVerification: "Verification code sent successfully. Code expires in 5 minutes." }));
+    } else {
+      // Handle error
+      setErrors(prev => ({
+        ...prev,
+        emailVerification: result.error || "Failed to send verification code. Please try again."
       }));
-    } finally {
-      setSendingCode(false);
     }
-  };
+  } catch (error: any) {
+    console.error("Error sending verification code:", error);
+    setErrors(prev => ({
+      ...prev,
+      emailVerification: error.message || "Failed to send verification code. You may have reached the rate limit (3 requests per hour)."
+    }));
+  } finally {
+    setSendingCode(false);
+  }
+};
 
   // Format seconds to mm:ss
   const formatTimeLeft = (seconds: number): string => {
@@ -283,6 +279,59 @@ const SignupModalContent: React.FC<SignupModalProps> = ({
     return Object.keys(newErrors).length === 0;
   };
 
+  // Extracted login logic that can be called from both login form and after signup
+  const performLogin = async (userEmail: string, userPassword: string) => {
+    try {
+      const credentials: LoginData = {
+        email: userEmail,
+        password: userPassword,
+      };
+
+      const result = await login(credentials);
+      console.log(result);
+
+      if (result.login?.success) {
+        // onClose();
+        // Redirect based on user type
+        router.push(result?.login?.user?.isInstructor ? "/instructor" : "/dashboard");
+        return { success: true };
+      } else {
+        // Handle specific login errors
+        if (result.login?.errors?.length > 0) {
+          const loginError = result.login.errors[0];
+          
+          // Map common login errors to appropriate fields
+          if (loginError.toLowerCase().includes("email") || loginError.toLowerCase().includes("not found")) {
+            setErrors({ email: loginError });
+          } else if (loginError.toLowerCase().includes("password") || loginError.toLowerCase().includes("incorrect")) {
+            setErrors({ password: loginError });
+          } else {
+            setErrors({ general: loginError });
+          }
+        } else {
+          setErrors({ general: "Invalid email or password. Please try again." });
+        }
+        return { success: false };
+      }
+    } catch (error: any) {
+      console.error("Login error:", error);
+      
+      // Handle different error scenarios
+      if (!navigator.onLine) {
+        setErrors({ general: "Network error. Please check your internet connection." });
+      } else if (error.message?.includes("rate")) {
+        setErrors({ general: "Too many login attempts. Please try again later." });
+      } else if (error.message?.includes("timeout")) {
+        setErrors({ general: "Server timeout. Please try again later." });
+      } else {
+        setErrors({ 
+          general: error.message || "An unexpected error occurred. Please try again later." 
+        });
+      }
+      return { success: false };
+    }
+  };
+
   // Handle signup submission
   const handleSignup = async (e: FormEvent) => {
     e.preventDefault();
@@ -307,8 +356,19 @@ const SignupModalContent: React.FC<SignupModalProps> = ({
       const result = await signUp(userData);
 
       if (result.register?.success) {
-        // Show the login screen
-        setHasAccount(true);
+        // Auto-login the user after successful signup
+        console.log("Signup successful, attempting auto-login...");
+        
+        // Use the same email and password for automatic login
+        const loginResult = await performLogin(email, password);
+        
+        if (!loginResult.success) {
+          // If auto-login fails, show the login form so user can login manually
+          console.log("Auto-login failed, showing login form");
+          setHasAccount(true);
+          setErrors({ general: "Account created successfully! Please login with your credentials." });
+        }
+        // If auto-login succeeds, performLogin will handle the redirect
       } else {
         // Handle specific API errors
         if (result.register?.errors?.length > 0) {
@@ -346,7 +406,7 @@ const SignupModalContent: React.FC<SignupModalProps> = ({
     }
   };
 
-  // Handle login submission
+  // Handle login form submission
   const handleLogin = async (e: FormEvent) => {
     e.preventDefault();
     
@@ -358,54 +418,10 @@ const SignupModalContent: React.FC<SignupModalProps> = ({
     setLoading(true);
     setErrors({});
 
-    try {
-      const credentials: LoginData = {
-        email,
-        password,
-      };
-
-      const result = await login(credentials);
-      console.log(result)
-
-      if (result.login?.success) {
-        // onClose();
-        // Redirect based on user type
-        router.push(result?.login?.user?.isInstructor ? "/instructor" : "/dashboard");
-      } else {
-        // Handle specific login errors
-        if (result.login?.errors?.length > 0) {
-          const loginError = result.login.errors[0];
-          
-          // Map common login errors to appropriate fields
-          if (loginError.toLowerCase().includes("email") || loginError.toLowerCase().includes("not found")) {
-            setErrors({ email: loginError });
-          } else if (loginError.toLowerCase().includes("password") || loginError.toLowerCase().includes("incorrect")) {
-            setErrors({ password: loginError });
-          } else {
-            setErrors({ general: loginError });
-          }
-        } else {
-          setErrors({ general: "Invalid email or password. Please try again." });
-        }
-      }
-    } catch (error: any) {
-      console.error("Login error:", error);
-      
-      // Handle different error scenarios
-      if (!navigator.onLine) {
-        setErrors({ general: "Network error. Please check your internet connection." });
-      } else if (error.message?.includes("rate")) {
-        setErrors({ general: "Too many login attempts. Please try again later." });
-      } else if (error.message?.includes("timeout")) {
-        setErrors({ general: "Server timeout. Please try again later." });
-      } else {
-        setErrors({ 
-          general: error.message || "An unexpected error occurred. Please try again later." 
-        });
-      }
-    } finally {
-      setLoading(false);
-    }
+    // Call the extracted login logic
+    await performLogin(email, password);
+    
+    setLoading(false);
   };
 
   // Helper to get input border class based on validation state
