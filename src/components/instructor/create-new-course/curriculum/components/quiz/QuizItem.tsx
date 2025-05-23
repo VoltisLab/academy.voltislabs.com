@@ -327,7 +327,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
           </div>
 
           <div className="flex items-center space-x-2">
-            <GoQuestion size={12} />
+            <GoQuestion size={12} className="shrink-0" />
             {editingLectureId === lecture.id ? (
               <input
                 ref={lectureNameInputRef}
@@ -345,7 +345,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
                 onClick={(e) => e.stopPropagation()}
               />
             ) : (
-              <h4 className="font-medium text-sm">
+              <h4 className="font-medium text-sm w-max">
                 {lecture.name || "New quiz"}
               </h4>
             )}
