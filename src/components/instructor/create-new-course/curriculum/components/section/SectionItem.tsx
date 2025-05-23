@@ -96,6 +96,7 @@ interface SectionItemProps {
     quizId: string,
     questions: any[]
   ) => void;
+  
   // New prop for practice exercises
   savePracticeCode?: (
     sectionId: string,
