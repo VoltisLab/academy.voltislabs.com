@@ -219,6 +219,7 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({ onSaveNext, courseId }) =
     });
   };
   
+  // FIXED: Improved drag and drop handling to prevent duplicate notifications
   const handleDrop = (e: React.DragEvent, targetSectionId: string, targetLectureId?: string) => {
     e.preventDefault();
     setIsDragging(false);
@@ -253,6 +254,8 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({ onSaveNext, courseId }) =
       
       // Update the state with the new sections array
       setSections(newSections);
+      
+      // Show success message for section move
       toast.success("Section moved successfully");
     }
   };
