@@ -233,8 +233,6 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({ onSaveNext, courseId }) =
     // Case 1: We're dragging a lecture
     if (sourceLectureId && sourceLectureId.trim() !== "") {
       handleLectureDrop(sourceSectionId, sourceLectureId, targetSectionId, targetLectureId);
-      // Show success message for lecture move
-      toast.success("item moved successfully");
       return;
     }
     

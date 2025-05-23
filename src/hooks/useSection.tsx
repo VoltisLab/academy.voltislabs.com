@@ -14,8 +14,9 @@ interface Section {
   objective?: string;
 }
 
-export const useSections = (initialSections: Section[] ) => {
-  const [sections, setSections] = useState<Section[]>([]);
+export const useSections = (initialSections: Section[] = []) => {
+  // Fix: Use the initialSections parameter
+  const [sections, setSections] = useState<Section[]>(initialSections);
 
   // Modified to accept name and objective parameters
   const addSection = (name: string = "New Section", objective?: string) => {
@@ -29,13 +30,14 @@ export const useSections = (initialSections: Section[] ) => {
       isExpanded: true
     };
     
-    setSections([...sections, newSection]);
+    // Fix: Use functional form to avoid stale closure
+    setSections(prevSections => [...prevSections, newSection]);
     toast.success("Section added");
     return newSection.id;
   };
 
   // Add a new lecture to a section with custom title
-  const addLecture = (sectionId: string, contentType: ContentItemType, title?: string ): string => {
+  const addLecture = (sectionId: string, contentType: ContentItemType, title?: string): string => {
     console.log("Adding lecture with title:", title);
     
     const newLecture: Lecture = {
@@ -55,7 +57,8 @@ export const useSections = (initialSections: Section[] ) => {
       externalResources: []
     };
   
-    setSections(sections.map(section => {
+    // Fix: Use functional form to avoid stale closure
+    setSections(prevSections => prevSections.map(section => {
       if (section.id === sectionId) {
         return {
           ...section,
@@ -86,7 +89,8 @@ export const useSections = (initialSections: Section[] ) => {
 
   // Save practice code
   const savePracticeCode = (sectionId: string, lectureId: string, code: string, language: string) => {
-    setSections(sections.map(section => {
+    // Fix: Use functional form to avoid stale closure
+    setSections(prevSections => prevSections.map(section => {
       if (section.id === sectionId) {
         return {
           ...section,
@@ -110,7 +114,8 @@ export const useSections = (initialSections: Section[] ) => {
 
   // Add external resource to practice exercise
   const addExternalResource = (sectionId: string, lectureId: string, url: string, name: string, title: string) => {
-    setSections(sections.map(section => {
+    // Fix: Use functional form to avoid stale closure
+    setSections(prevSections => prevSections.map(section => {
       if (section.id === sectionId) {
         return {
           ...section,
@@ -138,7 +143,8 @@ export const useSections = (initialSections: Section[] ) => {
     const quizId = addLecture(sectionId, 'quiz', title);
     
     // Update the description for the newly created quiz
-    setSections(sections.map(section => {
+    // Fix: Use functional form to avoid stale closure
+    setSections(prevSections => prevSections.map(section => {
       if (section.id === sectionId) {
         return {
           ...section,
@@ -162,18 +168,21 @@ export const useSections = (initialSections: Section[] ) => {
 
   // Delete a section
   const deleteSection = (sectionId: string) => {
-    if (sections.length === 1) {
-      toast.error("You must have at least one section");
-      return false;
-    }
-    setSections(sections.filter(section => section.id !== sectionId));
-    toast.success("Section deleted");
-    return true;
+    // Fix: Use functional form to check current state
+    setSections(prevSections => {
+      if (prevSections.length === 1) {
+        toast.error("You must have at least one section");
+        return prevSections; // Return unchanged state
+      }
+      toast.success("Section deleted");
+      return prevSections.filter(section => section.id !== sectionId);
+    });
   };
 
   // Delete a lecture
   const deleteLecture = (sectionId: string, lectureId: string) => {
-    setSections(sections.map(section => {
+    // Fix: Use functional form to avoid stale closure
+    setSections(prevSections => prevSections.map(section => {
       if (section.id === sectionId) {
         return {
           ...section,
@@ -187,7 +196,8 @@ export const useSections = (initialSections: Section[] ) => {
 
   // Toggle section expansion
   const toggleSectionExpansion = (sectionId: string) => {
-    setSections(sections.map(section => {
+    // Fix: Use functional form to avoid stale closure
+    setSections(prevSections => prevSections.map(section => {
       if (section.id === sectionId) {
         return {
           ...section,
@@ -198,23 +208,34 @@ export const useSections = (initialSections: Section[] ) => {
     }));
   };
 
-  // Update section name - modified to include objective
+  // Update section name - MAIN FIX: Use functional form to avoid stale closure
   const updateSectionName = (sectionId: string, newName: string, objective?: string) => {
-    setSections(sections.map(section => {
-      if (section.id === sectionId) {
-        return {
-          ...section,
-          name: newName,
-          objective: objective !== undefined ? objective : section.objective
-        };
-      }
-      return section;
-    }));
+    console.log("Updating section name:", { sectionId, newName, objective });
+    
+    setSections(prevSections => {
+      const updatedSections = prevSections.map(section => {
+        if (section.id === sectionId) {
+          console.log("Found section to update:", section.name, "->", newName);
+          return {
+            ...section,
+            name: newName,
+            objective: objective !== undefined ? objective : section.objective
+          };
+        }
+        return section;
+      });
+      
+      console.log("Updated sections:", updatedSections);
+      return updatedSections;
+    });
+    
+    toast.success("Section updated successfully");
   };
 
   // Update lecture name
   const updateLectureName = (sectionId: string, lectureId: string, newName: string) => {
-    setSections(sections.map(section => {
+    // Fix: Use functional form to avoid stale closure
+    setSections(prevSections => prevSections.map(section => {
       if (section.id === sectionId) {
         return {
           ...section,
@@ -235,25 +256,29 @@ export const useSections = (initialSections: Section[] ) => {
 
   // Move section up or down
   const moveSection = (sectionId: string, direction: 'up' | 'down') => {
-    const currentIndex = sections.findIndex(section => section.id === sectionId);
-    if (
-      (direction === 'up' && currentIndex === 0) || 
-      (direction === 'down' && currentIndex === sections.length - 1)
-    ) {
-      return; // Can't move further up/down
-    }
+    // Fix: Use functional form to avoid stale closure
+    setSections(prevSections => {
+      const currentIndex = prevSections.findIndex(section => section.id === sectionId);
+      if (
+        (direction === 'up' && currentIndex === 0) || 
+        (direction === 'down' && currentIndex === prevSections.length - 1)
+      ) {
+        return prevSections; // Can't move further up/down
+      }
 
-    const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
-    const newSections = [...sections];
-    const [movedSection] = newSections.splice(currentIndex, 1);
-    newSections.splice(newIndex, 0, movedSection);
-    
-    setSections(newSections);
+      const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+      const newSections = [...prevSections];
+      const [movedSection] = newSections.splice(currentIndex, 1);
+      newSections.splice(newIndex, 0, movedSection);
+      
+      return newSections;
+    });
   };
 
   // Move lecture up or down within a section
   const moveLecture = (sectionId: string, lectureId: string, direction: 'up' | 'down') => {
-    setSections(sections.map(section => {
+    // Fix: Use functional form to avoid stale closure
+    setSections(prevSections => prevSections.map(section => {
       if (section.id === sectionId) {
         const lectures = [...section.lectures];
         const currentIndex = lectures.findIndex(lecture => lecture.id === lectureId);
@@ -277,7 +302,8 @@ export const useSections = (initialSections: Section[] ) => {
   
   // Update lecture content (description, captions, notes)
   const updateLectureContent = (sectionId: string, lectureId: string, contentType: ContentType, value: string) => {
-    setSections(sections.map(section => {
+    // Fix: Use functional form to avoid stale closure
+    setSections(prevSections => prevSections.map(section => {
       if (section.id === sectionId) {
         return {
           ...section,
@@ -302,28 +328,28 @@ export const useSections = (initialSections: Section[] ) => {
   
   // Save description
   const saveDescription = (sectionId: string, lectureId: string, description: string) => {
-  // Update sections state with the new description
-  setSections(sections.map(section => {
-    if (section.id === sectionId) {
-      return {
-        ...section,
-        lectures: section.lectures.map(lecture => {
-          if (lecture.id === lectureId) {
-            return {
-              ...lecture,
-              description: description
-            };
-          }
-          return lecture;
-        })
-      };
-    }
-    return section;
-  }));
-  
-  toast.success("Description saved");
-  return description; // Return the description for use in the parent component
-};
+    // Fix: Use functional form to avoid stale closure
+    setSections(prevSections => prevSections.map(section => {
+      if (section.id === sectionId) {
+        return {
+          ...section,
+          lectures: section.lectures.map(lecture => {
+            if (lecture.id === lectureId) {
+              return {
+                ...lecture,
+                description: description
+              };
+            }
+            return lecture;
+          })
+        };
+      }
+      return section;
+    }));
+    
+    toast.success("Description saved");
+    return description;
+  };
   
   // Update lecture with uploaded content
   const updateLectureWithUploadedContent = (
@@ -333,7 +359,8 @@ export const useSections = (initialSections: Section[] ) => {
     fileUrl: string, 
     fileName: string
   ) => {
-    setSections(sections.map(section => {
+    // Fix: Use functional form to avoid stale closure
+    setSections(prevSections => prevSections.map(section => {
       if (section.id === sectionId) {
         return {
           ...section,
@@ -364,75 +391,78 @@ export const useSections = (initialSections: Section[] ) => {
     sourceSectionId: string, 
     sourceLectureId: string,
     targetSectionId: string, 
-    targetLectureId?: string
+    targetLectureId?: string,
   ) => {
-    // Clone the current sections array to avoid direct state mutation
-    const updatedSections = [...sections];
-    
-    // Find the indices of the source and target sections
-    const sourceSectionIndex = updatedSections.findIndex(s => s.id === sourceSectionId);
-    const targetSectionIndex = updatedSections.findIndex(s => s.id === targetSectionId);
-    
-    // If either section is not found, abort
-    if (sourceSectionIndex === -1 || targetSectionIndex === -1) {
-      console.error("Source or target section not found");
-      return;
-    }
-    
-    // Find the source lecture within its section
-    const sourceSection = updatedSections[sourceSectionIndex];
-    const sourceLectureIndex = sourceSection.lectures.findIndex(l => l.id === sourceLectureId);
-    
-    // If the source lecture is not found, abort
-    if (sourceLectureIndex === -1) {
-      console.error("Source lecture not found");
-      return;
-    }
-    
-    // Get a copy of the lecture to be moved
-    const lectureCopy = { ...sourceSection.lectures[sourceLectureIndex] };
-    
-    // Create a new array of lectures for the source section with the lecture removed
-    const updatedSourceLectures = sourceSection.lectures.filter(l => l.id !== sourceLectureId);
-    
-    // Update the source section with the lecture removed
-    updatedSections[sourceSectionIndex] = {
-      ...sourceSection,
-      lectures: updatedSourceLectures
-    };
-    
-    // Handle the target section (which might be the same as the source)
-    const targetSection = updatedSections[targetSectionIndex];
-    const targetLectures = [...targetSection.lectures];
-    
-    // Determine where to insert the lecture in the target section
-    let insertIndex = targetLectures.length; // Default to the end
-    
-    if (targetLectureId) {
-      // If we have a target lecture ID, find its position
-      const targetLectureIndex = targetLectures.findIndex(l => l.id === targetLectureId);
+    // Fix: Use functional form to avoid stale closure
+    setSections(prevSections => {
+      // Clone the current sections array to avoid direct state mutation
+      const updatedSections = [...prevSections];
       
-      if (targetLectureIndex !== -1) {
-        // Insert after the target lecture
-        insertIndex = targetLectureIndex + 1;
+      // Find the indices of the source and target sections
+      const sourceSectionIndex = updatedSections.findIndex(s => s.id === sourceSectionId);
+      const targetSectionIndex = updatedSections.findIndex(s => s.id === targetSectionId);
+      
+      // If either section is not found, abort
+      if (sourceSectionIndex === -1 || targetSectionIndex === -1) {
+        console.error("Source or target section not found");
+        return prevSections;
       }
-    }
-    
-    // Insert the lecture at the determined position
-    targetLectures.splice(insertIndex, 0, lectureCopy);
-    
-    // Update the target section with the new lectures array
-    updatedSections[targetSectionIndex] = {
-      ...targetSection,
-      lectures: targetLectures
-    };
-    
-    // Update the state with the new sections array
-    setSections(updatedSections);   
+      
+      // Find the source lecture within its section
+      const sourceSection = updatedSections[sourceSectionIndex];
+      const sourceLectureIndex = sourceSection.lectures.findIndex(l => l.id === sourceLectureId);
+      
+      // If the source lecture is not found, abort
+      if (sourceLectureIndex === -1) {
+        console.error("Source lecture not found");
+        return prevSections;
+      }
+      
+      // Get a copy of the lecture to be moved
+      const lectureCopy = { ...sourceSection.lectures[sourceLectureIndex] };
+      
+      // Create a new array of lectures for the source section with the lecture removed
+      const updatedSourceLectures = sourceSection.lectures.filter(l => l.id !== sourceLectureId);
+      
+      // Update the source section with the lecture removed
+      updatedSections[sourceSectionIndex] = {
+        ...sourceSection,
+        lectures: updatedSourceLectures
+      };
+      
+      // Handle the target section (which might be the same as the source)
+      const targetSection = updatedSections[targetSectionIndex];
+      const targetLectures = [...targetSection.lectures];
+      
+      // Determine where to insert the lecture in the target section
+      let insertIndex = targetLectures.length; // Default to the end
+      
+      if (targetLectureId) {
+        // If we have a target lecture ID, find its position
+        const targetLectureIndex = targetLectures.findIndex(l => l.id === targetLectureId);
+        
+        if (targetLectureIndex !== -1) {
+          // Insert after the target lecture
+          insertIndex = targetLectureIndex + 1;
+        }
+      }
+      
+      // Insert the lecture at the determined position
+      targetLectures.splice(insertIndex, 0, lectureCopy);
+      
+      // Update the target section with the new lectures array
+      updatedSections[targetSectionIndex] = {
+        ...targetSection,
+        lectures: targetLectures
+      };
+      
+      return updatedSections;
+    });
   };
   
   const updateQuizQuestions = (sectionId: string, quizId: string, questions: Question[]) => {
-    setSections(sections.map(section => {
+    // Fix: Use functional form to avoid stale closure
+    setSections(prevSections => prevSections.map(section => {
       if (section.id === sectionId) {
         return {
           ...section,
@@ -454,7 +484,8 @@ export const useSections = (initialSections: Section[] ) => {
   };
 
   const addQuestionToQuiz = (sectionId: string, quizId: string, question: Question) => {
-    setSections(sections.map(section => {
+    // Fix: Use functional form to avoid stale closure
+    setSections(prevSections => prevSections.map(section => {
       if (section.id === sectionId) {
         return {
           ...section,
