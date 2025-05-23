@@ -12,6 +12,40 @@ import SectionForm from './components/section/SectionForm';
 import NewFeatureAlert from './NewFeatureAlert';
 import InfoBox from './InfoBox';
 import CodingExerciseCreator from './components/code/CodingExcerciseCreator';
+import AssignmentEditor from './components/assignment/AssignmentEditor'; // Import the new component
+
+// Add the ExtendedLecture interface here if not already imported
+interface ExtendedLecture {
+  id: string;
+  name?: string;
+  title?: string;
+  description: string;
+  captions: string;
+  lectureNotes: string;
+  attachedFiles: any[];
+  videos: any[];
+  contentType: any;
+  isExpanded: boolean;
+  assignmentTitle?: string;
+  assignmentDescription?: string;
+  estimatedDuration?: number;
+  durationUnit?: 'minutes' | 'hours' | 'days';
+  assignmentInstructions?: string;
+  instructionalVideo?: {
+    file: File | null;
+    url?: string;
+  };
+  downloadableResource?: {
+    file: File | null;
+    url?: string;
+    name?: string;
+  };
+  assignmentQuestions?: any[];
+  solutionVideo?: {
+    file: File | null;
+    url?: string;
+  };
+}
 
 interface CourseBuilderProps {
   onSaveNext?: () => void;
@@ -35,11 +69,19 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({ onSaveNext, courseId }) =
     lectureId: string | null;
   }>({ sectionId: null, lectureId: null });
   
-  // New state for coding exercise modal
+  // Existing coding exercise modal state
   const [showCodingExerciseCreator, setShowCodingExerciseCreator] = useState<boolean>(false);
   const [currentCodingExercise, setCurrentCodingExercise] = useState<{
     sectionId: string;
     lectureId: string;
+  } | null>(null);
+  
+  // NEW: Assignment editor state
+  const [showAssignmentEditor, setShowAssignmentEditor] = useState<boolean>(false);
+  const [currentAssignment, setCurrentAssignment] = useState<{
+    sectionId: string;
+    lectureId: string;
+    data: ExtendedLecture;
   } | null>(null);
   
   const { 
@@ -103,17 +145,15 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({ onSaveNext, courseId }) =
     lectureId: string;
   } | null>(null);
 
-  // New handler for opening the coding exercise creator modal
+  // Existing coding exercise handlers
   const handleOpenCodingExerciseModal = (sectionId: string, lectureId: string) => {
     setCurrentCodingExercise({ sectionId, lectureId });
     setShowCodingExerciseCreator(true);
   };
 
-  // Handler for saving the coding exercise
   const handleSaveCodingExercise = (updatedLecture: any) => {
     if (!currentCodingExercise) return;
     
-    // Update the sections state with the changes
     setSections(sections.map(section => {
       if (section.id === currentCodingExercise.sectionId) {
         return {
@@ -125,7 +165,6 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({ onSaveNext, courseId }) =
                   name: updatedLecture.name || lecture.name,
                   codeLanguage: updatedLecture.codeLanguage,
                   version: updatedLecture.version,
-                  // Add any other properties that need to be updated
                 } 
               : lecture
           )
@@ -134,59 +173,116 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({ onSaveNext, courseId }) =
       return section;
     }));
     
-    // Close the modal
     setShowCodingExerciseCreator(false);
     setCurrentCodingExercise(null);
-    
-    // Show success message
     toast.success("Coding exercise updated successfully!");
   };
 
+  // NEW: Assignment editor handlers
+  const handleOpenAssignmentEditor = (assignmentData: ExtendedLecture) => {
+    // Find the section and lecture IDs
+    let foundSectionId = '';
+    let foundLectureId = assignmentData.id;
+    
+    for (const section of sections) {
+      const lecture = section.lectures.find(l => l.id === assignmentData.id);
+      if (lecture) {
+        foundSectionId = section.id;
+        break;
+      }
+    }
+    
+    setCurrentAssignment({
+      sectionId: foundSectionId,
+      lectureId: foundLectureId,
+      data: assignmentData
+    });
+    setShowAssignmentEditor(true);
+  };
+
+  const handleSaveAssignment = (updatedAssignment: ExtendedLecture) => {
+    if (!currentAssignment) return;
+    
+    // Update the sections state with the assignment changes
+    setSections(sections.map(section => {
+      if (section.id === currentAssignment.sectionId) {
+        return {
+          ...section,
+          lectures: section.lectures.map(lecture => 
+            lecture.id === updatedAssignment.id 
+              ? { 
+                  ...lecture, 
+                  name: updatedAssignment.assignmentTitle || updatedAssignment.name || lecture.name,
+                  title: updatedAssignment.assignmentTitle || updatedAssignment.title || lecture.title,
+                  description: updatedAssignment.assignmentDescription || lecture.description,
+                  // Add all the assignment-specific fields
+                  assignmentTitle: updatedAssignment.assignmentTitle,
+                  assignmentDescription: updatedAssignment.assignmentDescription,
+                  estimatedDuration: updatedAssignment.estimatedDuration,
+                  durationUnit: updatedAssignment.durationUnit,
+                  assignmentInstructions: updatedAssignment.assignmentInstructions,
+                  instructionalVideo: updatedAssignment.instructionalVideo,
+                  downloadableResource: updatedAssignment.downloadableResource,
+                  assignmentQuestions: updatedAssignment.assignmentQuestions,
+                  solutionVideo: updatedAssignment.solutionVideo
+                } 
+              : lecture
+          )
+        };
+      }
+      return section;
+    }));
+    
+    // Close the assignment editor
+    setShowAssignmentEditor(false);
+    setCurrentAssignment(null);
+    
+    // Show success message
+    toast.success("Assignment updated successfully!");
+  };
+
+  const handleCloseAssignmentEditor = () => {
+    setShowAssignmentEditor(false);
+    setCurrentAssignment(null);
+  };
+
+  // Rest of your existing handlers remain the same...
   const toggleContentSection = (sectionId: string, lectureId: string) => {
-    // Check if this section is already active
     if (activeContentSection && 
         activeContentSection.sectionId === sectionId && 
         activeContentSection.lectureId === lectureId) {
-      // Close the section
       setActiveContentSection(null);
     } else {
-      // Open the section
       setActiveContentSection({ sectionId, lectureId });
     }
   };
   
-  // Toggle description editor
   const toggleDescriptionEditor = (sectionId: string, lectureId: string, description?: string) => {
-  if (activeDescriptionSection && 
-      activeDescriptionSection.sectionId === sectionId && 
-      activeDescriptionSection.lectureId === lectureId) {
-    // Description editor is being closed
-    setActiveDescriptionSection(null);
-    
-    // If this was a save operation, we need to keep the content section open
-    // and ensure content is visible
-    if (description !== undefined && description.trim() !== '') {
-      // Keep content section expanded
-      if (!activeContentSection || 
-          activeContentSection.sectionId !== sectionId || 
-          activeContentSection.lectureId !== lectureId) {
-        setActiveContentSection({ sectionId, lectureId });
+    if (activeDescriptionSection && 
+        activeDescriptionSection.sectionId === sectionId && 
+        activeDescriptionSection.lectureId === lectureId) {
+      setActiveDescriptionSection(null);
+      
+      if (description !== undefined && description.trim() !== '') {
+        if (!activeContentSection || 
+            activeContentSection.sectionId !== sectionId || 
+            activeContentSection.lectureId !== lectureId) {
+          setActiveContentSection({ sectionId, lectureId });
+        }
       }
+    } else {
+      setActiveDescriptionSection({ sectionId, lectureId });
+      setCurrentDescription(description || '');
     }
-  } else {
-    // Description editor is being opened
-    setActiveDescriptionSection({ sectionId, lectureId });
-    setCurrentDescription(description || '');
-  }
-};
+  };
   
-  // Toggle add resource
   const toggleAddResourceModal = (sectionId: string, lectureId: string) => {
     contentSectionModal.toggle(sectionId, lectureId);
   };
 
+  // Rest of your existing handlers (handleDragStart, handleDragEnd, etc.) remain the same...
   const handleDragStart = (e: React.DragEvent, sectionId: string, lectureId?: string) => {
-    e.stopPropagation(); // Prevent event bubbling
+    e.stopPropagation();
     setIsDragging(true);
     
     if (lectureId) {
@@ -212,60 +308,47 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({ onSaveNext, courseId }) =
     e.stopPropagation();
     e.dataTransfer.dropEffect = 'move';
     
-    // Update the drop target
     setDragTarget({
       sectionId: targetSectionId,
       lectureId: targetLectureId || null
     });
   };
   
-  // FIXED: Improved drag and drop handling to prevent duplicate notifications
   const handleDrop = (e: React.DragEvent, targetSectionId: string, targetLectureId?: string) => {
     e.preventDefault();
     setIsDragging(false);
     
-    // Get the dragged item data
     const sourceSectionId = e.dataTransfer.getData("sectionId");
     const sourceLectureId = e.dataTransfer.getData("lectureId");
     
-    if (!sourceSectionId) return; // No valid data, abort
+    if (!sourceSectionId) return;
     
-    // Case 1: We're dragging a lecture
     if (sourceLectureId && sourceLectureId.trim() !== "") {
       handleLectureDrop(sourceSectionId, sourceLectureId, targetSectionId, targetLectureId);
       return;
     }
     
-    // Case 2: We're dragging a section (and not dropping onto a lecture)
     if (!targetLectureId) {
-      // Find section indices
       const sourceIndex = sections.findIndex(s => s.id === sourceSectionId);
       const targetIndex = sections.findIndex(s => s.id === targetSectionId);
       
-      // Skip if source or target not found, or if dropping onto itself
       if (sourceIndex === -1 || targetIndex === -1 || sourceIndex === targetIndex) {
         return;
       }
       
-      // Create a new array with the section moved to the new position
       const newSections = [...sections];
       const [movedSection] = newSections.splice(sourceIndex, 1);
       newSections.splice(targetIndex, 0, movedSection);
       
-      // Update the state with the new sections array
       setSections(newSections);
-      
-      // Show success message for section move
       toast.success("Section moved successfully");
     }
   };
   
   const handleDragLeave = () => {
-    // Optionally clear drop targets when leaving
     setDragTarget({ sectionId: null, lectureId: null });
   };
 
-  // Handle adding new section with title and objective
   const handleAddSection = (title: string, objective: string) => {
     addSection(title, objective);
     setShowSectionForm(false);
@@ -275,16 +358,12 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({ onSaveNext, courseId }) =
     if (e) e.preventDefault();
     
     try {
-      // Map sections to match CourseSectionInput type
       const courseSections: CourseSectionInput[] = sections.map(section => {
-        // Map lectures to match LectureInput type
         const lectures: LectureInput[] = section.lectures.map(lecture => ({
-          // Ensure name is always a string, never undefined
           name: lecture.name ?? lecture.title ?? "",
           description: lecture.description || "",
           captions: lecture.captions || "",
           lectureNotes: lecture.lectureNotes || "",
-          contentType: lecture.contentType,
           attachedFiles: {
             action: "ADD",
             attachedFile: lecture.attachedFiles.map(file => ({ url: file.url }))
@@ -293,7 +372,6 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({ onSaveNext, courseId }) =
             action: "ADD",
             videos: lecture.videos.map(video => ({ url: video.url }))
           },
-          // Add code-related fields if present
           code: lecture.code,
           codeLanguage: lecture.codeLanguage
         }));
@@ -319,13 +397,23 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({ onSaveNext, courseId }) =
     }
   };
 
-  // Function to find lecture data by section and lecture IDs
   const findLecture = (sectionId: string, lectureId: string) => {
     const section = sections.find(s => s.id === sectionId);
     if (!section) return null;
     
     return section.lectures.find(l => l.id === lectureId) || null;
   };
+
+  // NEW: Check if assignment editor is open and render it
+  if (showAssignmentEditor && currentAssignment) {
+    return (
+      <AssignmentEditor
+        initialData={currentAssignment.data}
+        onClose={handleCloseAssignmentEditor}
+        onSave={handleSaveAssignment}
+      />
+    );
+  }
   
   return (
     <div className="xl:max-w-5xl max-w-full mx-auto shadow-xl">
@@ -366,7 +454,6 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({ onSaveNext, courseId }) =
           </button>
         </div>
         <div className="bg-white border border-gray-200 mb-6 mt-20">
-          {/* Render sections */}
           {sections.length > 0 ? (
             sections.map((section, index) => (
               <SectionItem
@@ -402,8 +489,9 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({ onSaveNext, courseId }) =
                 draggedLecture={draggedLecture}
                 dragTarget={dragTarget}
                 saveDescription={saveSectionDescription}
-                // Pass the handler for opening the coding exercise modal
                 openCodingExerciseModal={handleOpenCodingExerciseModal}
+                // NEW: Pass the assignment editor handler
+                onEditAssignment={handleOpenAssignmentEditor}
               />
             ))
           ) : (
@@ -423,7 +511,6 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({ onSaveNext, courseId }) =
           )}
         </div>
         
-        {/* Section Form rendered outside the main content area when shown */}
         {showSectionForm && (
           <div className='pb-20'>
             <SectionForm
@@ -465,20 +552,20 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({ onSaveNext, courseId }) =
         className="hidden" 
       />
 
-      {/* Render the CodingExerciseCreator modal when active */}
+      {/* Existing coding exercise modal */}
       {showCodingExerciseCreator && currentCodingExercise && (
-  <div className="fixed inset-0 z-50 bg-black bg-opacity-50 overflow-auto">
-    <CodingExerciseCreator
-      lectureId={currentCodingExercise.lectureId}
-      onClose={() => {
-        setShowCodingExerciseCreator(false);
-        setCurrentCodingExercise(null);
-      }}
-      onSave={handleSaveCodingExercise}
-      initialData={findLecture(currentCodingExercise.sectionId, currentCodingExercise.lectureId) ?? undefined}
-    />
-  </div>
-)}
+        <div className="fixed inset-0 z-50 bg-black bg-opacity-50 overflow-auto">
+          <CodingExerciseCreator
+            lectureId={currentCodingExercise.lectureId}
+            onClose={() => {
+              setShowCodingExerciseCreator(false);
+              setCurrentCodingExercise(null);
+            }}
+            onSave={handleSaveCodingExercise}
+            initialData={findLecture(currentCodingExercise.sectionId, currentCodingExercise.lectureId) ?? undefined}
+          />
+        </div>
+      )}
     </div>
   );
 };

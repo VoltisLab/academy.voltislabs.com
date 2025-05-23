@@ -1,7 +1,7 @@
 "use client";
 import React, { useRef, useEffect, useState } from 'react';
-import { Lecture } from '@/lib/types';
-import { Edit3, Trash2, ChevronUp, ChevronDown, FileText } from 'lucide-react';
+import { ExtendedLecture, Lecture } from '@/lib/types';
+import { Edit3, Trash2, ChevronUp, ChevronDown, FileText, Edit } from 'lucide-react';
 
 interface AssignmentItemProps {
   lecture: Lecture;
@@ -16,7 +16,6 @@ interface AssignmentItemProps {
   handleDragStart: (e: React.DragEvent, sectionId: string, lectureId?: string) => void;
   handleDragOver: (e: React.DragEvent) => void;
   handleDrop: (e: React.DragEvent, targetSectionId: string, targetLectureId?: string) => void;
-  // Add these new props
   isDragging?: boolean;
   handleDragEnd?: () => void;
   handleDragLeave?: () => void;
@@ -25,9 +24,11 @@ interface AssignmentItemProps {
     sectionId: string | null;
     lectureId: string | null;
   };
+  // Add the missing prop
+  onEditAssignment?: (lecture: ExtendedLecture) => void;
 }
 
-export default function AssignmentItem({
+const AssignmentItem: React.FC<AssignmentItemProps> = ({
   lecture,
   lectureIndex,
   totalLectures,
@@ -44,8 +45,9 @@ export default function AssignmentItem({
   handleDragEnd,
   handleDragLeave,
   draggedLecture,
-  dragTarget
-}: AssignmentItemProps) {
+  dragTarget,
+  onEditAssignment, // Now properly typed
+}) => {
   const nameInputRef = useRef<HTMLInputElement>(null);
   const [isHovering, setIsHovering] = useState(false);
 
@@ -58,6 +60,26 @@ export default function AssignmentItem({
   const startEditing = (e: React.MouseEvent) => {
     e.stopPropagation();
     setEditingLectureId(lecture.id);
+  };
+
+  const handleEditClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onEditAssignment) {
+      // Convert Lecture to ExtendedLecture for the assignment editor
+      const extendedLecture: ExtendedLecture = {
+        ...lecture,
+        assignmentTitle: lecture.assignmentTitle || lecture.name || lecture.title || '',
+        assignmentDescription: lecture.assignmentDescription || lecture.description || '',
+        estimatedDuration: lecture.estimatedDuration || 0,
+        durationUnit: lecture.durationUnit || 'minutes',
+        assignmentInstructions: lecture.assignmentInstructions || '',
+        instructionalVideo: lecture.instructionalVideo || { file: null },
+        downloadableResource: lecture.downloadableResource || { file: null, name: '' },
+        assignmentQuestions: lecture.assignmentQuestions || [],
+        solutionVideo: lecture.solutionVideo || { file: null }
+      };
+      onEditAssignment(extendedLecture);
+    }
   };
 
   return (
@@ -87,7 +109,7 @@ export default function AssignmentItem({
             <input
               ref={nameInputRef}
               type="text"
-              value={lecture.name}
+              value={lecture.name || ''}
               onChange={(e) => updateLectureName(sectionId, lecture.id, e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
@@ -100,14 +122,15 @@ export default function AssignmentItem({
           ) : (
            <div className='flex flex-row items-center gap-2'>
              <h3 className=" text-xs text-gray-800 whitespace-nowrap overflow-hidden text-ellipsis flex items-center gap-1">
-                Unpublished Assignment: <FileText size={10} /> {lecture.name}
+                Unpublished Assignment: <FileText size={10} /> {lecture.name || lecture.title || 'Untitled Assignment'}
               </h3>
                     <div className='flex flex-row gap-1'>
                     <button
-                    onClick={startEditing}
+                    onClick={handleEditClick}
                     className="p-1 text-gray-400 hover:text-gray-600"
+                    title="Edit Assignment"
                   >
-                    <Edit3 className="w-4 h-4" />
+                    <Edit className="w-4 h-4" />
                   </button>
                   <button
                     onClick={(e) => {
@@ -123,9 +146,6 @@ export default function AssignmentItem({
           )}
         </div>
         <div className={`flex items-center space-x-1 ${isHovering ? 'opacity-100' : 'opacity-0'}`}>
-    
-          
-          {/* Chevron Up button - only visible when hovering */}
           <div className={`transition-opacity duration-200 ${isHovering ? 'opacity-100' : 'opacity-0'}`}>
             <button
               onClick={(e) => {
@@ -139,7 +159,6 @@ export default function AssignmentItem({
             </button>
           </div>
           
-          {/* Chevron Down button - only visible when hovering */}
           <div className={`transition-opacity duration-200 ${isHovering ? 'opacity-100' : 'opacity-0'}`}>
             <button
               onClick={(e) => {
@@ -156,4 +175,6 @@ export default function AssignmentItem({
       </div>
     </div>
   );
-}
+};
+
+export default AssignmentItem;

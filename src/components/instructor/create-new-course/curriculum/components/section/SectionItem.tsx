@@ -9,7 +9,7 @@ import {
   AlignJustify,
   FileText,
 } from "lucide-react";
-import { Lecture, ContentItemType } from "@/lib/types";
+import { Lecture, ContentItemType, ExtendedLecture } from "@/lib/types";
 // Import the components
 import { ActionButtons } from "./ActionButtons";
 import LectureItem from "../lecture/LectureItem";
@@ -96,6 +96,7 @@ interface SectionItemProps {
     quizId: string,
     questions: any[]
   ) => void;
+  
   // New prop for practice exercises
   savePracticeCode?: (
     sectionId: string,
@@ -113,6 +114,7 @@ interface SectionItemProps {
   };
   // Add the missing property for opening coding exercise modal
   openCodingExerciseModal?: (sectionId: string, lectureId: string) => void;
+  onEditAssignment: (assignmentData: ExtendedLecture) => void;
 }
 
 export default function SectionItem({
@@ -150,6 +152,7 @@ export default function SectionItem({
   dragTarget,
   saveDescription,
   openCodingExerciseModal,
+  onEditAssignment,
 }: SectionItemProps) {
   const sectionNameInputRef = useRef<HTMLInputElement>(null);
   // State for toggling action buttons
@@ -382,17 +385,36 @@ export default function SectionItem({
   // Handle description save
   // In your parent component
 
+  // Calculate content type specific indices
+  const getContentTypeIndex = (currentIndex: number, contentType: string): number => {
+    let typeIndex = 0;
+    for (let i = 0; i <= currentIndex; i++) {
+      if (section.lectures[i]?.contentType === contentType || 
+          (!section.lectures[i]?.contentType && contentType === "video")) {
+        if (i === currentIndex) {
+          return typeIndex;
+        }
+        typeIndex++;
+      }
+    }
+    return typeIndex;
+  };
+
   // Render lecture items based on their content type
   const renderLectureItem = (lecture: Lecture, lectureIndex: number) => {
     console.log("Rendering lecture:", lecture);
+
+    // Calculate the specific index for this content type
+    const contentType = lecture.contentType || "video"; // Default to video if not set
+    const typeSpecificIndex = getContentTypeIndex(lectureIndex, contentType);
 
     if (lecture.contentType === "assignment") {
       return (
         <AssignmentItem
           key={lecture.id}
           lecture={lecture}
-          lectureIndex={lectureIndex}
-          totalLectures={section.lectures.length}
+          lectureIndex={typeSpecificIndex} // Use assignment-specific index
+          totalLectures={section.lectures.filter(l => l.contentType === "assignment").length}
           sectionId={section.id}
           editingLectureId={editingLectureId}
           setEditingLectureId={setEditingLectureId}
@@ -407,6 +429,7 @@ export default function SectionItem({
           handleDragLeave={handleDragLeave}
           draggedLecture={draggedLecture}
           dragTarget={dragTarget}
+          onEditAssignment={onEditAssignment} 
         />
       );
     }
@@ -416,8 +439,8 @@ export default function SectionItem({
         <CodingExerciseItem
           key={lecture.id}
           lecture={lecture}
-          lectureIndex={lectureIndex}
-          totalLectures={section.lectures.length}
+          lectureIndex={typeSpecificIndex} // Use coding-exercise-specific index
+          totalLectures={section.lectures.filter(l => l.contentType === "coding-exercise").length}
           sectionId={section.id}
           editingLectureId={editingLectureId}
           setEditingLectureId={setEditingLectureId}
@@ -447,8 +470,8 @@ export default function SectionItem({
         <QuizItem
           key={lecture.id}
           lecture={lecture}
-          lectureIndex={lectureIndex}
-          totalLectures={section.lectures.length}
+          lectureIndex={typeSpecificIndex} // Use quiz-specific index
+          totalLectures={section.lectures.filter(l => l.contentType === "quiz").length}
           sectionId={section.id}
           editingLectureId={editingLectureId}
           setEditingLectureId={setEditingLectureId}
@@ -475,8 +498,8 @@ export default function SectionItem({
         <PracticeItem
           key={lecture.id}
           lecture={lecture}
-          lectureIndex={lectureIndex}
-          totalLectures={section.lectures.length}
+          lectureIndex={typeSpecificIndex} // Use practice-specific index
+          totalLectures={section.lectures.filter(l => l.contentType === "practice").length}
           sectionId={section.id}
           editingLectureId={editingLectureId}
           setEditingLectureId={setEditingLectureId}
@@ -496,12 +519,13 @@ export default function SectionItem({
       );
     }
 
+    // Default to LectureItem (for video lectures and other types)
     return (
       <LectureItem
         key={lecture.id}
         lecture={lecture}
-        lectureIndex={lectureIndex}
-        totalLectures={section.lectures.length}
+        lectureIndex={typeSpecificIndex} // Use lecture-specific index
+        totalLectures={section.lectures.filter(l => l.contentType === "video" || !l.contentType).length}
         sectionId={section.id}
         editingLectureId={editingLectureId}
         setEditingLectureId={setEditingLectureId}
