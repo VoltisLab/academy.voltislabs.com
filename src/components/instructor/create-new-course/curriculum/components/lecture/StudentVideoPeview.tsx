@@ -1,5 +1,11 @@
 import { useState, useEffect, useRef } from "react";
-import { Lecture, SourceCodeFile, VideoContent, AttachedFile, ExternalResource } from "@/lib/types";
+import {
+  Lecture,
+  SourceCodeFile,
+  VideoContent,
+  AttachedFile,
+  ExternalResource,
+} from "@/lib/types";
 import {
   ChevronDown,
   ChevronUp,
@@ -17,18 +23,19 @@ import {
   FileDown,
   FileText,
   SquareArrowOutUpRight,
-  Code
+  Code,
 } from "lucide-react";
 import ReactPlayer from "react-player";
 import StudentPreviewSidebar from "./StudentPreviewSidebar";
 
 import { ArticleContent } from "@/lib/types"; // Add this import
+import QuizPreview from "../quiz/QuizPreview";
 
 type ChildProps = {
   videoContent: VideoContent;
   setShowVideoPreview: React.Dispatch<React.SetStateAction<boolean>>;
   lecture: Lecture;
-  uploadedFiles?: Array<{name: string, size: string}>;
+  uploadedFiles?: Array<{ name: string; size: string }>;
   sourceCodeFiles?: SourceCodeFile[];
   externalResources?: ExternalResource[];
   section?: any;
@@ -47,20 +54,25 @@ type VideoNote = {
 };
 
 type ModalStep = 1 | 2 | 3;
-type FrequencyType = 'Daily' | 'Weekly' | 'Once';
+type FrequencyType = "Daily" | "Weekly" | "Once";
 
 // Define content type for sidebar items
-type ContentItemType = 'video' | 'article' | 'quiz' | 'assignment' | 'coding-exercise';
+type ContentItemType =
+  | "video"
+  | "article"
+  | "quiz"
+  | "assignment"
+  | "coding-exercise";
 
-const StudentVideoPreview = ({ 
-  videoContent, 
-  setShowVideoPreview, 
+const StudentVideoPreview = ({
+  videoContent,
+  setShowVideoPreview,
   lecture,
   uploadedFiles = [],
   sourceCodeFiles = [],
   externalResources = [],
   section,
-  articleContent = { text: '' }
+  articleContent = { text: "" },
 }: ChildProps) => {
   // State management
 
@@ -73,111 +85,128 @@ const StudentVideoPreview = ({
   const [showSearch, setShowSearch] = useState<boolean>(false);
   const [showLearningModal, setShowLearningModal] = useState<boolean>(false);
   const [activeItemId, setActiveItemId] = useState<string>(lecture.id);
-  
-  const [activeTab, setActiveTab] = useState<'overview' | 'notes' | 'announcements' | 'reviews' | 'learning-tools'>('overview');
+
+  const [activeTab, setActiveTab] = useState<
+    "overview" | "notes" | "announcements" | "reviews" | "learning-tools"
+  >("overview");
   // Determine if this is an article based on actual content
-  const hasArticleContent = articleContent && articleContent.text !== '' && 
-                         (!videoContent.selectedVideoDetails || videoContent.selectedVideoDetails === null);
+  const hasArticleContent =
+    articleContent &&
+    articleContent.text !== "" &&
+    (!videoContent.selectedVideoDetails ||
+      videoContent.selectedVideoDetails === null);
 
-// Set activeItemType based on article content
-const [activeItemType, setActiveItemType] = useState<string>(
-  hasArticleContent ? 'article' : (lecture.contentType || 'video')
-);
+  // Set activeItemType based on article content
+  const [activeItemType, setActiveItemType] = useState<string>(
+    hasArticleContent ? "article" : lecture.contentType || "video"
+  );
 
-// Add an effect to update activeItemType if props change
-useEffect(() => {
-  const hasArticle = articleContent && articleContent.text !== '' && 
-                    (!videoContent.selectedVideoDetails || videoContent.selectedVideoDetails === null);
-  
-  console.log('StudentVideoPreview content check:', {
-    hasArticle,
-    articleContentExists: !!articleContent?.text,
-    articleTextLength: articleContent?.text?.length || 0,
-    videoDetailsExists: !!videoContent.selectedVideoDetails,
-    lectureContentType: lecture.contentType,
-    currentActiveItemType: activeItemType
-  });
-  
-  if (hasArticle && activeItemType !== 'article') {
-    setActiveItemType('article');
-  } else if (!hasArticle && activeItemType === 'article' && lecture.contentType !== 'article') {
-    setActiveItemType(lecture.contentType || 'video');
+  // Add an effect to update activeItemType if props change
+  useEffect(() => {
+    const hasArticle =
+      articleContent &&
+      articleContent.text !== "" &&
+      (!videoContent.selectedVideoDetails ||
+        videoContent.selectedVideoDetails === null);
+
+    console.log("StudentVideoPreview content check:", {
+      hasArticle,
+      articleContentExists: !!articleContent?.text,
+      articleTextLength: articleContent?.text?.length || 0,
+      videoDetailsExists: !!videoContent.selectedVideoDetails,
+      lectureContentType: lecture.contentType,
+      currentActiveItemType: activeItemType,
+    });
+
+    if (hasArticle && activeItemType !== "article") {
+      setActiveItemType("article");
+    } else if (
+      !hasArticle &&
+      activeItemType === "article" &&
+      lecture.contentType !== "article"
+    ) {
+      setActiveItemType(lecture.contentType || "video");
+    }
+  }, [articleContent, videoContent.selectedVideoDetails, lecture.contentType]);
+  type SelectedItemType = Lecture | Quiz | Assignment | CodingExercise;
+
+  // Define interfaces for the missing types (if they're not already defined in your codebase)
+  interface Quiz {
+    id: string;
+    name: string;
+    description?: string;
+    // Add other properties as needed
   }
-}, [articleContent, videoContent.selectedVideoDetails, lecture.contentType]);
-type SelectedItemType = Lecture | Quiz | Assignment | CodingExercise;
 
-// Define interfaces for the missing types (if they're not already defined in your codebase)
-interface Quiz {
-  id: string;
-  name: string;
-  description?: string;
-  // Add other properties as needed
-}
-
-interface Assignment {
-  id: string;
-  name: string;
-  description?: string;
-  // Add other properties as needed
-}
-
-interface CodingExercise {
-  id: string;
-  name: string;
-  description?: string;
-  // Add other properties as needed
-}
-
-// Add this state variable with the proper type
-const [selectedItemData, setSelectedItemData] = useState<SelectedItemType | null>(lecture);
-
-// Fix the handleItemSelect function
-const handleItemSelect = (itemId: string, itemType: string) => {
-  console.log(`Selected item: ${itemId}, type: ${itemType}`);
-  setActiveItemId(itemId);
-  setActiveItemType(itemType);
-  
-  // Find the selected item from the sections data with proper typing
-  const selectedItem: SelectedItemType | undefined = 
-    section?.lectures?.find((l: Lecture) => l.id === itemId) || 
-    section?.quizzes?.find((q: Quiz) => q.id === itemId) ||
-    section?.assignments?.find((a: Assignment) => a.id === itemId) ||
-    section?.codingExercises?.find((e: CodingExercise) => e.id === itemId);
-    
-  console.log('Selected item data:', selectedItem);
-  
-  // Store the selected item data for use in the UI (if it exists)
-  if (selectedItem) {
-    setSelectedItemData(selectedItem);
+  interface Assignment {
+    id: string;
+    name: string;
+    description?: string;
+    // Add other properties as needed
   }
-};
-  
+
+  interface CodingExercise {
+    id: string;
+    name: string;
+    description?: string;
+    // Add other properties as needed
+  }
+
+  // Add this state variable with the proper type
+  const [selectedItemData, setSelectedItemData] =
+    useState<SelectedItemType | null>(lecture);
+
+  // Fix the handleItemSelect function
+  const handleItemSelect = (itemId: string, itemType: string) => {
+    console.log(`Selected item: ${itemId}, type: ${itemType}`);
+    setActiveItemId(itemId);
+    setActiveItemType(itemType);
+
+    // Find the selected item from the sections data with proper typing
+    const selectedItem: SelectedItemType | undefined =
+      section?.lectures?.find((l: Lecture) => l.id === itemId) ||
+      section?.quizzes?.find((q: Quiz) => q.id === itemId) ||
+      section?.assignments?.find((a: Assignment) => a.id === itemId) ||
+      section?.codingExercises?.find((e: CodingExercise) => e.id === itemId);
+
+    console.log("Selected item data:", selectedItem);
+
+    // Store the selected item data for use in the UI (if it exists)
+    if (selectedItem) {
+      setSelectedItemData(selectedItem);
+    }
+  };
+
   // Notes specific state
   const [notes, setNotes] = useState<VideoNote[]>([]);
   const [isAddingNote, setIsAddingNote] = useState<boolean>(false);
   const [currentNoteContent, setCurrentNoteContent] = useState<string>("");
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
-  const [allLecturesDropdownOpen, setAllLecturesDropdownOpen] = useState<boolean>(false);
+  const [allLecturesDropdownOpen, setAllLecturesDropdownOpen] =
+    useState<boolean>(false);
   const [sortByDropdownOpen, setSortByDropdownOpen] = useState<boolean>(false);
-  const [selectedLectureFilter, setSelectedLectureFilter] = useState<string>("All lectures");
-  const [selectedSortOption, setSelectedSortOption] = useState<string>("Sort by most recent");
+  const [selectedLectureFilter, setSelectedLectureFilter] =
+    useState<string>("All lectures");
+  const [selectedSortOption, setSelectedSortOption] = useState<string>(
+    "Sort by most recent"
+  );
   const [forwardLabel, setForwardLabel] = useState<boolean>(false);
   const [rewindLabel, setRewindLabel] = useState<boolean>(false);
   const [showVolumeSlider, setShowVolumeSlider] = useState<boolean>(false);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
-  
+
   // Learning reminder states
   const [modalStep, setModalStep] = useState<ModalStep>(1);
-  const [reminderName, setReminderName] = useState<string>('Learning reminder');
+  const [reminderName, setReminderName] = useState<string>("Learning reminder");
   const [selectedCourse, setSelectedCourse] = useState<string | null>(null);
-  const [frequency, setFrequency] = useState<FrequencyType>('Daily');
-  const [reminderTime, setReminderTime] = useState<string>('12:00 PM');
-  const [selectedDate, setSelectedDate] = useState<string>('');
+  const [frequency, setFrequency] = useState<FrequencyType>("Daily");
+  const [reminderTime, setReminderTime] = useState<string>("12:00 PM");
+  const [selectedDate, setSelectedDate] = useState<string>("");
   const [selectedDays, setSelectedDays] = useState<string[]>([]);
   const playerRef = useRef<ReactPlayer>(null);
   const playerContainerRef = useRef<HTMLDivElement>(null);
   const mainContentRef = useRef<HTMLDivElement>(null);
-  
+
   // Function to handle opening the learning schedule modal
   const handleOpenLearningModal = () => {
     setShowLearningModal(true);
@@ -201,21 +230,21 @@ const handleItemSelect = (itemId: string, itemType: string) => {
   };
 
   type ExternalResource = {
-  title: string | React.ReactNode;
-  url: string;
-  name: string;
-};
+    title: string | React.ReactNode;
+    url: string;
+    name: string;
+  };
 
-// Ensure the ChildProps type has proper definitions for the resources
-type ChildProps = {
-  videoContent: VideoContent;
-  setShowVideoPreview: React.Dispatch<React.SetStateAction<boolean>>;
-  lecture: Lecture;
-  uploadedFiles?: Array<{name: string, size: string}>;
-  sourceCodeFiles?: SourceCodeFile[];
-  externalResources?: ExternalResource[];
-  section?: any
-};
+  // Ensure the ChildProps type has proper definitions for the resources
+  type ChildProps = {
+    videoContent: VideoContent;
+    setShowVideoPreview: React.Dispatch<React.SetStateAction<boolean>>;
+    lecture: Lecture;
+    uploadedFiles?: Array<{ name: string; size: string }>;
+    sourceCodeFiles?: SourceCodeFile[];
+    externalResources?: ExternalResource[];
+    section?: any;
+  };
 
   // Function to handle previous button in modal
   const handlePrevious = () => {
@@ -232,12 +261,12 @@ type ChildProps = {
   // Function to toggle day selection for weekly frequency
   const toggleDay = (day: string) => {
     if (selectedDays.includes(day)) {
-      setSelectedDays(selectedDays.filter(d => d !== day));
+      setSelectedDays(selectedDays.filter((d) => d !== day));
     } else {
       setSelectedDays([...selectedDays, day]);
     }
   };
-  
+
   // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -247,26 +276,26 @@ type ChildProps = {
         setSortByDropdownOpen(false);
       }
     };
-    
-    document.addEventListener('mousedown', handleClickOutside);
+
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [allLecturesDropdownOpen, sortByDropdownOpen]);
-  
+
   useEffect(() => {
     // If the component is mounted, make sure we have our event handlers set up
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.code === "Space") {
         setPlaying(!playing);
         e.preventDefault();
-      } else if (e.code === "KeyB" && activeTab === 'notes' && !isAddingNote) {
+      } else if (e.code === "KeyB" && activeTab === "notes" && !isAddingNote) {
         // "B" key to add a new note
         handleCreateNote();
         e.preventDefault();
       }
     };
-    
+
     document.addEventListener("keydown", handleKeyDown);
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
@@ -278,27 +307,27 @@ type ChildProps = {
     setShowSearch(!showSearch);
     // Reset other states if needed when opening search
     if (!showSearch) {
-      setActiveTab('overview'); // This ensures we're not showing tab content under search
+      setActiveTab("overview"); // This ensures we're not showing tab content under search
     }
   };
-  
+
   // Fix for scroll issue
   useEffect(() => {
     // This will prevent the automatic scrolling behavior
     if (mainContentRef.current) {
       const mainContent = mainContentRef.current;
-      
+
       // Store the scroll position
       let lastScrollTop = 0;
-      
+
       const handleScroll = () => {
         // Get current scroll position
         const scrollTop = mainContent.scrollTop;
-        
+
         // Store scroll position for later use
         lastScrollTop = scrollTop;
       };
-      
+
       // Override browser's automatic scroll restoration
       const handleWheel = (e: WheelEvent) => {
         // Let the natural scrolling happen, but ensure we're saving position
@@ -306,56 +335,66 @@ type ChildProps = {
           handleScroll();
         });
       };
-      
+
       // Add event listeners
-      mainContent.addEventListener('scroll', handleScroll, { passive: true });
-      mainContent.addEventListener('wheel', handleWheel, { passive: true });
-      
+      mainContent.addEventListener("scroll", handleScroll, { passive: true });
+      mainContent.addEventListener("wheel", handleWheel, { passive: true });
+
       return () => {
-        mainContent.removeEventListener('scroll', handleScroll);
-        mainContent.removeEventListener('wheel', handleWheel);
+        mainContent.removeEventListener("scroll", handleScroll);
+        mainContent.removeEventListener("wheel", handleWheel);
       };
     }
   }, []);
-  
-  if (!videoContent.selectedVideoDetails && (!articleContent || !articleContent.text)) {
-  console.log('Early return - no content to display', { 
-    hasVideoContent: !!videoContent.selectedVideoDetails,
-    hasArticleContent: !!(articleContent && articleContent.text) 
-  });
-  return null;
-}
-  
+
+  if (
+    !videoContent.selectedVideoDetails &&
+    (!articleContent || !articleContent.text)
+  ) {
+    console.log("Early return - no content to display", {
+      hasVideoContent: !!videoContent.selectedVideoDetails,
+      hasArticleContent: !!(articleContent && articleContent.text),
+    });
+    return null;
+  }
+
   // Format time in MM:SS format
   const formatTime = (seconds: number): string => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = Math.floor(seconds % 60);
-    return `${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}`;
+    return `${minutes}:${remainingSeconds < 10 ? "0" : ""}${remainingSeconds}`;
   };
-  
-  const handleProgress = (state: { played: number; playedSeconds: number; loaded: number; loadedSeconds: number }) => {
+
+  const handleProgress = (state: {
+    played: number;
+    playedSeconds: number;
+    loaded: number;
+    loadedSeconds: number;
+  }) => {
     setProgress(state.playedSeconds);
   };
-  
+
   const handleDuration = (duration: number) => {
     setDuration(duration);
   };
-  
+
   // Note-related functions
   const handleCreateNote = () => {
     setIsAddingNote(true);
     setCurrentNoteContent("");
     setEditingNoteId(null);
   };
-  
+
   const handleSaveNote = () => {
     if (editingNoteId) {
       // Update existing note
-      setNotes(notes.map(note => 
-        note.id === editingNoteId 
-          ? { ...note, content: currentNoteContent } 
-          : note
-      ));
+      setNotes(
+        notes.map((note) =>
+          note.id === editingNoteId
+            ? { ...note, content: currentNoteContent }
+            : note
+        )
+      );
     } else {
       // Create new note
       const newNote: VideoNote = {
@@ -366,60 +405,66 @@ type ChildProps = {
         lectureId: lecture.id || "default-lecture",
         lectureName: lecture.name,
         sectionName: "Demo Section", // This would typically come from your data structure
-        createdAt: new Date()
+        createdAt: new Date(),
       };
-      
+
       setNotes([newNote, ...notes]);
     }
-    
+
     setIsAddingNote(false);
     setCurrentNoteContent("");
     setEditingNoteId(null);
   };
-  
+
   const handleCancelNote = () => {
     setIsAddingNote(false);
     setCurrentNoteContent("");
     setEditingNoteId(null);
   };
-  
+
   const handleEditNote = (noteId: string) => {
-    const noteToEdit = notes.find(note => note.id === noteId);
+    const noteToEdit = notes.find((note) => note.id === noteId);
     if (noteToEdit) {
       setCurrentNoteContent(noteToEdit.content);
       setEditingNoteId(noteId);
       setIsAddingNote(true);
     }
   };
-  
+
   const handleDeleteNote = (noteId: string) => {
-    setNotes(notes.filter(note => note.id !== noteId));
+    setNotes(notes.filter((note) => note.id !== noteId));
   };
-  
+
   const getSortedNotes = () => {
     let filteredNotes = [...notes];
-    
+
     // Apply lecture filter
     if (selectedLectureFilter === "Current lecture") {
-      filteredNotes = filteredNotes.filter(note => note.lectureId === lecture.id);
+      filteredNotes = filteredNotes.filter(
+        (note) => note.lectureId === lecture.id
+      );
     }
-    
+
     // Apply sort
     if (selectedSortOption === "Sort by most recent") {
-      filteredNotes.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+      filteredNotes.sort(
+        (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
+      );
     } else if (selectedSortOption === "Sort by oldest") {
-      filteredNotes.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+      filteredNotes.sort(
+        (a, b) => a.createdAt.getTime() - b.createdAt.getTime()
+      );
     }
-    
+
     return filteredNotes;
   };
-  
+
   // Video controls functions
   const handleForward = () => {
     if (playerRef.current) {
       const newTime = Math.min(duration, progress + 5);
       playerRef.current.seekTo(newTime / duration);
-      
+
       // Show the forward label temporarily
       setForwardLabel(true);
       setTimeout(() => {
@@ -427,12 +472,12 @@ type ChildProps = {
       }, 800);
     }
   };
-  
+
   const handleRewind = () => {
     if (playerRef.current) {
       const newTime = Math.max(0, progress - 5);
       playerRef.current.seekTo(newTime / duration);
-      
+
       // Show the rewind label temporarily
       setRewindLabel(true);
       setTimeout(() => {
@@ -440,11 +485,13 @@ type ChildProps = {
       }, 800);
     }
   };
-  
+
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().catch(err => {
-        console.error(`Error attempting to enable full-screen mode: ${err.message}`);
+      document.documentElement.requestFullscreen().catch((err) => {
+        console.error(
+          `Error attempting to enable full-screen mode: ${err.message}`
+        );
       });
       setIsFullscreen(true);
     } else {
@@ -454,7 +501,7 @@ type ChildProps = {
       }
     }
   };
-  
+
   // Update this useEffect to include fullscreen change event listener
   useEffect(() => {
     // If the component is mounted, make sure we have our event handlers set up
@@ -470,22 +517,20 @@ type ChildProps = {
         e.preventDefault();
       }
     };
-    
+
     const handleFullscreenChange = () => {
       setIsFullscreen(!!document.fullscreenElement);
     };
-    
+
     document.addEventListener("keydown", handleKeyDown);
     document.addEventListener("fullscreenchange", handleFullscreenChange);
-    
+
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
       document.removeEventListener("fullscreenchange", handleFullscreenChange);
     };
   }, [playing]);
 
-
-  
   // Learning modal component
   const renderLearningModal = () => {
     return (
@@ -493,7 +538,7 @@ type ChildProps = {
         <div className="bg-white rounded-lg w-full max-w-xl shadow-lg">
           <div className="p-4 flex justify-between items-center border-b border-gray-200">
             <h2 className="text-lg font-medium">Learning reminders</h2>
-            <button 
+            <button
               onClick={handleCloseModal}
               className="text-gray-500 hover:text-gray-700"
               aria-label="Close modal"
@@ -501,12 +546,14 @@ type ChildProps = {
               <X className="w-5 h-5" />
             </button>
           </div>
-          
+
           <div className="p-6">
             <div className="mb-4">
-              <p className="text-sm text-gray-600 mb-4">Step {modalStep} of 3</p>
+              <p className="text-sm text-gray-600 mb-4">
+                Step {modalStep} of 3
+              </p>
             </div>
-            
+
             {modalStep === 1 && (
               <>
                 <div className="mb-6">
@@ -522,29 +569,34 @@ type ChildProps = {
                     placeholder="Learning reminder"
                   />
                 </div>
-                
+
                 <div>
                   <p className="font-medium mb-2">Attach content (optional)</p>
-                  <p className="text-sm text-gray-600 mb-3">Most recent courses or labs:</p>
-                  
+                  <p className="text-sm text-gray-600 mb-3">
+                    Most recent courses or labs:
+                  </p>
+
                   <div className="mb-3">
                     <label className="flex items-center space-x-2 mb-2">
-                      <input 
-                        type="radio" 
-                        name="course" 
-                        value="course" 
+                      <input
+                        type="radio"
+                        name="course"
+                        value="course"
                         checked={selectedCourse === "course"}
                         onChange={() => setSelectedCourse("course")}
                         className="text-purple-600"
                       />
-                      <span className="text-sm">Course: How to Create an Online Course: The Official Udemy Course</span>
+                      <span className="text-sm">
+                        Course: How to Create an Online Course: The Official
+                        Udemy Course
+                      </span>
                     </label>
-                    
+
                     <label className="flex items-center space-x-2">
-                      <input 
-                        type="radio" 
-                        name="course" 
-                        value="none" 
+                      <input
+                        type="radio"
+                        name="course"
+                        value="none"
                         checked={selectedCourse === "none"}
                         onChange={() => setSelectedCourse("none")}
                         className="text-purple-600"
@@ -552,7 +604,7 @@ type ChildProps = {
                       <span className="text-sm">None</span>
                     </label>
                   </div>
-                  
+
                   <div className="relative mb-4">
                     <input
                       type="text"
@@ -564,39 +616,53 @@ type ChildProps = {
                 </div>
               </>
             )}
-            
+
             {modalStep === 2 && (
               <>
                 <div className="mb-6">
                   <p className="font-medium mb-3">Frequency</p>
                   <div className="flex space-x-3">
-                    <button 
-                      className={`px-4 py-2 rounded-full border ${frequency === 'Daily' ? 'bg-purple-100 border-purple-300' : 'border-gray-300'}`}
-                      onClick={() => handleFrequencyChange('Daily')}
+                    <button
+                      className={`px-4 py-2 rounded-full border ${
+                        frequency === "Daily"
+                          ? "bg-purple-100 border-purple-300"
+                          : "border-gray-300"
+                      }`}
+                      onClick={() => handleFrequencyChange("Daily")}
                       type="button"
                     >
-                      {frequency === 'Daily' && <span className="mr-1">✓</span>}
+                      {frequency === "Daily" && <span className="mr-1">✓</span>}
                       Daily
                     </button>
-                    <button 
-                      className={`px-4 py-2 rounded-full border ${frequency === 'Weekly' ? 'bg-purple-100 border-purple-300' : 'border-gray-300'}`}
-                      onClick={() => handleFrequencyChange('Weekly')}
+                    <button
+                      className={`px-4 py-2 rounded-full border ${
+                        frequency === "Weekly"
+                          ? "bg-purple-100 border-purple-300"
+                          : "border-gray-300"
+                      }`}
+                      onClick={() => handleFrequencyChange("Weekly")}
                       type="button"
                     >
-                      {frequency === 'Weekly' && <span className="mr-1">✓</span>}
+                      {frequency === "Weekly" && (
+                        <span className="mr-1">✓</span>
+                      )}
                       Weekly
                     </button>
-                    <button 
-                      className={`px-4 py-2 rounded-full border ${frequency === 'Once' ? 'bg-purple-100 border-purple-300' : 'border-gray-300'}`}
-                      onClick={() => handleFrequencyChange('Once')}
+                    <button
+                      className={`px-4 py-2 rounded-full border ${
+                        frequency === "Once"
+                          ? "bg-purple-100 border-purple-300"
+                          : "border-gray-300"
+                      }`}
+                      onClick={() => handleFrequencyChange("Once")}
                       type="button"
                     >
-                      {frequency === 'Once' && <span className="mr-1">✓</span>}
+                      {frequency === "Once" && <span className="mr-1">✓</span>}
                       Once
                     </button>
                   </div>
                 </div>
-                
+
                 <div className="mb-6">
                   <p className="font-medium mb-3">Time</p>
                   <div className="relative">
@@ -609,28 +675,32 @@ type ChildProps = {
                     <Clock className="w-4 h-4 text-gray-500 absolute right-3 top-1/2 transform -translate-y-1/2" />
                   </div>
                 </div>
-                
-                {frequency === 'Weekly' && (
+
+                {frequency === "Weekly" && (
                   <div className="mb-6">
                     <p className="font-medium mb-3">Day</p>
                     <div className="flex space-x-2">
-                      {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(day => (
+                      {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((day) => (
                         <button
                           key={day}
                           type="button"
                           className={`h-10 w-10 rounded-full border flex items-center justify-center ${
-                            selectedDays.includes(day) ? 'bg-purple-100 border-purple-300' : 'border-gray-300'
+                            selectedDays.includes(day)
+                              ? "bg-purple-100 border-purple-300"
+                              : "border-gray-300"
                           }`}
                           onClick={() => toggleDay(day)}
                         >
-                          <span className="text-sm">{selectedDays.includes(day) ? '✓' : ''} {day}</span>
+                          <span className="text-sm">
+                            {selectedDays.includes(day) ? "✓" : ""} {day}
+                          </span>
                         </button>
                       ))}
                     </div>
                   </div>
                 )}
-                
-                {frequency === 'Once' && (
+
+                {frequency === "Once" && (
                   <div className="mb-6">
                     <p className="font-medium mb-3">Date</p>
                     <div className="relative">
@@ -646,7 +716,7 @@ type ChildProps = {
                 )}
               </>
             )}
-            
+
             {modalStep === 3 && (
               <>
                 <div className="mb-6">
@@ -656,44 +726,64 @@ type ChildProps = {
                       type="button"
                       className="flex items-center px-4 py-2 border border-purple-600 text-purple-600 rounded"
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="#673ab7">
-                        <path d="M12.24 10.285V14.4h6.806c-.275 1.765-2.056 5.174-6.806 5.174-4.095 0-7.439-3.389-7.439-7.574s3.345-7.574 7.439-7.574c2.33 0 3.891.989 4.785 1.849l3.254-3.138C18.189 1.186 15.479 0 12.24 0c-6.635 0-12 5.365-12 12s5.365 12 12 12c6.926 0 11.52-4.869 11.52-11.726 0-.788-.085-1.39-.189-1.989H12.24z"/>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="18"
+                        height="18"
+                        viewBox="0 0 24 24"
+                        fill="#673ab7"
+                      >
+                        <path d="M12.24 10.285V14.4h6.806c-.275 1.765-2.056 5.174-6.806 5.174-4.095 0-7.439-3.389-7.439-7.574s3.345-7.574 7.439-7.574c2.33 0 3.891.989 4.785 1.849l3.254-3.138C18.189 1.186 15.479 0 12.24 0c-6.635 0-12 5.365-12 12s5.365 12 12 12c6.926 0 11.52-4.869 11.52-11.726 0-.788-.085-1.39-.189-1.989H12.24z" />
                       </svg>
                       <span className="ml-2">Sign in with Google</span>
                     </button>
-                    
-                    <button 
+
+                    <button
                       type="button"
                       className="flex items-center px-4 py-2 border border-gray-300 rounded"
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M18.71,19.5C17.88,20.74 17,21.95 15.66,21.97C14.32,22 13.89,21.18 12.37,21.18C10.84,21.18 10.37,21.95 9.1,22C7.79,22.05 6.8,20.68 5.96,19.47C4.25,17 2.94,12.45 4.7,9.39C5.57,7.87 7.13,6.91 8.82,6.88C10.1,6.86 11.32,7.75 12.11,7.75C12.89,7.75 14.37,6.68 15.92,6.84C16.57,6.87 18.39,7.1 19.56,8.82C19.47,8.88 17.39,10.1 17.41,12.63C17.44,15.65 20.06,16.66 20.09,16.67C20.06,16.74 19.67,18.11 18.71,19.5M13,3.5C13.73,2.67 14.94,2.04 15.94,2C16.07,3.17 15.6,4.35 14.9,5.19C14.21,6.04 13.07,6.7 11.95,6.61C11.8,5.46 12.36,4.26 13,3.5Z"/>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="18"
+                        height="18"
+                        viewBox="0 0 24 24"
+                        fill="currentColor"
+                      >
+                        <path d="M18.71,19.5C17.88,20.74 17,21.95 15.66,21.97C14.32,22 13.89,21.18 12.37,21.18C10.84,21.18 10.37,21.95 9.1,22C7.79,22.05 6.8,20.68 5.96,19.47C4.25,17 2.94,12.45 4.7,9.39C5.57,7.87 7.13,6.91 8.82,6.88C10.1,6.86 11.32,7.75 12.11,7.75C12.89,7.75 14.37,6.68 15.92,6.84C16.57,6.87 18.39,7.1 19.56,8.82C19.47,8.88 17.39,10.1 17.41,12.63C17.44,15.65 20.06,16.66 20.09,16.67C20.06,16.74 19.67,18.11 18.71,19.5M13,3.5C13.73,2.67 14.94,2.04 15.94,2C16.07,3.17 15.6,4.35 14.9,5.19C14.21,6.04 13.07,6.7 11.95,6.61C11.8,5.46 12.36,4.26 13,3.5Z" />
                       </svg>
                       <span className="ml-2">Apple</span>
                     </button>
-                    
-                    <button 
+
+                    <button
                       type="button"
                       className="flex items-center px-4 py-2 border border-gray-300 rounded"
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M21.386 12.000c0-1.197-.22-2.403-.662-3.557-.43-1.113-1.057-2.145-1.876-3.022-.8-.86-1.762-1.53-2.816-1.989-1.088-.472-2.229-.704-3.383-.704h-.297c-1.154 0-2.295.232-3.383.704-1.054.459-2.016 1.129-2.816 1.989-.819.877-1.446 1.909-1.876 3.022-.442 1.155-.662 2.360-.662 3.557 0 .64.064 1.275.186 1.900.114.59.274 1.174.48 1.729v2.898c0 .193.123.366.307.43.184.063.387.006.522-.143L7.63 17.29c.43.193.88.357 1.338.487.544.155 1.11.244 1.678.264h.303c1.153 0 2.295-.232 3.383-.704 1.053-.46 2.016-1.13 2.815-1.99.82-.876 1.446-1.908 1.876-3.02.442-1.155.663-2.36.663-3.558zM8.46 11.991c0-.568.456-1.031 1.015-1.031.56 0 1.015.463 1.015 1.031 0 .567-.455 1.031-1.015 1.031-.56 0-1.015-.464-1.015-1.031zm3.015 0c0-.568.456-1.031 1.015-1.031.56 0 1.015.463 1.015 1.031 0 .567-.455 1.031-1.015 1.031-.56 0-1.015-.464-1.015-1.031zm3.016 0c0-.568.455-1.031 1.015-1.031.559 0 1.015.463 1.015 1.031 0 .567-.456 1.031-1.015 1.031-.56 0-1.015-.464-1.015-1.031z"/>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="18"
+                        height="18"
+                        viewBox="0 0 24 24"
+                        fill="currentColor"
+                      >
+                        <path d="M21.386 12.000c0-1.197-.22-2.403-.662-3.557-.43-1.113-1.057-2.145-1.876-3.022-.8-.86-1.762-1.53-2.816-1.989-1.088-.472-2.229-.704-3.383-.704h-.297c-1.154 0-2.295.232-3.383.704-1.054.459-2.016 1.129-2.816 1.989-.819.877-1.446 1.909-1.876 3.022-.442 1.155-.662 2.360-.662 3.557 0 .64.064 1.275.186 1.900.114.59.274 1.174.48 1.729v2.898c0 .193.123.366.307.43.184.063.387.006.522-.143L7.63 17.29c.43.193.88.357 1.338.487.544.155 1.11.244 1.678.264h.303c1.153 0 2.295-.232 3.383-.704 1.053-.46 2.016-1.13 2.815-1.99.82-.876 1.446-1.908 1.876-3.02.442-1.155.663-2.36.663-3.558zM8.46 11.991c0-.568.456-1.031 1.015-1.031.56 0 1.015.463 1.015 1.031 0 .567-.455 1.031-1.015 1.031-.56 0-1.015-.464-1.015-1.031zm3.015 0c0-.568.456-1.031 1.015-1.031.56 0 1.015.463 1.015 1.031 0 .567-.455 1.031-1.015 1.031-.56 0-1.015-.464-1.015-1.031zm3.016 0c0-.568.455-1.031 1.015-1.031.559 0 1.015.463 1.015 1.031 0 .567-.456 1.031-1.015 1.031-.56 0-1.015-.464-1.015-1.031z" />
                       </svg>
                       <span className="ml-2">Outlook</span>
                     </button>
                   </div>
-                  
+
                   <p className="text-xs text-gray-600">
-                    Follow all calendar prompts and save before moving forward. Apple and outlook will download an ics file. Open this file to add it to your calendar.
+                    Follow all calendar prompts and save before moving forward.
+                    Apple and outlook will download an ics file. Open this file
+                    to add it to your calendar.
                   </p>
                 </div>
               </>
             )}
           </div>
-          
+
           <div className="px-6 pb-6 flex justify-end">
             {modalStep > 1 && (
-              <button 
+              <button
                 onClick={handlePrevious}
                 className="mr-3 text-purple-600 font-medium"
                 type="button"
@@ -701,9 +791,9 @@ type ChildProps = {
                 Previous
               </button>
             )}
-            
+
             {modalStep < 3 ? (
-              <button 
+              <button
                 onClick={handleNext}
                 className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded"
                 type="button"
@@ -711,7 +801,7 @@ type ChildProps = {
                 Next
               </button>
             ) : (
-              <button 
+              <button
                 onClick={handleCloseModal}
                 className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded"
                 type="button"
@@ -724,432 +814,543 @@ type ChildProps = {
       </div>
     );
   };
-  
+
   // Main render method
   // Updated StudentVideoPreview component return statement
 
-return (
-  <div className="fixed inset-0 z-[9999] bg-white flex flex-col">
-    <div className="flex flex-1 h-full overflow-hidden">
-      {/* Main scrollable container */}
-      <div ref={mainContentRef} className="flex-1 overflow-y-auto" style={{ width: 'calc(100% - 320px)' }}>
-        {/* This section conditionally renders based on activeItemType */}
-        <div className="top-content-area">
-          {activeItemType === 'quiz' ? (
-  // Quiz view - using actual data from selected quiz
-  <div className="p-6">
-    <h1 className="text-2xl font-bold mb-4">
-      {selectedItemData?.name || "Quiz"}
-    </h1>
-    <div className="mb-4 text-sm text-gray-700">Quiz | 0 questions</div>
-    <p className="mb-8">{selectedItemData?.description || "This quiz will test your knowledge of the course material."}</p>
-    
-    <div className="flex space-x-4">
-      <button 
-        className="bg-[#6D28D2] hover:bg-[#7D28D2] text-white text-sm py-2 px-4 rounded-md font-medium"
-        type="button"
-      >
-        Start quiz
-      </button>
-      <button 
-        className="text-gray-600 text-sm py-2 px-4 rounded-md font-medium"
-        type="button"
-      >
-        Skip quiz
-      </button>
-    </div>
-  </div>
-) : activeItemType === 'coding-exercise' ? (
-  // Coding exercise view - using actual data from selected coding exercise
-  <div className="flex" style={{ height: 'calc(100vh - 220px)' }}>
-    <div className="w-64 bg-white border-r border-gray-200">
-      <div className="p-4 border-b border-gray-200">
-        <h2 className="font-semibold">Instructions</h2>
-      </div>
-      <div className="p-4">
-        <h3 className="font-bold mb-3">
-          {selectedItemData?.name || "Coding Exercise"}
-        </h3>
-        <div className="text-sm text-gray-700 mt-2">
-          {selectedItemData?.description || "Complete the exercise by writing the required code."}
-        </div>
-      </div>
-    </div>
-    <div className="flex-1 bg-gray-900 flex flex-col">
-      <div className="flex-1 flex items-center justify-center text-white">
-        <p>Code Editor Interface</p>
-      </div>
-      <div className="p-4 border-t border-gray-700 flex items-center space-x-4">
-        <button 
-          className="bg-white text-gray-800 rounded px-4 py-2 text-sm font-medium flex items-center"
-          type="button"
+  return (
+    <div className="fixed inset-0 z-[9999] bg-white flex flex-col">
+      <div className="flex flex-1 h-full overflow-hidden">
+        {/* Main scrollable container */}
+        <div
+          ref={mainContentRef}
+          className="flex-1 overflow-y-auto"
+          style={{ width: "calc(100% - 320px)" }}
         >
-          <span className="mr-2">▶</span> Run tests
-        </button>
-        <button 
-          className="text-white text-sm font-medium"
-          type="button"
-        >
-          Reset
-        </button>
-        <div className="flex-1"></div>
-        <div className="text-sm text-gray-400">All changes saved | Line 1, Column 1</div>
-      </div>
-    </div>
-  </div>
-) : activeItemType === 'assignment' ? (
-  // Assignment view - using actual data from selected assignment
-  <div className="p-6" style={{ height: 'calc(100vh - 220px)' }}>
-    <h1 className="text-2xl font-bold mb-6">
-      {selectedItemData?.name || "Assignment"}
-    </h1>
-    
-    <div className="text-gray-700 mb-8">
-      {selectedItemData?.description || "Complete this assignment according to the instructions."}
-    </div>
-    
-    <div className="flex justify-end space-x-4 mt-8">
-      <button 
-        className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-md font-medium"
-        type="button"
-      >
-        Skip assignment
-      </button>
-      <button 
-        className="bg-[#6D28D2] hover:bg-[#7D28D2] text-white px-4 py-2 rounded-md font-medium"
-        type="button"
-      >
-        Start assignment
-      </button>
-    </div>
-  </div>
-          ) : (
-             <div className="bg-black relative w-[82vw]" style={{ height: 'calc(100vh - 220px)' }}>
-              <div 
-                ref={playerContainerRef}
-                className="relative w-full h-full flex"
-                onMouseEnter={() => setShowControls(true)}
-                onMouseLeave={() => setShowControls(false)}
-              >
-                <div className="relative w-full h-full mx-auto text-left ">
-                  {activeItemType === 'article' || (articleContent && articleContent.text !== '') ? (
-                    // Article content
-                    <div className="bg-white relative w-full h-full px-52">
-                      <div className="relative w-full h-full px-8 py-6 overflow-y-auto">
-                        <h1 className="text-2xl font-bold mb-4">{lecture.name}</h1>
-                        <div 
-                          className="article-content prose max-w-none"
-                          dangerouslySetInnerHTML={{ __html: articleContent?.text || '' }}
-                        />
-
-                        {(uploadedFiles.length > 0 || sourceCodeFiles.length > 0 || externalResources.length > 0) && (
-        <div className="pt-6">
-          <h2 className="text-xl font-semibold mb-4">Resources for this lecture</h2>
-          
-          <div className="space-y-3">
-            {/* Downloadable Files */}
-            {uploadedFiles.map((file, index) => (
-              <div key={`uploaded-${index}`} className="flex items-center">
-                <FileDown className="w-5 h-5 text-gray-600 mr-2" />
-                <a 
-                  href="#" 
-                  className="text-blue-600 hover:underline font-medium"
-                  onClick={(e) => e.preventDefault()}
-                >
-                  {file.name}
-                </a>
-              </div>
-            ))}
-            
-            {/* Source Code Files */}
-            {sourceCodeFiles.map((file, index) => (
-              <div key={`code-${index}`} className="flex items-center">
-                <Code className="w-5 h-5 text-gray-600 mr-2" />
-                <a 
-                  href="#" 
-                  className="text-blue-600 hover:underline font-medium"
-                  onClick={(e) => e.preventDefault()}
-                >
-                  {file.name || file.filename}
-                </a>
-              </div>
-            ))}
-            
-            {/* External Links */}
-            {externalResources.map((resource, index) => (
-              <div key={`external-${index}`} className="flex items-center">
-                <SquareArrowOutUpRight className="w-5 h-5 text-gray-600 mr-2" />
-                <a 
-                  href={resource.url} 
-                  className="text-blue-600 hover:underline font-medium"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  {typeof resource.title === 'string' ? resource.title : resource.name}
-                </a>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-                      </div>
-                    </div>
-                  ) : (
-                    // Video player with overlay
-                    <>
-                      <ReactPlayer
-                        ref={playerRef}
-                        url={videoContent.selectedVideoDetails?.url || "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}
-                        width="100%"
-                        height="100%"
-                        playing={playing}
-                        volume={volume}
-                        playbackRate={playbackRate}
-                        onProgress={handleProgress}
-                        onDuration={handleDuration}
-                        progressInterval={100}
-                        config={{
-                          file: {
-                            attributes: {
-                              controlsList: 'nodownload'
-                            }
-                          }
-                        }}
-                      />
-                      
-                      {/* Play button overlay when paused - only for video content */}
-                      {!playing && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-40">
-                          <button 
-                            className="rounded-full bg-black bg-opacity-70 p-4 hover:bg-opacity-90 transition-all"
-                            type="button"
-                            aria-label="Play video"
-                            onClick={() => setPlaying(true)}
-                          >
-                            <Play size={80} className="p-3 rounded-full bg-gray-800 text-white" />
-                          </button>
-                        </div>
-                      )}
-
-                       {/* Bottom video controls - only show for video content type */}
-        {(activeItemType === 'video' || activeItemType === 'article') && (
-          <div className="h-12 bg-black w-[82vw] flex items-center px-4 text-white relative">
-            {/* Progress bar at the very top */}
-            <div className="absolute top-0 left-0 right-0 h-1 bg-gray-900">
-              <div 
-                className="h-full bg-gradient-to-r from-purple-600 to-purple-700" 
-                style={{ width: `${(progress / duration) * 100}%` }}
-              ></div>
-            </div>
-
-            {/* Left controls */}
-            <div className="flex items-center space-x-3">
-              <button 
-                className="hover:text-gray-300 focus:outline-none"
-                aria-label="Play/Pause"
-                onClick={() => setPlaying(!playing)}
-              >
-                {playing ? (
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M10 4H6V20H10V4Z" fill="white"/>
-                    <path d="M18 4H14V20H18V4Z" fill="white"/>
-                  </svg>
-                ) : (
-                  <Play className="w-5 h-5" />
-                )}
-              </button>
-
-              {/* Rewind button with label */}
-              <div className="relative">
-                <button 
-                  className="hover:text-gray-300 focus:outline-none"
-                  aria-label="Rewind 5s"
-                  onClick={handleRewind}
-                >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12.5 8V16L6.5 12L12.5 8Z" fill="white"/>
-                    <path d="M18.5 8V16L12.5 12L18.5 8Z" fill="white"/>
-                  </svg>
-                </button>
-                {rewindLabel && (
-                  <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-70 px-2 py-0.5 rounded text-xs">
-                    Rewind 5s
-                  </div>
-                )}
-              </div>
-
-              {/* Forward button with label */}
-              <div className="relative">
-                <button 
-                  className="hover:text-gray-300 focus:outline-none"
-                  aria-label="Forward 5s"
-                  onClick={handleForward}
-                >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M5.5 8V16L11.5 12L5.5 8Z" fill="white"/>
-                    <path d="M11.5 8V16L17.5 12L11.5 8Z" fill="white"/>
-                  </svg>
-                </button>
-                {forwardLabel && (
-                  <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-70 px-2 py-0.5 rounded text-xs whitespace-nowrap">
-                    Forward 5s
-                  </div>
-                )}
-              </div>
-
-              <div className="text-xs mx-2 flex items-center space-x-1 font-medium">
-                <span>{formatTime(progress)}</span>
-                <span className="text-gray-400">/</span>
-                <span className="text-gray-400">{videoContent.selectedVideoDetails?.duration || formatTime(duration)}</span>
-              </div>
-            </div>
-
-            {/* Center - empty space */}
-            <div className="flex-1"></div>
-
-            {/* Right controls */}
-            <div className="flex items-center space-x-3">
-              <button 
-                className="text-xs border border-gray-700 px-2 py-0.5 rounded hover:bg-gray-900 focus:outline-none"
-                onClick={() => {
-                  const rates = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
-                  const currentIndex = rates.indexOf(playbackRate);
-                  const nextIndex = (currentIndex + 1) % rates.length;
-                  setPlaybackRate(rates[nextIndex]);
-                }}
-                type="button"
-              >
-                {playbackRate}x
-              </button>
-
-              {/* Volume control with hover slider */}
-              <div className="relative">
-                <button 
-                  className="hover:text-gray-300 focus:outline-none"
-                  onMouseEnter={() => setShowVolumeSlider(true)}
-                  onMouseLeave={() => setShowVolumeSlider(false)}
-                  type="button"
-                >
-                  <Volume2 className="w-4 h-4" />
-                </button>
-                
-                {showVolumeSlider && (
-                  <div 
-                    className="absolute bottom-8 -left-1 bg-gray-900 p-2 rounded shadow-lg z-10"
-                    onMouseEnter={() => setShowVolumeSlider(true)}
-                    onMouseLeave={() => setShowVolumeSlider(false)}
-                  >
-                    <div 
-                      className="h-20 w-1 bg-gray-700 rounded-full cursor-pointer"
-                      onClick={(e) => {
-                        const rect = e.currentTarget.getBoundingClientRect();
-                        const newVolume = 1 - ((e.clientY - rect.top) / rect.height);
-                        setVolume(Math.max(0, Math.min(1, newVolume)));
-                      }}
-                    >
-                      <div 
-                        className="bg-white rounded-full absolute bottom-0 left-0 right-0" 
-                        style={{ height: `${volume * 100}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <button className="hover:text-gray-300 focus:outline-none" type="button">
-                <Settings className="w-4 h-4" />
-              </button>
-
-              <button 
-                className="hover:text-gray-300 focus:outline-none"
-                onClick={toggleFullscreen}
-                type="button"
-              >
-                <Maximize className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        )}
-        
-                    </>
-                  )}
+          {/* This section conditionally renders based on activeItemType */}
+          <div className="top-content-area">
+            {activeItemType === "quiz" ? (
+              // Quiz view - using actual data from selected quiz
+              // <QuizPreview/>
+              <div className="p-6">
+                <h1 className="text-2xl font-bold mb-4">
+                  {selectedItemData?.name || "Quiz"}
+                </h1>
+                <div className="mb-4 text-sm text-gray-700">
+                  Quiz | 0 questions
                 </div>
-              </div>
-            </div>
-          )}
-        </div> 
-       
-        {/* Bottom content tabs - ALWAYS SHOW THESE */}
-        <div className="bg-white border-t border-gray-200 max-w-[82vw]" style={{ minHeight: '200px' }}>
-          {/* Tabs with Search icon/functionality */}
-          <div className="flex items-center border-b border-gray-200">
-            <button 
-              className={`px-4 py-3 text-gray-500 hover:text-gray-700 ${showSearch ? 'text-gray-700 border-b-2 border-gray-700' : ''}`}
-              type="button"
-              aria-label="Search"
-              onClick={handleSearchToggle}
-            >
-              <Search className="w-5 h-5" />
-            </button>
-            
-            {/* Tabs always visible */}
-            {[
-              { id: 'overview', label: 'Overview' },
-              { id: 'notes', label: 'Notes' },
-              { id: 'announcements', label: 'Announcements' },
-              { id: 'reviews', label: 'Reviews' },
-              { id: 'learning-tools', label: 'Learning tools' }
-            ].map(tab => (
-              <button 
-                key={tab.id}
-                className={`px-6 py-3 text-sm font-bold ${activeTab === tab.id && !showSearch ? 'text-gray-700 border-b-2 border-gray-700' : 'text-gray-500 hover:text-gray-800'}`}
-                onClick={() => {
-                  setActiveTab(tab.id as typeof activeTab);
-                  setShowSearch(false);
-                }}
-                type="button"
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
+                <p className="mb-8">
+                  {selectedItemData?.description ||
+                    "This quiz will test your knowledge of the course material."}
+                </p>
 
-          {/* Search interface */}
-          {showSearch && (
-            <div className="px-6 py-8">
-              <div className="max-w-2xl mx-auto mb-8">
-                <div className="relative flex items-center">
-                  <input 
-                    type="text"
-                    placeholder="Search course content"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500"
-                    autoFocus
-                  />
-                  <button 
-                    className="absolute right-2 bg-purple-600 hover:bg-purple-700 text-white p-2 rounded-md"
-                    aria-label="Search"
+                <div className="flex space-x-4">
+                  <button
+                    className="bg-[#6D28D2] hover:bg-[#7D28D2] text-white text-sm py-2 px-4 rounded-md font-medium"
                     type="button"
                   >
-                    <Search className="w-5 h-5" />
+                    Start quiz
+                  </button>
+                  <button
+                    className="text-gray-600 text-sm py-2 px-4 rounded-md font-medium"
+                    type="button"
+                  >
+                    Skip quiz
                   </button>
                 </div>
               </div>
-              
-              <div className="text-center py-8">
-                <h3 className="text-xl font-bold mb-2 text-gray-800">Start a new search</h3>
-                <p className="text-gray-600">To find lectures or resources</p>
+            ) : activeItemType === "coding-exercise" ? (
+              // Coding exercise view - using actual data from selected coding exercise
+              <div className="flex" style={{ height: "calc(100vh - 220px)" }}>
+                <div className="w-64 bg-white border-r border-gray-200">
+                  <div className="p-4 border-b border-gray-200">
+                    <h2 className="font-semibold">Instructions</h2>
+                  </div>
+                  <div className="p-4">
+                    <h3 className="font-bold mb-3">
+                      {selectedItemData?.name || "Coding Exercise"}
+                    </h3>
+                    <div className="text-sm text-gray-700 mt-2">
+                      {selectedItemData?.description ||
+                        "Complete the exercise by writing the required code."}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex-1 bg-gray-900 flex flex-col">
+                  <div className="flex-1 flex items-center justify-center text-white">
+                    <p>Code Editor Interface</p>
+                  </div>
+                  <div className="p-4 border-t border-gray-700 flex items-center space-x-4">
+                    <button
+                      className="bg-white text-gray-800 rounded px-4 py-2 text-sm font-medium flex items-center"
+                      type="button"
+                    >
+                      <span className="mr-2">▶</span> Run tests
+                    </button>
+                    <button
+                      className="text-white text-sm font-medium"
+                      type="button"
+                    >
+                      Reset
+                    </button>
+                    <div className="flex-1"></div>
+                    <div className="text-sm text-gray-400">
+                      All changes saved | Line 1, Column 1
+                    </div>
+                  </div>
+                </div>
               </div>
+            ) : activeItemType === "assignment" ? (
+              // Assignment view - using actual data from selected assignment
+              <div className="p-6" style={{ height: "calc(100vh - 220px)" }}>
+                <h1 className="text-2xl font-bold mb-6">
+                  {selectedItemData?.name || "Assignment"}
+                </h1>
+
+                <div className="text-gray-700 mb-8">
+                  {selectedItemData?.description ||
+                    "Complete this assignment according to the instructions."}
+                </div>
+
+                <div className="flex justify-end space-x-4 mt-8">
+                  <button
+                    className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-md font-medium"
+                    type="button"
+                  >
+                    Skip assignment
+                  </button>
+                  <button
+                    className="bg-[#6D28D2] hover:bg-[#7D28D2] text-white px-4 py-2 rounded-md font-medium"
+                    type="button"
+                  >
+                    Start assignment
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div
+                className="bg-black relative w-[82vw]"
+                style={{ height: "calc(100vh - 220px)" }}
+              >
+                <div
+                  ref={playerContainerRef}
+                  className="relative w-full h-full flex"
+                  onMouseEnter={() => setShowControls(true)}
+                  onMouseLeave={() => setShowControls(false)}
+                >
+                  <div className="relative w-full h-full mx-auto text-left ">
+                    {activeItemType === "article" ||
+                    (articleContent && articleContent.text !== "") ? (
+                      // Article content
+                      <div className="bg-white relative w-full h-full px-52">
+                        <div className="relative w-full h-full px-8 py-6 overflow-y-auto">
+                          <h1 className="text-2xl font-bold mb-4">
+                            {lecture.name}
+                          </h1>
+                          <div
+                            className="article-content prose max-w-none"
+                            dangerouslySetInnerHTML={{
+                              __html: articleContent?.text || "",
+                            }}
+                          />
+
+                          {(uploadedFiles.length > 0 ||
+                            sourceCodeFiles.length > 0 ||
+                            externalResources.length > 0) && (
+                            <div className="pt-6">
+                              <h2 className="text-xl font-semibold mb-4">
+                                Resources for this lecture
+                              </h2>
+
+                              <div className="space-y-3">
+                                {/* Downloadable Files */}
+                                {uploadedFiles.map((file, index) => (
+                                  <div
+                                    key={`uploaded-${index}`}
+                                    className="flex items-center"
+                                  >
+                                    <FileDown className="w-5 h-5 text-gray-600 mr-2" />
+                                    <a
+                                      href="#"
+                                      className="text-blue-600 hover:underline font-medium"
+                                      onClick={(e) => e.preventDefault()}
+                                    >
+                                      {file.name}
+                                    </a>
+                                  </div>
+                                ))}
+
+                                {/* Source Code Files */}
+                                {sourceCodeFiles.map((file, index) => (
+                                  <div
+                                    key={`code-${index}`}
+                                    className="flex items-center"
+                                  >
+                                    <Code className="w-5 h-5 text-gray-600 mr-2" />
+                                    <a
+                                      href="#"
+                                      className="text-blue-600 hover:underline font-medium"
+                                      onClick={(e) => e.preventDefault()}
+                                    >
+                                      {file.name || file.filename}
+                                    </a>
+                                  </div>
+                                ))}
+
+                                {/* External Links */}
+                                {externalResources.map((resource, index) => (
+                                  <div
+                                    key={`external-${index}`}
+                                    className="flex items-center"
+                                  >
+                                    <SquareArrowOutUpRight className="w-5 h-5 text-gray-600 mr-2" />
+                                    <a
+                                      href={resource.url}
+                                      className="text-blue-600 hover:underline font-medium"
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                    >
+                                      {typeof resource.title === "string"
+                                        ? resource.title
+                                        : resource.name}
+                                    </a>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      // Video player with overlay
+                      <>
+                        <ReactPlayer
+                          ref={playerRef}
+                          url={
+                            videoContent.selectedVideoDetails?.url ||
+                            "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+                          }
+                          width="100%"
+                          height="100%"
+                          playing={playing}
+                          volume={volume}
+                          playbackRate={playbackRate}
+                          onProgress={handleProgress}
+                          onDuration={handleDuration}
+                          progressInterval={100}
+                          config={{
+                            file: {
+                              attributes: {
+                                controlsList: "nodownload",
+                              },
+                            },
+                          }}
+                        />
+
+                        {/* Play button overlay when paused - only for video content */}
+                        {!playing && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-40">
+                            <button
+                              className="rounded-full bg-black bg-opacity-70 p-4 hover:bg-opacity-90 transition-all"
+                              type="button"
+                              aria-label="Play video"
+                              onClick={() => setPlaying(true)}
+                            >
+                              <Play
+                                size={80}
+                                className="p-3 rounded-full bg-gray-800 text-white"
+                              />
+                            </button>
+                          </div>
+                        )}
+
+                        {/* Bottom video controls - only show for video content type */}
+                        {(activeItemType === "video" ||
+                          activeItemType === "article") && (
+                          <div className="h-12 bg-black w-[82vw] flex items-center px-4 text-white relative">
+                            {/* Progress bar at the very top */}
+                            <div className="absolute top-0 left-0 right-0 h-1 bg-gray-900">
+                              <div
+                                className="h-full bg-gradient-to-r from-purple-600 to-purple-700"
+                                style={{
+                                  width: `${(progress / duration) * 100}%`,
+                                }}
+                              ></div>
+                            </div>
+
+                            {/* Left controls */}
+                            <div className="flex items-center space-x-3">
+                              <button
+                                className="hover:text-gray-300 focus:outline-none"
+                                aria-label="Play/Pause"
+                                onClick={() => setPlaying(!playing)}
+                              >
+                                {playing ? (
+                                  <svg
+                                    width="20"
+                                    height="20"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                  >
+                                    <path d="M10 4H6V20H10V4Z" fill="white" />
+                                    <path d="M18 4H14V20H18V4Z" fill="white" />
+                                  </svg>
+                                ) : (
+                                  <Play className="w-5 h-5" />
+                                )}
+                              </button>
+
+                              {/* Rewind button with label */}
+                              <div className="relative">
+                                <button
+                                  className="hover:text-gray-300 focus:outline-none"
+                                  aria-label="Rewind 5s"
+                                  onClick={handleRewind}
+                                >
+                                  <svg
+                                    width="18"
+                                    height="18"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                  >
+                                    <path
+                                      d="M12.5 8V16L6.5 12L12.5 8Z"
+                                      fill="white"
+                                    />
+                                    <path
+                                      d="M18.5 8V16L12.5 12L18.5 8Z"
+                                      fill="white"
+                                    />
+                                  </svg>
+                                </button>
+                                {rewindLabel && (
+                                  <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-70 px-2 py-0.5 rounded text-xs">
+                                    Rewind 5s
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Forward button with label */}
+                              <div className="relative">
+                                <button
+                                  className="hover:text-gray-300 focus:outline-none"
+                                  aria-label="Forward 5s"
+                                  onClick={handleForward}
+                                >
+                                  <svg
+                                    width="18"
+                                    height="18"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                  >
+                                    <path
+                                      d="M5.5 8V16L11.5 12L5.5 8Z"
+                                      fill="white"
+                                    />
+                                    <path
+                                      d="M11.5 8V16L17.5 12L11.5 8Z"
+                                      fill="white"
+                                    />
+                                  </svg>
+                                </button>
+                                {forwardLabel && (
+                                  <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-70 px-2 py-0.5 rounded text-xs whitespace-nowrap">
+                                    Forward 5s
+                                  </div>
+                                )}
+                              </div>
+
+                              <div className="text-xs mx-2 flex items-center space-x-1 font-medium">
+                                <span>{formatTime(progress)}</span>
+                                <span className="text-gray-400">/</span>
+                                <span className="text-gray-400">
+                                  {videoContent.selectedVideoDetails
+                                    ?.duration || formatTime(duration)}
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Center - empty space */}
+                            <div className="flex-1"></div>
+
+                            {/* Right controls */}
+                            <div className="flex items-center space-x-3">
+                              <button
+                                className="text-xs border border-gray-700 px-2 py-0.5 rounded hover:bg-gray-900 focus:outline-none"
+                                onClick={() => {
+                                  const rates = [
+                                    0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2,
+                                  ];
+                                  const currentIndex =
+                                    rates.indexOf(playbackRate);
+                                  const nextIndex =
+                                    (currentIndex + 1) % rates.length;
+                                  setPlaybackRate(rates[nextIndex]);
+                                }}
+                                type="button"
+                              >
+                                {playbackRate}x
+                              </button>
+
+                              {/* Volume control with hover slider */}
+                              <div className="relative">
+                                <button
+                                  className="hover:text-gray-300 focus:outline-none"
+                                  onMouseEnter={() => setShowVolumeSlider(true)}
+                                  onMouseLeave={() =>
+                                    setShowVolumeSlider(false)
+                                  }
+                                  type="button"
+                                >
+                                  <Volume2 className="w-4 h-4" />
+                                </button>
+
+                                {showVolumeSlider && (
+                                  <div
+                                    className="absolute bottom-8 -left-1 bg-gray-900 p-2 rounded shadow-lg z-10"
+                                    onMouseEnter={() =>
+                                      setShowVolumeSlider(true)
+                                    }
+                                    onMouseLeave={() =>
+                                      setShowVolumeSlider(false)
+                                    }
+                                  >
+                                    <div
+                                      className="h-20 w-1 bg-gray-700 rounded-full cursor-pointer"
+                                      onClick={(e) => {
+                                        const rect =
+                                          e.currentTarget.getBoundingClientRect();
+                                        const newVolume =
+                                          1 -
+                                          (e.clientY - rect.top) / rect.height;
+                                        setVolume(
+                                          Math.max(0, Math.min(1, newVolume))
+                                        );
+                                      }}
+                                    >
+                                      <div
+                                        className="bg-white rounded-full absolute bottom-0 left-0 right-0"
+                                        style={{ height: `${volume * 100}%` }}
+                                      ></div>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+
+                              <button
+                                className="hover:text-gray-300 focus:outline-none"
+                                type="button"
+                              >
+                                <Settings className="w-4 h-4" />
+                              </button>
+
+                              <button
+                                className="hover:text-gray-300 focus:outline-none"
+                                onClick={toggleFullscreen}
+                                type="button"
+                              >
+                                <Maximize className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Bottom content tabs - ALWAYS SHOW THESE */}
+          <div
+            className="bg-white border-t border-gray-200 max-w-[82vw]"
+            style={{ minHeight: "200px" }}
+          >
+            {/* Tabs with Search icon/functionality */}
+            <div className="flex items-center border-b border-gray-200">
+              <button
+                className={`px-4 py-3 text-gray-500 hover:text-gray-700 ${
+                  showSearch ? "text-gray-700 border-b-2 border-gray-700" : ""
+                }`}
+                type="button"
+                aria-label="Search"
+                onClick={handleSearchToggle}
+              >
+                <Search className="w-5 h-5" />
+              </button>
+
+              {/* Tabs always visible */}
+              {[
+                { id: "overview", label: "Overview" },
+                { id: "notes", label: "Notes" },
+                { id: "announcements", label: "Announcements" },
+                { id: "reviews", label: "Reviews" },
+                { id: "learning-tools", label: "Learning tools" },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  className={`px-6 py-3 text-sm font-bold ${
+                    activeTab === tab.id && !showSearch
+                      ? "text-gray-700 border-b-2 border-gray-700"
+                      : "text-gray-500 hover:text-gray-800"
+                  }`}
+                  onClick={() => {
+                    setActiveTab(tab.id as typeof activeTab);
+                    setShowSearch(false);
+                  }}
+                  type="button"
+                >
+                  {tab.label}
+                </button>
+              ))}
             </div>
-          )}
-          
-          {/* Tab content - Overview */}
-          {activeTab === 'overview' && !showSearch && (
+
+            {/* Search interface */}
+            {showSearch && (
+              <div className="px-6 py-8">
+                <div className="max-w-2xl mx-auto mb-8">
+                  <div className="relative flex items-center">
+                    <input
+                      type="text"
+                      placeholder="Search course content"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500"
+                      autoFocus
+                    />
+                    <button
+                      className="absolute right-2 bg-purple-600 hover:bg-purple-700 text-white p-2 rounded-md"
+                      aria-label="Search"
+                      type="button"
+                    >
+                      <Search className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="text-center py-8">
+                  <h3 className="text-xl font-bold mb-2 text-gray-800">
+                    Start a new search
+                  </h3>
+                  <p className="text-gray-600">To find lectures or resources</p>
+                </div>
+              </div>
+            )}
+
+            {/* Tab content - Overview */}
+            {activeTab === "overview" && !showSearch && (
               <div className="p-6">
                 {/* Rating, Students, and Total section */}
                 <div className="flex items-center gap-8 mb-6">
                   <div className="flex flex-col items-center ">
-                    <span className="text-amber-700 text-lg font-bold mr-1">0.0 <span className="text-amber-700">★</span></span>
-                    <span className="text-gray-500 text-xs ml-1">(0 ratings)</span>
+                    <span className="text-amber-700 text-lg font-bold mr-1">
+                      0.0 <span className="text-amber-700">★</span>
+                    </span>
+                    <span className="text-gray-500 text-xs ml-1">
+                      (0 ratings)
+                    </span>
                   </div>
                   <div className="">
                     <div className="text-gray-700 font-bold">0</div>
@@ -1160,7 +1361,7 @@ return (
                     <div className="text-gray-500 text-xs">Total</div>
                   </div>
                 </div>
-                
+
                 {/* Published date and language */}
                 <div className="mb-6 space-y-3">
                   <div className="flex items-center text-gray-600">
@@ -1172,27 +1373,31 @@ return (
                     <span className="text-sm">English</span>
                   </div>
                 </div>
-                
+
                 {/* Schedule learning time section */}
                 <div className="border-b border-gray-300 mb-8">
                   <div className="p-6 border border-gray-300 rounded-lg">
                     <div className="flex items-start">
                       <Clock className="text-gray-500 w-5 h-5 mr-3 mt-1" />
                       <div>
-                        <h4 className="font-medium text-base mb-2">Schedule learning time</h4>
+                        <h4 className="font-medium text-base mb-2">
+                          Schedule learning time
+                        </h4>
                         <p className="text-sm text-gray-600 mb-4">
-                          Learning a little each day adds up. Research shows that students who make learning a habit are more likely to reach their goals.
-                          Set time aside to learn and get reminders using your learning scheduler.
+                          Learning a little each day adds up. Research shows
+                          that students who make learning a habit are more
+                          likely to reach their goals. Set time aside to learn
+                          and get reminders using your learning scheduler.
                         </p>
                         <div className="flex">
-                          <button 
+                          <button
                             type="button"
                             className="bg-[#6D28D2] hover:bg-[#7D28D2] text-white text-sm py-2 px-4 rounded-md mr-3 font-medium"
                             onClick={handleOpenLearningModal}
                           >
                             Get started
                           </button>
-                          <button 
+                          <button
                             type="button"
                             className="text-[#6D28D2] hover:text-[#7D28D2] text-sm py-2 px-4 font-medium"
                           >
@@ -1203,7 +1408,7 @@ return (
                     </div>
                   </div>
                 </div>
-                
+
                 {/* By the numbers section */}
                 <div className="mb-8 pb-8 border-b border-gray-200 grid grid-cols-3">
                   <h3 className="text-gray-700 text-sm mb-4">By the numbers</h3>
@@ -1216,41 +1421,59 @@ return (
                   </div>
 
                   <div>
-                    <p className="text-sm text-gray-700">Lectures: {section.lectures ? section.lectures.length : 0}</p>
+                    <p className="text-sm text-gray-700">
+                      Lectures: {section.lectures ? section.lectures.length : 0}
+                    </p>
                     <p className="text-sm text-gray-700">Video: 2 total mins</p>
                   </div>
                 </div>
-                
+
                 {/* Features section */}
                 <div className="mb-8 pb-8 border-b grid grid-cols-3 items-center border-gray-200 mr-7">
                   <h3 className="text-sm text-gray-700 ">Features</h3>
                   <div className="flex items-center text-gray-700 font-medium ">
                     <p className="text-sm">Available on </p>
-                    <a href="#" className="text-purple-600 mx-1 text-sm font-medium">iOS</a>
+                    <a
+                      href="#"
+                      className="text-purple-600 mx-1 text-sm font-medium"
+                    >
+                      iOS
+                    </a>
                     <p className="text-sm">and</p>
-                    <a href="#" className="text-purple-600 mx-1 text-sm font-medium">Android</a>
+                    <a
+                      href="#"
+                      className="text-purple-600 mx-1 text-sm font-medium"
+                    >
+                      Android
+                    </a>
                   </div>
                 </div>
-                
+
                 {/* Description section */}
                 <div className="mb-8 pb-8 border-b border-gray-200 grid grid-cols-3 mr-10 ">
                   <h3 className="text-sm text-gray-700 ">Description</h3>
                   <div className="text-sm text-gray-700 col-span-2">
                     <div>
-                      <h4 className="font-medium text-sm ">What you'll learn</h4>
+                      <h4 className="font-medium text-sm ">
+                        What you'll learn
+                      </h4>
                       {/* Content would go here */}
                     </div>
                     <div>
-                      <h4 className="font-medium text-sm ">Are there any course requirements or prerequisites?</h4>
+                      <h4 className="font-medium text-sm ">
+                        Are there any course requirements or prerequisites?
+                      </h4>
                       {/* Content would go here */}
                     </div>
                     <div>
-                      <h4 className="font-medium text-sm">Who this course is for:</h4>
+                      <h4 className="font-medium text-sm">
+                        Who this course is for:
+                      </h4>
                       {/* Content would go here */}
                     </div>
                   </div>
                 </div>
-                
+
                 {/* Instructor section */}
                 <div className="grid grid-cols-3 mr-10">
                   <h3 className="text-sm text-gray-700">Instructor</h3>
@@ -1265,274 +1488,290 @@ return (
                 </div>
               </div>
             )}
-          
-          {/* Tab content - Notes */}
-{activeTab === 'notes' && !showSearch && (
-  <div className="p-6 flex flex-col items-center">
-    {/* Note adding/editing interface */}
-    {!isAddingNote ? (
-      <div className="mb-4 w-full max-w-3xl">
-        <div className="relative">
-          <input 
-            type="text" 
-            placeholder={`Create a new note at ${formatTime(progress)}`}
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500" 
-            onClick={handleCreateNote} 
-            readOnly
-          />
-          <button 
-            className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-purple-600" 
-            aria-label="Add note"
-            onClick={handleCreateNote}
-            type="button"
-          >
-            <Plus className="w-5 h-5" />
-          </button>
-        </div>
-      </div>
-    ) : (
-      <div className="mb-4 w-full max-w-3xl">
-        <div className="bg-black text-white text-sm px-3 py-1 rounded-t-md inline-block">
-          {formatTime(progress)}
-        </div>
-        <div className="border border-purple-200 rounded-md p-2 rounded-tl-none">
-          <div className="border-b border-gray-200 pb-2 mb-2 flex items-center">
-            <button className="px-2 py-1 text-sm">Styles</button>
-            <button className="px-2 py-1 text-sm font-bold">B</button>
-            <button className="px-2 py-1 text-sm italic">I</button>
-            <button className="px-2 py-1 text-sm">≡</button>
-            <button className="px-2 py-1 text-sm">≡</button>
-            <button className="px-2 py-1 text-sm">&lt;&gt;</button>
-            <div className="ml-auto text-gray-400 text-sm">1000</div>
+
+            {/* Tab content - Notes */}
+            {activeTab === "notes" && !showSearch && (
+              <div className="p-6 flex flex-col items-center">
+                {/* Note adding/editing interface */}
+                {!isAddingNote ? (
+                  <div className="mb-4 w-full max-w-3xl">
+                    <div className="relative">
+                      <input
+                        type="text"
+                        placeholder={`Create a new note at ${formatTime(
+                          progress
+                        )}`}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500"
+                        onClick={handleCreateNote}
+                        readOnly
+                      />
+                      <button
+                        className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-purple-600"
+                        aria-label="Add note"
+                        onClick={handleCreateNote}
+                        type="button"
+                      >
+                        <Plus className="w-5 h-5" />
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mb-4 w-full max-w-3xl">
+                    <div className="bg-black text-white text-sm px-3 py-1 rounded-t-md inline-block">
+                      {formatTime(progress)}
+                    </div>
+                    <div className="border border-purple-200 rounded-md p-2 rounded-tl-none">
+                      <div className="border-b border-gray-200 pb-2 mb-2 flex items-center">
+                        <button className="px-2 py-1 text-sm">Styles</button>
+                        <button className="px-2 py-1 text-sm font-bold">
+                          B
+                        </button>
+                        <button className="px-2 py-1 text-sm italic">I</button>
+                        <button className="px-2 py-1 text-sm">≡</button>
+                        <button className="px-2 py-1 text-sm">≡</button>
+                        <button className="px-2 py-1 text-sm">&lt;&gt;</button>
+                        <div className="ml-auto text-gray-400 text-sm">
+                          1000
+                        </div>
+                      </div>
+                      <textarea
+                        className="w-full min-h-32 resize-none focus:outline-none focus:ring-0 border-0 p-2"
+                        value={currentNoteContent}
+                        onChange={(e) => setCurrentNoteContent(e.target.value)}
+                        placeholder="Enter your note here..."
+                        autoFocus
+                      />
+                    </div>
+                    <div className="flex justify-end mt-2">
+                      <button
+                        className="text-gray-700 font-medium mr-3 hover:text-gray-900"
+                        onClick={handleCancelNote}
+                        type="button"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md disabled:bg-purple-300"
+                        onClick={handleSaveNote}
+                        disabled={!currentNoteContent.trim()}
+                        type="button"
+                      >
+                        Save note
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Filter dropdowns */}
+                <div className="flex space-x-2 mb-6 w-full max-w-3xl">
+                  {/* All lectures dropdown */}
+                  <div className="relative">
+                    <button
+                      className="flex items-center px-3 py-1.5 text-sm border border-[#6D28D2] text-[#6D28D2] rounded-md font-medium"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setAllLecturesDropdownOpen(!allLecturesDropdownOpen);
+                        setSortByDropdownOpen(false);
+                      }}
+                      type="button"
+                    >
+                      <span>{selectedLectureFilter}</span>
+                      <ChevronDown className="w-4 h-4 ml-1" />
+                    </button>
+
+                    {allLecturesDropdownOpen && (
+                      <div className="absolute top-full left-0 mt-1 bg-white rounded-md shadow-lg z-10 w-48">
+                        <div className="p-2">
+                          <button
+                            className={`block w-full text-left px-3 py-2 text-sm rounded-md `}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedLectureFilter("All lectures");
+                              setAllLecturesDropdownOpen(false);
+                            }}
+                            type="button"
+                          >
+                            All lectures
+                          </button>
+                          <button
+                            className={`block w-full text-left px-3 py-2 text-sm rounded-md`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedLectureFilter("Current lecture");
+                              setAllLecturesDropdownOpen(false);
+                            }}
+                            type="button"
+                          >
+                            Current lecture
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Sort by dropdown */}
+                  <div className="relative">
+                    <button
+                      className="flex items-center px-3 py-1.5 text-sm border border-[#6D28D2] rounded-md text-[#6D28D2] font-medium"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSortByDropdownOpen(!sortByDropdownOpen);
+                        setAllLecturesDropdownOpen(false);
+                      }}
+                      type="button"
+                    >
+                      <span>{selectedSortOption}</span>
+                      <ChevronDown className="w-4 h-4 ml-1" />
+                    </button>
+
+                    {sortByDropdownOpen && (
+                      <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg z-10 w-48">
+                        <div className="p-2">
+                          <button
+                            className={`block w-full text-left px-3 py-2 text-sm rounded-md `}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedSortOption("Sort by most recent");
+                              setSortByDropdownOpen(false);
+                            }}
+                            type="button"
+                          >
+                            Sort by most recent
+                          </button>
+                          <button
+                            className={`block w-full text-left px-3 py-2 text-sm rounded-md `}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedSortOption("Sort by oldest");
+                              setSortByDropdownOpen(false);
+                            }}
+                            type="button"
+                          >
+                            Sort by oldest
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Notes list or empty state */}
+                {getSortedNotes().length > 0 ? (
+                  <div className="w-full max-w-3xl">
+                    {getSortedNotes().map((note) => (
+                      <div key={note.id} className="mb-4">
+                        <div className="flex items-center mb-2">
+                          <div className="bg-black text-white text-xs px-2 py-1 rounded-sm mr-3">
+                            {note.formattedTime}
+                          </div>
+                          <div className="text-sm text-gray-700 font-medium mr-2">
+                            {note.sectionName && `${note.sectionName}.`}{" "}
+                            {note.lectureName}
+                          </div>
+                          <div className="ml-auto flex">
+                            <button
+                              className="text-gray-500 hover:text-purple-600 p-1"
+                              onClick={() => handleEditNote(note.id)}
+                              type="button"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </button>
+                            <button
+                              className="text-gray-500 hover:text-red-600 p-1 ml-1"
+                              onClick={() => handleDeleteNote(note.id)}
+                              type="button"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                        <div className="bg-gray-50 p-4 rounded-md">
+                          <p className="text-sm text-gray-700">
+                            {note.content}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-32 text-center">
+                    <p className="text-gray-600 mb-2">
+                      Click the "Create a new note" box, the "+" button, or
+                      press "B" to make your first note.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Tab content - Announcements */}
+            {activeTab === "announcements" && !showSearch && (
+              <div className="p-6">
+                <div className="text-center py-8">
+                  <h3 className="text-xl font-bold mb-2">
+                    No announcements posted yet
+                  </h3>
+                  <p className="text-gray-600">
+                    The instructor hasn't added any announcements to this course
+                    yet. Announcements are used to inform you of updates or
+                    additions to the course.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Tab content - Reviews */}
+            {activeTab === "reviews" && !showSearch && (
+              <div className="p-6">
+                <div className="text-center py-8">
+                  <h3 className="text-xl font-bold mb-2">Student feedback</h3>
+                  <p className="text-gray-600">
+                    This course doesn't have any reviews yet.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Tab content - Learning tools */}
+            {activeTab === "learning-tools" && !showSearch && (
+              <div className="p-6">
+                <div className="mb-6">
+                  <h3 className="text-xl font-bold mb-2">Learning reminders</h3>
+                  <p className="text-gray-600 mb-4">
+                    Set up push notifications or calendar events to stay on
+                    track for your learning goals.
+                  </p>
+
+                  <button
+                    className="flex items-center bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md transition-colors"
+                    onClick={handleOpenLearningModal}
+                    type="button"
+                  >
+                    <Plus className="w-4 h-4 mr-1" />
+                    <span>Add a learning reminder</span>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
-          <textarea 
-            className="w-full min-h-32 resize-none focus:outline-none focus:ring-0 border-0 p-2" 
-            value={currentNoteContent}
-            onChange={(e) => setCurrentNoteContent(e.target.value)}
-            placeholder="Enter your note here..."
-            autoFocus
-          />
         </div>
-        <div className="flex justify-end mt-2">
-          <button 
-            className="text-gray-700 font-medium mr-3 hover:text-gray-900"
-            onClick={handleCancelNote}
-            type="button"
-          >
-            Cancel
-          </button>
-          <button 
-            className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md disabled:bg-purple-300"
-            onClick={handleSaveNote}
-            disabled={!currentNoteContent.trim()}
-            type="button"
-          >
-            Save note
-          </button>
-        </div>
+
+        {/* Right sidebar */}
+        <StudentPreviewSidebar
+          currentLectureId={activeItemId}
+          setShowVideoPreview={setShowVideoPreview}
+          sections={section ? [section] : []}
+          uploadedFiles={uploadedFiles}
+          sourceCodeFiles={sourceCodeFiles}
+          externalResources={externalResources}
+          onSelectItem={handleItemSelect}
+        />
       </div>
-    )}
-    
-    {/* Filter dropdowns */}
-    <div className="flex space-x-2 mb-6 w-full max-w-3xl">
-      {/* All lectures dropdown */}
-      <div className="relative">
-        <button 
-          className="flex items-center px-3 py-1.5 text-sm border border-[#6D28D2] text-[#6D28D2] rounded-md font-medium"
-          onClick={(e) => {
-            e.stopPropagation();
-            setAllLecturesDropdownOpen(!allLecturesDropdownOpen);
-            setSortByDropdownOpen(false);
-          }}
-          type="button"
-        >
-          <span>{selectedLectureFilter}</span>
-          <ChevronDown className="w-4 h-4 ml-1" />
-        </button>
-        
-        {allLecturesDropdownOpen && (
-          <div className="absolute top-full left-0 mt-1 bg-white rounded-md shadow-lg z-10 w-48">
-            <div className="p-2">
-              <button 
-                className={`block w-full text-left px-3 py-2 text-sm rounded-md `}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setSelectedLectureFilter('All lectures');
-                  setAllLecturesDropdownOpen(false);
-                }}
-                type="button"
-              >
-                All lectures
-              </button>
-              <button 
-                className={`block w-full text-left px-3 py-2 text-sm rounded-md`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setSelectedLectureFilter('Current lecture');
-                  setAllLecturesDropdownOpen(false);
-                }}
-                type="button"
-              >
-                Current lecture
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-      
-      {/* Sort by dropdown */}
-      <div className="relative">
-        <button 
-          className="flex items-center px-3 py-1.5 text-sm border border-[#6D28D2] rounded-md text-[#6D28D2] font-medium"
-          onClick={(e) => {
-            e.stopPropagation();
-            setSortByDropdownOpen(!sortByDropdownOpen);
-            setAllLecturesDropdownOpen(false);
-          }}
-          type="button"
-        >
-          <span>{selectedSortOption}</span>
-          <ChevronDown className="w-4 h-4 ml-1" />
-        </button>
-        
-        {sortByDropdownOpen && (
-          <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg z-10 w-48">
-            <div className="p-2">
-              <button 
-                className={`block w-full text-left px-3 py-2 text-sm rounded-md `}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setSelectedSortOption('Sort by most recent');
-                  setSortByDropdownOpen(false);
-                }}
-                type="button"
-              >
-                Sort by most recent
-              </button>
-              <button 
-                className={`block w-full text-left px-3 py-2 text-sm rounded-md `}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setSelectedSortOption('Sort by oldest');
-                  setSortByDropdownOpen(false);
-                }}
-                type="button"
-              >
-                Sort by oldest
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
+
+      {/* Learning reminder modal */}
+      {showLearningModal && renderLearningModal()}
     </div>
-    
-    {/* Notes list or empty state */}
-    {getSortedNotes().length > 0 ? (
-      <div className="w-full max-w-3xl">
-        {getSortedNotes().map(note => (
-          <div key={note.id} className="mb-4">
-            <div className="flex items-center mb-2">
-              <div className="bg-black text-white text-xs px-2 py-1 rounded-sm mr-3">
-                {note.formattedTime}
-              </div>
-              <div className="text-sm text-gray-700 font-medium mr-2">
-                {note.sectionName && `${note.sectionName}.`} {note.lectureName}
-              </div>
-              <div className="ml-auto flex">
-                <button 
-                  className="text-gray-500 hover:text-purple-600 p-1"
-                  onClick={() => handleEditNote(note.id)}
-                  type="button"
-                >
-                  <Edit className="w-4 h-4" />
-                </button>
-                <button 
-                  className="text-gray-500 hover:text-red-600 p-1 ml-1"
-                  onClick={() => handleDeleteNote(note.id)}
-                  type="button"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-            <div className="bg-gray-50 p-4 rounded-md">
-              <p className="text-sm text-gray-700">{note.content}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-    ) : (
-      <div className="flex flex-col items-center justify-center h-32 text-center">
-        <p className="text-gray-600 mb-2">Click the "Create a new note" box, the "+" button, or press "B" to make your first note.</p>
-      </div>
-    )}
-  </div>
-)}
-          
-          {/* Tab content - Announcements */}
-          {activeTab === 'announcements' && !showSearch && (
-            <div className="p-6">
-              <div className="text-center py-8">
-                <h3 className="text-xl font-bold mb-2">No announcements posted yet</h3>
-                <p className="text-gray-600">
-                  The instructor hasn't added any announcements to this course yet. Announcements 
-                  are used to inform you of updates or additions to the course.
-                </p>
-              </div>
-            </div>
-          )}
-          
-          {/* Tab content - Reviews */}
-          {activeTab === 'reviews' && !showSearch && (
-            <div className="p-6">
-              <div className="text-center py-8">
-                <h3 className="text-xl font-bold mb-2">Student feedback</h3>
-                <p className="text-gray-600">
-                  This course doesn't have any reviews yet.
-                </p>
-              </div>
-            </div>
-          )}
-          
-          {/* Tab content - Learning tools */}
-          {activeTab === 'learning-tools' && !showSearch && (
-            <div className="p-6">
-              <div className="mb-6">
-                <h3 className="text-xl font-bold mb-2">Learning reminders</h3>
-                <p className="text-gray-600 mb-4">
-                  Set up push notifications or calendar events to stay on track for your learning goals.
-                </p>
-                
-                <button 
-                  className="flex items-center bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md transition-colors"
-                  onClick={handleOpenLearningModal}
-                  type="button"
-                >
-                  <Plus className="w-4 h-4 mr-1" />
-                  <span>Add a learning reminder</span>
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-      
-      {/* Right sidebar */}
-      <StudentPreviewSidebar
-        currentLectureId={activeItemId}
-        setShowVideoPreview={setShowVideoPreview}
-        sections={section ? [section] : []}
-        uploadedFiles={uploadedFiles}
-        sourceCodeFiles={sourceCodeFiles}
-        externalResources={externalResources}
-        onSelectItem={handleItemSelect}
-      />
-    </div>
-    
-    {/* Learning reminder modal */}
-    {showLearningModal && renderLearningModal()}
-  </div>
-);
+  );
 };
 
 export default StudentVideoPreview;
