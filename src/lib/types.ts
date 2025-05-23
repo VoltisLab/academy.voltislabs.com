@@ -216,22 +216,64 @@ export interface Lecture {
   isCompleted?: boolean;
   hasResources?: boolean;
   duration?: string;
-  language?:string;
-  version?:string;
-  // Code editor related fields
-  code?: string;                    // Stores the code content for practice exercises
-  codeLanguage?: string;            // Stores the programming language for the code editor
-  externalResources?: ExternalResource[]; // Links to external resources related to the practice
+  language?: string;
+  version?: string;
   
-  // Fields for coding challenges/evaluations
-  testCases?: TestCase[];           // Test cases to validate student code
-  expectedOutput?: string;          // Expected output for auto-grading
-  initialCode?: string;             // Initial code template to show to students
-  solutionCode?: string;            // Solution code (for instructor reference)
+  // Code editor related fields
+  code?: string;
+  codeLanguage?: string;
+  externalResources?: ExternalResource[];
+  testCases?: TestCase[];
+  expectedOutput?: string;
+  initialCode?: string;
+  solutionCode?: string;
   
   // Assignment related fields
   dueDate?: string;
   pointsValue?: number;
+  
+  // NEW: Assignment-specific fields (all optional to maintain compatibility)
+  assignmentTitle?: string;
+  assignmentDescription?: string;
+  estimatedDuration?: number;
+  durationUnit?: 'minutes' | 'hours' | 'days';
+  assignmentInstructions?: string;
+  instructionalVideo?: {
+    file: File | null;
+    url?: string;
+  };
+  downloadableResource?: {
+    file: File | null;
+    url?: string;
+    name?: string;
+  };
+  assignmentQuestions?: AssignmentQuestion[];
+  solutionVideo?: {
+    file: File | null;
+    url?: string;
+  };
+}
+
+export interface ExtendedLecture extends Lecture {
+  assignmentTitle?: string;
+  assignmentDescription?: string;
+  estimatedDuration?: number;
+  durationUnit?: 'minutes' | 'hours' | 'days';
+  assignmentInstructions?: string;
+  instructionalVideo?: {
+    file: File | null;
+    url?: string;
+  };
+  downloadableResource?: {
+    file: File | null;
+    url?: string;
+    name?: string;
+  };
+  assignmentQuestions?: AssignmentQuestion[];
+  solutionVideo?: {
+    file: File | null;
+    url?: string;
+  };
 }
 
 
@@ -583,6 +625,7 @@ export interface LectureItemProps {
   saveDescription?: () => void;
   currentDescription?: string;
   children?: React.ReactNode;
+  onEditAssignment?: (lecture: ExtendedLecture) => void;
 }
 
 // Type definitions
@@ -595,3 +638,9 @@ export type Language = {
   additionalInfo?: string;
   isNew?: boolean;
 };
+
+export interface AssignmentQuestion {
+  id: string;
+  content: string;
+  order: number;
+}
