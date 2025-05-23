@@ -433,7 +433,7 @@ const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
                 className={`w-full text-left px-3 py-2 text-sm ${
                   activeTab === tab.id
                     ? 'text-gray-800 border-l-4 border-gray-800'
-                    : 'text-gray-800 '
+                    : 'text-gray-800'
                 } hover:bg-gray-100`}
               >
                 {tab.label}
