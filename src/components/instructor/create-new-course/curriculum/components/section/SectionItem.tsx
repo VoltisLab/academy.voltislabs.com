@@ -115,6 +115,16 @@ interface SectionItemProps {
   // Add the missing property for opening coding exercise modal
   openCodingExerciseModal?: (sectionId: string, lectureId: string) => void;
   onEditAssignment: (assignmentData: ExtendedLecture) => void;
+  // Add this new prop
+  allSections: Array<{
+    id: string;
+    name: string;
+    lectures: Lecture[];
+    quizzes: any[];
+    assignments: any[];
+    codingExercises: any[];
+    isExpanded: boolean;
+  }>;
 }
 
 export default function SectionItem({
@@ -153,6 +163,7 @@ export default function SectionItem({
   saveDescription,
   openCodingExerciseModal,
   onEditAssignment,
+  allSections,
 }: SectionItemProps) {
   const sectionNameInputRef = useRef<HTMLInputElement>(null);
   // State for toggling action buttons
@@ -405,8 +416,8 @@ export default function SectionItem({
     console.log("Rendering lecture:", lecture);
 
     // Calculate the specific index for this content type
-    const contentType = lecture.contentType || "video"; // Default to video if not set
-    const typeSpecificIndex = getContentTypeIndex(lectureIndex, contentType);
+     const contentType = lecture.contentType || "video"; // Default to video if not set
+  const typeSpecificIndex = getContentTypeIndex(lectureIndex, contentType);
 
     if (lecture.contentType === "assignment") {
       return (
@@ -429,6 +440,7 @@ export default function SectionItem({
           handleDragLeave={handleDragLeave}
           draggedLecture={draggedLecture}
           dragTarget={dragTarget}
+          allSections={allSections} 
           onEditAssignment={onEditAssignment} 
         />
       );
@@ -455,6 +467,7 @@ export default function SectionItem({
           handleDragLeave={handleDragLeave}
           draggedLecture={draggedLecture}
           dragTarget={dragTarget}
+          allSections={allSections}
           // Add the required prop here
           customEditHandler={(lectureId) => {
             if (openCodingExerciseModal) {
@@ -483,6 +496,7 @@ export default function SectionItem({
           handleDrop={handleDrop}
           toggleContentSection={toggleContentSection}
           updateQuizQuestions={updateQuizQuestions}
+          allSections={allSections}
           // isDragging={isDragging}
           // handleDragEnd={handleDragEnd}
           // handleDragLeave={handleDragLeave}
@@ -515,6 +529,7 @@ export default function SectionItem({
           handleDragLeave={handleDragLeave}
           draggedLecture={draggedLecture}
           dragTarget={dragTarget}
+          allSections={allSections}
         />
       );
     }
@@ -546,10 +561,11 @@ export default function SectionItem({
         handleDragLeave={handleDragLeave}
         draggedLecture={draggedLecture}
         dragTarget={dragTarget}
-        sections={[section]} // Pass the current section if needed
+        sections={allSections} // Pass the current section if needed
         updateCurrentDescription={updateCurrentDescription}
         saveDescription={handleSaveDescription} // Use the local wrapper function
         currentDescription={currentDescription}
+        allSections={allSections}
       />
     );
   };

@@ -26,6 +26,7 @@ interface AssignmentItemProps {
   };
   // Add the missing prop
   onEditAssignment?: (lecture: ExtendedLecture) => void;
+  allSections: any[]
 }
 
 const AssignmentItem: React.FC<AssignmentItemProps> = ({

@@ -626,6 +626,7 @@ export interface LectureItemProps {
   currentDescription?: string;
   children?: React.ReactNode;
   onEditAssignment?: (lecture: ExtendedLecture) => void;
+  allSections: PreviewSection[];
 }
 
 // Type definitions
@@ -643,4 +644,56 @@ export interface AssignmentQuestion {
   id: string;
   content: string;
   order: number;
+}
+
+export interface PreviewSection {
+  id: string;
+  name: string;
+  lectures: Lecture[];
+  quizzes: PreviewQuiz[];
+  assignments: PreviewAssignment[];
+  codingExercises: PreviewCodingExercise[];
+  isExpanded: boolean;
+}
+
+// Quiz interface for preview
+export interface PreviewQuiz {
+  id: string;
+  name: string;
+  description?: string;
+  questions?: Question[];
+  duration?: string;
+  contentType: 'quiz';
+}
+
+// Assignment interface for preview
+export interface PreviewAssignment {
+  id: string;
+  name: string;
+  description?: string;
+  duration?: string;
+  contentType: 'assignment';
+  estimatedDuration?: number;
+  durationUnit?: 'minutes' | 'hours' | 'days';
+}
+
+// Coding Exercise interface for preview
+export interface PreviewCodingExercise {
+  id: string;
+  name: string;
+  description?: string;
+  duration?: string;
+  contentType: 'coding-exercise';
+  language?: string;
+  version?: string;
+}
+
+export interface ResourceWithLecture {
+  lectureId: string;
+  name: string;
+  size?: string;
+  type?: string;
+  url?: string;
+  title?: string | React.ReactNode;
+  filename?: string;
 }

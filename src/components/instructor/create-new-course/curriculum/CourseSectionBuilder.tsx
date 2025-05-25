@@ -354,6 +354,57 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({ onSaveNext, courseId }) =
     setShowSectionForm(false);
   };
 
+  const getFormattedSectionsForPreview = () => {
+  return sections.map(section => {
+    // Separate content by type
+    const lectures = section.lectures.filter(lecture => 
+      !lecture.contentType || lecture.contentType === 'video' || lecture.contentType === 'article'
+    );
+    
+    const quizzes = section.lectures.filter(lecture => 
+      lecture.contentType === 'quiz'
+    ).map(lecture => ({
+      id: lecture.id,
+      name: lecture.name || lecture.title || 'Quiz',
+      description: lecture.description || '',
+      questions: lecture.questions || [],
+      duration: '10min',
+      contentType: 'quiz'
+    }));
+    
+    const assignments = section.lectures.filter(lecture => 
+      lecture.contentType === 'assignment'
+    ).map(lecture => ({
+      id: lecture.id,
+      name: lecture.name || lecture.title || 'Assignment',
+      description: lecture.description || '',
+      duration: lecture.estimatedDuration ? `${lecture.estimatedDuration}${lecture.durationUnit || 'min'}` : '30min',
+      contentType: 'assignment'
+    }));
+    
+    const codingExercises = section.lectures.filter(lecture => 
+      lecture.contentType === 'coding-exercise'
+    ).map(lecture => ({
+      id: lecture.id,
+      name: lecture.name || lecture.title || 'Coding Exercise',
+      description: lecture.description || '',
+      duration: '15min',
+      contentType: 'coding-exercise'
+    }));
+
+    return {
+      id: section.id,
+      name: section.name,
+      lectures: lectures,
+      quizzes: quizzes,
+      assignments: assignments,
+      codingExercises: codingExercises,
+      isExpanded: section.isExpanded !== false
+    };
+  });
+};
+
+
   const handleSaveCourseSections = async (e?: React.MouseEvent<HTMLButtonElement>) => {
     if (e) e.preventDefault();
     
@@ -492,6 +543,7 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({ onSaveNext, courseId }) =
                 openCodingExerciseModal={handleOpenCodingExerciseModal}
                 // NEW: Pass the assignment editor handler
                 onEditAssignment={handleOpenAssignmentEditor}
+                allSections={getFormattedSectionsForPreview()}
               />
             ))
           ) : (

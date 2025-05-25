@@ -56,11 +56,11 @@ export interface SourceCodeFile {
 }
 
 interface ExternalResourceItem {
-  title: string | React.ReactNode; // Allow both string and ReactNode
+  title: string | React.ReactNode;
   url: string;
   name: string;
   lectureId?: string;
-  filename?: string; // Add this if needed based on your usage
+  filename?: string;
 }
 
 export default function LectureItem({
@@ -92,6 +92,7 @@ export default function LectureItem({
   saveDescription,
   currentDescription = "",
   children,
+  allSections
 }: LectureItemProps) {
   const lectureNameInputRef = useRef<HTMLInputElement>(null);
   const [showContentTypeSelector, setShowContentTypeSelector] = useState(false);
@@ -118,13 +119,14 @@ export default function LectureItem({
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadedFiles, setUploadedFiles] = useState<
-    Array<{ name: string; size: string }>
+    Array<{ name: string; size: string; lectureId: string }>
   >([]);
   const [sourceCodeFiles, setSourceCodeFiles] = useState<SourceCodeFile[]>([]);
   const [externalResources, setExternalResources] = useState<
     ExternalResourceItem[]
   >([]);
   const [previewContentType, setPreviewContentType] = useState<string>("video");
+   console.log("Sections from lectureitem preview", allSections)
 
   const [videoContent, setVideoContent] = useState<VideoContent>({
     uploadTab: { selectedFile: null },
@@ -138,7 +140,7 @@ export default function LectureItem({
           type: "Video",
           status: "Success",
           date: "05/08/2025",
-          url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4", // Sample video URL
+          url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
         },
         {
           id: "2",
@@ -146,7 +148,7 @@ export default function LectureItem({
           type: "Video",
           status: "Success",
           date: "05/08/2025",
-          url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4", // Sample video URL
+          url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
         },
         {
           id: "3",
@@ -154,7 +156,7 @@ export default function LectureItem({
           type: "Video",
           status: "Success",
           date: "05/08/2025",
-          url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4", // Sample video URL
+          url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
         },
         {
           id: "4",
@@ -162,7 +164,7 @@ export default function LectureItem({
           type: "Video",
           status: "Success",
           date: "05/07/2025",
-          url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4", // Sample video URL
+          url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4",
         },
         {
           id: "5",
@@ -170,7 +172,7 @@ export default function LectureItem({
           type: "Video",
           status: "Success",
           date: "05/07/2025",
-          url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4", // Sample video URL
+          url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4",
         },
       ],
     },
@@ -243,7 +245,15 @@ export default function LectureItem({
     url: string,
     name: string
   ) => {
-    setExternalResources([...externalResources, { title, url, name }]);
+    setExternalResources([
+      ...externalResources, 
+      { 
+        title, 
+        url, 
+        name, 
+        lectureId: lecture.id  // Associate with current lecture
+      }
+    ]);
 
     // Close the resource modal
     if (toggleAddResourceModal) {
@@ -290,6 +300,7 @@ export default function LectureItem({
       handleCancelLectureEdit();
     }
   };
+
   // Add these handlers for the video and slide mashup
   const toggleDownloadable = () => {
     if (videoContent.selectedVideoDetails) {
@@ -355,24 +366,14 @@ export default function LectureItem({
 
   // For debugging
   const VideoPreviewPage: React.FC = () => {
-    // Ensure we're properly detecting article content
-    const hasArticleContent =
-      articleContent &&
-      articleContent.text !== "" &&
-      (!videoContent.selectedVideoDetails ||
-        videoContent.selectedVideoDetails === null);
+    const hasArticleContent = articleContent && articleContent.text !== "" && 
+      (!videoContent.selectedVideoDetails || videoContent.selectedVideoDetails === null);
 
-    const currentSection = sections.find((section) => section.id === sectionId);
-
-    // Use the previewContentType state for initialization, with better fallback
     const [activeItemId, setActiveItemId] = useState<string>(lecture.id);
     const [activeItemType, setActiveItemType] = useState<string>(
-      hasArticleContent
-        ? "article"
-        : previewContentType || lecture.contentType || "video"
+      hasArticleContent ? "article" : previewContentType || lecture.contentType || "video"
     );
 
-    // Add debugging for troubleshooting
     useEffect(() => {
       console.log("VideoPreviewPage initialized:", {
         hasArticleContent,
@@ -382,141 +383,72 @@ export default function LectureItem({
         previewContentType,
         activeItemType,
         lectureContentType: lecture.contentType,
+        allSectionsCount: allSections.length,
       });
     }, []);
 
-    // Always update activeItemType if the source data changes
     useEffect(() => {
-      const hasArticle =
-        articleContent &&
-        articleContent.text !== "" &&
-        (!videoContent.selectedVideoDetails ||
-          videoContent.selectedVideoDetails === null);
+      const hasArticle = articleContent && articleContent.text !== "" && 
+        (!videoContent.selectedVideoDetails || videoContent.selectedVideoDetails === null);
 
-      const contentType = hasArticle
-        ? "article"
-        : previewContentType || lecture.contentType || "video";
+      const contentType = hasArticle ? "article" : previewContentType || lecture.contentType || "video";
 
       if (contentType !== activeItemType) {
-        console.log(
-          `Updating activeItemType from ${activeItemType} to ${contentType}`
-        );
+        console.log(`Updating activeItemType from ${activeItemType} to ${contentType}`);
         setActiveItemType(contentType);
       }
-    }, [
-      articleContent,
-      videoContent.selectedVideoDetails,
-      previewContentType,
-      lecture.contentType,
-    ]);
+    }, [articleContent, videoContent.selectedVideoDetails, previewContentType, lecture.contentType]);
 
-    // Function to handle item selection from the sidebar
     const handleItemSelect = (itemId: string, itemType: string) => {
       console.log(`Switching to item ${itemId} of type ${itemType}`);
       setActiveItemId(itemId);
       setActiveItemType(itemType);
     };
 
-    const findItemById = (
-      itemId: string
-    ): { item: any; type: string } | null => {
-      // Check each section
-      for (const section of sections) {
-        // Check lectures
-        const lecture = section.lectures?.find((l: Lecture) => l.id === itemId);
-        if (lecture)
-          return { item: lecture, type: lecture.contentType || "video" };
-
-        // Check quizzes if they exist
-        if (section.quizzes) {
-          const quiz = section.quizzes.find((q: any) => q.id === itemId);
-          if (quiz) return { item: quiz, type: "quiz" };
-        }
-
-        // Check assignments if they exist
-        if (section.assignments) {
-          const assignment = section.assignments.find(
-            (a: any) => a.id === itemId
-          );
-          if (assignment) return { item: assignment, type: "assignment" };
-        }
-
-        // Check coding exercises if they exist
-        if (section.codingExercises) {
-          const exercise = section.codingExercises.find(
-            (e: any) => e.id === itemId
-          );
-          if (exercise) return { item: exercise, type: "coding-exercise" };
-        }
-      }
-
-      return null;
+    // Find the current section and create the proper section structure
+    const currentSection = allSections.find(section => section.id === sectionId) || {
+      id: sectionId,
+      name: "Section",
+      lectures: [lecture],
+      quizzes: [],
+      assignments: [],
+      codingExercises: [],
+      isExpanded: true
     };
 
-    // Get the active item with better type handling
-    const activeItemInfo = findItemById(activeItemId);
-    const activeItem = activeItemInfo?.item || lecture;
+    const contentType = hasArticleContent ? "article" : activeItemType || "video";
 
-    // Force the content type to 'article' if we have article content
-    // This is critical to ensure proper rendering
-    const contentType = hasArticleContent
-      ? "article"
-      : activeItemInfo?.type || activeItemType || "video";
-
-    console.log("Active item:", activeItem, "Content type:", contentType);
+    // Filter resources for current lecture only
+    const currentLectureUploadedFiles = uploadedFiles.filter(file => file.lectureId === lecture.id);
+    const currentLectureSourceCodeFiles = sourceCodeFiles.filter(file => file.lectureId === lecture.id);
+    const currentLectureExternalResources = externalResources.filter(resource => resource.lectureId === lecture.id);
 
     if (previewMode === "student") {
-      // For article content, ensure we pass the correct props
-      if (contentType === "article" || hasArticleContent) {
-        return (
-          <StudentVideoPreview
-            videoContent={videoContent}
-            articleContent={articleContent}
-            setShowVideoPreview={setShowVideoPreview}
-            // Force content type to article in the lecture object
-            lecture={{ ...activeItem, contentType: "article" }}
-            uploadedFiles={uploadedFiles}
-            sourceCodeFiles={sourceCodeFiles}
-            externalResources={externalResources}
-            section={currentSection}
-          />
-        );
-      }
-      // Other content types...
-      else if (contentType === "quiz") {
-        // Quiz view code...
-      } else if (contentType === "coding-exercise") {
-        // Coding exercise view code...
-      } else if (contentType === "assignment") {
-        // Assignment view code...
-      } else {
-        // Default for videos
-        return (
-          <StudentVideoPreview
-            videoContent={videoContent}
-            articleContent={articleContent}
-            setShowVideoPreview={setShowVideoPreview}
-            lecture={activeItem}
-            uploadedFiles={uploadedFiles}
-            sourceCodeFiles={sourceCodeFiles}
-            externalResources={externalResources}
-            section={currentSection}
-          />
-        );
-      }
+      return (
+        <StudentVideoPreview
+          videoContent={videoContent}
+          articleContent={articleContent}
+          setShowVideoPreview={setShowVideoPreview}
+          lecture={{ ...lecture, contentType: contentType as any }}
+          uploadedFiles={currentLectureUploadedFiles}
+          sourceCodeFiles={currentLectureSourceCodeFiles}
+          externalResources={currentLectureExternalResources}
+          section={{
+            id: 'all-sections',
+            name: 'All Sections',
+            sections: allSections // Pass all sections
+          }}
+        />
+      );
     }
 
-    // Instructor preview - also ensure article content is properly passed
+    // Instructor preview
     return (
       <InstructorVideoPreview
         videoContent={videoContent}
         articleContent={articleContent}
         setShowVideoPreview={setShowVideoPreview}
-        lecture={
-          hasArticleContent
-            ? { ...activeItem, contentType: "article" }
-            : activeItem
-        }
+        lecture={hasArticleContent ? { ...lecture, contentType: "article" } : lecture}
         section={currentSection}
       />
     );
@@ -602,41 +534,27 @@ export default function LectureItem({
 
   // Now update the handlePreviewSelection function
   const handlePreviewSelection = (mode: "instructor" | "student"): void => {
-    // First, properly determine if we have article content
-    const hasArticle =
-      articleContent &&
-      articleContent.text !== "" &&
-      (!videoContent.selectedVideoDetails ||
-        videoContent.selectedVideoDetails === null);
+    // Determine content type
+    const hasArticle = articleContent && articleContent.text !== "" && 
+      (!videoContent.selectedVideoDetails || videoContent.selectedVideoDetails === null);
 
-    console.log(
-      `Preview mode: ${mode}, Has article: ${hasArticle}, Article text length: ${
-        articleContent?.text?.length || 0
-      }`
-    );
+    console.log(`Preview mode: ${mode}, Has article: ${hasArticle}, Article text length: ${articleContent?.text?.length || 0}`);
 
     setPreviewMode(mode);
     setShowPreviewDropdown(false);
 
-    // Set content type based on content
     const contentType = hasArticle ? "article" : "video";
     setPreviewContentType(contentType);
 
-    // This is critical - we need to update the lecture's contentType property
-    // to ensure proper rendering in the preview
-    const previewLecture = { ...lecture };
-    if (hasArticle) {
-      previewLecture.contentType = "article";
-    }
-
-    // Format resources as usual
+    // Associate resources with current lecture
     const formattedUploadedFiles = uploadedFiles.map((file) => ({
       name: file.name,
       size: file.size,
+      lectureId: file.lectureId || lecture.id,
     }));
 
     const formattedSourceCodeFiles = sourceCodeFiles.map((file) => ({
-      lectureId: file.lectureId,
+      lectureId: file.lectureId || lecture.id,
       filename: file.filename,
       name: file.name,
       type: file.type,
@@ -645,41 +563,38 @@ export default function LectureItem({
     const formattedExternalResources = externalResources.map((resource) => ({
       title: resource.title,
       url: resource.url,
-      name:
-        typeof resource.name === "string"
-          ? resource.name
-          : String(resource.title),
+      name: typeof resource.name === "string" ? resource.name : String(resource.title),
+      lectureId: resource.lectureId || lecture.id,
     }));
 
     setUploadedFiles(formattedUploadedFiles);
     setSourceCodeFiles(formattedSourceCodeFiles);
     setExternalResources(formattedExternalResources);
 
-    // Force a state update by setting articleContent again when it's an article
     if (hasArticle) {
       setArticleContent({ ...articleContent });
     }
 
-    // Debug what's happening
     console.log("Before showing preview:", {
       hasArticle,
       articleText: articleContent?.text?.substring(0, 50),
       previewContentType: contentType,
-      lectureContentType: previewLecture.contentType,
+      allSections: allSections.length,
     });
 
-    // Finally, show the preview - using a small timeout to ensure state updates are processed
     setTimeout(() => {
       setShowVideoPreview(true);
-    }, 50); // Increase timeout a bit to ensure all state updates have propagated
+    }, 50);
   };
+
   const handleLibraryItemSelect = (item: LibraryFileWithSize) => {
-    // Add the selected item to your downloadable files list
+    // Add the selected item to your downloadable files list with lecture association
     setUploadedFiles([
       ...uploadedFiles,
       {
         name: item.filename,
         size: item.size || (item.type === "Video" ? "01:45" : "1.2 MB"),
+        lectureId: lecture.id, // Associate with current lecture
       },
     ]);
 
@@ -751,9 +666,6 @@ export default function LectureItem({
                   },
                   // Don't set selectedVideoDetails here - user must select from library
                 }));
-
-                // IMPORTANT: Removed the line that was adding to uploadedFiles
-                // No longer adding: setUploadedFiles([...uploadedFiles, { name: file.name, size: formatFileSize(file.size) }]);
               }
 
               // Switch to the library tab to show the uploaded video
@@ -1175,7 +1087,7 @@ export default function LectureItem({
             setIsUploading(false);
             setUploadProgress(0);
 
-            // Add a new dummy file to the list
+            // Add a new dummy file to the list with lecture association
             const filename =
               contentType === ContentType.VIDEO
                 ? "2025-05-01-025523.webm"
@@ -1186,6 +1098,7 @@ export default function LectureItem({
               {
                 name: filename,
                 size: contentType === ContentType.VIDEO ? "263.5 kB" : "1.2 MB",
+                lectureId: lecture.id, // Associate with current lecture
               },
             ]);
           }, 500);
@@ -1205,6 +1118,15 @@ export default function LectureItem({
       videoContent.selectedVideoDetails !== null ||
       articleContent.text !== ""
     );
+  };
+
+  // Helper function to check if current lecture has resources
+  const hasCurrentLectureResources = (): boolean => {
+    const hasUploadedFiles = uploadedFiles.some(file => file.lectureId === lecture.id);
+    const hasSourceCode = sourceCodeFiles.some(file => file.lectureId === lecture.id);
+    const hasExternalRes = externalResources.some(resource => resource.lectureId === lecture.id);
+    
+    return hasUploadedFiles || hasSourceCode || hasExternalRes;
   };
 
   return (
@@ -1501,8 +1423,8 @@ export default function LectureItem({
                   uploadProgress={uploadProgress}
                   triggerFileUpload={triggerFileUpload}
                   onLibraryItemSelect={handleLibraryItemSelect}
-                  onSourceCodeSelect={handleSourceCodeSelect} // Add this
-                  onExternalResourceAdd={handleExternalResourceAdd} // Add this
+                  onSourceCodeSelect={handleSourceCodeSelect}
+                  onExternalResourceAdd={handleExternalResourceAdd}
                 />
               )}
 
@@ -1692,97 +1614,104 @@ export default function LectureItem({
                       </div>
                     )}
 
-                    {/* Display Downloadable Materials section if files exist */}
-                    {uploadedFiles.length > 0 && (
+                    {/* Display Downloadable Materials section if files exist for this lecture */}
+                    {uploadedFiles.filter(file => file.lectureId === lecture.id).length > 0 && (
                       <div className="mb-4 border-b border-gray-400 pb-2">
                         <h3 className="text-sm font-bold text-gray-700 mb-2">
                           Downloadable materials
                         </h3>
-                        {uploadedFiles.map((file, index) => (
-                          <div
-                            key={`file-${index}`}
-                            className="flex justify-between items-center py-1"
-                          >
-                            <div className="flex items-center text-gray-800">
-                              <FileDown
-                                size={13}
-                                className="text-gray-800 mr-1"
-                              />
-                              <span className="text-sm text-gray-800">
-                                {file.name} ({file.size})
-                              </span>
-                            </div>
-                            <button
-                              onClick={() => {
-                                setUploadedFiles(
-                                  uploadedFiles.filter((_, i) => i !== index)
-                                );
-                              }}
-                              className="text-gray-400 hover:bg-gray-200 p-2 rounded"
+                        {uploadedFiles
+                          .filter(file => file.lectureId === lecture.id)
+                          .map((file, index) => (
+                            <div
+                              key={`file-${index}`}
+                              className="flex justify-between items-center py-1"
                             >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        ))}
+                              <div className="flex items-center text-gray-800">
+                                <FileDown
+                                  size={13}
+                                  className="text-gray-800 mr-1"
+                                />
+                                <span className="text-sm text-gray-800">
+                                  {file.name} ({file.size})
+                                </span>
+                              </div>
+                              <button
+                                onClick={() => {
+                                  setUploadedFiles(
+                                    uploadedFiles.filter((_, i) => i !== index)
+                                  );
+                                }}
+                                className="text-gray-400 hover:bg-gray-200 p-2 rounded"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          ))}
                       </div>
                     )}
 
-                    {sourceCodeFiles.length > 0 && (
+                    {/* Display Source Code section if files exist for this lecture */}
+                    {sourceCodeFiles.filter(file => file.lectureId === lecture.id).length > 0 && (
                       <div className="mb-4 border-b border-gray-400 pb-2">
                         <h3 className="text-sm font-bold text-gray-700 mb-2">
                           Source Code
                         </h3>
-                        {sourceCodeFiles.map((file, index) => (
-                          <div
-                            key={`sourcecode-${index}`}
-                            className="flex justify-between items-center py-1"
-                          >
-                            <div className="flex items-center">
-                              <span className="text-sm text-gray-800">
-                                {file.name} ({file.type})
-                              </span>
-                            </div>
-                            <button
-                              onClick={() => removeSourceCodeFile(file.name)}
-                              className="text-gray-400 hover:bg-gray-200 p-2 rounded"
+                        {sourceCodeFiles
+                          .filter(file => file.lectureId === lecture.id)
+                          .map((file, index) => (
+                            <div
+                              key={`sourcecode-${index}`}
+                              className="flex justify-between items-center py-1"
                             >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        ))}
+                              <div className="flex items-center">
+                                <span className="text-sm text-gray-800">
+                                  {file.name} ({file.type})
+                                </span>
+                              </div>
+                              <button
+                                onClick={() => removeSourceCodeFile(file.name)}
+                                className="text-gray-400 hover:bg-gray-200 p-2 rounded"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          ))}
                       </div>
                     )}
 
-                    {/* External Resources section - separate from other sections */}
-                    {externalResources.length > 0 && (
+                    {/* External Resources section - only for this lecture */}
+                    {externalResources.filter(resource => resource.lectureId === lecture.id).length > 0 && (
                       <div className="mb-4 border-b border-gray-400 pb-2">
                         <h3 className="text-sm font-bold text-gray-700 mb-2">
                           External Resources
                         </h3>
-                        {externalResources.map((resource, index) => (
-                          <div
-                            key={`resource-${index}`}
-                            className="flex justify-between items-center py-1"
-                          >
-                            <div className="flex items-center text-gray-800">
-                              <SquareArrowOutUpRight
-                                size={13}
-                                className="mr-1 text-gray-800"
-                              />
-                              <span className="text-sm text-gray-800">
-                                {resource.title}
-                              </span>
-                            </div>
-                            <button
-                              onClick={() =>
-                                removeExternalResource(resource.title)
-                              }
-                              className="text-gray-400 hover:bg-gray-200 p-2 rounded"
+                        {externalResources
+                          .filter(resource => resource.lectureId === lecture.id)
+                          .map((resource, index) => (
+                            <div
+                              key={`resource-${index}`}
+                              className="flex justify-between items-center py-1"
                             >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        ))}
+                              <div className="flex items-center text-gray-800">
+                                <SquareArrowOutUpRight
+                                  size={13}
+                                  className="mr-1 text-gray-800"
+                                />
+                                <span className="text-sm text-gray-800">
+                                  {typeof resource.title === 'string' ? resource.title : resource.name}
+                                </span>
+                              </div>
+                              <button
+                                onClick={() =>
+                                  removeExternalResource(resource.title)
+                                }
+                                className="text-gray-400 hover:bg-gray-200 p-2 rounded"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          ))}
                       </div>
                     )}
 
