@@ -43,7 +43,7 @@ interface QuizItemProps {
     quizId: string,
     questions: any[]
   ) => void;
-  sections?: any[]; // All sections for preview
+  sections: any[]; // All sections for preview
   allSections: any[]
 }
 
@@ -74,7 +74,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
   toggleContentSection,
   updateQuizQuestions,
   allSections,
-  sections = allSections, // All sections for preview
+  sections
 }) => {
   const lectureNameInputRef = useRef<HTMLInputElement>(null);
   const [expanded, setExpanded] = useState(false);
@@ -105,6 +105,8 @@ const QuizItem: React.FC<QuizItemProps> = ({
   useEffect(() => {
     setQuestions(lecture.questions || []);
   }, [lecture.questions]);
+
+  
 
   // Add effect to close dropdown when clicking outside
   useEffect(() => {
@@ -197,109 +199,6 @@ const QuizItem: React.FC<QuizItemProps> = ({
 
   // Preview component - Updated to use ALL sections
   const QuizPreviewPage: React.FC = () => {
-    console.log("QuizPreviewPage - All sections:", sections);
-    console.log("QuizPreviewPage - Current section ID:", sectionId);
-    console.log("QuizPreviewPage - Lecture (Quiz) data:", lecture);
-    console.log("QuizPreviewPage - Quiz data:", quizData);
-    
-    // Process ALL sections to include our quiz in the proper structure
-    const processedSections = sections.map(section => {
-      if (section.id === sectionId) {
-        // This is the section containing our quiz
-        const regularLectures = (section.lectures || []).filter((l: any) => 
-          !l.contentType || l.contentType === 'video' || l.contentType === 'article'
-        );
-        
-        const quizzes = (section.lectures || []).filter((l: any) => 
-          l.contentType === 'quiz'
-        ).map((l: any) => ({
-          id: l.id,
-          name: l.name || "Quiz",
-          description: l.description,
-          contentType: "quiz",
-          questions: l.questions || [],
-          duration: "10min"
-        }));
-        
-        // Make sure our current quiz is included
-        const currentQuizExists = quizzes.find((q: any) => q.id === lecture.id);
-        if (!currentQuizExists) {
-          quizzes.push({
-            id: lecture.id,
-            name: lecture.name || "New quiz",
-            description: lecture.description,
-            contentType: "quiz",
-            questions: questions,
-            duration: "10min"
-          });
-        }
-
-        return {
-          ...section,
-          lectures: regularLectures,
-          quizzes: quizzes,
-          assignments: (section.lectures || []).filter((l: any) => 
-            l.contentType === 'assignment'
-          ).map((l: any) => ({
-            id: l.id,
-            name: l.name || "Assignment",
-            description: l.description,
-            contentType: "assignment",
-            duration: "30min"
-          })),
-          codingExercises: (section.lectures || []).filter((l: any) => 
-            l.contentType === 'coding-exercise'
-          ).map((l: any) => ({
-            id: l.id,
-            name: l.name || "Coding Exercise",
-            description: l.description,
-            contentType: "coding-exercise",
-            duration: "15min"
-          })),
-          isExpanded: section.isExpanded !== false
-        };
-      } else {
-        // Other sections - process their content types
-        return {
-          ...section,
-          lectures: (section.lectures || []).filter((l: any) => 
-            !l.contentType || l.contentType === 'video' || l.contentType === 'article'
-          ),
-          quizzes: (section.lectures || []).filter((l: any) => 
-            l.contentType === 'quiz'
-          ).map((l: any) => ({
-            id: l.id,
-            name: l.name || "Quiz",
-            description: l.description,
-            contentType: "quiz",
-            questions: l.questions || [],
-            duration: "10min"
-          })),
-          assignments: (section.lectures || []).filter((l: any) => 
-            l.contentType === 'assignment'
-          ).map((l: any) => ({
-            id: l.id,
-            name: l.name || "Assignment",
-            description: l.description,
-            contentType: "assignment",
-            duration: "30min"
-          })),
-          codingExercises: (section.lectures || []).filter((l: any) => 
-            l.contentType === 'coding-exercise'
-          ).map((l: any) => ({
-            id: l.id,
-            name: l.name || "Coding Exercise",
-            description: l.description,
-            contentType: "coding-exercise",
-            duration: "15min"
-          })),
-          isExpanded: section.isExpanded !== false
-        };
-      }
-    });
-
-    console.log("QuizPreviewPage - Processed sections:", processedSections);
-
     return (
       <StudentVideoPreview
         videoContent={{
@@ -324,7 +223,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
         section={{
           id: 'all-sections',
           name: 'All Sections',
-          sections: processedSections // Pass all processed sections
+          sections: sections // Pass all processed sections
         }}
         quizData={quizData}
       />

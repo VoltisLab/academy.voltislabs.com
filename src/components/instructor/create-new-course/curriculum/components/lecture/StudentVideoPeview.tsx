@@ -928,6 +928,8 @@ if (!shouldShowPreview) {
 
   const currentContent = getCurrentContent();
 
+  console.log("sections from quiz item " + section)
+
   // Main render method
   return (
     <div className="fixed inset-0 z-[9999] bg-white flex flex-col">

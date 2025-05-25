@@ -496,6 +496,7 @@ export default function SectionItem({
           handleDrop={handleDrop}
           toggleContentSection={toggleContentSection}
           updateQuizQuestions={updateQuizQuestions}
+          sections={allSections}
           allSections={allSections}
           // isDragging={isDragging}
           // handleDragEnd={handleDragEnd}

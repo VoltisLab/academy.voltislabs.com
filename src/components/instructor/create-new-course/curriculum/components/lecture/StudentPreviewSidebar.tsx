@@ -475,7 +475,7 @@ useEffect(() => {
           className="flex justify-between items-center mb-2 cursor-pointer"
           onClick={() => toggleSection(section.id)}
         >
-          <h3 className="font-bold text-sm">Section{index+1}: {section.name}</h3>
+          <h3 className="font-bold text-sm">Section {index+1}: {section.name}</h3>
           {expandedSections[section.id] ? (
             <ChevronUp className="w-4 h-4" />
           ) : (
