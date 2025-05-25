@@ -942,10 +942,8 @@ if (!shouldShowPreview) {
           <div className="flex-shrink-0" style={{ height: "calc(100vh - 280px)" }}>
             {activeItemType === "quiz" ? (
               // Quiz view - render QuizPreview component
-              <div className="bg-white relative w-full h-full">
-                <div className="relative w-full h-full p-6">
+              <div className="bg-white relative h-full">
                   <QuizPreview quiz={quizData} />
-                </div>
               </div>
             ) : activeItemType === "coding-exercise" ? (
               // Coding exercise view - using actual data from selected coding exercise

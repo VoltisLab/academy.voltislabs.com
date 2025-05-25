@@ -905,7 +905,7 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({ quiz, onClose }) => {
   const needsReviewCount = needsReviewQuestions.length;
 
   return (
-    <div className="flex flex-col h-full relative">
+    <div className="flex flex-col h-full relative w-[79.5vw]">
       {/* Main content */}
       {(quizStatus === "Overview" || quizStatus === "Questions") && (
         <main className="flex-1 overflow-y-auto p-4 sm:p-8 sm:pt-15 w-full">
