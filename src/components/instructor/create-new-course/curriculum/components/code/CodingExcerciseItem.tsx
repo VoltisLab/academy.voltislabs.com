@@ -45,7 +45,7 @@ const CodingExerciseItem: React.FC<CodingExerciseItemProps> = ({
   handleDragEnd,
   handleDragLeave,
   draggedLecture,
-  allSections = [],
+  allSections,
   dragTarget,
   // Required edit handler for opening the modal
   customEditHandler
