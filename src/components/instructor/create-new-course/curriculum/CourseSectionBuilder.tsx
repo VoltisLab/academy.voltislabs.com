@@ -100,7 +100,8 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({ onSaveNext, courseId }) =
     saveDescription: saveSectionDescription,
     updateLectureWithUploadedContent,
     handleLectureDrop,
-    savePracticeCode
+    savePracticeCode,
+    updateQuiz
   } = useSections([]);
   
   const contentSectionModal = useModal();
@@ -544,6 +545,7 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({ onSaveNext, courseId }) =
                 // NEW: Pass the assignment editor handler
                 onEditAssignment={handleOpenAssignmentEditor}
                 allSections={getFormattedSectionsForPreview()}
+                updateQuiz={updateQuiz}
               />
             ))
           ) : (

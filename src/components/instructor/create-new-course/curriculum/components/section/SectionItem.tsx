@@ -125,6 +125,9 @@ interface SectionItemProps {
     codingExercises: any[];
     isExpanded: boolean;
   }>;
+  // New props for quiz functionality
+  addQuiz?: (sectionId: string, title: string, description: string) => string;
+  updateQuiz?: (sectionId: string, quizId: string, title: string, description: string) => void;
 }
 
 export default function SectionItem({
@@ -164,6 +167,8 @@ export default function SectionItem({
   openCodingExerciseModal,
   onEditAssignment,
   allSections,
+  addQuiz,
+  updateQuiz,
 }: SectionItemProps) {
   const sectionNameInputRef = useRef<HTMLInputElement>(null);
   // State for toggling action buttons
@@ -237,15 +242,37 @@ export default function SectionItem({
     setShowAssignmentForm(false);
   };
 
-  // Handler for adding a quiz
+  // Enhanced handler for adding a quiz - uses addQuiz instead of addLecture
   const handleAddQuiz = (
     sectionId: string,
     title: string,
     description: string
   ) => {
-    // First add the lecture with quiz content type
-    const newLectureId = addLecture(sectionId, "quiz", title);
+    console.log("SectionItem handling quiz add:", { sectionId, title, description });
+    
+    if (addQuiz) {
+      // Use the addQuiz function which properly handles the quiz creation with description
+      addQuiz(sectionId, title, description);
+    } else {
+      // Fallback to the old method if addQuiz is not available
+      const newLectureId = addLecture(sectionId, "quiz", title);
+    }
+    
     setShowQuizForm(false);
+  };
+
+  // Handler for editing a quiz
+  const handleEditQuiz = (
+    sectionId: string,
+    quizId: string,
+    title: string,
+    description: string
+  ) => {
+    console.log("SectionItem handling quiz edit:", { sectionId, quizId, title, description });
+    
+    if (updateQuiz) {
+      updateQuiz(sectionId, quizId, title, description);
+    }
   };
 
   // Add handler for adding a coding exercise
@@ -498,6 +525,7 @@ export default function SectionItem({
           updateQuizQuestions={updateQuizQuestions}
           sections={allSections}
           allSections={allSections}
+          onEditQuiz={handleEditQuiz} // Pass the edit handler
           // isDragging={isDragging}
           // handleDragEnd={handleDragEnd}
           // handleDragLeave={handleDragLeave}
@@ -726,12 +754,13 @@ export default function SectionItem({
               />
             )}
 
-            {/* Quiz Form */}
+            {/* Enhanced Quiz Form */}
             {showQuizForm && (
               <QuizForm
                 sectionId={section.id}
                 onAddQuiz={handleAddQuiz}
                 onCancel={() => setShowQuizForm(false)}
+                isEdit={false}
               />
             )}
 

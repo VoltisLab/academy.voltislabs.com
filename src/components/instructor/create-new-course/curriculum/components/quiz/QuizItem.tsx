@@ -7,6 +7,7 @@ import { GoQuestion } from "react-icons/go";
 import { RxHamburgerMenu } from "react-icons/rx";
 // Import the updated StudentVideoPreview component that supports quizData
 import StudentVideoPreview from "../lecture/StudentVideoPeview";
+import QuizForm from "./QuizForm";
 
 interface QuizItemProps {
   lecture: Lecture;
@@ -45,6 +46,7 @@ interface QuizItemProps {
   ) => void;
   sections: any[]; // All sections for preview
   allSections: any[]
+  onEditQuiz?: (sectionId: string, quizId: string, title: string, description: string) => void;
 }
 
 interface Question {
@@ -57,7 +59,6 @@ interface Question {
   correctAnswerIndex: number;
   relatedLecture?: string;
   type: string;
-
 }
 
 const QuizItem: React.FC<QuizItemProps> = ({
@@ -74,7 +75,8 @@ const QuizItem: React.FC<QuizItemProps> = ({
   toggleContentSection,
   updateQuizQuestions,
   allSections,
-  sections
+  sections,
+  onEditQuiz,
 }) => {
   const lectureNameInputRef = useRef<HTMLInputElement>(null);
   const [expanded, setExpanded] = useState(false);
@@ -86,6 +88,38 @@ const QuizItem: React.FC<QuizItemProps> = ({
   const [showPreviewDropdown, setShowPreviewDropdown] = useState(false);
   const [showVideoPreview, setShowVideoPreview] = useState(false);
   const [previewMode, setPreviewMode] = useState<"instructor" | "student" | null>(null);
+  const [showEditQuizForm, setShowEditQuizForm] = useState(false);
+
+  // FIXED: Quiz edit handler
+  const handleQuizEditSubmit = (sectionId: string, quizId: string, title: string, description: string) => {
+    if (onEditQuiz) {
+      onEditQuiz(sectionId, quizId, title, description);
+    }
+    setShowEditQuizForm(false);
+  };
+
+  // FIXED: Edit button click handler - Now properly expands the quiz item
+  const handleEditQuiz = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    console.log('Edit quiz clicked, setting showEditQuizForm to true'); // Debug log
+    
+    // IMPORTANT: Expand the quiz item first if it's collapsed
+    if (!expanded) {
+      setExpanded(true);
+      if (toggleContentSection) {
+        toggleContentSection(sectionId, lecture.id);
+      }
+    }
+    
+    // Then show the edit form
+    setShowEditQuizForm(true);
+    
+    // Clear conflicting states
+    setShowQuestionForm(false);
+    setShowQuestionTypeSelector(false);
+    setEditingQuestionIndex(null);
+    setShowEditForm(false);
+  };
 
   const [questions, setQuestions] = useState<Question[]>(
     lecture.questions || []
@@ -96,6 +130,11 @@ const QuizItem: React.FC<QuizItemProps> = ({
   const [showQuestionTypeSelector, setShowQuestionTypeSelector] =
     useState(false);
 
+  // Debug effect to track showEditQuizForm changes
+  useEffect(() => {
+    console.log('showEditQuizForm state changed:', showEditQuizForm);
+  }, [showEditQuizForm]);
+
   useEffect(() => {
     if (editingLectureId === lecture.id && lectureNameInputRef.current) {
       lectureNameInputRef.current.focus();
@@ -105,8 +144,6 @@ const QuizItem: React.FC<QuizItemProps> = ({
   useEffect(() => {
     setQuestions(lecture.questions || []);
   }, [lecture.questions]);
-
-  
 
   // Add effect to close dropdown when clicking outside
   useEffect(() => {
@@ -171,9 +208,8 @@ const QuizItem: React.FC<QuizItemProps> = ({
     setExpanded(true);
   };
 
-
   // Preview functionality (similar to LectureItem)
-    const handlePreviewSelection = (mode: "instructor" | "student"): void => {
+  const handlePreviewSelection = (mode: "instructor" | "student"): void => {
     console.log(`Quiz Preview mode: ${mode}, Quiz ID: ${lecture.id}`);
     console.log("All sections available:", sections.length);
     
@@ -281,10 +317,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
             {isHovering && (
               <>
                 <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setEditingLectureId(lecture.id);
-                  }}
+                  onClick={handleEditQuiz}
                   className="text-gray-500 hover:text-gray-700 p-1 transition-opacity cursor-pointer"
                 >
                   <Edit3 className="w-4 h-4" />
@@ -381,7 +414,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
     );
   }
 
-  // Expanded view
+  // Expanded view - FIXED: Restructured conditional rendering
   return (
     <div
       className="mb-3 border border-zinc-400 rounded-md bg-white overflow-hidden"
@@ -431,10 +464,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
           {isHovering && (
             <>
               <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setEditingLectureId(lecture.id);
-                }}
+                onClick={handleEditQuiz}
                 className="text-gray-500 hover:text-gray-700 p-1 transition-opacity cursor-pointer"
               >
                 <Edit3 className="w-4 h-4" />
@@ -480,9 +510,21 @@ const QuizItem: React.FC<QuizItemProps> = ({
         </div>
       </div>
 
+      {/* FIXED: Restructured expanded section with proper conditional rendering */}
       {expanded && (
         <div className="border-t border-zinc-400">
-          {showQuestionForm || showQuestionTypeSelector ? (
+          {/* Show Quiz Edit Form first if it's active */}
+          {showEditQuizForm ? (
+            <QuizForm
+              sectionId={sectionId}
+              onEditQuiz={handleQuizEditSubmit}
+              onCancel={() => setShowEditQuizForm(false)}
+              isEdit={true}
+              initialTitle={lecture.name || ""}
+              initialDescription={lecture.description || ""}
+              quizId={lecture.id}
+            />
+          ) : showQuestionForm || showQuestionTypeSelector ? (
             <div className="relative">
               {showQuestionTypeSelector && (
                 <div className="absolute -translate-y-[97.5%] px-3 py-1 border-x border-t border-zinc-400 right-10 gap-1.5 bg-white z-10 flex items-center">
@@ -564,6 +606,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
               </div>
             </div>
           ) : (
+            /* Default expanded view - Questions list */
             <div className="px-3 py-2">
               <div className="flex justify-between items-center mb-3">
                 <div className="flex items-center">

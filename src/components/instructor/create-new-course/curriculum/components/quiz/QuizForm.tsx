@@ -3,43 +3,42 @@ import React, { useEffect, useRef, useState } from "react";
 import { BoldIcon, Italic, X } from "lucide-react";
 import ReactQuill from "react-quill-new";
 import RichTextEditor from "../../../../RichTextEditor";
-// import type { ReactQuillProps } from "react-quill";
 
 interface QuizFormProps {
   sectionId: string;
-  onAddQuiz: (sectionId: string, title: string, description: string) => void;
+  onAddQuiz?: (sectionId: string, title: string, description: string) => void;
+  onEditQuiz?: (sectionId: string, quizId: string, title: string, description: string) => void;
   onCancel: () => void;
+  isEdit?: boolean;
+  initialTitle?: string;
+  initialDescription?: string;
+  quizId?: string;
 }
 
 const QuizForm: React.FC<QuizFormProps> = ({
   sectionId,
   onAddQuiz,
+  onEditQuiz,
   onCancel,
+  isEdit = false,
+  initialTitle = "",
+  initialDescription = "",
+  quizId,
 }) => {
-  const [title, setTitle] = useState<string>("");
-  const [description, setDescription] = useState<string>("");
+  const [title, setTitle] = useState<string>(initialTitle);
+  const [description, setDescription] = useState<string>(initialDescription);
   const [isBold, setIsBold] = useState(false);
   const [isItalic, setIsItalic] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
 
-  // const editorRef = useRef<HTMLTextAreaElement>(null);
-
-  const toggleBold = () => setIsBold((prev) => !prev);
-  const toggleItalic = () => setIsItalic((prev) => !prev);
-
-  // const fontWeight = isBold ? "font-medium" : "font-normal";
-  // const fontStyle = isItalic ? "italic" : "not-italic";
-  const wrapperRing = isFocused
-    ? "border border-transparent ring-1 ring-purple-600"
-    : "border-zinc-400 border";
   const wrapperRef = useRef<HTMLDivElement>(null);
-
-  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setDescription(e.target.value);
-  };
-
   const quillRef = useRef<ReactQuill | null>(null);
-  const [value, setValue] = useState("");
+
+  // Update form when initial values change (for edit mode)
+  useEffect(() => {
+    setTitle(initialTitle);
+    setDescription(initialDescription);
+  }, [initialTitle, initialDescription]);
 
   const toggleFormat = (type: "bold" | "italic") => {
     if (quillRef.current) {
@@ -78,16 +77,20 @@ const QuizForm: React.FC<QuizFormProps> = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleAddQuiz = () => {
+  const handleSubmit = () => {
     if (title.trim()) {
-      onAddQuiz(sectionId, title.trim(), description.trim());
+      if (isEdit && onEditQuiz && quizId) {
+        onEditQuiz(sectionId, quizId, title.trim(), description.trim());
+      } else if (!isEdit && onAddQuiz) {
+        onAddQuiz(sectionId, title.trim(), description.trim());
+      }
     }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && title.trim()) {
       e.preventDefault();
-      handleAddQuiz();
+      handleSubmit();
     } else if (e.key === "Escape") {
       onCancel();
     }
@@ -96,7 +99,9 @@ const QuizForm: React.FC<QuizFormProps> = ({
   return (
     <div className="bg-white border border-gray-200 rounded-lg p-4 mb-4">
       <div className="flex justify-between items-center mb-2">
-        <h3 className="text-sm font-medium">New Quiz:</h3>
+        <h3 className="text-sm font-medium">
+          {isEdit ? "Edit Quiz:" : "New Quiz:"}
+        </h3>
         <button
           onClick={onCancel}
           className="text-zinc-400 hover:text-gray-700"
@@ -114,10 +119,10 @@ const QuizForm: React.FC<QuizFormProps> = ({
             placeholder="Enter a Title"
             className="w-full border border-zinc-400 rounded focus:border-transparent px-3 py-2 focus:outline-none focus:ring-1 focus:ring-purple-600"
             maxLength={80}
-            autoFocus
+            autoFocus={!isEdit} // Only autofocus for new quizzes
           />
           <div className="text-right text-sm text-zinc-400 absolute top-1/2 right-3 -translate-y-1/2">
-            {80 - title.length || 0}
+            {80 - title.length}
           </div>
         </div>
         {/* Description */}
@@ -137,7 +142,7 @@ const QuizForm: React.FC<QuizFormProps> = ({
         </button>
         <button
           type="button"
-          onClick={handleAddQuiz}
+          onClick={handleSubmit}
           disabled={!title.trim()}
           className={`px-4 py-2 ${
             !title.trim()
@@ -145,7 +150,7 @@ const QuizForm: React.FC<QuizFormProps> = ({
               : "bg-purple-600 hover:bg-indigo-700"
           } text-white rounded-md focus:outline-none focus:ring-2 focus:ring-purple-600`}
         >
-          Add Quiz
+          {isEdit ? "Save Quiz" : "Add Quiz"}
         </button>
       </div>
     </div>
