@@ -272,7 +272,7 @@ const MonacoEditorComponent = ({ language, value, onChange, readOnly = false, is
 
   return (
     <Editor
-      height="78vh"
+      height="65vh"
       language={language}
       value={value}
       onChange={handleEditorChange}
@@ -280,7 +280,7 @@ const MonacoEditorComponent = ({ language, value, onChange, readOnly = false, is
       options={{
         minimap: { enabled: false },
         scrollBeyondLastLine: false,
-        fontSize: 14,
+        fontSize: 10,
         wordWrap: 'on',
         automaticLayout: true,
         readOnly: readOnly,
@@ -1021,7 +1021,7 @@ const isLastTab = () => {
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 overflow-y-auto">
+      <div className={`flex-1 overflow-y-auto ${activeTab === 'authorSolution' ? "bg-black" : " "} `}>
         {view === 'languageSelection' && (
           <div className="fixed inset-0 flex items-center justify-center z-40">
             {/* Backdrop overlay with blur effect */}
@@ -1437,7 +1437,7 @@ const isLastTab = () => {
             </div>
             
             {/* Run tests button */}
-            <div className="fixed bottom-[114px] left-0 px-6 py-10 z-10 bg-gradient-to-t from-black via-black to-transparent w-full">
+            <div className="fixed bottom-[114px] left-0 px-6 pt-8 pb-5 z-10 bg-gradient-to-t from-black via-black to-transparent w-full">
   <button 
     className="bg-white text-gray-700 px-4 py-2 rounded-md flex items-center font-bold text-sm shadow-md hover:bg-gray-100"
     onClick={handleRunTests}

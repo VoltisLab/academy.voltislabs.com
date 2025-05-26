@@ -212,32 +212,66 @@ const StudentVideoPreview = ({
   const [selectedItemData, setSelectedItemData] =
     useState<SelectedItemType | null>(lecture);
 
-  // Fix the handleItemSelect function
+  // Process sections to get flat structure for searching
+  const processedSections = React.useMemo(() => {
+    if (!section) return [];
+
+    // Handle the new structure with nested sections
+    if (section.sections && Array.isArray(section.sections)) {
+      console.log("Using nested sections structure:", section.sections);
+      return section.sections;
+    }
+    
+    // Handle backward compatibility with single section
+    if (section.lectures || section.quizzes || section.assignments || section.codingExercises) {
+      console.log("Using single section structure");
+      return [{
+        id: section.id,
+        name: section.name,
+        lectures: section.lectures || [],
+        quizzes: section.quizzes || [],
+        assignments: section.assignments || [],
+        codingExercises: section.codingExercises || [],
+        isExpanded: true
+      }];
+    }
+
+    return [];
+  }, [section]);
+
+  // FIXED: Updated handleItemSelect function to search through all processedSections
   const handleItemSelect = (itemId: string, itemType: string) => {
     console.log(`Selected item: ${itemId}, type: ${itemType}`);
     setActiveItemId(itemId);
     setActiveItemType(itemType);
 
-    // Find the selected item from the sections data with proper typing
+    // Find the selected item from the processedSections data with proper typing
     let selectedItem: SelectedItemType | undefined;
 
-    if (section) {
+    // Search through all processed sections
+    for (const sectionData of processedSections) {
       // Check lectures
-      selectedItem = section.lectures?.find((l: Lecture) => l.id === itemId);
+      if (sectionData.lectures) {
+        selectedItem = sectionData.lectures.find((l: Lecture) => l.id === itemId);
+        if (selectedItem) break;
+      }
       
       // Check quizzes if not found in lectures
-      if (!selectedItem && section.quizzes) {
-        selectedItem = section.quizzes.find((q: Quiz) => q.id === itemId);
+      if (!selectedItem && sectionData.quizzes) {
+        selectedItem = sectionData.quizzes.find((q: Quiz) => q.id === itemId);
+        if (selectedItem) break;
       }
       
       // Check assignments if not found
-      if (!selectedItem && section.assignments) {
-        selectedItem = section.assignments.find((a: Assignment) => a.id === itemId);
+      if (!selectedItem && sectionData.assignments) {
+        selectedItem = sectionData.assignments.find((a: Assignment) => a.id === itemId);
+        if (selectedItem) break;
       }
       
       // Check coding exercises if not found
-      if (!selectedItem && section.codingExercises) {
-        selectedItem = section.codingExercises.find((e: CodingExercise) => e.id === itemId);
+      if (!selectedItem && sectionData.codingExercises) {
+        selectedItem = sectionData.codingExercises.find((e: CodingExercise) => e.id === itemId);
+        if (selectedItem) break;
       }
     }
 
@@ -313,32 +347,6 @@ const StudentVideoPreview = ({
       setModalStep((modalStep - 1) as ModalStep);
     }
   };
-
-  const processedSections = React.useMemo(() => {
-    if (!section) return [];
-
-    // Handle the new structure with nested sections
-    if (section.sections && Array.isArray(section.sections)) {
-      console.log("Using nested sections structure:", section.sections);
-      return section.sections;
-    }
-    
-    // Handle backward compatibility with single section
-    if (section.lectures || section.quizzes || section.assignments || section.codingExercises) {
-      console.log("Using single section structure");
-      return [{
-        id: section.id,
-        name: section.name,
-        lectures: section.lectures || [],
-        quizzes: section.quizzes || [],
-        assignments: section.assignments || [],
-        codingExercises: section.codingExercises || [],
-        isExpanded: true
-      }];
-    }
-
-    return [];
-  }, [section]);
 
   // Function to handle frequency selection
   const handleFrequencyChange = (newFrequency: FrequencyType) => {
@@ -434,25 +442,56 @@ const StudentVideoPreview = ({
     }
   }, []);
 
-  // Early return check - updated to be more flexible
- const shouldShowPreview = 
-  videoContent.selectedVideoDetails || // Has video
-  (articleContent && articleContent.text) || // Has article
-  (activeItemType === "quiz" && quizData) || // Has quiz
-  activeItemType === "assignment" || // Is assignment
-  activeItemType === "coding-exercise" || // Is coding exercise
-  activeItemType === "video"; // Is video type (even without selectedVideoDetails)
+  // FIXED: Updated getCurrentContent to use selectedItemData properly
+  const getCurrentContent = () => {
+    const currentSelectedItem = selectedItemData;
+    
+    if (activeItemType === "quiz") {
+      // For quiz, use the selected item's data if available, otherwise fall back to quizData prop
+      const currentQuizData = currentSelectedItem && 'questions' in currentSelectedItem 
+        ? currentSelectedItem as QuizData 
+        : quizData;
+      return { type: "quiz", data: currentQuizData };
+    } else if (activeItemType === "article") {
+      // For articles, check if the selected item has article content
+      const currentArticleData = currentSelectedItem && 'text' in currentSelectedItem 
+        ? currentSelectedItem as ArticleContent 
+        : articleContent;
+      return { type: "article", data: currentArticleData };
+    } else if (activeItemType === "assignment") {
+      return { type: "assignment", data: currentSelectedItem };
+    } else if (activeItemType === "coding-exercise") {
+      return { type: "coding-exercise", data: currentSelectedItem };
+    } else {
+      // For video content, check if the selected item has video details
+      const currentVideoData = currentSelectedItem && 'videoUrl' in currentSelectedItem 
+        ? { selectedVideoDetails: { url: (currentSelectedItem as any).videoUrl, duration: (currentSelectedItem as any).duration } }
+        : videoContent;
+      return { type: "video", data: currentVideoData };
+    }
+  };
 
-if (!shouldShowPreview) {
-  console.log("Early return - no content to display", {
-    hasVideoContent: !!videoContent.selectedVideoDetails,
-    hasArticleContent: !!(articleContent && articleContent.text),
-    hasQuizContent: !!(quizData && activeItemType === "quiz"),
-    activeItemType: activeItemType,
-    shouldShow: shouldShowPreview
-  });
-  return null;
-}
+  // Early return check - updated to be more flexible
+  const shouldShowPreview = 
+    videoContent.selectedVideoDetails || // Has video
+    (articleContent && articleContent.text) || // Has article
+    (activeItemType === "quiz" && (quizData || selectedItemData)) || // Has quiz
+    activeItemType === "assignment" || // Is assignment
+    activeItemType === "coding-exercise" || // Is coding exercise
+    activeItemType === "video" || // Is video type (even without selectedVideoDetails)
+    selectedItemData; // Has selected item data
+
+  if (!shouldShowPreview) {
+    console.log("Early return - no content to display", {
+      hasVideoContent: !!videoContent.selectedVideoDetails,
+      hasArticleContent: !!(articleContent && articleContent.text),
+      hasQuizContent: !!(quizData && activeItemType === "quiz"),
+      activeItemType: activeItemType,
+      hasSelectedItemData: !!selectedItemData,
+      shouldShow: shouldShowPreview
+    });
+    return null;
+  }
 
   // Format time in MM:SS format
   const formatTime = (seconds: number): string => {
@@ -498,8 +537,8 @@ if (!shouldShowPreview) {
         timestamp: progress,
         formattedTime: formatTime(progress),
         content: currentNoteContent,
-        lectureId: lecture.id || "default-lecture",
-        lectureName: lecture.name,
+        lectureId: activeItemId || "default-lecture",
+        lectureName: selectedItemData?.name || "Current Item",
         sectionName: "Demo Section", // This would typically come from your data structure
         createdAt: new Date(),
       };
@@ -537,7 +576,7 @@ if (!shouldShowPreview) {
     // Apply lecture filter
     if (selectedLectureFilter === "Current lecture") {
       filteredNotes = filteredNotes.filter(
-        (note) => note.lectureId === lecture.id
+        (note) => note.lectureId === activeItemId
       );
     }
 
@@ -911,24 +950,10 @@ if (!shouldShowPreview) {
     );
   };
 
-  // Get current content to display - used for dynamic content rendering
-  const getCurrentContent = () => {
-    if (activeItemType === "quiz" && quizData) {
-      return { type: "quiz", data: quizData };
-    } else if (activeItemType === "article" && hasArticleContent) {
-      return { type: "article", data: articleContent };
-    } else if (activeItemType === "assignment") {
-      return { type: "assignment", data: selectedItemData };
-    } else if (activeItemType === "coding-exercise") {
-      return { type: "coding-exercise", data: selectedItemData };
-    } else {
-      return { type: "video", data: videoContent };
-    }
-  };
-
   const currentContent = getCurrentContent();
 
-  console.log("sections from quiz item " + section)
+  console.log("Current content data:", currentContent);
+  console.log("Active item:", { id: activeItemId, type: activeItemType, data: selectedItemData });
 
   // Main render method
   return (
@@ -943,9 +968,9 @@ if (!shouldShowPreview) {
           {/* Content area - FIXED HEIGHT */}
           <div className="flex-shrink-0" style={{ height: "calc(100vh - 280px)" }}>
             {activeItemType === "quiz" ? (
-              // Quiz view - render QuizPreview component
+              // Quiz view - render QuizPreview component using selected quiz data
               <div className="bg-white relative h-full">
-                  <QuizPreview quiz={quizData} />
+                <QuizPreview quiz={currentContent.data as QuizData} />
               </div>
             ) : activeItemType === "coding-exercise" ? (
               // Coding exercise view - using actual data from selected coding exercise
@@ -1024,32 +1049,33 @@ if (!shouldShowPreview) {
                   onMouseLeave={() => setShowControls(false)}
                 >
                   <div className="relative w-full h-full mx-auto text-left">
-                    {activeItemType === "article" ||
-                    (articleContent && articleContent.text !== "") ? (
-                      // Article content
+                    {activeItemType === "article" || 
+                    (currentContent.data && typeof currentContent.data === 'object' && 'text' in currentContent.data && currentContent.data.text !== "") ? (
+                      // Article content - using selected item's article data
                       <div className="bg-white relative w-full h-full px-52">
                         <div className="relative w-full h-full px-8 py-6 overflow-y-auto">
                           <h1 className="text-2xl font-bold mb-4">
-                            {lecture.name}
+                            {selectedItemData?.name || "Article"}
                           </h1>
                           <div
                             className="article-content prose max-w-none"
                             dangerouslySetInnerHTML={{
-                              __html: articleContent?.text || "",
+                              __html: (currentContent.data as ArticleContent)?.text || "",
                             }}
                           />
 
-                          {(uploadedFiles.length > 0 ||
-                            sourceCodeFiles.length > 0 ||
-                            externalResources.length > 0) && (
+                          {/* Resources section - filter by current item ID */}
+                          {(uploadedFiles.filter(f => f.lectureId === activeItemId).length > 0 ||
+                            sourceCodeFiles.filter(f => f.lectureId === activeItemId).length > 0 ||
+                            externalResources.filter(r => r.lectureId === activeItemId).length > 0) && (
                             <div className="pt-6">
                               <h2 className="text-xl font-semibold mb-4">
-                                Resources for this lecture
+                                Resources for this {activeItemType}
                               </h2>
 
                               <div className="space-y-3">
                                 {/* Downloadable Files */}
-                                {uploadedFiles.map((file, index) => (
+                                {uploadedFiles.filter(f => f.lectureId === activeItemId).map((file, index) => (
                                   <div
                                     key={`uploaded-${index}`}
                                     className="flex items-center"
@@ -1066,7 +1092,7 @@ if (!shouldShowPreview) {
                                 ))}
 
                                 {/* Source Code Files */}
-                                {sourceCodeFiles.map((file, index) => (
+                                {sourceCodeFiles.filter(f => f.lectureId === activeItemId).map((file, index) => (
                                   <div
                                     key={`code-${index}`}
                                     className="flex items-center"
@@ -1083,7 +1109,7 @@ if (!shouldShowPreview) {
                                 ))}
 
                                 {/* External Links */}
-                                {externalResources.map((resource, index) => (
+                                {externalResources.filter(r => r.lectureId === activeItemId).map((resource, index) => (
                                   <div
                                     key={`external-${index}`}
                                     className="flex items-center"
@@ -1107,11 +1133,12 @@ if (!shouldShowPreview) {
                         </div>
                       </div>
                     ) : (
-                      // Video player with overlay
+                      // Video player with overlay - using selected item's video data
                       <>
                         <ReactPlayer
                           ref={playerRef}
                           url={
+                            (currentContent.data as any)?.selectedVideoDetails?.url ||
                             videoContent.selectedVideoDetails?.url ||
                             "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
                           }
@@ -1148,203 +1175,204 @@ if (!shouldShowPreview) {
                             </button>
                           </div>
                         )}
-                         {/* Video controls - ALWAYS show for all content types */}
-                <div className="h-12 bg-black w-full flex items-center px-4 text-white relative">
-                  {/* Progress bar at the very top */}
-                  <div className="absolute top-0 left-0 right-0 h-1 bg-gray-900">
-                    <div
-                      className="h-full bg-gradient-to-r from-purple-600 to-purple-700"
-                      style={{
-                        width: `${(progress / duration) * 100}%`,
-                      }}
-                    ></div>
-                  </div>
-
-                  {/* Left controls */}
-                  <div className="flex items-center space-x-3">
-                    <button
-                      className="hover:text-gray-300 focus:outline-none"
-                      aria-label="Play/Pause"
-                      onClick={() => setPlaying(!playing)}
-                    >
-                      {playing ? (
-                        <svg
-                          width="20"
-                          height="20"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path d="M10 4H6V20H10V4Z" fill="white" />
-                          <path d="M18 4H14V20H18V4Z" fill="white" />
-                        </svg>
-                      ) : (
-                        <Play className="w-5 h-5" />
-                      )}
-                    </button>
-
-                    {/* Rewind button with label */}
-                    <div className="relative">
-                      <button
-                        className="hover:text-gray-300 focus:outline-none"
-                        aria-label="Rewind 5s"
-                        onClick={handleRewind}
-                      >
-                        <svg
-                          width="18"
-                          height="18"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path
-                            d="M12.5 8V16L6.5 12L12.5 8Z"
-                            fill="white"
-                          />
-                          <path
-                            d="M18.5 8V16L12.5 12L18.5 8Z"
-                            fill="white"
-                          />
-                        </svg>
-                      </button>
-                      {rewindLabel && (
-                        <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-70 px-2 py-0.5 rounded text-xs">
-                          Rewind 5s
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Forward button with label */}
-                    <div className="relative">
-                      <button
-                        className="hover:text-gray-300 focus:outline-none"
-                        aria-label="Forward 5s"
-                        onClick={handleForward}
-                      >
-                        <svg
-                          width="18"
-                          height="18"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path
-                            d="M5.5 8V16L11.5 12L5.5 8Z"
-                            fill="white"
-                          />
-                          <path
-                            d="M11.5 8V16L17.5 12L11.5 8Z"
-                            fill="white"
-                          />
-                        </svg>
-                      </button>
-                      {forwardLabel && (
-                        <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-70 px-2 py-0.5 rounded text-xs whitespace-nowrap">
-                          Forward 5s
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="text-xs mx-2 flex items-center space-x-1 font-medium">
-                      <span>{formatTime(progress)}</span>
-                      <span className="text-gray-400">/</span>
-                      <span className="text-gray-400">
-                        {videoContent.selectedVideoDetails
-                          ?.duration || formatTime(duration)}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Center - empty space */}
-                  <div className="flex-1"></div>
-
-                  {/* Right controls */}
-                  <div className="flex items-center space-x-3">
-                    <button
-                      className="text-xs border border-gray-700 px-2 py-0.5 rounded hover:bg-gray-900 focus:outline-none"
-                      onClick={() => {
-                        const rates = [
-                          0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2,
-                        ];
-                        const currentIndex =
-                          rates.indexOf(playbackRate);
-                        const nextIndex =
-                          (currentIndex + 1) % rates.length;
-                        setPlaybackRate(rates[nextIndex]);
-                      }}
-                      type="button"
-                    >
-                      {playbackRate}x
-                    </button>
-
-                    {/* Volume control with hover slider */}
-                    <div className="relative">
-                      <button
-                        className="hover:text-gray-300 focus:outline-none"
-                        onMouseEnter={() => setShowVolumeSlider(true)}
-                        onMouseLeave={() =>
-                          setShowVolumeSlider(false)
-                        }
-                        type="button"
-                      >
-                        <Volume2 className="w-4 h-4" />
-                      </button>
-
-                      {showVolumeSlider && (
-                        <div
-                          className="absolute bottom-8 -left-1 bg-gray-900 p-2 rounded shadow-lg z-10"
-                          onMouseEnter={() =>
-                            setShowVolumeSlider(true)
-                          }
-                          onMouseLeave={() =>
-                            setShowVolumeSlider(false)
-                          }
-                        >
-                          <div
-                            className="h-20 w-1 bg-gray-700 rounded-full cursor-pointer"
-                            onClick={(e) => {
-                              const rect =
-                                e.currentTarget.getBoundingClientRect();
-                              const newVolume =
-                                1 -
-                                (e.clientY - rect.top) / rect.height;
-                              setVolume(
-                                Math.max(0, Math.min(1, newVolume))
-                              );
-                            }}
-                          >
-                            <div
-                              className="bg-white rounded-full absolute bottom-0 left-0 right-0"
-                              style={{ height: `${volume * 100}%` }}
-                            ></div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    <button
-                      className="hover:text-gray-300 focus:outline-none"
-                      type="button"
-                    >
-                      <Settings className="w-4 h-4" />
-                    </button>
-
-                    <button
-                      className="hover:text-gray-300 focus:outline-none"
-                      onClick={toggleFullscreen}
-                      type="button"
-                    >
-                      <Maximize className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
                       </>
-                      
                     )}
                   </div>
                 </div>
 
-               
+                {/* Video controls - ALWAYS show for video and article content */}
+                {(activeItemType === "video" || activeItemType === "article") && (
+                  <div className="h-12 bg-black w-full flex items-center px-4 text-white relative">
+                    {/* Progress bar at the very top */}
+                    <div className="absolute top-0 left-0 right-0 h-1 bg-gray-900">
+                      <div
+                        className="h-full bg-gradient-to-r from-purple-600 to-purple-700"
+                        style={{
+                          width: `${(progress / duration) * 100}%`,
+                        }}
+                      ></div>
+                    </div>
+
+                    {/* Left controls */}
+                    <div className="flex items-center space-x-3">
+                      <button
+                        className="hover:text-gray-300 focus:outline-none"
+                        aria-label="Play/Pause"
+                        onClick={() => setPlaying(!playing)}
+                      >
+                        {playing ? (
+                          <svg
+                            width="20"
+                            height="20"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                          >
+                            <path d="M10 4H6V20H10V4Z" fill="white" />
+                            <path d="M18 4H14V20H18V4Z" fill="white" />
+                          </svg>
+                        ) : (
+                          <Play className="w-5 h-5" />
+                        )}
+                      </button>
+
+                      {/* Rewind button with label */}
+                      <div className="relative">
+                        <button
+                          className="hover:text-gray-300 focus:outline-none"
+                          aria-label="Rewind 5s"
+                          onClick={handleRewind}
+                        >
+                          <svg
+                            width="18"
+                            height="18"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                          >
+                            <path
+                              d="M12.5 8V16L6.5 12L12.5 8Z"
+                              fill="white"
+                            />
+                            <path
+                              d="M18.5 8V16L12.5 12L18.5 8Z"
+                              fill="white"
+                            />
+                          </svg>
+                        </button>
+                        {rewindLabel && (
+                          <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-70 px-2 py-0.5 rounded text-xs">
+                            Rewind 5s
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Forward button with label */}
+                      <div className="relative">
+                        <button
+                          className="hover:text-gray-300 focus:outline-none"
+                          aria-label="Forward 5s"
+                          onClick={handleForward}
+                        >
+                          <svg
+                            width="18"
+                            height="18"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                          >
+                            <path
+                              d="M5.5 8V16L11.5 12L5.5 8Z"
+                              fill="white"
+                            />
+                            <path
+                              d="M11.5 8V16L17.5 12L11.5 8Z"
+                              fill="white"
+                            />
+                          </svg>
+                        </button>
+                        {forwardLabel && (
+                          <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-70 px-2 py-0.5 rounded text-xs whitespace-nowrap">
+                            Forward 5s
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="text-xs mx-2 flex items-center space-x-1 font-medium">
+                        <span>{formatTime(progress)}</span>
+                        <span className="text-gray-400">/</span>
+                        <span className="text-gray-400">
+                          {(currentContent.data as any)?.selectedVideoDetails?.duration ||
+                           videoContent.selectedVideoDetails?.duration || 
+                           formatTime(duration)}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Center - empty space */}
+                    <div className="flex-1"></div>
+
+                    {/* Right controls */}
+                    <div className="flex items-center space-x-3">
+                      <button
+                        className="text-xs border border-gray-700 px-2 py-0.5 rounded hover:bg-gray-900 focus:outline-none"
+                        onClick={() => {
+                          const rates = [
+                            0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2,
+                          ];
+                          const currentIndex =
+                            rates.indexOf(playbackRate);
+                          const nextIndex =
+                            (currentIndex + 1) % rates.length;
+                          setPlaybackRate(rates[nextIndex]);
+                        }}
+                        type="button"
+                      >
+                        {playbackRate}x
+                      </button>
+
+                      {/* Volume control with hover slider */}
+                      <div className="relative">
+                        <button
+                          className="hover:text-gray-300 focus:outline-none"
+                          onMouseEnter={() => setShowVolumeSlider(true)}
+                          onMouseLeave={() =>
+                            setShowVolumeSlider(false)
+                          }
+                          type="button"
+                        >
+                          <Volume2 className="w-4 h-4" />
+                        </button>
+
+                        {showVolumeSlider && (
+                          <div
+                            className="absolute bottom-8 -left-1 bg-gray-900 p-2 rounded shadow-lg z-10"
+                            onMouseEnter={() =>
+                              setShowVolumeSlider(true)
+                            }
+                            onMouseLeave={() =>
+                              setShowVolumeSlider(false)
+                            }
+                          >
+                            <div
+                              className="h-20 w-1 bg-gray-700 rounded-full cursor-pointer"
+                              onClick={(e) => {
+                                const rect =
+                                  e.currentTarget.getBoundingClientRect();
+                                const newVolume =
+                                  1 -
+                                  (e.clientY - rect.top) / rect.height;
+                                setVolume(
+                                  Math.max(0, Math.min(1, newVolume))
+                                );
+                              }}
+                            >
+                              <div
+                                className="bg-white rounded-full absolute bottom-0 left-0 right-0"
+                                style={{ height: `${volume * 100}%` }}
+                              ></div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      <button
+                        className="hover:text-gray-300 focus:outline-none"
+                        type="button"
+                      >
+                        <Settings className="w-4 h-4" />
+                      </button>
+
+                      <button
+                        className="hover:text-gray-300 focus:outline-none"
+                        onClick={toggleFullscreen}
+                        type="button"
+                      >
+                        <Maximize className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -1442,7 +1470,9 @@ if (!shouldShowPreview) {
                       <div className="text-gray-500 text-xs">Students</div>
                     </div>
                     <div>
-                      <div className="text-gray-700 font-bold">2mins</div>
+                      <div className="text-gray-700 font-bold">
+                        {selectedItemData?.duration || "2mins"}
+                      </div>
                       <div className="text-gray-500 text-xs">Total</div>
                     </div>
                   </div>
@@ -1507,9 +1537,11 @@ if (!shouldShowPreview) {
 
                     <div>
                       <p className="text-sm text-gray-700">
-                        Lectures: {section?.lectures ? section.lectures.length : 0}
+                        Content Type: {activeItemType}
                       </p>
-                      <p className="text-sm text-gray-700">Video: 2 total mins</p>
+                      <p className="text-sm text-gray-700">
+                        Duration: {selectedItemData?.duration || "2 mins"}
+                      </p>
                     </div>
                   </div>
 
@@ -1539,22 +1571,12 @@ if (!shouldShowPreview) {
                     <h3 className="text-sm text-gray-700 ">Description</h3>
                     <div className="text-sm text-gray-700 col-span-2">
                       <div>
-                        <h4 className="font-medium text-sm ">
-                          What you'll learn
+                        <h4 className="font-medium text-sm mb-2">
+                          Content Details
                         </h4>
-                        {/* Content would go here */}
-                      </div>
-                      <div>
-                        <h4 className="font-medium text-sm ">
-                          Are there any course requirements or prerequisites?
-                        </h4>
-                        {/* Content would go here */}
-                      </div>
-                      <div>
-                        <h4 className="font-medium text-sm">
-                          Who this course is for:
-                        </h4>
-                        {/* Content would go here */}
+                        <p className="mb-4">
+                          {selectedItemData?.description || `This is a ${activeItemType} content item.`}
+                        </p>
                       </div>
                     </div>
                   </div>
