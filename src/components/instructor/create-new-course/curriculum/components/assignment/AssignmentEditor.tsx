@@ -1,46 +1,18 @@
-import React, { useState, useRef } from 'react';
-import { ArrowLeft} from 'lucide-react';
-import SolutionsTab from './SolutionsTab';
-import QuestionsTab from './QuestionsTab';
-import BasicInfoTab from './BasicInfoTab';
+import React, { useState, useRef, JSX } from "react";
+import { ArrowLeft } from "lucide-react";
+import SolutionsTab from "./SolutionsTab";
+import QuestionsTab from "./QuestionsTab";
+import BasicInfoTab from "./BasicInfoTab";
+import InstructionsTab from "./InstructionsTab";
+import toast from "react-hot-toast";
+import { ExtendedLecture } from "@/lib/types";
 
 // Types
 interface AssignmentQuestion {
   id: string;
   content: string;
   order: number;
-}
-
-interface ExtendedLecture {
-  id: string;
-  name?: string;
-  title?: string;
-  description: string;
-  captions: string;
-  lectureNotes: string;
-  attachedFiles: any[];
-  videos: any[];
-  contentType: any;
-  isExpanded: boolean;
-  assignmentTitle?: string;
-  assignmentDescription?: string;
-  estimatedDuration?: number;
-  durationUnit?: 'minutes' | 'hours' | 'days';
-  assignmentInstructions?: string;
-  instructionalVideo?: {
-    file: File | null;
-    url?: string;
-  };
-  downloadableResource?: {
-    file: File | null;
-    url?: string;
-    name?: string;
-  };
-  assignmentQuestions?: AssignmentQuestion[];
-  solutionVideo?: {
-    file: File | null;
-    url?: string;
-  };
+  solution?: string; // Optional solution field for answers
 }
 
 interface AssignmentEditorProps {
@@ -49,327 +21,252 @@ interface AssignmentEditorProps {
   onSave: (data: ExtendedLecture) => void;
 }
 
-// Simple Rich Text Editor (React Quill alternative for this demo)
-const RichTextEditor: React.FC<{
-  value: string;
-  onChange: (value: string) => void;
-  placeholder?: string;
-}> = ({ value, onChange, placeholder }) => {
-  const [isBold, setIsBold] = useState(false);
-  const [isItalic, setIsItalic] = useState(false);
-  
-  const handleFormat = (command: string) => {
-    document.execCommand(command, false);
-    if (command === 'bold') setIsBold(!isBold);
-    if (command === 'italic') setIsItalic(!isItalic);
-  };
-
-  return (
-    <div className="border border-gray-300 rounded-md">
-      <div className="border-b border-gray-200 p-2 flex gap-2">
-        <select className="text-sm border-none bg-transparent">
-          <option>Styles</option>
-        </select>
-        <button
-          type="button"
-          onClick={() => handleFormat('bold')}
-          className={`p-1 rounded ${isBold ? 'bg-gray-200' : ''}`}
-        >
-          <strong>B</strong>
-        </button>
-        <button
-          type="button"
-          onClick={() => handleFormat('italic')}
-          className={`p-1 rounded ${isItalic ? 'bg-gray-200' : ''}`}
-        >
-          <em>I</em>
-        </button>
-        <button type="button" onClick={() => handleFormat('insertUnorderedList')} className="p-1">
-          •
-        </button>
-        <button type="button" onClick={() => handleFormat('insertOrderedList')} className="p-1">
-          1.
-        </button>
-        <span className="text-blue-600 text-sm ml-auto cursor-pointer">Edit HTML</span>
-      </div>
-      <div
-        contentEditable
-        className="p-3 min-h-[100px] outline-none"
-        onInput={(e) => onChange(e.currentTarget.textContent || '')}
-        suppressContentEditableWarning={true}
-        data-placeholder={placeholder}
-        style={{
-          color: !value ? '#9CA3AF' : '#000'
-        }}
-      >
-        {value || placeholder}
-      </div>
-    </div>
-  );
-};
-
-// Instructions Tab Component
-const InstructionsTab: React.FC<{
-  data: ExtendedLecture;
-  onChange: (field: string, value: any) => void;
-}> = ({ data, onChange }) => {
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [activeVideoTab, setActiveVideoTab] = useState<'upload' | 'library'>('upload');
-  const [searchQuery, setSearchQuery] = useState('');
-
-  // Sample library videos - replace with actual data from your API
-  const libraryVideos = [
-    {
-      filename: '2024-11-13-175733.webm',
-      type: 'Video',
-      status: 'Success',
-      date: '05/13/2025'
-    },
-    {
-      filename: 'Netflix.mp4',
-      type: 'Video', 
-      status: 'Success',
-      date: '05/08/2025'
-    },
-    {
-      filename: 'Netflix.mp4',
-      type: 'Video',
-      status: 'Success', 
-      date: '05/07/2025'
-    }
-  ];
-
-  const handleVideoUpload = (file: File) => {
-    onChange('instructionalVideo', { file, url: URL.createObjectURL(file) });
-  };
-
-  const handleResourceUpload = (file: File) => {
-    onChange('downloadableResource', { 
-      file, 
-      url: URL.createObjectURL(file),
-      name: file.name 
-    });
-  };
-
-  const handleVideoSelect = (video: any) => {
-    onChange('instructionalVideo', { 
-      file: null, 
-      url: video.filename,
-      filename: video.filename 
-    });
-  };
-
-  const filteredVideos = libraryVideos.filter(video =>
-    video.filename.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  return (
-    <div className="p-6 space-y-6">
-      {/* Video Section */}
-      <div>
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Video</h3>
-        
-        {/* Video Tabs */}
-        <div className="border-b border-gray-200 mb-4">
-          <div className="flex">
-            <button 
-              onClick={() => setActiveVideoTab('upload')}
-              className={`px-4 py-2 font-medium text-sm border-b-2 ${
-                activeVideoTab === 'upload' 
-                  ? 'border-purple-600 text-purple-600' 
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              Upload Video
-            </button>
-            <button 
-              onClick={() => setActiveVideoTab('library')}
-              className={`px-4 py-2 font-medium text-sm border-b-2 ml-8 ${
-                activeVideoTab === 'library' 
-                  ? 'border-purple-600 text-purple-600' 
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              Add from library
-            </button>
-          </div>
-        </div>
-
-        {/* Upload Video Tab Content */}
-        {activeVideoTab === 'upload' && (
-          <div>
-            <div className="border border-gray-300 rounded-md p-4 flex items-center justify-between">
-              <span className="text-gray-500">
-                {data.instructionalVideo?.file ? data.instructionalVideo.file.name : 'No file selected'}
-              </span>
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="px-4 py-2 border border-purple-600 text-purple-600 rounded-md hover:bg-purple-50"
-              >
-                Select Video
-              </button>
-            </div>
-            <p className="text-sm text-gray-500 mt-2">
-              Note: All files should be at least 720p and less than 4.0 GB.
-            </p>
-          </div>
-        )}
-
-        {/* Library Tab Content */}
-        {activeVideoTab === 'library' && (
-          <div>
-            {/* Search Bar */}
-            <div className="mb-4">
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Search files by name"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                />
-                <button className="absolute right-2 top-2 p-1 bg-purple-600 text-white rounded">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-
-            {/* Video Library Table */}
-            <div className="border border-gray-300 rounded-md overflow-hidden">
-              {/* Table Header */}
-              <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
-                <div className="grid grid-cols-5 gap-4 font-medium text-sm text-gray-700">
-                  <div>Filename</div>
-                  <div>Type</div>
-                  <div>Status</div>
-                  <div className="flex items-center gap-1">
-                    Date
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </div>
-                  <div></div>
-                </div>
-              </div>
-
-              {/* Table Body */}
-              <div className="divide-y divide-gray-200">
-                {filteredVideos.map((video, index) => (
-                  <div key={index} className="px-4 py-3 hover:bg-gray-50">
-                    <div className="grid grid-cols-5 gap-4 items-center text-sm">
-                      <div className="text-gray-900">{video.filename}</div>
-                      <div className="text-gray-600">{video.type}</div>
-                      <div className="text-blue-600">{video.status}</div>
-                      <div className="text-gray-600">{video.date}</div>
-                      <div>
-                        <button
-                          onClick={() => handleVideoSelect(video)}
-                          className="text-purple-600 hover:text-purple-800 font-medium"
-                        >
-                          Select ↗
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Assignment Instructions */}
-      <div>
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Assignment Instructions</h3>
-        <RichTextEditor
-          value={data.assignmentInstructions || ''}
-          onChange={(value) => onChange('assignmentInstructions', value)}
-          placeholder="Enter assignment instructions..."
-        />
-        <div className="flex gap-2 mt-4">
-          <button className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700">
-            Submit
-          </button>
-          <button className="px-4 py-2 text-gray-600 hover:text-gray-800">
-            Cancel
-          </button>
-        </div>
-      </div>
-
-      {/* Downloadable Resource */}
-      <div>
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Downloadable resource</h3>
-        <div className="border border-gray-300 rounded-md p-4 flex items-center justify-between">
-          <span className="text-gray-500">
-            {data.downloadableResource?.file ? data.downloadableResource.file.name : 'No file selected'}
-          </span>
-          <button
-            onClick={() => {
-              const input = document.createElement('input');
-              input.type = 'file';
-              input.onchange = (e) => {
-                const file = (e.target as HTMLInputElement).files?.[0];
-                if (file) handleResourceUpload(file);
-              };
-              input.click();
-            }}
-            className="px-4 py-2 border border-purple-600 text-purple-600 rounded-md hover:bg-purple-50"
-          >
-            Select File
-          </button>
-        </div>
-        <p className="text-sm text-blue-600 mt-2">
-          Note: A resource is for any type of document that can be used to help students in the lecture. This file is going to be such as a lecture extra. Make sure everything is legible and the file size is less than 1 GB.
-        </p>
-      </div>
-
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="video/*"
-        onChange={(e) => {
-          const file = e.target.files?.[0];
-          if (file) handleVideoUpload(file);
-        }}
-        className="hidden"
-      />
-    </div>
-  );
-};
-
 // Main Assignment Editor Component
 const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
   initialData,
   onClose,
-  onSave
+  onSave,
 }) => {
-  const [activeTab, setActiveTab] = useState('basic-info');
-  const [assignmentData, setAssignmentData] = useState<ExtendedLecture>(
-    initialData || {
+  const [activeTab, setActiveTab] = useState("basic-info");
+
+  const [assignmentData, setAssignmentData] = useState<ExtendedLecture>({
+    ...(initialData || {
       id: Date.now().toString(),
-      name: '',
-      description: '',
-      captions: '',
-      lectureNotes: '',
+      name: "",
+      description: "",
+      captions: "",
+      lectureNotes: "",
       attachedFiles: [],
       videos: [],
-      contentType: 'assignment',
+      contentType: "assignment",
       isExpanded: false,
-      assignmentTitle: '',
-      assignmentDescription: '',
+      assignmentTitle: "",
+      assignmentDescription: "",
       estimatedDuration: 0,
-      durationUnit: 'minutes',
-      assignmentInstructions: '',
-      assignmentQuestions: []
+      durationUnit: "minutes",
+      assignmentInstructions: "",
+      assignmentQuestions: [],
+      isPublished: false,
+    }),
+    // Track published state
+  });
+
+  const [showPublishModal, setShowPublishModal] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [hasAttemptedPublish, setHasAttemptedPublish] = useState(false);
+  const [showValidation, setShowValidation] = useState(false);
+
+  const validateAssignment = () => {
+    const errors: string[] = [];
+
+    // Basic Info validation
+    if (!assignmentData.assignmentTitle?.trim()) {
+      errors.push("title");
     }
+    if (!assignmentData.assignmentDescription?.trim()) {
+      errors.push("description");
+    }
+    if (
+      !assignmentData.estimatedDuration ||
+      assignmentData.estimatedDuration <= 0
+    ) {
+      errors.push("duration");
+    }
+
+    // Questions validation
+    if (!assignmentData.assignmentQuestions?.length) {
+      errors.push("questions");
+    } else {
+      // Check all questions have answers
+      const unansweredQuestions = assignmentData.assignmentQuestions.filter(
+        (q) => !q.solution?.trim()
+      );
+      if (unansweredQuestions.length > 0) {
+        errors.push("answers");
+      }
+    }
+
+    // Instructions validation
+    if (!assignmentData.assignmentInstructions?.trim()) {
+      errors.push("instructions");
+    }
+
+    setValidationErrors(errors);
+    return errors.length === 0;
+  };
+
+  const handlePublishClick = () => {
+    setHasAttemptedPublish(true);
+    // if (validateAssignment()) {
+    setShowPublishModal(true);
+    // }
+  };
+
+  const handleConfirmPublish = () => {
+    if (!validateAssignment()) {
+      setShowPublishModal(false);
+      return;
+    }
+    const publishedData = { ...assignmentData, isPublished: true };
+    onSave(publishedData);
+    setShowPublishModal(false);
+  };
+
+  const handleErrorClick = (errorType: string) => {
+    // Remove the clicked error
+    setValidationErrors((prev) => prev.filter((e) => e !== errorType));
+
+    // Navigate to appropriate tab
+    switch (errorType) {
+      case "title":
+      case "description":
+      case "duration":
+        setActiveTab("basic-info");
+        break;
+      case "questions":
+        setActiveTab("questions");
+        break;
+      case "answers":
+        setActiveTab("solutions");
+        break;
+      case "instructions":
+        setActiveTab("instructions");
+        break;
+    }
+  };
+
+  const showValidationErrors = () => {
+    const errorMessages: JSX.Element[] = [];
+
+    if (validationErrors.includes("title")) {
+      errorMessages.push(
+        <ErrorAlert
+          key="title"
+          message="You need to add a title"
+          errorType="title"
+        />
+      );
+    }
+    if (validationErrors.includes("description")) {
+      errorMessages.push(
+        <ErrorAlert
+          key="description"
+          message="You need to have a description"
+          errorType="title"
+        />
+      );
+    }
+    if (validationErrors.includes("duration")) {
+      errorMessages.push(
+        <ErrorAlert
+          key="duration"
+          message="You need to estimate the duration"
+          errorType="title"
+        />
+      );
+    }
+    if (validationErrors.includes("questions")) {
+      errorMessages.push(
+        <ErrorAlert
+          key="questions"
+          message="You need to have at least one question"
+          errorType="questions"
+        />
+      );
+    }
+    if (validationErrors.includes("answers")) {
+      errorMessages.push(
+        <ErrorAlert
+          key="answers"
+          message="You need to have answers for all questions"
+          errorType="answers"
+        />
+      );
+    }
+    if (validationErrors.includes("instructions")) {
+      errorMessages.push(
+        <ErrorAlert
+          key="instructions"
+          message="You need to add assignment instructions"
+          errorType="instructions"
+        />
+      );
+    }
+
+    return errorMessages;
+  };
+
+  // Only show success if all errors are fixed AND we've attempted validation
+  const showSuccess = showValidation && validationErrors.length === 0;
+
+  // ErrorAlert component
+  const ErrorAlert = ({
+    errorType,
+    message,
+  }: {
+    errorType: string;
+    message: string;
+  }) => (
+    <div className="border-l-4 border-red-500 bg-red-50 p-4 mb-2">
+      <div className="flex items-center">
+        <div className="flex-shrink-0">
+          <svg
+            className="h-5 w-5 text-red-500"
+            fill="currentColor"
+            viewBox="0 0 20 20"
+          >
+            <path
+              fillRule="evenodd"
+              d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+              clipRule="evenodd"
+            />
+          </svg>
+        </div>
+        <div className="ml-3">
+          <p className="text-sm text-red-700">
+            {message}.{" "}
+            <button
+              onClick={() => handleErrorClick(errorType)}
+              className="font-medium text-red-700 hover:text-red-600 underline"
+            >
+              Click here to fix it
+            </button>
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+
+  // SuccessAlert component
+  const SuccessAlert = () => (
+    <div className="border-l-4 border-green-500 bg-green-50 p-4 mb-2">
+      <div className="flex items-center">
+        <div className="flex-shrink-0">
+          <svg
+            className="h-5 w-5 text-green-500"
+            fill="currentColor"
+            viewBox="0 0 20 20"
+          >
+            <path
+              fillRule="evenodd"
+              d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+              clipRule="evenodd"
+            />
+          </svg>
+        </div>
+        <div className="ml-3">
+          <p className="text-sm text-green-700">
+            All requirements are met! You can now publish your assignment.
+          </p>
+        </div>
+      </div>
+    </div>
   );
 
   const handleDataChange = (field: string, value: any) => {
-    setAssignmentData(prev => ({
+    setAssignmentData((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
   };
 
@@ -378,24 +275,46 @@ const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
   };
 
   const tabs = [
-    { id: 'basic-info', label: 'Basic Info' },
-    { id: 'instructions', label: 'Instructions' },
-    { id: 'questions', label: 'Questions' },
-    { id: 'solutions', label: 'Solutions' }
+    { id: "basic-info", label: "Basic Info" },
+    { id: "instructions", label: "Instructions" },
+    { id: "questions", label: "Questions" },
+    { id: "solutions", label: "Solutions" },
   ];
 
   const renderTabContent = () => {
     switch (activeTab) {
-      case 'basic-info':
-        return <BasicInfoTab data={assignmentData} onChange={handleDataChange} />;
-      case 'instructions':
-        return <InstructionsTab data={assignmentData} onChange={handleDataChange} />;
-      case 'questions':
-        return <QuestionsTab data={assignmentData} onChange={handleDataChange} />;
-      case 'solutions':
-        return <SolutionsTab data={assignmentData} onChange={handleDataChange} />;
+      case "basic-info":
+        return (
+          <BasicInfoTab
+            data={assignmentData}
+            onChange={handleDataChange}
+            onSave={() => console.log("Basic info saved")}
+          />
+        );
+      case "instructions":
+        return (
+          <InstructionsTab data={assignmentData} onChange={handleDataChange} />
+        );
+      case "questions":
+        return (
+          <QuestionsTab data={assignmentData} onChange={handleDataChange} />
+        );
+      case "solutions":
+        return (
+          <SolutionsTab
+            data={assignmentData}
+            onChange={handleDataChange}
+            setActiveTab={setActiveTab}
+          />
+        );
       default:
-        return <BasicInfoTab data={assignmentData} onChange={handleDataChange} />;
+        return (
+          <BasicInfoTab
+            data={assignmentData}
+            onChange={handleDataChange}
+            onSave={() => console.log("Basic info saved")}
+          />
+        );
     }
   };
 
@@ -411,15 +330,28 @@ const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
             <ArrowLeft className="w-4 h-4" />
             Back to curriculum
           </button>
-          <h1 className="text-2xl font-bold text-gray-900">Create Assignment</h1>
+          <h1 className="text-2xl font-bold text-gray-900">
+            {assignmentData.isPublished
+              ? "Edit Assignment"
+              : "Create Assignment"}
+          </h1>
         </div>
         <button
-          onClick={handleSave}
+          onClick={handlePublishClick}
           className="px-6 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
         >
           Publish
         </button>
       </div>
+
+      {/* Validation Errors */}
+      {hasAttemptedPublish && (
+        <div className="px-6 py-2">
+          {validationErrors.length > 0
+            ? showValidationErrors()
+            : showSuccess && <SuccessAlert />}
+        </div>
+      )}
 
       {/* Main Content */}
       <div className="flex flex-1 overflow-hidden">
@@ -432,8 +364,8 @@ const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
                 onClick={() => setActiveTab(tab.id)}
                 className={`w-full text-left px-3 py-2 text-sm ${
                   activeTab === tab.id
-                    ? 'text-gray-800 border-l-4 border-gray-800'
-                    : 'text-gray-800'
+                    ? "text-gray-800 border-l-4 border-gray-800"
+                    : "text-gray-800"
                 } hover:bg-gray-100`}
               >
                 {tab.label}
@@ -443,10 +375,37 @@ const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
         </div>
 
         {/* Content Area */}
-        <div className="flex-1 overflow-auto">
-          {renderTabContent()}
-        </div>
+        <div className="flex-1 overflow-auto">{renderTabContent()}</div>
       </div>
+
+      {/* Publish Confirmation Modal */}
+      {showPublishModal && (
+        <div className="fixed inset-0 bg-black/30 bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">
+              Confirm Publication
+            </h3>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to publish this assignment? Once published,
+              students will be able to see and complete it.
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setShowPublishModal(false)}
+                className="px-4 py-2 text-gray-600 hover:text-gray-800"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmPublish}
+                className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
+              >
+                {assignmentData.isPublished ? "Update" : "Publish"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

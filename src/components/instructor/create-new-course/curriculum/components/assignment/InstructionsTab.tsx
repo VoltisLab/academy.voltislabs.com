@@ -3,26 +3,18 @@ import { useRef, useState } from "react";
 import RichTextEditor from "./NewRichTextEditor";
 import toast from "react-hot-toast";
 
-const SolutionsTab: React.FC<{
+const InstructionsTab: React.FC<{
   data: ExtendedLecture;
   onChange: (field: string, value: any) => void;
-  setActiveTab: (tab: string) => void; // Add this line
-}> = ({ data, onChange, setActiveTab }) => {
+}> = ({ data, onChange }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [activeVideoTab, setActiveVideoTab] = useState<
     "upload" | "library" | null
   >("upload");
   const [searchQuery, setSearchQuery] = useState("");
+  const [isEditingInstructions, setIsEditingInstructions] = useState(true);
   const [showVideoUploaded, setShowVideoUploaded] = useState(false);
   const [showChangeCancel, setShowChangeCancel] = useState(false);
-  const [editingAnswers, setEditingAnswers] = useState<Record<string, boolean>>(
-    {}
-  );
-  const [answerContents, setAnswerContents] = useState<Record<string, string>>(
-    {}
-  );
-
-  const [answerToDelete, setAnswerToDelete] = useState<string | null>(null);
 
   // Sample library videos
   const libraryVideos = [
@@ -46,28 +38,29 @@ const SolutionsTab: React.FC<{
     },
   ];
 
+  const handleVideoUpload = (file: File) => {
+    onChange("instructionalVideo", { file, url: URL.createObjectURL(file) });
+    setShowVideoUploaded(true);
+    setActiveVideoTab(null); // Hide tabs after upload
+  };
+
   const handleResourceUpload = (file: File) => {
-    onChange("solutionResource", {
+    onChange("instructionalResource", {
+      // Changed from downloadableResource
       file,
       url: URL.createObjectURL(file),
       name: file.name,
     });
   };
 
-  const handleSolutionVideoUpload = (file: File) => {
-    onChange("solutionVideo", { file, url: URL.createObjectURL(file) });
-    setShowVideoUploaded(true);
-    setActiveVideoTab(null);
-  };
-
   const handleVideoSelect = (video: any) => {
-    onChange("solutionVideo", {
+    onChange("instructionalVideo", {
       file: null,
       url: video.filename,
       filename: video.filename,
     });
     setShowVideoUploaded(true);
-    setActiveVideoTab(null);
+    setActiveVideoTab(null); // Hide tabs after selection
   };
 
   const handleChangeVideo = () => {
@@ -82,55 +75,36 @@ const SolutionsTab: React.FC<{
     setActiveVideoTab(null);
   };
 
-  const startEditingAnswer = (questionId: string) => {
-    setEditingAnswers((prev) => ({ ...prev, [questionId]: true }));
-    setAnswerContents((prev) => ({
-      ...prev,
-      [questionId]:
-        data.assignmentQuestions?.find((q) => q.id === questionId)?.solution ||
-        "",
-    }));
-  };
+  const handleSubmitInstructions = () => {
+    if (
+      !data.assignmentInstructions ||
+      data.assignmentInstructions.trim() === ""
+    ) {
+      toast.error("Please enter assignment instructions.");
+      return;
+    }
+    const cleanedInstructions = data.assignmentInstructions
+      .replace(/<p><br><\/p>/g, "") // remove <p><br></p>
+      .replace(/<[^>]*>/g, "") // remove all HTML tags
+      .trim(); // trim whitespace
 
-  const cancelEditingAnswer = (questionId: string) => {
-    setEditingAnswers((prev) => ({ ...prev, [questionId]: false }));
-  };
-
-  const handleSubmitAnswer = (questionId: string) => {
-    const answerContent = answerContents[questionId] || "";
-
-    if (!answerContent.trim()) {
-      toast.error("Answer content cannot be empty");
+    if (!cleanedInstructions) {
+      toast.error("Please enter assignment instructions.");
       return;
     }
 
-    // Update the question with the solution
-    const updatedQuestions =
-      data.assignmentQuestions?.map((q) =>
-        q.id === questionId ? { ...q, solution: answerContent } : q
-      ) || [];
-
-    onChange("assignmentQuestions", updatedQuestions);
-    setEditingAnswers((prev) => ({ ...prev, [questionId]: false }));
-    toast.success("Answer saved successfully!");
+    setIsEditingInstructions(false);
+    toast.success("Instructions saved successfully!");
+    console.log("Instructions saved:", data.assignmentInstructions);
   };
 
-  const handleDeleteAnswer = (questionId: string) => {
-    // Remove the solution from the question
-    const updatedQuestions =
-      data.assignmentQuestions?.map((q) =>
-        q.id === questionId ? { ...q, solution: undefined } : q
-      ) || [];
-
-    onChange("assignmentQuestions", updatedQuestions);
+  const handleEditInstructions = () => {
+    setIsEditingInstructions(true);
   };
 
   const filteredVideos = libraryVideos.filter((video) =>
     video.filename.toLowerCase().includes(searchQuery.toLowerCase())
   );
-
-  const hasQuestions =
-    data.assignmentQuestions && data.assignmentQuestions.length > 0;
 
   return (
     <div className="p-6 space-y-6">
@@ -171,8 +145,8 @@ const SolutionsTab: React.FC<{
               <div>
                 <div className="border border-gray-300 rounded-md p-4 flex items-center justify-between">
                   <span className="text-gray-500">
-                    {data.solutionVideo?.file
-                      ? data.solutionVideo.file.name
+                    {data.instructionalVideo?.file
+                      ? data.instructionalVideo.file.name
                       : "No file selected"}
                   </span>
                   <button
@@ -285,8 +259,8 @@ const SolutionsTab: React.FC<{
             <div className="border border-gray-300 rounded-md p-4">
               <div className="flex justify-between items-center">
                 <span className="text-gray-700">
-                  {data.solutionVideo?.file?.name ||
-                    data.solutionVideo?.url?.split("/").pop() ||
+                  {data.instructionalVideo?.file?.name ||
+                    data.instructionalVideo?.url?.split("/").pop() ||
                     "No video selected"}
                 </span>
                 <div className="flex space-x-2">
@@ -298,10 +272,15 @@ const SolutionsTab: React.FC<{
                   </button>
                   <button
                     onClick={() => {
-                      onChange("solutionVideo", null);
+                      // Clear the video state
+                      onChange("instructionalVideo", null);
+
+                      // Reset the file input
                       if (fileInputRef.current) {
                         fileInputRef.current.value = "";
                       }
+
+                      // Reset all related states
                       setShowVideoUploaded(false);
                       setShowChangeCancel(false);
                       setActiveVideoTab("upload");
@@ -325,113 +304,52 @@ const SolutionsTab: React.FC<{
         )}
       </div>
 
-      {/* No Questions Warning */}
-      {!hasQuestions && (
-        <div className="border border-orange-300 bg-orange-50 rounded-md p-4 flex items-center gap-3">
-          <div className="w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center text-white text-sm">
-            ⚠
-          </div>
-          <div className="flex-1">
-            <p className="text-gray-700">
-              You have no questions yet.{" "}
+      {/* Assignment Instructions */}
+      <div>
+        <h3 className="text-lg font-medium text-gray-900 mb-4">
+          Assignment Instructions
+        </h3>
+        {isEditingInstructions ? (
+          <>
+            <RichTextEditor
+              value={data.assignmentInstructions || ""}
+              onChange={(value) => onChange("assignmentInstructions", value)}
+              placeholder="Enter assignment instructions..."
+            />
+            <div className="flex gap-2 mt-4">
               <button
-                onClick={() => setActiveTab("questions")}
-                className="text-purple-600 hover:text-purple-800 font-medium"
+                onClick={handleSubmitInstructions}
+                className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
               >
-                Click here to add questions
+                Save
               </button>
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* Questions and Answers Section */}
-      {hasQuestions && (
-        <div className="space-y-8">
-          {data.assignmentQuestions?.map((question) => (
-            <div key={question.id} className="border-b pb-6 last:border-b-0">
-              <h3 className="text-lg font-medium text-gray-900">
-                Question {question.order}
-              </h3>
-              <div className="prose max-w-none mt-2">
-                {question.content.split("\n").map((paragraph, i) => (
-                  <p key={i}>{paragraph}</p>
-                ))}
-              </div>
-
-              {/* Answer Section */}
-              <div className="mt-6">
-                <h4 className="text-md font-medium text-gray-900 mb-2">
-                  Your Answer
-                </h4>
-
-                {editingAnswers[question.id] ? (
-                  <>
-                    <RichTextEditor
-                      value={answerContents[question.id] || ""}
-                      onChange={(value) =>
-                        setAnswerContents((prev) => ({
-                          ...prev,
-                          [question.id]: value,
-                        }))
-                      }
-                      placeholder="Enter your answer..."
-                    />
-                    <div className="flex gap-2 mt-4">
-                      <button
-                        onClick={() => handleSubmitAnswer(question.id)}
-                        className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
-                      >
-                        Submit
-                      </button>
-                      <button
-                        onClick={() => cancelEditingAnswer(question.id)}
-                        className="px-4 py-2 text-gray-600 hover:text-gray-800"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    {question.solution ? (
-                      <div className="space-y-2">
-                        <div
-                          className="prose max-w-none"
-                          dangerouslySetInnerHTML={{
-                            __html: question.solution,
-                          }}
-                        />
-                        <div className="flex gap-2 mt-2">
-                          <button
-                            onClick={() => startEditingAnswer(question.id)}
-                            className="px-3 py-1 text-sm text-purple-600 hover:text-purple-800 border border-purple-600 rounded-md"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => setAnswerToDelete(question.id)}
-                            className="px-3 py-1 text-sm text-red-600 hover:text-red-800 border border-red-600 rounded-md"
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <button
-                        onClick={() => startEditingAnswer(question.id)}
-                        className="mt-2 px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
-                      >
-                        Add Answer
-                      </button>
-                    )}
-                  </>
-                )}
-              </div>
+              <button
+                onClick={() => {
+                  setIsEditingInstructions(false);
+                }}
+                className="px-4 py-2 text-gray-600 hover:text-gray-800"
+              >
+                Cancel
+              </button>
             </div>
-          ))}
-        </div>
-      )}
+          </>
+        ) : (
+          <div className="space-y-2">
+            <div
+              className="prose max-w-none"
+              dangerouslySetInnerHTML={{
+                __html: data.assignmentInstructions || "",
+              }}
+            />
+            <button
+              onClick={handleEditInstructions}
+              className="text-purple-600 hover:text-purple-800"
+            >
+              Edit
+            </button>
+          </div>
+        )}
+      </div>
 
       {/* Downloadable Resource */}
       <div>
@@ -440,8 +358,8 @@ const SolutionsTab: React.FC<{
         </h3>
         <div className="border border-gray-300 rounded-md p-4 flex items-center justify-between">
           <span className="text-gray-500">
-            {data.solutionResource?.file
-              ? data.solutionResource.file.name
+            {data.instructionalResource?.file
+              ? data.instructionalResource.file.name
               : "No file selected"}
           </span>
           <button
@@ -473,43 +391,12 @@ const SolutionsTab: React.FC<{
         accept="video/*"
         onChange={(e) => {
           const file = e.target.files?.[0];
-          if (file) handleSolutionVideoUpload(file);
+          if (file) handleVideoUpload(file);
         }}
         className="hidden"
       />
-
-      {/* Delete confirmation modal */}
-      {answerToDelete && (
-        <div className="fixed inset-0 bg-black/30 bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">
-              Confirm Deletion
-            </h3>
-            <p className="text-gray-600 mb-6">
-              Are you sure you want to delete this answer?
-            </p>
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={() => setAnswerToDelete(null)}
-                className="px-4 py-2 text-gray-600 hover:text-gray-800"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => {
-                  handleDeleteAnswer(answerToDelete);
-                  setAnswerToDelete(null);
-                }}
-                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
 
-export default SolutionsTab;
+export default InstructionsTab;
