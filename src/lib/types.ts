@@ -195,6 +195,8 @@ export type ContentItemType = 'video' | 'article' | 'quiz' | 'coding-exercise' |
 
 // Interface for external resources (links, references, etc.)
 export interface ExternalResource {
+  lectureId: string;
+  lectureId: string;
   title: ReactNode;
   url: string;
   name: string;
