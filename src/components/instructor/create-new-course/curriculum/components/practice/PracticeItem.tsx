@@ -26,6 +26,7 @@ interface PracticeItemProps {
     sectionId: string | null;
     lectureId: string | null;
   };
+  allSections: any[]
 }
 
 const PracticeItem: React.FC<PracticeItemProps> = ({
@@ -47,6 +48,7 @@ const PracticeItem: React.FC<PracticeItemProps> = ({
   isDragging,
   draggedLecture,
   dragTarget,
+  allSections = []
 }) => {
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
   const [isEditorOpen, setIsEditorOpen] = useState<boolean>(false);

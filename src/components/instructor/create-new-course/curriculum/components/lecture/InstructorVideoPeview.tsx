@@ -52,7 +52,7 @@ type FrequencyType = 'Daily' | 'Weekly' | 'Once';
 // Define content type for sidebar items
 type ContentItemType = 'video' | 'article' | 'quiz' | 'assignment' | 'coding-exercise';
 
-const StudentVideoPreview = ({ 
+const InstructorVideoPreview = ({ 
   videoContent, 
   setShowVideoPreview, 
   lecture,
@@ -703,7 +703,7 @@ type ChildProps = {
   };
   
   // Main render method
-  // Updated StudentVideoPreview component return statement
+  // Updated InstructorVideoPreview component return statement
 
 return (
   <div className="fixed inset-0 z-[9999] bg-white flex flex-col">
@@ -1459,4 +1459,4 @@ return (
 );
 };
 
-export default StudentVideoPreview;
+export default InstructorVideoPreview;

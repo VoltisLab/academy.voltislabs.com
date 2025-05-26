@@ -722,8 +722,8 @@ export interface Quiz {
 }
 
 interface QuizPreviewProps {
-  quiz: Quiz;
-  onClose: () => void;
+  quiz?: Quiz; // Make quiz optional
+  onClose?: () => void; // Make onClose optional
 }
 
 // Helper function to remove paragraph tags
@@ -757,12 +757,26 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({ quiz, onClose }) => {
   >({});
   const [hasShownFeedback, setHasShownFeedback] = useState<boolean>(false);
 
+  // Early return if no quiz data
+  if (!quiz) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold mb-4">No Quiz Data</h2>
+          <p className="text-gray-600">No quiz data available to display.</p>
+        </div>
+      </div>
+    );
+  }
+
   const startQuiz = (): void => {
     setQuizStatus("Questions");
   };
 
   const skipQuiz = (): void => {
-    onClose();
+    if (onClose) {
+      onClose();
+    }
   };
 
   const toggleSidebar = (): void => {
@@ -891,7 +905,7 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({ quiz, onClose }) => {
   const needsReviewCount = needsReviewQuestions.length;
 
   return (
-    <div className="flex flex-col h-screen relative">
+    <div className="flex flex-col h-full relative w-[79.5vw]">
       {/* Main content */}
       {(quizStatus === "Overview" || quizStatus === "Questions") && (
         <main className="flex-1 overflow-y-auto p-4 sm:p-8 sm:pt-15 w-full">
@@ -939,7 +953,7 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({ quiz, onClose }) => {
                 {!fromResult && showFeedback && isCorrectAnswer && (
                   <div
                     className={`rounded-2xl w-full px-6 py-3 border border-green-700 flex gap-4 mb-6 ${
-                      !currentQuestion.answers[correctAnswerIndex].explanation
+                      !currentQuestion?.answers?.[correctAnswerIndex || 0]?.explanation
                         ? "items-center"
                         : ""
                     }`}
@@ -947,11 +961,11 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({ quiz, onClose }) => {
                     <CheckCircle2Icon size={30} className="text-green-700" />
                     <div>
                       <p className="font-bold">Good job!</p>
-                      {currentQuestion.answers[correctAnswerIndex]
-                        .explanation && (
+                      {currentQuestion?.answers?.[correctAnswerIndex || 0]
+                        ?.explanation && (
                         <p>
                           {
-                            currentQuestion.answers[correctAnswerIndex]
+                            currentQuestion.answers[correctAnswerIndex || 0]
                               .explanation
                           }
                         </p>

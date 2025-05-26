@@ -25,6 +25,7 @@ interface CodingExerciseItemProps {
   };
   // Modified to be a required prop since we always want to use the modal
   customEditHandler: (lectureId: string) => void;
+  allSections: any[]
 }
 
 const CodingExerciseItem: React.FC<CodingExerciseItemProps> = ({
@@ -44,6 +45,7 @@ const CodingExerciseItem: React.FC<CodingExerciseItemProps> = ({
   handleDragEnd,
   handleDragLeave,
   draggedLecture,
+  allSections,
   dragTarget,
   // Required edit handler for opening the modal
   customEditHandler

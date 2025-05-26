@@ -2,10 +2,11 @@ import React, { useState, useRef, useEffect } from "react";
 import { Trash2, Edit3, ChevronDown, ChevronUp, X, Plus } from "lucide-react";
 import { Lecture } from "@/lib/types";
 import QuestionForm from "./QuestionForm";
-import QuizPreviewWrapper from "./QuizPreviewWrapper";
 import { FaCircleCheck } from "react-icons/fa6";
 import { GoQuestion } from "react-icons/go";
 import { RxHamburgerMenu } from "react-icons/rx";
+// Import the updated StudentVideoPreview component that supports quizData
+import StudentVideoPreview from "../lecture/StudentVideoPeview";
 
 interface QuizItemProps {
   lecture: Lecture;
@@ -42,6 +43,8 @@ interface QuizItemProps {
     quizId: string,
     questions: any[]
   ) => void;
+  sections: any[]; // All sections for preview
+  allSections: any[]
 }
 
 interface Question {
@@ -54,6 +57,7 @@ interface Question {
   correctAnswerIndex: number;
   relatedLecture?: string;
   type: string;
+
 }
 
 const QuizItem: React.FC<QuizItemProps> = ({
@@ -69,12 +73,19 @@ const QuizItem: React.FC<QuizItemProps> = ({
   handleDrop,
   toggleContentSection,
   updateQuizQuestions,
+  allSections,
+  sections
 }) => {
   const lectureNameInputRef = useRef<HTMLInputElement>(null);
   const [expanded, setExpanded] = useState(false);
   const [isHovering, setIsHovering] = useState(false);
   const [showQuestionForm, setShowQuestionForm] = useState(false);
   const [showEditForm, setShowEditForm] = useState(false);
+
+  // Preview-related states (similar to LectureItem)
+  const [showPreviewDropdown, setShowPreviewDropdown] = useState(false);
+  const [showVideoPreview, setShowVideoPreview] = useState(false);
+  const [previewMode, setPreviewMode] = useState<"instructor" | "student" | null>(null);
 
   const [questions, setQuestions] = useState<Question[]>(
     lecture.questions || []
@@ -95,6 +106,27 @@ const QuizItem: React.FC<QuizItemProps> = ({
     setQuestions(lecture.questions || []);
   }, [lecture.questions]);
 
+  
+
+  // Add effect to close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent): void => {
+      if (!showPreviewDropdown) return;
+
+      const dropdownElement = document.getElementById(`quiz-preview-dropdown-${lecture.id}`);
+      const target = event.target as Node;
+
+      if (dropdownElement && !dropdownElement.contains(target)) {
+        setShowPreviewDropdown(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showPreviewDropdown, lecture.id]);
+
   const toggleExpand = () => {
     setExpanded(!expanded);
     if (toggleContentSection) {
@@ -106,11 +138,9 @@ const QuizItem: React.FC<QuizItemProps> = ({
     let newQuestions;
 
     if (editingQuestionIndex !== null) {
-      // Update existing question
       newQuestions = [...questions];
       newQuestions[editingQuestionIndex] = question;
     } else {
-      // Add new question
       newQuestions = [...questions, { ...question, id: `q-${Date.now()}` }];
     }
 
@@ -139,9 +169,22 @@ const QuizItem: React.FC<QuizItemProps> = ({
     setShowQuestionForm(true);
     setShowQuestionTypeSelector(false);
     setExpanded(true);
-    // setShowEditForm(true);
   };
 
+
+  // Preview functionality (similar to LectureItem)
+    const handlePreviewSelection = (mode: "instructor" | "student"): void => {
+    console.log(`Quiz Preview mode: ${mode}, Quiz ID: ${lecture.id}`);
+    console.log("All sections available:", sections.length);
+    
+    setPreviewMode(mode);
+    setShowPreviewDropdown(false);
+    
+    setTimeout(() => {
+      setShowVideoPreview(true);
+    }, 50);
+  };
+  
   const quizData = {
     id: lecture.id,
     name: lecture.name || "New quiz",
@@ -153,6 +196,39 @@ const QuizItem: React.FC<QuizItemProps> = ({
   };
 
   const isNewQuiz = questions.length === 0;
+
+  // Preview component - Updated to use ALL sections
+  const QuizPreviewPage: React.FC = () => {
+    return (
+      <StudentVideoPreview
+        videoContent={{
+          uploadTab: { selectedFile: null },
+          libraryTab: {
+            searchQuery: "",
+            selectedVideo: null,
+            videos: [],
+          },
+          activeTab: "uploadVideo",
+          selectedVideoDetails: null,
+        }}
+        articleContent={{ text: "" }}
+        setShowVideoPreview={setShowVideoPreview}
+        lecture={{
+          ...lecture,
+          contentType: "quiz",
+        }}
+        uploadedFiles={[]}
+        sourceCodeFiles={[]}
+        externalResources={[]}
+        section={{
+          id: 'all-sections',
+          name: 'All Sections',
+          sections: sections // Pass all processed sections
+        }}
+        quizData={quizData}
+      />
+    );
+  };
 
   // Collapsed view for new quizzes
   if (!expanded && isNewQuiz) {
@@ -268,7 +344,6 @@ const QuizItem: React.FC<QuizItemProps> = ({
                     <button
                       onClick={() => {
                         setShowQuestionForm(true);
-                        // setShowQuestionTypeSelector(false);
                       }}
                       className="flex flex-col items-center border group border-gray-300 bg-gray-100 cursor-pointer rounded-xs hover:bg-black hover:text-white text-gray-400 transition"
                     >
@@ -352,7 +427,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
           </div>
         </div>
 
-        <div className="flex items-center  w-full ml-2">
+        <div className="flex items-center w-full ml-2">
           {isHovering && (
             <>
               <button
@@ -383,17 +458,19 @@ const QuizItem: React.FC<QuizItemProps> = ({
             }}
             className="cursor-pointer p-1 ml-auto"
           >
-            {expanded
-              ? !showEditForm && (
-                  <div className="cursor-pointer p-1 ml-auto rounded hover:bg-gray-200">
-                    <ChevronUp size={20} className=" text-gray-500" />
-                  </div>
-                )
-              : !showEditForm && (
-                  <div className="cursor-pointer p-1 ml-auto rounded hover:bg-gray-200">
-                    <ChevronDown size={20} className=" text-gray-500 " />
-                  </div>
-                )}
+            {expanded ? (
+              !showEditForm && (
+                <div className="cursor-pointer p-1 ml-auto rounded hover:bg-gray-200">
+                  <ChevronUp size={20} className=" text-gray-500" />
+                </div>
+              )
+            ) : (
+              !showEditForm && (
+                <div className="cursor-pointer p-1 ml-auto rounded hover:bg-gray-200">
+                  <ChevronDown size={20} className=" text-gray-500 " />
+                </div>
+              )
+            )}
           </button>
           <button className="w-7 cursor-move hover:bg-gray-200 p-1 rounded">
             {isHovering && (
@@ -468,7 +545,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
                 ) : (
                   <div className="border-t border-zinc-400">
                     <QuestionForm
-                      key={editingQuestionIndex ?? "new"} // This forces a fresh instance when editing different questions
+                      key={editingQuestionIndex ?? "new"}
                       onSubmit={handleAddQuestion}
                       onCancel={() => {
                         setShowQuestionForm(false);
@@ -496,7 +573,6 @@ const QuizItem: React.FC<QuizItemProps> = ({
                   <button
                     onClick={() => {
                       setShowQuestionTypeSelector(true);
-                      // setShowQuestionForm(true);
                       setShowEditForm(true);
                       setEditingQuestionIndex(null);
                     }}
@@ -505,14 +581,47 @@ const QuizItem: React.FC<QuizItemProps> = ({
                     New Question
                   </button>
                 </div>
-                <QuizPreviewWrapper quiz={quizData}>
+                
+                {/* Preview dropdown - similar to LectureItem */}
+                <div
+                  className="relative inline-flex gap-4"
+                  id={`quiz-preview-dropdown-${lecture.id}`}
+                >
                   <button
-                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 transition cursor-pointer"
+                    onClick={() => setShowPreviewDropdown(!showPreviewDropdown)}
+                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 transition cursor-pointer disabled:opacity-50"
                     disabled={questions.length === 0}
+                    type="button"
                   >
-                    Preview
+                    Preview <ChevronDown className="ml-1 w-4 h-4" />
                   </button>
-                </QuizPreviewWrapper>
+
+                  {/* Dropdown menu */}
+                  {showPreviewDropdown && (
+                    <div className="absolute mt-1 right-0 w-40 bg-white border border-gray-200 rounded-md shadow-lg z-50">
+                      <ul>
+                        <li>
+                          <button
+                            onClick={() => handlePreviewSelection("instructor")}
+                            className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                            type="button"
+                          >
+                            As Instructor
+                          </button>
+                        </li>
+                        <li>
+                          <button
+                            onClick={() => handlePreviewSelection("student")}
+                            className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                            type="button"
+                          >
+                            As Student
+                          </button>
+                        </li>
+                      </ul>
+                    </div>
+                  )}
+                </div>
               </div>
 
               {questions.length === 0 ? (
@@ -563,6 +672,9 @@ const QuizItem: React.FC<QuizItemProps> = ({
           )}
         </div>
       )}
+      
+      {/* Show preview component when needed */}
+      {showVideoPreview && <QuizPreviewPage />}
     </div>
   );
 };
