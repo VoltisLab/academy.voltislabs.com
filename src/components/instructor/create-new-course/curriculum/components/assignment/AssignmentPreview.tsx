@@ -374,7 +374,8 @@ const Instructions = ({
       </div>
 
       <div className="shadow-sm shadow-purple-200 p-6 border border-gray-400/40 divide-y divide-gray-300">
-        {assignmentData.instructionalVideo ? (
+        {assignmentData.instructionalVideo?.url ||
+        assignmentData.instructionalVideo?.file ? (
           <div className="h-80 flex items-center justify-center bg-gray-100">
             <video controls className="max-w-full max-h-full">
               <source
@@ -617,7 +618,8 @@ const InstructorExample = ({
           )}
         </div>
 
-        {assignmentData.solutionVideo ? (
+        {assignmentData.solutionVideo?.url ||
+        assignmentData.solutionVideo?.file ? (
           <div className="h-80 flex items-center justify-center bg-gray-100">
             <video controls className="max-w-full max-h-full">
               <source
