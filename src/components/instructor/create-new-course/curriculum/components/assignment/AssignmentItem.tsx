@@ -9,6 +9,7 @@ import {
   FileText,
   Edit,
 } from "lucide-react";
+import { FaCircleCheck } from "react-icons/fa6";
 
 interface AssignmentItemProps {
   lecture: ExtendedLecture;
@@ -106,7 +107,8 @@ const AssignmentItem: React.FC<AssignmentItemProps> = ({
         },
         assignmentQuestions: lecture.assignmentQuestions || [],
         solutionVideo: lecture.solutionVideo || { file: null },
-        isPublished: lecture.isPublished,
+        isPublished:
+          lecture.isPublished !== undefined ? lecture.isPublished : false,
       };
       onEditAssignment(extendedLecture);
     }
@@ -136,7 +138,6 @@ const AssignmentItem: React.FC<AssignmentItemProps> = ({
     >
       <div className="flex items-center p-2 w-full">
         <div className="flex-1 flex items-center">
-          <div className="mr-1 text-xs text-yellow-500">⚠</div>
           {editingLectureId === lecture.id ? (
             <input
               ref={nameInputRef}
@@ -158,15 +159,19 @@ const AssignmentItem: React.FC<AssignmentItemProps> = ({
               <h3 className=" text-xs text-gray-800 whitespace-nowrap overflow-hidden text-ellipsis flex items-center gap-1">
                 {lecture.isPublished ? (
                   <>
-                    <FileText size={10} />{" "}
-                    {lecture.name || lecture.title || "Assignment"}
+                    <div className="w-max shrink-0 flex items-center gap-3">
+                      <FaCircleCheck size={16} className="shrink-0" />
+                      <p className="w-max">Assignment {lectureIndex + 1}:</p>
+                    </div>
                   </>
                 ) : (
                   <>
-                    Unpublished Assignment: <FileText size={10} />{" "}
-                    {lecture.name || lecture.title || "Untitled Assignment"}
+                    <div className="mr-1 text-xs text-yellow-500">⚠</div>
+                    Unpublished Assignment:
                   </>
                 )}
+                <FileText size={16} className="shrink-0 ml-1" />{" "}
+                {lecture.name || lecture.title || "Assignment"}
               </h3>
               <div className="flex flex-row gap-1">
                 <button

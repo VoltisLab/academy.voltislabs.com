@@ -215,7 +215,13 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
     setCurrentAssignment({
       sectionId: foundSectionId,
       lectureId: foundLectureId,
-      data: assignmentData,
+      data: {
+        ...assignmentData,
+        isPublished:
+          assignmentData.isPublished !== undefined
+            ? assignmentData.isPublished
+            : false,
+      },
     });
     setShowAssignmentEditor(true);
   };
@@ -257,6 +263,7 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
                       updatedAssignment.downloadableResource,
                     assignmentQuestions: updatedAssignment.assignmentQuestions,
                     solutionVideo: updatedAssignment.solutionVideo,
+                    isPublished: updatedAssignment.isPublished,
                   }
                 : lecture
             ),
@@ -267,8 +274,8 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
     );
 
     // Close the assignment editor
-    setShowAssignmentEditor(false);
-    setCurrentAssignment(null);
+    // setShowAssignmentEditor(false);
+    // setCurrentAssignment(null);
 
     // Show success message
     toast.success("Assignment updated successfully!");
