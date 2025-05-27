@@ -122,7 +122,7 @@ export default function AssignmentPreview({
 
   return (
     <div className="fixed top-0 left-0 w-full h-screen bg-white z-50">
-      <div className="h-full overflow-y-auto relative px-2">
+      <div className="h-full flex-1 overflow-y-auto relative px-2">
         {assignmentStatus === "overview" && (
           <div className="max-w-2xl">
             <h2 className="text-2xl font-bold mb-2 text-zinc-700">
@@ -270,7 +270,7 @@ export default function AssignmentPreview({
         )}
 
         {/* Controls */}
-        <div className="flex justify-between items-center mt-auto border-t-2 border-black px-4 h-14">
+        <div className="flex justify-between items-center mt-35 border-t-2 border-black px-4 h-14 sticky bottom-0 bg-white left-0">
           {/* Left hand side */}
           <div>
             {isSubmitted && assignmentStatus === "overview" && (
