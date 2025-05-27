@@ -48,13 +48,17 @@ const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
       assignmentQuestions: [],
       isPublished: false,
     }),
-    // Track published state
+    // Make sure isPublished is never undefined
+    isPublished:
+      initialData?.isPublished !== undefined ? initialData.isPublished : false,
   });
 
   const [showPublishModal, setShowPublishModal] = useState(false);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [hasAttemptedPublish, setHasAttemptedPublish] = useState(false);
   const [showValidation, setShowValidation] = useState(false);
+  const [publishSuccess, setPublishSuccess] = useState(false);
+  const [isEditingInstructions, setIsEditingInstructions] = useState(true);
 
   const validateAssignment = () => {
     const errors: string[] = [];
@@ -107,31 +111,47 @@ const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
       setShowPublishModal(false);
       return;
     }
+
     const publishedData = { ...assignmentData, isPublished: true };
     onSave(publishedData);
     setShowPublishModal(false);
+    setPublishSuccess(true);
   };
 
   const handleErrorClick = (errorType: string) => {
-    // Remove the clicked error
+    // Immediately remove just this error from validationErrors
     setValidationErrors((prev) => prev.filter((e) => e !== errorType));
 
-    // Navigate to appropriate tab
+    console.log("Error clicked:", errorType);
+
+    // showValidationErrors();
+
+    // Determine which tab to navigate to
+    let targetTab = "basic-info";
     switch (errorType) {
       case "title":
       case "description":
       case "duration":
-        setActiveTab("basic-info");
+        targetTab = "basic-info";
         break;
       case "questions":
-        setActiveTab("questions");
+        targetTab = "questions";
         break;
       case "answers":
-        setActiveTab("solutions");
+        targetTab = "solutions";
         break;
       case "instructions":
-        setActiveTab("instructions");
+        targetTab = "instructions";
         break;
+    }
+
+    // Navigate to the tab
+    setActiveTab(targetTab);
+
+    // Optional: Scroll to top of content area
+    const contentArea = document.querySelector(".flex-1.overflow-auto");
+    if (contentArea) {
+      contentArea.scrollTo({ top: 0, behavior: "smooth" });
     }
   };
 
@@ -152,7 +172,7 @@ const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
         <ErrorAlert
           key="description"
           message="You need to have a description"
-          errorType="title"
+          errorType="description"
         />
       );
     }
@@ -161,7 +181,7 @@ const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
         <ErrorAlert
           key="duration"
           message="You need to estimate the duration"
-          errorType="title"
+          errorType="duration"
         />
       );
     }
@@ -293,7 +313,13 @@ const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
         );
       case "instructions":
         return (
-          <InstructionsTab data={assignmentData} onChange={handleDataChange} />
+          <InstructionsTab
+            data={assignmentData}
+            onChange={handleDataChange}
+            isEditing={isEditingInstructions}
+            onEditToggle={setIsEditingInstructions}
+            hasSubmitted={Boolean(assignmentData.assignmentInstructions)}
+          />
         );
       case "questions":
         return (
@@ -322,26 +348,28 @@ const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
     <div className="fixed inset-0 bg-white z-50 flex flex-col px-20">
       {/* Top Bar */}
       <div className="border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-4">
+        <div className=" gap-4 w-full">
           <button
             onClick={onClose}
-            className="flex items-center gap-2 text-purple-600 hover:text-purple-800"
+            className="flex items-center gap-2 py-1.5 px-2 hover:bg-purple-100 rounded-md text-purple-600 hover:text-purple-800 cursor-pointer transition"
           >
             <ArrowLeft className="w-4 h-4" />
             Back to curriculum
           </button>
-          <h1 className="text-2xl font-bold text-gray-900">
-            {assignmentData.isPublished
-              ? "Edit Assignment"
-              : "Create Assignment"}
-          </h1>
+
+          <div className="flex items-center justify-between w-full">
+            <h1 className="text-3xl font-bold text-gray-900">
+              Create Assignment
+            </h1>
+            <button
+              onClick={handlePublishClick}
+              disabled={assignmentData.isPublished}
+              className="px-6 py-2 bg-purple-600 text-white cursor-pointer rounded-md hover:bg-purple-700 disabled:bg-purple-300 disabled:cursor-not-allowed transition"
+            >
+              Publish
+            </button>
+          </div>
         </div>
-        <button
-          onClick={handlePublishClick}
-          className="px-6 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
-        >
-          Publish
-        </button>
       </div>
 
       {/* Validation Errors */}
@@ -349,7 +377,7 @@ const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
         <div className="px-6 py-2">
           {validationErrors.length > 0
             ? showValidationErrors()
-            : showSuccess && <SuccessAlert />}
+            : publishSuccess && <SuccessAlert />}
         </div>
       )}
 
