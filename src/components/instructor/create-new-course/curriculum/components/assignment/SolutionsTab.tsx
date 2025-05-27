@@ -47,6 +47,7 @@ const SolutionsTab: React.FC<{
   ];
 
   const handleResourceUpload = (file: File) => {
+    if (!file) return; // Add null check
     onChange("solutionResource", {
       file,
       url: URL.createObjectURL(file),
@@ -55,6 +56,7 @@ const SolutionsTab: React.FC<{
   };
 
   const handleSolutionVideoUpload = (file: File) => {
+    if (!file) return; // Add null check
     onChange("solutionVideo", { file, url: URL.createObjectURL(file) });
     setShowVideoUploaded(true);
     setActiveVideoTab(null);
