@@ -620,7 +620,6 @@ export const useSections = (initialSections: Section[] = []) => {
     toast.success("Section moved successfully");
   };
 
-<<<<<<< HEAD
    const updateQuiz = (sectionId: string, quizId: string, title: string, description: string) => {
     setSections(prevSections => prevSections.map(section => {
       if (section.id === sectionId) {
@@ -645,8 +644,6 @@ export const useSections = (initialSections: Section[] = []) => {
     toast.success("Quiz updated successfully");
   };
   
-=======
->>>>>>> fd9a4f5ed5759ab710c0c56a23c2949ef47ffc9b
   return {
     sections,
     updateQuizQuestions,
@@ -670,9 +667,6 @@ export const useSections = (initialSections: Section[] = []) => {
     savePracticeCode,
     addExternalResource,
     getDefaultCodeTemplate,
-<<<<<<< HEAD
     updateQuiz
-=======
->>>>>>> fd9a4f5ed5759ab710c0c56a23c2949ef47ffc9b
   };
 };

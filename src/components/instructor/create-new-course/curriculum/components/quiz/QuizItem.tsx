@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Trash2, Edit3, ChevronDown, ChevronUp, X, Plus } from "lucide-react";
-import { Lecture } from "@/lib/types";
+import { Lecture, EnhancedLecture, ContentTypeDetector, SourceCodeFile, ExternalResourceItem } from "@/lib/types";
 import QuestionForm from "./QuestionForm";
 import { FaCircleCheck } from "react-icons/fa6";
 import { GoQuestion } from "react-icons/go";
@@ -45,8 +45,12 @@ interface QuizItemProps {
     questions: any[]
   ) => void;
   sections: any[]; // All sections for preview
-  allSections: any[]
+  allSections: any[];
   onEditQuiz?: (sectionId: string, quizId: string, title: string, description: string) => void;
+  enhancedLectures?: Record<string, EnhancedLecture>; // NEW: Add enhanced lectures prop
+  uploadedFiles?: Array<{ name: string; size: string; lectureId: string }>;
+  sourceCodeFiles?: SourceCodeFile[];
+  externalResources?: ExternalResourceItem[];
 }
 
 interface Question {
@@ -77,6 +81,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
   allSections,
   sections,
   onEditQuiz,
+  enhancedLectures = {}, // NEW: Receive enhanced lectures
 }) => {
   const lectureNameInputRef = useRef<HTMLInputElement>(null);
   const [expanded, setExpanded] = useState(false);
@@ -89,6 +94,84 @@ const QuizItem: React.FC<QuizItemProps> = ({
   const [showVideoPreview, setShowVideoPreview] = useState(false);
   const [previewMode, setPreviewMode] = useState<"instructor" | "student" | null>(null);
   const [showEditQuizForm, setShowEditQuizForm] = useState(false);
+
+  const [questions, setQuestions] = useState<Question[]>(
+    lecture.questions || []
+  );
+  const [editingQuestionIndex, setEditingQuestionIndex] = useState<
+    number | null
+  >(null);
+  const [showQuestionTypeSelector, setShowQuestionTypeSelector] =
+    useState(false);
+
+  // NEW: Function to create enhanced sections with proper content type detection
+  const createEnhancedSections = () => {
+    if (!allSections || allSections.length === 0) {
+      return allSections;
+    }
+
+    console.log('🎯 QuizItem: Creating enhanced sections for preview', {
+      totalSections: allSections.length,
+      enhancedLecturesCount: Object.keys(enhancedLectures).length
+    });
+
+    // Process all sections and enhance ALL lectures
+    return allSections.map(section => ({
+      ...section,
+      lectures: section.lectures?.map((lec: Lecture) => {
+        // Check if we have enhanced data for this lecture
+        const enhancedData = enhancedLectures[lec.id];
+        
+        if (enhancedData) {
+          // Merge the enhanced data with the lecture
+          console.log(`Using enhanced data for lecture ${lec.id}:`, {
+            actualContentType: enhancedData.actualContentType,
+            hasVideoContent: enhancedData.hasVideoContent,
+            hasArticleContent: enhancedData.hasArticleContent
+          });
+          return { ...lec, ...enhancedData };
+        }
+        
+        // Check if the lecture already has enhanced properties
+        const existingEnhanced = lec as EnhancedLecture;
+        
+        if (existingEnhanced.actualContentType || 
+            existingEnhanced.hasVideoContent !== undefined || 
+            existingEnhanced.hasArticleContent !== undefined) {
+          return existingEnhanced;
+        }
+        
+        // Otherwise, create a basic enhanced lecture based on contentType
+        const enhancedLecture: EnhancedLecture = {
+          ...lec,
+          actualContentType: (lec.contentType as any) || 'video',
+          hasVideoContent: lec.contentType === 'video' || (!lec.contentType && lec.videos && lec.videos.length > 0),
+          hasArticleContent: lec.contentType === 'article',
+          contentMetadata: {
+            createdAt: new Date(),
+            lastModified: new Date()
+          }
+        };
+        
+        // If the lecture has a description that looks like article content, mark it as article
+        if (!enhancedLecture.hasArticleContent && lec.description && lec.description.length > 100 && lec.description.includes('<')) {
+          enhancedLecture.hasArticleContent = true;
+          enhancedLecture.actualContentType = 'article';
+          enhancedLecture.articleContent = { text: lec.description };
+        }
+        
+        console.log(`Enhanced lecture ${lec.id} in quiz preview:`, {
+          name: lec.name,
+          originalType: lec.contentType,
+          actualContentType: enhancedLecture.actualContentType,
+          hasVideoContent: enhancedLecture.hasVideoContent,
+          hasArticleContent: enhancedLecture.hasArticleContent
+        });
+        
+        return enhancedLecture;
+      }) || []
+    }));
+  };
 
   // FIXED: Quiz edit handler
   const handleQuizEditSubmit = (sectionId: string, quizId: string, title: string, description: string) => {
@@ -121,19 +204,18 @@ const QuizItem: React.FC<QuizItemProps> = ({
     setShowEditForm(false);
   };
 
-  const [questions, setQuestions] = useState<Question[]>(
-    lecture.questions || []
-  );
-  const [editingQuestionIndex, setEditingQuestionIndex] = useState<
-    number | null
-  >(null);
-  const [showQuestionTypeSelector, setShowQuestionTypeSelector] =
-    useState(false);
-
   // Debug effect to track showEditQuizForm changes
   useEffect(() => {
     console.log('showEditQuizForm state changed:', showEditQuizForm);
   }, [showEditQuizForm]);
+
+  // Debug effect to track enhanced lectures
+  useEffect(() => {
+    console.log('QuizItem enhanced lectures updated:', {
+      quizId: lecture.id,
+      enhancedLecturesCount: Object.keys(enhancedLectures).length
+    });
+  }, [enhancedLectures, lecture.id]);
 
   useEffect(() => {
     if (editingLectureId === lecture.id && lectureNameInputRef.current) {
@@ -208,10 +290,11 @@ const QuizItem: React.FC<QuizItemProps> = ({
     setExpanded(true);
   };
 
-  // Preview functionality (similar to LectureItem)
+  // Preview functionality - UPDATED
   const handlePreviewSelection = (mode: "instructor" | "student"): void => {
     console.log(`Quiz Preview mode: ${mode}, Quiz ID: ${lecture.id}`);
-    console.log("All sections available:", sections.length);
+    console.log("All sections available:", allSections.length);
+    console.log("Enhanced lectures available:", Object.keys(enhancedLectures).length);
     
     setPreviewMode(mode);
     setShowPreviewDropdown(false);
@@ -233,8 +316,20 @@ const QuizItem: React.FC<QuizItemProps> = ({
 
   const isNewQuiz = questions.length === 0;
 
-  // Preview component - Updated to use ALL sections
   const QuizPreviewPage: React.FC = () => {
+    // Create enhanced sections with proper content type detection
+    const enhancedSections = createEnhancedSections();
+    
+    console.log('📊 Quiz preview sections enhanced:', {
+      totalSections: enhancedSections.length,
+      totalLectures: enhancedSections.reduce((acc, section) => 
+        acc + (section.lectures?.length || 0), 0
+      ),
+      lecturesWithActualContentType: enhancedSections.reduce((acc, section) => 
+        acc + (section.lectures?.filter((l: Lecture) => (l as EnhancedLecture).actualContentType)?.length || 0), 0
+      )
+    });
+    
     return (
       <StudentVideoPreview
         videoContent={{
@@ -259,7 +354,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
         section={{
           id: 'all-sections',
           name: 'All Sections',
-          sections: sections // Pass all processed sections
+          sections: enhancedSections // Pass enhanced sections with proper content types
         }}
         quizData={quizData}
       />

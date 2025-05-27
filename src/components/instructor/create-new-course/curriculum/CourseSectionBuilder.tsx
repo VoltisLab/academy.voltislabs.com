@@ -115,10 +115,7 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
     updateLectureWithUploadedContent,
     handleLectureDrop,
     savePracticeCode,
-<<<<<<< HEAD
     updateQuiz
-=======
->>>>>>> fd9a4f5ed5759ab710c0c56a23c2949ef47ffc9b
   } = useSections([]);
 
   const contentSectionModal = useModal();

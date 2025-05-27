@@ -311,6 +311,7 @@ export interface Lecture {
 
 // ENHANCED: Enhanced Lecture interface with content type detection
 export interface EnhancedLecture extends Lecture {
+  lectureResources?: any;
   // Content type detection properties
   actualContentType?: 'video' | 'article' | 'quiz' | 'assignment' | 'coding-exercise';
   hasVideoContent?: boolean;

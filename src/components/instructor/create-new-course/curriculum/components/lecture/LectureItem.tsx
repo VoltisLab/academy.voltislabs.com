@@ -588,20 +588,6 @@ const handlePreviewSelection = (mode: "instructor" | "student"): void => {
   setShowPreviewDropdown(false);
   setPreviewContentType(detectedContentType);
 
-  // Pass ALL resources without filtering
-  console.log('📋 Passing all resources to preview:', {
-    uploadedFiles: uploadedFiles.length,
-    sourceCodeFiles: sourceCodeFiles.length,
-    externalResources: externalResources.length,
-    uniqueLectureIds: [
-      ...new Set([
-        ...uploadedFiles.map(f => f.lectureId).filter(Boolean),
-        ...sourceCodeFiles.map(f => f.lectureId).filter(Boolean),
-        ...externalResources.map(r => r.lectureId).filter(Boolean)
-      ])
-    ]
-  });
-
   setTimeout(() => {
     setShowVideoPreview(true);
   }, 50);
@@ -612,17 +598,6 @@ const createEnhancedLectureForPreview = (): EnhancedLecture => {
   // FIXED: More precise content detection logic
   const hasRealVideoContent = !!(videoContent.selectedVideoDetails && videoContent.selectedVideoDetails.url);
   const hasRealArticleContent = !!(articleContent && articleContent.text && articleContent.text.trim() !== '');
-  
-  console.log('🔍 Enhanced lecture creation - content analysis:', {
-    lectureId: lecture.id,
-    lectureName: lecture.name,
-    hasRealVideoContent,
-    hasRealArticleContent,
-    videoDetailsExists: !!videoContent.selectedVideoDetails,
-    videoUrl: videoContent.selectedVideoDetails?.url,
-    articleTextLength: articleContent?.text?.length || 0,
-    articleText: articleContent?.text?.substring(0, 50) + '...'
-  });
 
   const enhancedLecture: EnhancedLecture = {
     ...lecture,
@@ -662,14 +637,6 @@ const createEnhancedLectureForPreview = (): EnhancedLecture => {
     detectedType = (lecture.contentType as "article" | "video" | "quiz" | "coding-exercise" | "assignment") || 'video';
   }
   
-  console.log('🎯 Content type detection result:', {
-    lectureId: lecture.id,
-    detectedType,
-    hasRealVideoContent,
-    hasRealArticleContent,
-    originalContentType: lecture.contentType
-  });
-
   enhancedLecture.actualContentType = detectedType;
   enhancedLecture.contentType = detectedType;
 
@@ -689,24 +656,6 @@ const createEnhancedLectureForPreview = (): EnhancedLecture => {
     hasArticleContent ? "article" : previewContentType || enhancedLecture.actualContentType || "video"
   );
 
-  useEffect(() => {
-    console.log("🚀 VideoPreviewPage initialized with enhanced sections:", {
-      hasArticleContent,
-      articleTextExists: !!articleContent?.text,
-      articleLength: articleContent?.text?.length || 0,
-      videoDetailsExists: !!videoContent.selectedVideoDetails,
-      previewContentType,
-      activeItemType,
-      enhancedSectionsCount: enhancedSections.length,
-      totalLecturesWithResources: enhancedSections.reduce((acc, section) => 
-        acc + section.lectures.filter(l => 
-          (l as any).uploadedFiles?.length > 0 || 
-          (l as any).sourceCodeFiles?.length > 0 || 
-          (l as any).externalResources?.length > 0
-        ).length, 0
-      )
-    });
-  }, []);
 
   const handleItemSelect = (itemId: string, itemType: string) => {
     console.log(`🎯 Switching to item ${itemId} of type ${itemType}`);
