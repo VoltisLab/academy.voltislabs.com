@@ -25,6 +25,7 @@ interface RichTextEditorProps {
   answerIndex?: number;
   placeholder?: string;
   onImageUpload?: (file: File) => Promise<string>;
+  readOnly?: boolean; // Add this line
 }
 
 type TextStyle = "normal" | "quote" | "heading";
@@ -42,6 +43,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   setFocusedAnswerIndex,
   answerIndex,
   placeholder = "",
+  readOnly,
 }) => {
   const [formats, setFormats] = useState({
     bold: false,
@@ -371,6 +373,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           onChange={onChange}
           className="my-quill no-border w-[100%]"
           placeholder={placeholder}
+          readOnly={readOnly} // Pass the prop to ReactQuill
           modules={{
             toolbar: false,
             clipboard: {

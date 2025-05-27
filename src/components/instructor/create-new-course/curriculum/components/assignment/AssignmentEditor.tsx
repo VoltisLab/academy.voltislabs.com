@@ -6,6 +6,7 @@ import BasicInfoTab from "./BasicInfoTab";
 import InstructionsTab from "./InstructionsTab";
 import toast from "react-hot-toast";
 import { ExtendedLecture } from "@/lib/types";
+import AssignmentPreview from "./AssignmentPreview";
 
 // Types
 interface AssignmentQuestion {
@@ -428,11 +429,15 @@ const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
                 onClick={handleConfirmPublish}
                 className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
               >
-                {assignmentData.isPublished ? "Update" : "Publish"}
+                Publish
               </button>
             </div>
           </div>
         </div>
+      )}
+
+      {assignmentData.isPublished && (
+        <AssignmentPreview assignmentData={assignmentData} />
       )}
     </div>
   );

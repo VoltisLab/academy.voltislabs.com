@@ -46,12 +46,15 @@ const InstructionsTab: React.FC<{
   ];
 
   const handleVideoUpload = (file: File) => {
+    if (!file) return; // Add null check
+
     onChange("instructionalVideo", { file, url: URL.createObjectURL(file) });
     setShowVideoUploaded(true);
     setActiveVideoTab(null); // Hide tabs after upload
   };
 
   const handleResourceUpload = (file: File) => {
+    if (!file) return; // Add null check
     onChange("instructionalResource", {
       // Changed from downloadableResource
       file,
