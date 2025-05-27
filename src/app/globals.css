@@ -19,6 +19,30 @@ body {
   white-space: pre-wrap;
 }
 
+.ql-editor h2 {
+  font-size: 4rem;
+  /* font-weight: ; */
+  margin: 1rem 0;
+}
+
+/* For the quote style */
+.ql-editor blockquote {
+  border-left: 4px solid #ccc;
+  margin: 1rem 0;
+  padding-left: 1rem;
+  color: #555;
+  font-style: italic;
+}
+
+ql-editor a {
+  color: #2563eb; /* blue-600 */
+  text-decoration: underline;
+}
+
+.ql-editor a:hover {
+  color: #1d4ed8; /* blue-700 */
+}
+
 /* Target inline <code> elements inserted by Quill */
 .my-quill .ql-editor code {
   color: #d0a120; /* yellow text */
