@@ -9,7 +9,14 @@ import {
   AlignJustify,
   FileText,
 } from "lucide-react";
-import { Lecture, ContentItemType, ExtendedLecture, EnhancedLecture } from "@/lib/types";
+import { 
+  Lecture, 
+  ContentItemType, 
+  ExtendedLecture, 
+  EnhancedLecture, 
+  SourceCodeFile, 
+  ExternalResourceItem 
+} from "@/lib/types";
 // Import the components
 import { ActionButtons } from "./ActionButtons";
 import LectureItem from "../lecture/LectureItem";
@@ -128,6 +135,17 @@ interface SectionItemProps {
   // New props for quiz functionality
   addQuiz?: (sectionId: string, title: string, description: string) => string;
   updateQuiz?: (sectionId: string, quizId: string, title: string, description: string) => void;
+  
+  // FIXED: Add global resource props
+  globalUploadedFiles?: Array<{ name: string; size: string; lectureId: string }>;
+  globalSourceCodeFiles?: SourceCodeFile[];
+  globalExternalResources?: ExternalResourceItem[];
+  addUploadedFile?: (file: { name: string; size: string; lectureId: string }) => void;
+  removeUploadedFile?: (fileName: string, lectureId: string) => void;
+  addSourceCodeFile?: (file: SourceCodeFile) => void;
+  removeSourceCodeFile?: (fileName: string, lectureId: string) => void;
+  addExternalResource?: (resource: ExternalResourceItem) => void;
+  removeExternalResource?: (title: string, lectureId: string) => void;
 }
 
 export default function SectionItem({
@@ -136,19 +154,10 @@ export default function SectionItem({
   totalSections,
   editingSectionId,
   setEditingSectionId,
-  editingLectureId,
-  setEditingLectureId,
   updateSectionName,
-  updateLectureName,
   deleteSection,
-  deleteLecture,
   moveSection,
-  moveLecture,
   toggleSectionExpansion,
-  toggleContentSection,
-  toggleAddResourceModal,
-  toggleDescriptionEditor,
-  activeContentSection,
   isDragging,
   handleDragStart,
   handleDragEnd,
@@ -169,6 +178,25 @@ export default function SectionItem({
   allSections,
   addQuiz,
   updateQuiz,
+  editingLectureId,
+  setEditingLectureId,
+  updateLectureName,
+  deleteLecture,
+  moveLecture,
+  toggleContentSection,
+  toggleAddResourceModal,
+  toggleDescriptionEditor,
+  activeContentSection,
+  // FIXED: Receive global resource props
+  globalUploadedFiles = [],
+  globalSourceCodeFiles = [],
+  globalExternalResources = [],
+  addUploadedFile,
+  removeUploadedFile,
+  addSourceCodeFile,
+  removeSourceCodeFile,
+  addExternalResource,
+  removeExternalResource,
 }: SectionItemProps) {
   const sectionNameInputRef = useRef<HTMLInputElement>(null);
   // State for toggling action buttons
@@ -415,59 +443,36 @@ export default function SectionItem({
     }
   };
 
-
-
   // Handle description update
   const updateCurrentDescription = (description: string) => {
     setCurrentDescription(description);
   };
   
-
   const [enhancedLectures, setEnhancedLectures] = useState<Record<string, EnhancedLecture>>({});
-const allSectionsWithEnhanced = allSections.map(section => ({
-  ...section,
-  lectures: section.lectures.map(lecture => {
-    const enhanced = enhancedLectures[lecture.id];
-    return enhanced ? { ...lecture, ...enhanced } : lecture;
-  })
-}));
-// Handler to update lecture content
-const updateLectureContent = (sectionId: string, lectureId: string, updatedLecture: EnhancedLecture) => {
-  console.log('📝 Updating lecture content:', {
-    sectionId,
-    lectureId,
-    actualContentType: updatedLecture.actualContentType,
-    hasVideoContent: updatedLecture.hasVideoContent,
-    hasArticleContent: updatedLecture.hasArticleContent
-  });
-
-  // Store the enhanced lecture data
-  setEnhancedLectures(prev => ({
-    ...prev,
-    [lectureId]: updatedLecture
+  const allSectionsWithEnhanced = allSections.map(section => ({
+    ...section,
+    lectures: section.lectures.map(lecture => {
+      const enhanced = enhancedLectures[lecture.id];
+      return enhanced ? { ...lecture, ...enhanced } : lecture;
+    })
   }));
+  
+  // Handler to update lecture content
+  const updateLectureContent = (sectionId: string, lectureId: string, updatedLecture: EnhancedLecture) => {
+    console.log('📝 Updating lecture content:', {
+      sectionId,
+      lectureId,
+      actualContentType: updatedLecture.actualContentType,
+      hasVideoContent: updatedLecture.hasVideoContent,
+      hasArticleContent: updatedLecture.hasArticleContent
+    });
 
-  // Also update the main sections state if you have one
-  // This depends on your actual state management
-  // Example:
-  // setSections(prevSections => 
-  //   prevSections.map(section => {
-  //     if (section.id === sectionId) {
-  //       return {
-  //         ...section,
-  //         lectures: section.lectures.map(lecture => 
-  //           lecture.id === lectureId ? { ...lecture, ...updatedLecture } : lecture
-  //         )
-  //       };
-  //     }
-  //     return section;
-  //   })
-  // );
-};
-
-
-  // Handle description save
-  // In your parent component
+    // Store the enhanced lecture data
+    setEnhancedLectures(prev => ({
+      ...prev,
+      [lectureId]: updatedLecture
+    }));
+  };
 
   // Calculate content type specific indices
   const getContentTypeIndex = (currentIndex: number, contentType: string): number => {
@@ -571,13 +576,13 @@ const updateLectureContent = (sectionId: string, lectureId: string, updatedLectu
           updateQuizQuestions={updateQuizQuestions}
           sections={allSections}
           onEditQuiz={handleEditQuiz} // Pass the edit handler
-           allSections={allSectionsWithEnhanced} // Pass enhanced sections
-      enhancedLectures={enhancedLectures} // ADD THIS LINE - Pass
-          // isDragging={isDragging}
-          // handleDragEnd={handleDragEnd}
-          // handleDragLeave={handleDragLeave}
-          // draggedLecture={draggedLecture}
-          // dragTarget={dragTarget}
+          allSections={allSectionsWithEnhanced} // Pass enhanced sections
+          enhancedLectures={enhancedLectures} // Pass enhanced lectures
+          // FIXED: Pass resource arrays to QuizItem
+          uploadedFiles={globalUploadedFiles}
+          sourceCodeFiles={globalSourceCodeFiles}
+          externalResources={globalExternalResources}
+          
         />
       );
     }
@@ -643,6 +648,16 @@ const updateLectureContent = (sectionId: string, lectureId: string, updatedLectu
         currentDescription={currentDescription}
         allSections={allSectionsWithEnhanced}
         updateLectureContent={updateLectureContent}
+        // FIXED: Pass global resource arrays and management functions to LectureItem
+        globalUploadedFiles={globalUploadedFiles}
+        globalSourceCodeFiles={globalSourceCodeFiles}
+        globalExternalResources={globalExternalResources}
+        addUploadedFile={addUploadedFile}
+        removeUploadedFile={removeUploadedFile}
+        addSourceCodeFile={addSourceCodeFile}
+        removeSourceCodeFile={removeSourceCodeFile}
+        addExternalResource={addExternalResource}
+        removeExternalResource={removeExternalResource}
       />
     );
   };

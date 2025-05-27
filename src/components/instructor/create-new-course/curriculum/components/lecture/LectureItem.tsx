@@ -12,6 +12,7 @@ import {
   Lecture,
   EnhancedLecture,
   ContentTypeDetector,
+  ExternalResource,
 } from "@/lib/types";
 import {
   Plus,
@@ -58,7 +59,7 @@ export interface SourceCodeFile {
 }
 
 interface ExternalResourceItem {
-  title: string | React.ReactNode;
+  title: string 
   url: string;
   name: string;
   lectureId?: string;
@@ -95,7 +96,16 @@ export default function LectureItem({
   currentDescription = "",
   children,
   allSections,
-  updateLectureContent
+  updateLectureContent,
+  globalUploadedFiles = [],
+  globalSourceCodeFiles = [],
+  globalExternalResources = [],
+  addUploadedFile,
+  removeUploadedFile,
+  addSourceCodeFile,
+  removeSourceCodeFile,
+  addExternalResource,
+  removeExternalResource,
 }: LectureItemProps) {
   const lectureNameInputRef = useRef<HTMLInputElement>(null);
   const [showContentTypeSelector, setShowContentTypeSelector] = useState(false);
@@ -121,13 +131,9 @@ export default function LectureItem({
   );
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [uploadedFiles, setUploadedFiles] = useState<
-    Array<{ name: string; size: string; lectureId: string }>
-  >([]);
-  const [sourceCodeFiles, setSourceCodeFiles] = useState<SourceCodeFile[]>([]);
-  const [externalResources, setExternalResources] = useState<
-    ExternalResourceItem[]
-  >([]);
+  const currentLectureUploadedFiles = globalUploadedFiles.filter(file => file.lectureId === lecture.id);
+  const currentLectureSourceCodeFiles = globalSourceCodeFiles.filter(file => file.lectureId === lecture.id);
+  const currentLectureExternalResources = globalExternalResources.filter(resource => resource.lectureId === lecture.id);
   const [previewContentType, setPreviewContentType] = useState<string>("video");
    console.log("Sections from lectureitem preview", allSections)
 
@@ -299,59 +305,18 @@ const selectVideo = (videoId: string) => {
   }
 };
   const handleSourceCodeSelect = (file: LibraryFileWithSize) => {
-    setSourceCodeFiles([
-      ...sourceCodeFiles,
-      {
+    if (addSourceCodeFile) {
+      addSourceCodeFile({
         name: file.filename,
         type: "SourceCode",
         lectureId: lecture.id,
         filename: file.filename,
-      },
-    ]);
+      });
+    }
 
-    // Close the resource modal
     if (toggleAddResourceModal) {
       toggleAddResourceModal(sectionId, lecture.id);
     }
-  };
-
-  // Add this handler for external resource additions
-  const handleExternalResourceAdd = (
-    title: string,
-    url: string,
-    name: string
-  ) => {
-    setExternalResources([
-      ...externalResources, 
-      { 
-        title, 
-        url, 
-        name, 
-        lectureId: lecture.id  // Associate with current lecture
-      }
-    ]);
-
-    // Close the resource modal
-    if (toggleAddResourceModal) {
-      toggleAddResourceModal(sectionId, lecture.id);
-    }
-  };
-
-  // Add these handlers to remove items
-  const removeSourceCodeFile = (fileName: string) => {
-    setSourceCodeFiles(
-      sourceCodeFiles.filter((file) => file.name !== fileName)
-    );
-  };
-
-  const removeExternalResource = (title: string | React.ReactNode) => {
-    setExternalResources(
-      externalResources.filter((resource) =>
-        typeof resource.title === "string" && typeof title === "string"
-          ? resource.title !== title
-          : String(resource.title) !== String(title)
-      )
-    );
   };
 
   // Add this function to save the lecture edit
@@ -440,131 +405,133 @@ const selectVideo = (videoId: string) => {
     }
   };
 
- const createEnhancedSections = () => {
-  if (!allSections || allSections.length === 0) {
-    return allSections;
-  }
 
-  // Create a map of all resources by lecture ID
-  const resourcesByLectureId: Record<string, {
-    uploadedFiles: Array<{ name: string; size: string; lectureId: string }>;
-    sourceCodeFiles: SourceCodeFile[];
-    externalResources: ExternalResourceItem[];
-  }> = {};
-
-  // Collect all resources from the current component
-  uploadedFiles.forEach(file => {
-    if (file.lectureId) {
-      if (!resourcesByLectureId[file.lectureId]) {
-        resourcesByLectureId[file.lectureId] = {
-          uploadedFiles: [],
-          sourceCodeFiles: [],
-          externalResources: []
-        };
-      }
-      resourcesByLectureId[file.lectureId].uploadedFiles.push(file);
-    }
-  });
-
-  sourceCodeFiles.forEach(file => {
-    if (file.lectureId) {
-      if (!resourcesByLectureId[file.lectureId]) {
-        resourcesByLectureId[file.lectureId] = {
-          uploadedFiles: [],
-          sourceCodeFiles: [],
-          externalResources: []
-        };
-      }
-      resourcesByLectureId[file.lectureId].sourceCodeFiles.push(file);
-    }
-  });
-
-  externalResources.forEach(resource => {
-    if (resource.lectureId) {
-      if (!resourcesByLectureId[resource.lectureId]) {
-        resourcesByLectureId[resource.lectureId] = {
-          uploadedFiles: [],
-          sourceCodeFiles: [],
-          externalResources: []
-        };
-      }
-      resourcesByLectureId[resource.lectureId].externalResources.push(resource);
-    }
-  });
-
-  console.log('📦 Resources by lecture ID:', resourcesByLectureId);
-
-  // Process all sections and enhance ALL lectures
-  return allSections.map(section => ({
-    ...section,
-    lectures: section.lectures?.map(lec => {
-      let enhancedLecture: EnhancedLecture;
-      
-      if (lec.id === lecture.id) {
-        // For the current lecture, create enhanced version with current state
-        enhancedLecture = createEnhancedLectureForPreview();
-      } else {
-        // For other lectures, determine their content type properly
-        const existingEnhanced = lec as EnhancedLecture;
-        
-        // Check if it's already enhanced
-        if (existingEnhanced.actualContentType) {
-          enhancedLecture = existingEnhanced;
-        } else {
-          // Create enhanced lecture based on contentType
-          let hasVideoContent = false;
-          let hasArticleContent = false;
-          let actualContentType = lec.contentType || 'video';
-          
-          // Check for actual content
-          if (lec.contentType === 'article') {
-            hasArticleContent = true;
-            actualContentType = 'article';
-          } else if (lec.contentType === 'video' || !lec.contentType) {
-            hasVideoContent = true;
-            actualContentType = 'video';
-          } else {
-            // For quiz, assignment, coding-exercise, etc.
-            actualContentType = lec.contentType;
-          }
-          
-          enhancedLecture = {
-            ...lec,
-            actualContentType: actualContentType as any,
-            hasVideoContent,
-            hasArticleContent,
-            contentMetadata: {
-              createdAt: new Date(),
-              lastModified: new Date()
-            }
-          };
-        }
-      }
-      
-      // Add resources to the enhanced lecture
-      const lectureResources = resourcesByLectureId[lec.id];
-      if (lectureResources) {
-        (enhancedLecture as any).uploadedFiles = lectureResources.uploadedFiles;
-        (enhancedLecture as any).sourceCodeFiles = lectureResources.sourceCodeFiles;
-        (enhancedLecture as any).externalResources = lectureResources.externalResources;
-      }
-      
-      console.log(`Enhanced lecture ${lec.id}:`, {
-        id: lec.id,
-        name: lec.name,
-        actualContentType: enhancedLecture.actualContentType,
-        hasResources: !!lectureResources,
-        resourceCounts: lectureResources ? {
-          uploaded: lectureResources.uploadedFiles.length,
-          sourceCode: lectureResources.sourceCodeFiles.length,
-          external: lectureResources.externalResources.length
-        } : null
-      });
-      
-      return enhancedLecture;
-    }) || []
-  }));
+const convertExternalResource = (resource: ExternalResource): ExternalResourceItem => {
+  return {
+    title: typeof resource.title === 'string' ? resource.title : resource.name,
+    url: resource.url,
+    name: resource.name,
+    lectureId: resource.lectureId
+  };
 };
+
+// FIXED: Updated createEnhancedSections function with proper type conversion
+ const createEnhancedSections = () => {
+    if (!allSections || allSections.length === 0) {
+      return allSections;
+    }
+
+    console.log('📦 Using global resources for enhanced sections:', {
+      totalUploadedFiles: globalUploadedFiles.length,
+      totalSourceCodeFiles: globalSourceCodeFiles.length,
+      totalExternalResources: globalExternalResources.length
+    });
+
+    // Process all sections and enhance ALL lectures with proper resource attachment
+    return allSections.map(section => ({
+      ...section,
+      lectures: section.lectures?.map(lec => {
+        // Get resources for this specific lecture from global arrays
+        const lectureUploadedFiles = globalUploadedFiles.filter(file => file.lectureId === lec.id);
+        const lectureSourceCodeFiles = globalSourceCodeFiles.filter(file => file.lectureId === lec.id);
+        const lectureExternalResources = globalExternalResources.filter(resource => resource.lectureId === lec.id);
+
+        let enhancedLecture: EnhancedLecture;
+        
+        if (lec.id === lecture.id) {
+          // For the current lecture, create enhanced version with current state
+          enhancedLecture = createEnhancedLectureForPreview();
+        } else {
+          // For other lectures, determine their content type properly
+          const existingEnhanced = lec as EnhancedLecture;
+          
+          if (existingEnhanced.actualContentType) {
+            enhancedLecture = existingEnhanced;
+          } else {
+            let hasVideoContent = false;
+            let hasArticleContent = false;
+            let actualContentType = lec.contentType || 'video';
+            
+            if (lec.contentType === 'article') {
+              hasArticleContent = true;
+              actualContentType = 'article';
+            } else if (lec.contentType === 'video' || !lec.contentType) {
+              hasVideoContent = true;
+              actualContentType = 'video';
+            } else {
+              actualContentType = lec.contentType;
+            }
+            
+            enhancedLecture = {
+              ...lec,
+              actualContentType: actualContentType as any,
+              hasVideoContent,
+              hasArticleContent,
+              contentMetadata: {
+                createdAt: new Date(),
+                lastModified: new Date()
+              }
+            };
+          }
+        }
+        
+        // Attach resources to each lecture from global arrays
+        enhancedLecture.lectureResources = {
+          uploadedFiles: lectureUploadedFiles,
+          sourceCodeFiles: lectureSourceCodeFiles,
+          externalResources: lectureExternalResources
+        };
+        
+        console.log(`Enhanced lecture ${lec.id}:`, {
+          id: lec.id,
+          name: lec.name,
+          actualContentType: enhancedLecture.actualContentType,
+          resourceCounts: {
+            uploaded: lectureUploadedFiles.length,
+            sourceCode: lectureSourceCodeFiles.length,
+            external: lectureExternalResources.length
+          }
+        });
+        
+        return enhancedLecture;
+      }) || []
+    }));
+  };
+
+// FIXED: Updated handleExternalResourceAdd function with proper typing
+const handleExternalResourceAdd = (title: string, url: string, name: string) => {
+    if (addExternalResource) {
+      addExternalResource({
+        title: title,
+        url: url,
+        name: name,
+        lectureId: lecture.id
+      });
+    }
+
+    if (toggleAddResourceModal) {
+      toggleAddResourceModal(sectionId, lecture.id);
+    }
+  };
+
+  const removeSourceCodeFileHandler = (fileName: string) => {
+    if (removeSourceCodeFile) {
+      removeSourceCodeFile(fileName, lecture.id);
+    }
+  };
+
+  const removeExternalResourceHandler = (title: string) => {
+    if (removeExternalResource) {
+      removeExternalResource(title, lecture.id);
+    }
+  };
+
+  const removeUploadedFileHandler = (fileName: string) => {
+    if (removeUploadedFile) {
+      removeUploadedFile(fileName, lecture.id);
+    }
+  };
+
 // FIXED: Don't filter resources in handlePreviewSelection - pass ALL resources
 const handlePreviewSelection = (mode: "instructor" | "student"): void => {
   const enhancedLecture = createEnhancedLectureForPreview();
@@ -575,14 +542,6 @@ const handlePreviewSelection = (mode: "instructor" | "student"): void => {
   } else {
     detectedContentType = enhancedLecture.actualContentType || 'video';
   }
-
-  console.log(`🎬 Preview mode: ${mode}, Detected content type: ${detectedContentType}`, {
-    hasArticleContent: enhancedLecture.hasArticleContent,
-    hasVideoContent: enhancedLecture.hasVideoContent,
-    articleTextLength: articleContent?.text?.length || 0,
-    videoDetailsExists: !!videoContent.selectedVideoDetails,
-    detectedType: detectedContentType
-  });
 
   setPreviewMode(mode);
   setShowPreviewDropdown(false);
@@ -644,9 +603,9 @@ const createEnhancedLectureForPreview = (): EnhancedLecture => {
 };
 
   // For debugging
-  const VideoPreviewPage: React.FC = () => {
+ const VideoPreviewPage: React.FC = () => {
   const enhancedLecture = createEnhancedLectureForPreview();
-  const enhancedSections = createEnhancedSections(); // Use enhanced sections with resources
+  const enhancedSections = createEnhancedSections(); // This now includes all resources properly
   
   const hasArticleContent = !!(articleContent && articleContent.text && articleContent.text.trim() !== '') && 
     !videoContent.selectedVideoDetails;
@@ -656,6 +615,26 @@ const createEnhancedLectureForPreview = (): EnhancedLecture => {
     hasArticleContent ? "article" : previewContentType || enhancedLecture.actualContentType || "video"
   );
 
+  useEffect(() => {
+    console.log("🚀 VideoPreviewPage initialized with enhanced sections:", {
+      hasArticleContent,
+      articleTextExists: !!articleContent?.text,
+      articleLength: articleContent?.text?.length || 0,
+      videoDetailsExists: !!videoContent.selectedVideoDetails,
+      previewContentType,
+      activeItemType,
+      enhancedSectionsCount: enhancedSections.length,
+      totalLecturesWithResources: enhancedSections.reduce((acc, section) => 
+        acc + section.lectures.filter((l: EnhancedLecture) => 
+          l.lectureResources && (
+            l.lectureResources.uploadedFiles.length > 0 || 
+            l.lectureResources.sourceCodeFiles.length > 0 || 
+            l.lectureResources.externalResources.length > 0
+          )
+        ).length, 0
+      )
+    });
+  }, []);
 
   const handleItemSelect = (itemId: string, itemType: string) => {
     console.log(`🎯 Switching to item ${itemId} of type ${itemType}`);
@@ -666,19 +645,19 @@ const createEnhancedLectureForPreview = (): EnhancedLecture => {
   if (previewMode === "student") {
     return (
       <StudentVideoPreview
-        videoContent={videoContent}
-        articleContent={articleContent}
-        setShowVideoPreview={setShowVideoPreview}
-        lecture={enhancedLecture}
-        uploadedFiles={uploadedFiles} // Pass ALL uploaded files
-        sourceCodeFiles={sourceCodeFiles} // Pass ALL source code files
-        externalResources={externalResources} // Pass ALL external resources
-        section={{
-          id: 'all-sections',
-          name: 'All Sections',
-          sections: enhancedSections // Pass enhanced sections with proper content types and resources
-        }}
-      />
+      videoContent={videoContent}
+      articleContent={articleContent}
+      setShowVideoPreview={setShowVideoPreview}
+      lecture={enhancedLecture}
+      uploadedFiles={globalUploadedFiles} // Pass global arrays
+      sourceCodeFiles={globalSourceCodeFiles} // Pass global arrays
+      externalResources={globalExternalResources} // Pass global arrays
+      section={{
+        id: 'all-sections',
+        name: 'All Sections',
+        sections: enhancedSections
+      }}
+    />
     );
   }
 
@@ -743,21 +722,19 @@ const createEnhancedLectureForPreview = (): EnhancedLecture => {
 
 
   const handleLibraryItemSelect = (item: LibraryFileWithSize) => {
-    // Add the selected item to your downloadable files list with lecture association
-    setUploadedFiles([
-      ...uploadedFiles,
-      {
+    if (addUploadedFile) {
+      addUploadedFile({
         name: item.filename,
         size: item.size || (item.type === "Video" ? "01:45" : "1.2 MB"),
-        lectureId: lecture.id, // Associate with current lecture
-      },
-    ]);
+        lectureId: lecture.id,
+      });
+    }
 
-    // Close the resource modal
     if (toggleAddResourceModal) {
       toggleAddResourceModal(sectionId, lecture.id);
     }
   };
+
 
   // Add this function to handle the video file upload and progress
   const handleVideoFileUpload = (
@@ -1251,36 +1228,36 @@ const createEnhancedLectureForPreview = (): EnhancedLecture => {
 
   // Simulate uploading a file for resources
   const triggerFileUpload = (contentType: ContentType) => {
-    setIsUploading(true);
-    const interval = setInterval(() => {
-      setUploadProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setTimeout(() => {
-            setIsUploading(false);
-            setUploadProgress(0);
+  setIsUploading(true);
+  const interval = setInterval(() => {
+    setUploadProgress((prev) => {
+      if (prev >= 100) {
+        clearInterval(interval);
+        setTimeout(() => {
+          setIsUploading(false);
+          setUploadProgress(0);
 
-            // Add a new dummy file to the list with lecture association
-            const filename =
-              contentType === ContentType.VIDEO
-                ? "2025-05-01-025523.webm"
-                : "course_materials.pdf";
+          // Add a new dummy file to the list with lecture association
+          const filename =
+            contentType === ContentType.VIDEO
+              ? "2025-05-01-025523.webm"
+              : "course_materials.pdf";
 
-            setUploadedFiles([
-              ...uploadedFiles,
-              {
-                name: filename,
-                size: contentType === ContentType.VIDEO ? "263.5 kB" : "1.2 MB",
-                lectureId: lecture.id, // Associate with current lecture
-              },
-            ]);
-          }, 500);
-          return 100;
-        }
-        return prev + 10;
-      });
-    }, 300);
-  };
+          // FIXED: Use the global add function instead of local setState
+          if (addUploadedFile) {
+            addUploadedFile({
+              name: filename,
+              size: contentType === ContentType.VIDEO ? "263.5 kB" : "1.2 MB",
+              lectureId: lecture.id, // Associate with current lecture
+            });
+          }
+        }, 500);
+        return 100;
+      }
+      return prev + 10;
+    });
+  }, 300);
+};
 
   const maxLength = 80;
 
@@ -1292,15 +1269,6 @@ const createEnhancedLectureForPreview = (): EnhancedLecture => {
     (articleContent.text && articleContent.text.trim() !== "")
   );
 };
-
-  // Helper function to check if current lecture has resources
-  const hasCurrentLectureResources = (): boolean => {
-    const hasUploadedFiles = uploadedFiles.some(file => file.lectureId === lecture.id);
-    const hasSourceCode = sourceCodeFiles.some(file => file.lectureId === lecture.id);
-    const hasExternalRes = externalResources.some(resource => resource.lectureId === lecture.id);
-    
-    return hasUploadedFiles || hasSourceCode || hasExternalRes;
-  };
 
   return (
     <div
@@ -1786,107 +1754,112 @@ const createEnhancedLectureForPreview = (): EnhancedLecture => {
                         />
                       </div>
                     )}
+                 
+{/* Display Downloadable Materials section if files exist for this lecture */}
+{currentLectureUploadedFiles.length > 0 && (
+  <div className="mb-4 border-b border-gray-400 pb-2">
+    <h3 className="text-sm font-bold text-gray-700 mb-2">
+      Downloadable materials
+    </h3>
+    {currentLectureUploadedFiles.map((file, index) => (
+      <div
+        key={`file-${file.name}-${file.lectureId}`} // Better key
+        className="flex justify-between items-center py-1"
+      >
+        <div className="flex items-center text-gray-800">
+          <FileDown size={13} className="text-gray-800 mr-1" />
+          <span className="text-sm text-gray-800">
+            {file.name} ({file.size})
+          </span>
+        </div>
+        <button
+          onClick={() => {
+            // Use the global remove function instead of local setState
+            if (removeUploadedFile) {
+              removeUploadedFile(file.name, lecture.id);
+            }
+          }}
+          className="text-gray-400 hover:bg-gray-200 p-2 rounded"
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
+      </div>
+    ))}
+  </div>
+)}
 
-                    {/* Display Downloadable Materials section if files exist for this lecture */}
-                    {uploadedFiles.filter(file => file.lectureId === lecture.id).length > 0 && (
-                      <div className="mb-4 border-b border-gray-400 pb-2">
-                        <h3 className="text-sm font-bold text-gray-700 mb-2">
-                          Downloadable materials
-                        </h3>
-                        {uploadedFiles
-                          .filter(file => file.lectureId === lecture.id)
-                          .map((file, index) => (
-                            <div
-                              key={`file-${index}`}
-                              className="flex justify-between items-center py-1"
-                            >
-                              <div className="flex items-center text-gray-800">
-                                <FileDown
-                                  size={13}
-                                  className="text-gray-800 mr-1"
-                                />
-                                <span className="text-sm text-gray-800">
-                                  {file.name} ({file.size})
-                                </span>
-                              </div>
-                              <button
-                                onClick={() => {
-                                  setUploadedFiles(
-                                    uploadedFiles.filter((_, i) => i !== index)
-                                  );
-                                }}
-                                className="text-gray-400 hover:bg-gray-200 p-2 rounded"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
-                          ))}
-                      </div>
-                    )}
+{/* Display Source Code section if files exist for this lecture */}
+{currentLectureExternalResources.length > 0 && (
+  <div className="mb-4 border-b border-gray-400 pb-2">
+    <h3 className="text-sm font-bold text-gray-700 mb-2">
+      External Resources
+    </h3>
+    {currentLectureExternalResources.map((resource, index) => {
+      // FIXED: Get the resource title, handling undefined cases
+      const resourceTitle = typeof resource.title === 'string' 
+        ? resource.title 
+        : resource.name || `Resource ${index + 1}`;
+        
+      return (
+        <div
+          key={`resource-${resourceTitle}-${resource.lectureId}`} // Use computed title
+          className="flex justify-between items-center py-1"
+        >
+          <div className="flex items-center text-gray-800">
+            <SquareArrowOutUpRight size={13} className="mr-1 text-gray-800" />
+            <span className="text-sm text-gray-800">
+              {resourceTitle}
+            </span>
+          </div>
+          <button
+            onClick={() => {
+              // FIXED: Use the computed resourceTitle which is guaranteed to be a string
+              if (removeExternalResource) {
+                removeExternalResource(resourceTitle, lecture.id);
+              }
+            }}
+            className="text-gray-400 hover:bg-gray-200 p-2 rounded"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        </div>
+      );
+    })}
+  </div>
+)}
 
-                    {/* Display Source Code section if files exist for this lecture */}
-                    {sourceCodeFiles.filter(file => file.lectureId === lecture.id).length > 0 && (
-                      <div className="mb-4 border-b border-gray-400 pb-2">
-                        <h3 className="text-sm font-bold text-gray-700 mb-2">
-                          Source Code
-                        </h3>
-                        {sourceCodeFiles
-                          .filter(file => file.lectureId === lecture.id)
-                          .map((file, index) => (
-                            <div
-                              key={`sourcecode-${index}`}
-                              className="flex justify-between items-center py-1"
-                            >
-                              <div className="flex items-center">
-                                <span className="text-sm text-gray-800">
-                                  {file.name} ({file.type})
-                                </span>
-                              </div>
-                              <button
-                                onClick={() => removeSourceCodeFile(file.name)}
-                                className="text-gray-400 hover:bg-gray-200 p-2 rounded"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
-                          ))}
-                      </div>
-                    )}
-
-                    {/* External Resources section - only for this lecture */}
-                    {externalResources.filter(resource => resource.lectureId === lecture.id).length > 0 && (
-                      <div className="mb-4 border-b border-gray-400 pb-2">
-                        <h3 className="text-sm font-bold text-gray-700 mb-2">
-                          External Resources
-                        </h3>
-                        {externalResources
-                          .filter(resource => resource.lectureId === lecture.id)
-                          .map((resource, index) => (
-                            <div
-                              key={`resource-${index}`}
-                              className="flex justify-between items-center py-1"
-                            >
-                              <div className="flex items-center text-gray-800">
-                                <SquareArrowOutUpRight
-                                  size={13}
-                                  className="mr-1 text-gray-800"
-                                />
-                                <span className="text-sm text-gray-800">
-                                  {typeof resource.title === 'string' ? resource.title : resource.name}
-                                </span>
-                              </div>
-                              <button
-                                onClick={() =>
-                                  removeExternalResource(resource.title)
-                                }
-                                className="text-gray-400 hover:bg-gray-200 p-2 rounded"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
-                          ))}
-                      </div>
-                    )}
+{/* External Resources section - only for this lecture */}
+{currentLectureExternalResources.length > 0 && (
+  <div className="mb-4 border-b border-gray-400 pb-2">
+    <h3 className="text-sm font-bold text-gray-700 mb-2">
+      External Resources
+    </h3>
+    {currentLectureExternalResources.map((resource, index) => (
+      <div
+        key={`resource-${resource.title}-${resource.lectureId}`} // Better key
+        className="flex justify-between items-center py-1"
+      >
+        <div className="flex items-center text-gray-800">
+          <SquareArrowOutUpRight size={13} className="mr-1 text-gray-800" />
+          <span className="text-sm text-gray-800">
+            {typeof resource.title === 'string' ? resource.title : resource.name}
+          </span>
+        </div>
+        <button
+          onClick={() => {
+            // Use the global remove function
+            if (removeExternalResource) {
+              removeExternalResource(resource.title, lecture.id);
+            }
+          }}
+          className="text-gray-400 hover:bg-gray-200 p-2 rounded"
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
+      </div>
+    ))}
+  </div>
+)}
 
                     {articleContent.text &&
                       articleContent.text.trim() !== "" &&

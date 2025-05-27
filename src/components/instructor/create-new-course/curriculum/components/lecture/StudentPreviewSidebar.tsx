@@ -12,7 +12,15 @@ import {
   X,
   FolderOpen
 } from "lucide-react";
-import { Lecture, SourceCodeFile, ExternalResourceItem, AttachedFile, EnhancedLecture, ContentTypeDetector } from '@/lib/types';
+import { 
+  Lecture, 
+  SourceCodeFile, 
+  ExternalResourceItem, 
+  ExternalResource, // FIXED: Import both types
+  AttachedFile, 
+  EnhancedLecture, 
+  ContentTypeDetector 
+} from '@/lib/types';
 
 // Define the ContentItemType properly
 type ContentItemType = 'video' | 'article' | 'quiz' | 'assignment' | 'coding-exercise';
@@ -80,14 +88,21 @@ interface StudentPreviewSidebarProps {
     }>;
     isExpanded?: boolean;
   }>;
-  // REMOVED: Individual resource arrays since they're now part of enhanced lectures
+  // FIXED: Accept both types and handle conversion internally
+  uploadedFiles?: Array<{ name: string; size: string; lectureId?: string }>;
+  sourceCodeFiles?: SourceCodeFile[];
+  externalResources?: (ExternalResource | ExternalResourceItem)[]; // Accept both types
 }
 
 const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
   currentLectureId,
   setShowVideoPreview,
   sections = [],
-  onSelectItem
+  onSelectItem,
+  // FIXED: Accept resource props with defaults
+  uploadedFiles = [],
+  sourceCodeFiles = [],
+  externalResources = []
 }) => {
   // State for managing which resource dropdowns are open
   const [openResourcesDropdowns, setOpenResourcesDropdowns] = useState<Record<string, boolean>>({});
@@ -95,6 +110,26 @@ const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
   // State for processed sections with their items
   const [processedSections, setProcessedSections] = useState<SectionWithItems[]>([]);
+
+  // FIXED: Add helper function to convert ExternalResource to ExternalResourceItem
+  const convertExternalResource = (resource: ExternalResource | ExternalResourceItem): ExternalResourceItem => {
+    // If it's already ExternalResourceItem, return as is
+    if (typeof (resource as any).title === 'string') {
+      return resource as ExternalResourceItem;
+    }
+    
+    // Convert ExternalResource to ExternalResourceItem
+    const externalResource = resource as ExternalResource;
+    return {
+      title: typeof externalResource.title === 'string' 
+        ? externalResource.title 
+        : externalResource.name, // Convert ReactNode to string
+      url: externalResource.url,
+      name: externalResource.name,
+      lectureId: externalResource.lectureId,
+      filename: (externalResource as any).filename
+    };
+  };
 
   // FIXED: Enhanced content type detector function for lectures
   const detectLectureContentType = (lecture: Lecture): string => {
@@ -158,33 +193,84 @@ const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
     return 'video';
   };
 
-  // FIXED: Simplified resource extraction from EnhancedLecture
-  const extractLectureResources = (lecture: Lecture) => {
-    const enhancedLecture = lecture as EnhancedLecture;
-    
-    console.log(`📦 Extracting resources for lecture ${lecture.id}:`, {
-      hasLectureResources: !!enhancedLecture.lectureResources,
-      resourceData: enhancedLecture.lectureResources
+  // FIXED: Create resource map from props to aggregate all resources by lectureId
+  const createResourceMap = () => {
+    const resourcesByLectureId: Record<string, {
+      uploadedFiles: Array<{ name: string; size: string; lectureId: string }>;
+      sourceCodeFiles: SourceCodeFile[];
+      externalResources: ExternalResourceItem[];
+    }> = {};
+
+    console.log('🗂️ Creating resource map from props:', {
+      uploadedFilesCount: uploadedFiles.length,
+      sourceCodeFilesCount: sourceCodeFiles.length,
+      externalResourcesCount: externalResources.length
     });
 
-    // Return the resources directly from the enhanced lecture
-    if (enhancedLecture.lectureResources) {
-      return enhancedLecture.lectureResources;
-    }
+    // Process uploaded files
+    uploadedFiles.forEach(file => {
+      if (file.lectureId) {
+        if (!resourcesByLectureId[file.lectureId]) {
+          resourcesByLectureId[file.lectureId] = {
+            uploadedFiles: [],
+            sourceCodeFiles: [],
+            externalResources: []
+          };
+        }
+        resourcesByLectureId[file.lectureId].uploadedFiles.push({
+          name: file.name,
+          size: file.size,
+          lectureId: file.lectureId
+        });
+      }
+    });
 
-    // Return empty structure if no resources
-    return {
-      uploadedFiles: [],
-      sourceCodeFiles: [],
-      externalResources: []
-    };
+    // Process source code files
+    sourceCodeFiles.forEach(file => {
+      if (file.lectureId) {
+        if (!resourcesByLectureId[file.lectureId]) {
+          resourcesByLectureId[file.lectureId] = {
+            uploadedFiles: [],
+            sourceCodeFiles: [],
+            externalResources: []
+          };
+        }
+        resourcesByLectureId[file.lectureId].sourceCodeFiles.push(file);
+      }
+    });
+
+    // FIXED: Process external resources with type conversion
+    externalResources.forEach(resource => {
+      if (resource.lectureId) {
+        if (!resourcesByLectureId[resource.lectureId]) {
+          resourcesByLectureId[resource.lectureId] = {
+            uploadedFiles: [],
+            sourceCodeFiles: [],
+            externalResources: []
+          };
+        }
+        // Convert to ExternalResourceItem before adding
+        const convertedResource = convertExternalResource(resource);
+        resourcesByLectureId[resource.lectureId].externalResources.push(convertedResource);
+      }
+    });
+
+    console.log('📦 Resource map created:', {
+      totalLecturesWithResources: Object.keys(resourcesByLectureId).length,
+      resourcesByLectureId
+    });
+
+    return resourcesByLectureId;
   };
 
   // Update the useEffect that processes sections
   useEffect(() => {
     console.log("StudentPreviewSidebar - Processing sections:", {
       sectionsCount: sections.length,
-      currentLectureId
+      currentLectureId,
+      totalUploadedFiles: uploadedFiles.length,
+      totalSourceCodeFiles: sourceCodeFiles.length,
+      totalExternalResources: externalResources.length
     });
     
     if (!sections || sections.length === 0) {
@@ -192,6 +278,9 @@ const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
       setProcessedSections([]);
       return;
     }
+    
+    // FIXED: Create resource map from props
+    const resourcesByLectureId = createResourceMap();
     
     // Initialize expanded state for all sections
     const initialExpandedState: Record<string, boolean> = {};
@@ -216,8 +305,13 @@ const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
           // FIXED: Use the improved content type detection
           const detectedContentType = detectLectureContentType(lecture);
           
-          // FIXED: Use the simplified resource extraction
-          const lectureResources = extractLectureResources(lecture);
+          // FIXED: Get resources from the resource map instead of just the lecture
+          const lectureResources = resourcesByLectureId[lecture.id] || {
+            uploadedFiles: [],
+            sourceCodeFiles: [],
+            externalResources: []
+          };
+          
           const hasResources = lectureResources.uploadedFiles.length > 0 || 
                               lectureResources.sourceCodeFiles.length > 0 || 
                               lectureResources.externalResources.length > 0;
@@ -242,7 +336,7 @@ const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
             hasResources: hasResources,
             isCompleted: lecture.isCompleted || false,
             isActive: lecture.id === currentLectureId,
-            lectureResources: lectureResources, // FIXED: Use the proper structure
+            lectureResources: lectureResources, // FIXED: Use resources from map
             description: lecture.description,
             actualContentType: detectedContentType,
             hasVideoContent: detectedContentType === 'video',
@@ -354,7 +448,7 @@ const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
     });
     
     setProcessedSections(formatted);
-  }, [sections, currentLectureId]); // REMOVED: resource dependencies since they're now in sections
+  }, [sections, currentLectureId, uploadedFiles, sourceCodeFiles, externalResources]); // FIXED: Include resource props in dependencies
 
   // Toggle a section's expanded state
   const toggleSection = (sectionId: string) => {
@@ -478,7 +572,7 @@ const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
         >
           <div className='flex flex-row gap-1 items-center'>
             <FolderOpen size={14} />
-            <span>Resources ({totalResourceCount})</span>
+            <span>Resources</span>
           </div>
           {isOpen ? <ChevronUp className="w-3 h-3 ml-1" /> : <ChevronDown className="w-3 h-3 ml-1" />}
         </button>
@@ -492,7 +586,6 @@ const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
               {/* Uploaded Files */}
               {hasUploadedFiles && (
                 <div className="mb-2">
-                  <div className="text-xs font-semibold text-gray-600 mb-1">Downloadable Files</div>
                   {resources.uploadedFiles.map((file, index) => (
                     <div key={`dl-${index}`} className="flex items-center py-1 px-2 hover:bg-gray-50">
                       <FileDown className="w-4 h-4 mr-2 text-gray-600" />
@@ -505,7 +598,6 @@ const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
               {/* Source Code Files */}
               {hasSourceCode && (
                 <div className="mb-2">
-                  <div className="text-xs font-semibold text-gray-600 mb-1">Source Code</div>
                   {resources.sourceCodeFiles.map((file, index) => (
                     <div key={`sc-${index}`} className="flex items-center py-1 px-2 hover:bg-gray-50">
                       <Code className="w-4 h-4 mr-2 text-gray-600" />
@@ -518,7 +610,6 @@ const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
               {/* External Resources */}
               {hasExternalResources && (
                 <div>
-                  <div className="text-xs font-semibold text-gray-600 mb-1">External Links</div>
                   {resources.externalResources.map((resource, index) => (
                     <div key={`er-${index}`} className="flex items-center py-1 px-2 hover:bg-gray-50">
                       <SquareArrowOutUpRight className="w-4 h-4 mr-2 text-gray-600" />
@@ -529,7 +620,7 @@ const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
                         rel="noopener noreferrer"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        {typeof resource.title === 'string' ? resource.title : resource.name}
+                        {resource.title} {/* Now guaranteed to be string */}
                       </a>
                     </div>
                   ))}

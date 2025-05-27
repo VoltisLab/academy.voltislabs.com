@@ -1327,7 +1327,7 @@ const handleItemSelect = (itemId: string, itemType: string) => {
                   onMouseEnter={() => setShowControls(true)}
                   onMouseLeave={() => setShowControls(false)}
                 >
-                  <div className="relative w-full h-full mx-auto text-left">
+                  <div className="relative w-full h-[64vh] mx-auto text-left">
                     <ReactPlayer
                       ref={playerRef}
                       url={
@@ -1368,11 +1368,9 @@ const handleItemSelect = (itemId: string, itemType: string) => {
                         </button>
                       </div>
                     )}
-                  </div>
-                </div>
 
-                {/* Video controls - ONLY show for video content */}
-                {activeItemType === "video" && (
+
+                  {activeItemType === "video" && (
                   <div className="h-12 bg-black w-full flex items-center px-4 text-white relative">
                     {/* Progress bar at the very top */}
                     <div className="absolute top-0 left-0 right-0 h-1 bg-gray-900">
@@ -1564,6 +1562,11 @@ const handleItemSelect = (itemId: string, itemType: string) => {
                     </div>
                   </div>
                 )}
+                  </div>
+                </div>
+
+                {/* Video controls - ONLY show for video content */}
+            
               </div>
             )}
           </div>

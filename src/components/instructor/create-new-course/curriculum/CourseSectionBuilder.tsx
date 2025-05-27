@@ -6,6 +6,9 @@ import {
   ResourceTabType,
   CourseSectionInput,
   LectureInput,
+  SourceCodeFile,
+  ExternalResourceItem,
+  ExtendedLecture,
 } from "@/lib/types";
 import { useSections } from "@/hooks/useSection";
 import { useFileUpload } from "@/hooks/useFileUpload";
@@ -18,40 +21,6 @@ import NewFeatureAlert from "./NewFeatureAlert";
 import InfoBox from "./InfoBox";
 import CodingExerciseCreator from "./components/code/CodingExcerciseCreator";
 import AssignmentEditor from "./components/assignment/AssignmentEditor"; // Import the new component
-
-// Add the ExtendedLecture interface here if not already imported
-interface ExtendedLecture {
-  id: string;
-  name?: string;
-  title?: string;
-  description: string;
-  captions: string;
-  lectureNotes: string;
-  attachedFiles: any[];
-  videos: any[];
-  contentType: any;
-  isExpanded: boolean;
-  assignmentTitle?: string;
-  assignmentDescription?: string;
-  estimatedDuration?: number;
-  durationUnit?: "minutes" | "hours" | "days";
-  assignmentInstructions?: string;
-  instructionalVideo?: {
-    file: File | null;
-    url?: string;
-  };
-  downloadableResource?: {
-    file: File | null;
-    url?: string;
-    name?: string;
-  };
-  assignmentQuestions?: any[];
-  solutionVideo?: {
-    file: File | null;
-    url?: string;
-  };
-  isPublished: boolean;
-}
 
 interface CourseBuilderProps {
   onSaveNext?: () => void;
@@ -80,6 +49,13 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
     sectionId: string | null;
     lectureId: string | null;
   }>({ sectionId: null, lectureId: null });
+
+  // FIXED: Add global resource state management
+  const [globalUploadedFiles, setGlobalUploadedFiles] = useState<
+    Array<{ name: string; size: string; lectureId: string }>
+  >([]);
+  const [globalSourceCodeFiles, setGlobalSourceCodeFiles] = useState<SourceCodeFile[]>([]);
+  const [globalExternalResources, setGlobalExternalResources] = useState<ExternalResourceItem[]>([]);
 
   // Existing coding exercise modal state
   const [showCodingExerciseCreator, setShowCodingExerciseCreator] =
@@ -133,6 +109,37 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
     loading: mutationLoading,
     error: mutationError,
   } = useCourseSectionsUpdate();
+
+  // FIXED: Add resource management functions
+  const addUploadedFile = (file: { name: string; size: string; lectureId: string }) => {
+    setGlobalUploadedFiles(prev => [...prev, file]);
+  };
+
+  const removeUploadedFile = (fileName: string, lectureId: string) => {
+    setGlobalUploadedFiles(prev => 
+      prev.filter(file => !(file.name === fileName && file.lectureId === lectureId))
+    );
+  };
+
+  const addSourceCodeFile = (file: SourceCodeFile) => {
+    setGlobalSourceCodeFiles(prev => [...prev, file]);
+  };
+
+  const removeSourceCodeFile = (fileName: string, lectureId: string) => {
+    setGlobalSourceCodeFiles(prev => 
+      prev.filter(file => !(file.name === fileName && file.lectureId === lectureId))
+    );
+  };
+
+  const addExternalResource = (resource: ExternalResourceItem) => {
+    setGlobalExternalResources(prev => [...prev, resource]);
+  };
+
+  const removeExternalResource = (title: string, lectureId: string) => {
+    setGlobalExternalResources(prev => 
+      prev.filter(resource => !(resource.title === title && resource.lectureId === lectureId))
+    );
+  };
 
   useEffect(() => {
     const handleClickOutside = (e: globalThis.MouseEvent) => {
@@ -640,6 +647,16 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
                 onEditAssignment={handleOpenAssignmentEditor}
                 allSections={getFormattedSectionsForPreview()}
                 updateQuiz={updateQuiz}
+                // FIXED: Pass global resource management functions
+                globalUploadedFiles={globalUploadedFiles}
+                globalSourceCodeFiles={globalSourceCodeFiles}
+                globalExternalResources={globalExternalResources}
+                addUploadedFile={addUploadedFile}
+                removeUploadedFile={removeUploadedFile}
+                addSourceCodeFile={addSourceCodeFile}
+                removeSourceCodeFile={removeSourceCodeFile}
+                addExternalResource={addExternalResource}
+                removeExternalResource={removeExternalResource}
               />
             ))
           ) : (
