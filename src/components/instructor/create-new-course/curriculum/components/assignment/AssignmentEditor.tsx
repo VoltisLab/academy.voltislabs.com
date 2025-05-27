@@ -276,7 +276,7 @@ const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
         </div>
         <div className="ml-3">
           <p className="text-sm text-green-700">
-            All requirements are met! You can now publish your assignment.
+            All requirements are met! Your assignment is now published.
           </p>
         </div>
       </div>
