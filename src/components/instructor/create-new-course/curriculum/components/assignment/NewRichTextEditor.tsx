@@ -29,9 +29,9 @@ interface RichTextEditorProps {
 
 type TextStyle = "normal" | "quote" | "heading";
 const textStyles = [
-  { value: "normal", label: "Normal Text" },
+  { value: "normal", label: "Styles" },
   { value: "quote", label: "Quote" },
-  { value: "heading", label: "Heading" },
+  { value: "heading", label: "Heading 4" },
 ];
 
 const RichTextEditor: React.FC<RichTextEditorProps> = ({
@@ -247,7 +247,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
               setCurrentTextStyle(style);
               applyTextStyle(style);
             }}
-            className="h-full px-2 text-sm border-r border-gray-300 focus:outline-none"
+            className="h-full font-normal hover:bg-zinc-200 px-2 text-sm  focus:outline-none cursor-pointer"
           >
             {textStyles.map((style) => (
               <option key={style.value} value={style.value}>

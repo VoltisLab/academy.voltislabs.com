@@ -289,7 +289,7 @@ export interface ExtendedLecture extends Lecture {
     file: File | null;
     url?: string;
   };
-  isPublished: boolean;
+  // isPublished: boolean;
 }
 
 export interface LibraryFileWithSize extends StoredVideo {
