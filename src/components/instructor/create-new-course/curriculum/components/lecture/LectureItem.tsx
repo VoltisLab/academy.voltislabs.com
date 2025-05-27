@@ -10,6 +10,8 @@ import {
   StoredVideo,
   LectureItemProps,
   Lecture,
+  EnhancedLecture,
+  ContentTypeDetector,
 } from "@/lib/types";
 import {
   Plus,
@@ -92,7 +94,8 @@ export default function LectureItem({
   saveDescription,
   currentDescription = "",
   children,
-  allSections
+  allSections,
+  updateLectureContent
 }: LectureItemProps) {
   const lectureNameInputRef = useRef<HTMLInputElement>(null);
   const [showContentTypeSelector, setShowContentTypeSelector] = useState(false);
@@ -205,13 +208,86 @@ export default function LectureItem({
   };
 
   const handleSaveArticle = (articleContent: string) => {
-    // Save the article content
-    setArticleContent({ text: articleContent });
+  console.log('💾 Saving article content:', {
+    contentLength: articleContent.length,
+    hasVideoContent: !!videoContent.selectedVideoDetails
+  });
+  
+  // Save the article content
+  setArticleContent({ text: articleContent });
+  
+  // CRITICAL: Clear video content when saving article
+  if (videoContent.selectedVideoDetails) {
+    setVideoContent({
+      ...videoContent,
+      selectedVideoDetails: null
+    });
+  }
 
-    // Close the content section and show the article summary
+  // CRITICAL: Update the lecture's content type to 'article'
+  if (updateLectureContent) {
+    const updatedLecture = ContentTypeDetector.updateLectureContentType(
+      createEnhancedLectureForPreview(),
+      'article',
+      { text: articleContent }
+    );
+    updateLectureContent(sectionId, lecture.id, updatedLecture);
+  }
+
+  // Close the content section and show the article summary
+  setActiveContentType(null);
+
+  // Make sure lecture stays expanded
+  if (
+    toggleContentSection &&
+    (!activeContentSection ||
+      activeContentSection.sectionId !== sectionId ||
+      activeContentSection.lectureId !== lecture.id)
+  ) {
+    toggleContentSection(sectionId, lecture.id);
+  }
+};
+
+// CRITICAL FIX: Update selectVideo to properly set content type
+const selectVideo = (videoId: string) => {
+  const selectedVideo = videoContent.libraryTab.videos.find(
+    (v) => v.id === videoId
+  );
+
+  if (selectedVideo) {
+    const selectedDetails: SelectedVideoDetails = {
+      id: selectedVideo.id,
+      filename: selectedVideo.filename,
+      duration: "01:45",
+      thumbnailUrl: "https://via.placeholder.com/160x120/000000/FFFFFF/?text=Netflix",
+      isDownloadable: false,
+      url: selectedVideo.url || "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+    };
+
+    setVideoContent({
+      ...videoContent,
+      libraryTab: {
+        ...videoContent.libraryTab,
+        selectedVideo: videoId,
+      },
+      selectedVideoDetails: selectedDetails,
+    });
+
+    // CRITICAL: Clear article content when selecting a video
+    setArticleContent({ text: "" });
+
+    // CRITICAL: Update the lecture's content type to 'video'
+    if (updateLectureContent) {
+      const updatedLecture = ContentTypeDetector.updateLectureContentType(
+        createEnhancedLectureForPreview(),
+        'video',
+        selectedDetails
+      );
+      updateLectureContent(sectionId, lecture.id, updatedLecture);
+    }
+
     setActiveContentType(null);
 
-    // Make sure lecture stays expanded
     if (
       toggleContentSection &&
       (!activeContentSection ||
@@ -220,8 +296,8 @@ export default function LectureItem({
     ) {
       toggleContentSection(sectionId, lecture.id);
     }
-  };
-
+  }
+};
   const handleSourceCodeSelect = (file: LibraryFileWithSize) => {
     setSourceCodeFiles([
       ...sourceCodeFiles,
@@ -364,137 +440,321 @@ export default function LectureItem({
     }
   };
 
+ const createEnhancedSections = () => {
+  if (!allSections || allSections.length === 0) {
+    return allSections;
+  }
+
+  // Create a map of all resources by lecture ID
+  const resourcesByLectureId: Record<string, {
+    uploadedFiles: Array<{ name: string; size: string; lectureId: string }>;
+    sourceCodeFiles: SourceCodeFile[];
+    externalResources: ExternalResourceItem[];
+  }> = {};
+
+  // Collect all resources from the current component
+  uploadedFiles.forEach(file => {
+    if (file.lectureId) {
+      if (!resourcesByLectureId[file.lectureId]) {
+        resourcesByLectureId[file.lectureId] = {
+          uploadedFiles: [],
+          sourceCodeFiles: [],
+          externalResources: []
+        };
+      }
+      resourcesByLectureId[file.lectureId].uploadedFiles.push(file);
+    }
+  });
+
+  sourceCodeFiles.forEach(file => {
+    if (file.lectureId) {
+      if (!resourcesByLectureId[file.lectureId]) {
+        resourcesByLectureId[file.lectureId] = {
+          uploadedFiles: [],
+          sourceCodeFiles: [],
+          externalResources: []
+        };
+      }
+      resourcesByLectureId[file.lectureId].sourceCodeFiles.push(file);
+    }
+  });
+
+  externalResources.forEach(resource => {
+    if (resource.lectureId) {
+      if (!resourcesByLectureId[resource.lectureId]) {
+        resourcesByLectureId[resource.lectureId] = {
+          uploadedFiles: [],
+          sourceCodeFiles: [],
+          externalResources: []
+        };
+      }
+      resourcesByLectureId[resource.lectureId].externalResources.push(resource);
+    }
+  });
+
+  console.log('📦 Resources by lecture ID:', resourcesByLectureId);
+
+  // Process all sections and enhance ALL lectures
+  return allSections.map(section => ({
+    ...section,
+    lectures: section.lectures?.map(lec => {
+      let enhancedLecture: EnhancedLecture;
+      
+      if (lec.id === lecture.id) {
+        // For the current lecture, create enhanced version with current state
+        enhancedLecture = createEnhancedLectureForPreview();
+      } else {
+        // For other lectures, determine their content type properly
+        const existingEnhanced = lec as EnhancedLecture;
+        
+        // Check if it's already enhanced
+        if (existingEnhanced.actualContentType) {
+          enhancedLecture = existingEnhanced;
+        } else {
+          // Create enhanced lecture based on contentType
+          let hasVideoContent = false;
+          let hasArticleContent = false;
+          let actualContentType = lec.contentType || 'video';
+          
+          // Check for actual content
+          if (lec.contentType === 'article') {
+            hasArticleContent = true;
+            actualContentType = 'article';
+          } else if (lec.contentType === 'video' || !lec.contentType) {
+            hasVideoContent = true;
+            actualContentType = 'video';
+          } else {
+            // For quiz, assignment, coding-exercise, etc.
+            actualContentType = lec.contentType;
+          }
+          
+          enhancedLecture = {
+            ...lec,
+            actualContentType: actualContentType as any,
+            hasVideoContent,
+            hasArticleContent,
+            contentMetadata: {
+              createdAt: new Date(),
+              lastModified: new Date()
+            }
+          };
+        }
+      }
+      
+      // Add resources to the enhanced lecture
+      const lectureResources = resourcesByLectureId[lec.id];
+      if (lectureResources) {
+        (enhancedLecture as any).uploadedFiles = lectureResources.uploadedFiles;
+        (enhancedLecture as any).sourceCodeFiles = lectureResources.sourceCodeFiles;
+        (enhancedLecture as any).externalResources = lectureResources.externalResources;
+      }
+      
+      console.log(`Enhanced lecture ${lec.id}:`, {
+        id: lec.id,
+        name: lec.name,
+        actualContentType: enhancedLecture.actualContentType,
+        hasResources: !!lectureResources,
+        resourceCounts: lectureResources ? {
+          uploaded: lectureResources.uploadedFiles.length,
+          sourceCode: lectureResources.sourceCodeFiles.length,
+          external: lectureResources.externalResources.length
+        } : null
+      });
+      
+      return enhancedLecture;
+    }) || []
+  }));
+};
+// FIXED: Don't filter resources in handlePreviewSelection - pass ALL resources
+const handlePreviewSelection = (mode: "instructor" | "student"): void => {
+  const enhancedLecture = createEnhancedLectureForPreview();
+  
+  let detectedContentType: string;
+  if (ContentTypeDetector && typeof ContentTypeDetector.detectLectureContentType === 'function') {
+    detectedContentType = ContentTypeDetector.detectLectureContentType(enhancedLecture);
+  } else {
+    detectedContentType = enhancedLecture.actualContentType || 'video';
+  }
+
+  console.log(`🎬 Preview mode: ${mode}, Detected content type: ${detectedContentType}`, {
+    hasArticleContent: enhancedLecture.hasArticleContent,
+    hasVideoContent: enhancedLecture.hasVideoContent,
+    articleTextLength: articleContent?.text?.length || 0,
+    videoDetailsExists: !!videoContent.selectedVideoDetails,
+    detectedType: detectedContentType
+  });
+
+  setPreviewMode(mode);
+  setShowPreviewDropdown(false);
+  setPreviewContentType(detectedContentType);
+
+  // Pass ALL resources without filtering
+  console.log('📋 Passing all resources to preview:', {
+    uploadedFiles: uploadedFiles.length,
+    sourceCodeFiles: sourceCodeFiles.length,
+    externalResources: externalResources.length,
+    uniqueLectureIds: [
+      ...new Set([
+        ...uploadedFiles.map(f => f.lectureId).filter(Boolean),
+        ...sourceCodeFiles.map(f => f.lectureId).filter(Boolean),
+        ...externalResources.map(r => r.lectureId).filter(Boolean)
+      ])
+    ]
+  });
+
+  setTimeout(() => {
+    setShowVideoPreview(true);
+  }, 50);
+};
+
+
+const createEnhancedLectureForPreview = (): EnhancedLecture => {
+  // FIXED: More precise content detection logic
+  const hasRealVideoContent = !!(videoContent.selectedVideoDetails && videoContent.selectedVideoDetails.url);
+  const hasRealArticleContent = !!(articleContent && articleContent.text && articleContent.text.trim() !== '');
+  
+  console.log('🔍 Enhanced lecture creation - content analysis:', {
+    lectureId: lecture.id,
+    lectureName: lecture.name,
+    hasRealVideoContent,
+    hasRealArticleContent,
+    videoDetailsExists: !!videoContent.selectedVideoDetails,
+    videoUrl: videoContent.selectedVideoDetails?.url,
+    articleTextLength: articleContent?.text?.length || 0,
+    articleText: articleContent?.text?.substring(0, 50) + '...'
+  });
+
+  const enhancedLecture: EnhancedLecture = {
+    ...lecture,
+    // FIXED: Only set to true if content actually exists
+    hasVideoContent: hasRealVideoContent,
+    hasArticleContent: hasRealArticleContent,
+    articleContent: hasRealArticleContent ? articleContent : undefined,
+    // FIXED: Handle null case by converting to undefined
+    videoDetails: hasRealVideoContent && videoContent.selectedVideoDetails ? videoContent.selectedVideoDetails : undefined,
+    contentMetadata: {
+      createdAt: new Date(),
+      lastModified: new Date(),
+      ...(hasRealArticleContent && {
+        articleWordCount: articleContent.text.split(/\s+/).length
+      }),
+      ...(hasRealVideoContent && videoContent.selectedVideoDetails?.duration && {
+        videoDuration: videoContent.selectedVideoDetails.duration
+      })
+    }
+  };
+
+  // FIXED: Enhanced content type detection logic with proper typing
+  let detectedType: "article" | "video" | "quiz" | "coding-exercise" | "assignment";
+  
+  // IMPORTANT: Check for actual content, not just the presence of objects
+  if (hasRealArticleContent && !hasRealVideoContent) {
+    detectedType = 'article';
+  } else if (hasRealVideoContent && !hasRealArticleContent) {
+    detectedType = 'video';
+  } else if (hasRealArticleContent && hasRealVideoContent) {
+    // This should not happen - log a warning
+    console.warn('⚠️ Both article and video content exist - this is unexpected');
+    // Default to the most recently set content (article takes precedence as it's set last)
+    detectedType = 'article';
+  } else {
+    // Neither has content, use the original content type or default to video
+    detectedType = (lecture.contentType as "article" | "video" | "quiz" | "coding-exercise" | "assignment") || 'video';
+  }
+  
+  console.log('🎯 Content type detection result:', {
+    lectureId: lecture.id,
+    detectedType,
+    hasRealVideoContent,
+    hasRealArticleContent,
+    originalContentType: lecture.contentType
+  });
+
+  enhancedLecture.actualContentType = detectedType;
+  enhancedLecture.contentType = detectedType;
+
+  return enhancedLecture;
+};
+
   // For debugging
   const VideoPreviewPage: React.FC = () => {
-    const hasArticleContent = articleContent && articleContent.text !== "" && 
-      (!videoContent.selectedVideoDetails || videoContent.selectedVideoDetails === null);
+  const enhancedLecture = createEnhancedLectureForPreview();
+  const enhancedSections = createEnhancedSections(); // Use enhanced sections with resources
+  
+  const hasArticleContent = !!(articleContent && articleContent.text && articleContent.text.trim() !== '') && 
+    !videoContent.selectedVideoDetails;
 
-    const [activeItemId, setActiveItemId] = useState<string>(lecture.id);
-    const [activeItemType, setActiveItemType] = useState<string>(
-      hasArticleContent ? "article" : previewContentType || lecture.contentType || "video"
-    );
+  const [activeItemId, setActiveItemId] = useState<string>(lecture.id);
+  const [activeItemType, setActiveItemType] = useState<string>(
+    hasArticleContent ? "article" : previewContentType || enhancedLecture.actualContentType || "video"
+  );
 
-    useEffect(() => {
-      console.log("VideoPreviewPage initialized:", {
-        hasArticleContent,
-        articleTextExists: !!articleContent?.text,
-        articleLength: articleContent?.text?.length || 0,
-        videoDetailsExists: !!videoContent.selectedVideoDetails,
-        previewContentType,
-        activeItemType,
-        lectureContentType: lecture.contentType,
-        allSectionsCount: allSections.length,
-      });
-    }, []);
+  useEffect(() => {
+    console.log("🚀 VideoPreviewPage initialized with enhanced sections:", {
+      hasArticleContent,
+      articleTextExists: !!articleContent?.text,
+      articleLength: articleContent?.text?.length || 0,
+      videoDetailsExists: !!videoContent.selectedVideoDetails,
+      previewContentType,
+      activeItemType,
+      enhancedSectionsCount: enhancedSections.length,
+      totalLecturesWithResources: enhancedSections.reduce((acc, section) => 
+        acc + section.lectures.filter(l => 
+          (l as any).uploadedFiles?.length > 0 || 
+          (l as any).sourceCodeFiles?.length > 0 || 
+          (l as any).externalResources?.length > 0
+        ).length, 0
+      )
+    });
+  }, []);
 
-    useEffect(() => {
-      const hasArticle = articleContent && articleContent.text !== "" && 
-        (!videoContent.selectedVideoDetails || videoContent.selectedVideoDetails === null);
+  const handleItemSelect = (itemId: string, itemType: string) => {
+    console.log(`🎯 Switching to item ${itemId} of type ${itemType}`);
+    setActiveItemId(itemId);
+    setActiveItemType(itemType);
+  };
 
-      const contentType = hasArticle ? "article" : previewContentType || lecture.contentType || "video";
-
-      if (contentType !== activeItemType) {
-        console.log(`Updating activeItemType from ${activeItemType} to ${contentType}`);
-        setActiveItemType(contentType);
-      }
-    }, [articleContent, videoContent.selectedVideoDetails, previewContentType, lecture.contentType]);
-
-    const handleItemSelect = (itemId: string, itemType: string) => {
-      console.log(`Switching to item ${itemId} of type ${itemType}`);
-      setActiveItemId(itemId);
-      setActiveItemType(itemType);
-    };
-
-    // Find the current section and create the proper section structure
-    const currentSection = allSections.find(section => section.id === sectionId) || {
-      id: sectionId,
-      name: "Section",
-      lectures: [lecture],
-      quizzes: [],
-      assignments: [],
-      codingExercises: [],
-      isExpanded: true
-    };
-
-    const contentType = hasArticleContent ? "article" : activeItemType || "video";
-
-    // Filter resources for current lecture only
-    const currentLectureUploadedFiles = uploadedFiles.filter(file => file.lectureId === lecture.id);
-    const currentLectureSourceCodeFiles = sourceCodeFiles.filter(file => file.lectureId === lecture.id);
-    const currentLectureExternalResources = externalResources.filter(resource => resource.lectureId === lecture.id);
-
-    if (previewMode === "student") {
-      return (
-        <StudentVideoPreview
-          videoContent={videoContent}
-          articleContent={articleContent}
-          setShowVideoPreview={setShowVideoPreview}
-          lecture={{ ...lecture, contentType: contentType as any }}
-          uploadedFiles={currentLectureUploadedFiles}
-          sourceCodeFiles={currentLectureSourceCodeFiles}
-          externalResources={currentLectureExternalResources}
-          section={{
-            id: 'all-sections',
-            name: 'All Sections',
-            sections: allSections // Pass all sections
-          }}
-        />
-      );
-    }
-
-    // Instructor preview
+  if (previewMode === "student") {
     return (
-      <InstructorVideoPreview
+      <StudentVideoPreview
         videoContent={videoContent}
         articleContent={articleContent}
         setShowVideoPreview={setShowVideoPreview}
-        lecture={hasArticleContent ? { ...lecture, contentType: "article" } : lecture}
-        section={currentSection}
+        lecture={enhancedLecture}
+        uploadedFiles={uploadedFiles} // Pass ALL uploaded files
+        sourceCodeFiles={sourceCodeFiles} // Pass ALL source code files
+        externalResources={externalResources} // Pass ALL external resources
+        section={{
+          id: 'all-sections',
+          name: 'All Sections',
+          sections: enhancedSections // Pass enhanced sections with proper content types and resources
+        }}
       />
     );
+  }
+
+  // Instructor preview
+  const currentSection = enhancedSections.find(section => section.id === sectionId) || {
+    id: sectionId,
+    name: "Section",
+    lectures: [enhancedLecture],
+    quizzes: [],
+    assignments: [],
+    codingExercises: [],
+    isExpanded: true
   };
 
-  const selectVideo = (videoId: string) => {
-    // Find the selected video from the library
-    const selectedVideo = videoContent.libraryTab.videos.find(
-      (v) => v.id === videoId
-    );
-
-    if (selectedVideo) {
-      // Create the selected video details with the video URL
-      const selectedDetails: SelectedVideoDetails = {
-        id: selectedVideo.id,
-        filename: selectedVideo.filename,
-        duration: "01:45", // In a real app, this would come from the video metadata
-        thumbnailUrl:
-          "https://via.placeholder.com/160x120/000000/FFFFFF/?text=Netflix",
-        isDownloadable: false,
-        url: selectedVideo.url || "https://www.youtube.com/watch?v=dQw4w9WgXcQ", // Use the stored URL or fallback
-      };
-
-      setVideoContent({
-        ...videoContent,
-        libraryTab: {
-          ...videoContent.libraryTab,
-          selectedVideo: videoId,
-        },
-        selectedVideoDetails: selectedDetails,
-      });
-
-      // Set activeContentType to null to show the selected video details
-      setActiveContentType(null);
-
-      // Make sure lecture stays expanded
-      if (
-        toggleContentSection &&
-        (!activeContentSection ||
-          activeContentSection.sectionId !== sectionId ||
-          activeContentSection.lectureId !== lecture.id)
-      ) {
-        toggleContentSection(sectionId, lecture.id);
-      }
-    }
-  };
+  return (
+    <InstructorVideoPreview
+      videoContent={videoContent}
+      articleContent={articleContent}
+      setShowVideoPreview={setShowVideoPreview}
+      lecture={enhancedLecture}
+      section={currentSection}
+    />
+  );
+};
+ 
 
   const removeSelectedResource = (videoId: string) => {
     setSelectedResources(selectedResources.filter((v) => v.id !== videoId));
@@ -526,66 +786,12 @@ export default function LectureItem({
 
   const isArticleContent = (): boolean => {
     return (
-      articleContent.text !== "" &&
-      (!videoContent.selectedVideoDetails ||
-        videoContent.selectedVideoDetails === null)
+      !!(articleContent && articleContent.text && articleContent.text.trim() !== '') &&
+      !videoContent.selectedVideoDetails
     );
   };
 
-  // Now update the handlePreviewSelection function
-  const handlePreviewSelection = (mode: "instructor" | "student"): void => {
-    // Determine content type
-    const hasArticle = articleContent && articleContent.text !== "" && 
-      (!videoContent.selectedVideoDetails || videoContent.selectedVideoDetails === null);
 
-    console.log(`Preview mode: ${mode}, Has article: ${hasArticle}, Article text length: ${articleContent?.text?.length || 0}`);
-
-    setPreviewMode(mode);
-    setShowPreviewDropdown(false);
-
-    const contentType = hasArticle ? "article" : "video";
-    setPreviewContentType(contentType);
-
-    // Associate resources with current lecture
-    const formattedUploadedFiles = uploadedFiles.map((file) => ({
-      name: file.name,
-      size: file.size,
-      lectureId: file.lectureId || lecture.id,
-    }));
-
-    const formattedSourceCodeFiles = sourceCodeFiles.map((file) => ({
-      lectureId: file.lectureId || lecture.id,
-      filename: file.filename,
-      name: file.name,
-      type: file.type,
-    }));
-
-    const formattedExternalResources = externalResources.map((resource) => ({
-      title: resource.title,
-      url: resource.url,
-      name: typeof resource.name === "string" ? resource.name : String(resource.title),
-      lectureId: resource.lectureId || lecture.id,
-    }));
-
-    setUploadedFiles(formattedUploadedFiles);
-    setSourceCodeFiles(formattedSourceCodeFiles);
-    setExternalResources(formattedExternalResources);
-
-    if (hasArticle) {
-      setArticleContent({ ...articleContent });
-    }
-
-    console.log("Before showing preview:", {
-      hasArticle,
-      articleText: articleContent?.text?.substring(0, 50),
-      previewContentType: contentType,
-      allSections: allSections.length,
-    });
-
-    setTimeout(() => {
-      setShowVideoPreview(true);
-    }, 50);
-  };
 
   const handleLibraryItemSelect = (item: LibraryFileWithSize) => {
     // Add the selected item to your downloadable files list with lecture association
@@ -708,26 +914,32 @@ export default function LectureItem({
   }, [editingLectureId, lecture.id]);
 
   // Determine lecture type label based on contentType
-  const getLectureTypeLabel = () => {
-    switch (lecture.contentType) {
-      case "video":
-        return "Lecture";
-      case "article":
-        return "Article";
-      case "quiz":
-        return "Quiz";
-      case "coding-exercise":
-        return "Coding Exercise";
-      case "assignment":
-        return "Assignment";
-      case "practice":
-        return "Practice";
-      case "role-play":
-        return "Role Play";
-      default:
-        return "Item";
-    }
-  };
+  const getLectureTypeLabel = (): string => {
+  // ENHANCED: Use enhanced content type detection
+  const enhancedLecture = createEnhancedLectureForPreview();
+  
+  let detectedType: string;
+  if (ContentTypeDetector && typeof ContentTypeDetector.detectLectureContentType === 'function') {
+    detectedType = ContentTypeDetector.detectLectureContentType(enhancedLecture);
+  } else {
+    detectedType = enhancedLecture.actualContentType || 'video';
+  }
+  
+  switch (detectedType) {
+    case "video":
+      return "Lecture";
+    case "article":
+      return "Article";
+    case "quiz":
+      return "Quiz";
+    case "coding-exercise":
+      return "Coding Exercise";
+    case "assignment":
+      return "Assignment";
+    default:
+      return "Item";
+  }
+};
 
   // Handle search in library tab
   const handleSearchLibrary = (event: React.FormEvent) => {
@@ -737,35 +949,47 @@ export default function LectureItem({
   };
 
   // Updated for clarity - when initializing with handleContentTypeSelect
-  const handleContentTypeSelect = (contentType: ContentItemType) => {
-    setActiveContentType(contentType);
-    setShowContentTypeSelector(false);
+ const handleContentTypeSelect = (contentType: ContentItemType) => {
+  console.log('🔄 Switching content type to:', contentType);
+  
+  setActiveContentType(contentType);
+  setShowContentTypeSelector(false);
 
-    if (contentType === "video") {
-      // Keep existing videos in the library when initializing
-      const existingVideos = videoContent.libraryTab.videos;
-      const existingSelectedVideoDetails = videoContent.selectedVideoDetails;
+  if (contentType === "video") {
+    // FIXED: Clear article content when switching to video
+    setArticleContent({ text: "" });
+    
+    // Keep existing videos in the library when initializing
+    const existingVideos = videoContent.libraryTab.videos;
+    const existingSelectedVideoDetails = videoContent.selectedVideoDetails;
 
-      setVideoContent({
-        uploadTab: { selectedFile: null },
-        libraryTab: {
-          searchQuery: "",
-          selectedVideo: null,
-          videos: existingVideos, // Preserve existing videos
-        },
-        activeTab: "uploadVideo",
-        selectedVideoDetails: existingSelectedVideoDetails, // Preserve selected video details
-      });
-    } else if (contentType === ("video-slide" as ContentItemType)) {
-      setVideoSlideContent({
-        video: { selectedFile: null },
-        presentation: { selectedFile: null },
-        step: 1,
-      });
-    } else if (contentType === "article") {
-      setArticleContent({ text: "" });
-    }
-  };
+    setVideoContent({
+      uploadTab: { selectedFile: null },
+      libraryTab: {
+        searchQuery: "",
+        selectedVideo: null,
+        videos: existingVideos,
+      },
+      activeTab: "uploadVideo",
+      selectedVideoDetails: existingSelectedVideoDetails,
+    });
+  } else if (contentType === "video-slide") {
+    // FIXED: Clear other content types
+    setArticleContent({ text: "" });
+    setVideoSlideContent({
+      video: { selectedFile: null },
+      presentation: { selectedFile: null },
+      step: 1,
+    });
+  } else if (contentType === "article") {
+    // FIXED: Clear video content when switching to article
+    setVideoContent({
+      ...videoContent,
+      selectedVideoDetails: null // Clear selected video
+    });
+    setArticleContent({ text: "" });
+  }
+};
 
   // Function to delete a video from the library
   const deleteVideo = (videoId: string) => {
@@ -1112,13 +1336,13 @@ export default function LectureItem({
   const maxLength = 80;
 
   const hasExistingContent = (lecture: Lecture): boolean => {
-    return (
-      (lecture.videos && lecture.videos.length > 0) ||
-      lecture.contentType === "article" ||
-      videoContent.selectedVideoDetails !== null ||
-      articleContent.text !== ""
-    );
-  };
+  return Boolean(
+    (lecture.videos && lecture.videos.length > 0) ||
+    lecture.contentType === "article" ||
+    videoContent.selectedVideoDetails !== null ||
+    (articleContent.text && articleContent.text.trim() !== "")
+  );
+};
 
   // Helper function to check if current lecture has resources
   const hasCurrentLectureResources = (): boolean => {
@@ -1716,6 +1940,7 @@ export default function LectureItem({
                     )}
 
                     {articleContent.text &&
+                      articleContent.text.trim() !== "" &&
                       !videoContent.selectedVideoDetails && (
                         <div className="overflow-hidden border-b border-gray-400 mb-4">
                           <div className="flex flex-row justify-between sm:flex-row items-start">

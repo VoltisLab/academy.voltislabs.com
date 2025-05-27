@@ -9,7 +9,7 @@ import {
   AlignJustify,
   FileText,
 } from "lucide-react";
-import { Lecture, ContentItemType, ExtendedLecture } from "@/lib/types";
+import { Lecture, ContentItemType, ExtendedLecture, EnhancedLecture } from "@/lib/types";
 // Import the components
 import { ActionButtons } from "./ActionButtons";
 import LectureItem from "../lecture/LectureItem";
@@ -415,10 +415,56 @@ export default function SectionItem({
     }
   };
 
+
+
   // Handle description update
   const updateCurrentDescription = (description: string) => {
     setCurrentDescription(description);
   };
+  
+
+  const [enhancedLectures, setEnhancedLectures] = useState<Record<string, EnhancedLecture>>({});
+const allSectionsWithEnhanced = allSections.map(section => ({
+  ...section,
+  lectures: section.lectures.map(lecture => {
+    const enhanced = enhancedLectures[lecture.id];
+    return enhanced ? { ...lecture, ...enhanced } : lecture;
+  })
+}));
+// Handler to update lecture content
+const updateLectureContent = (sectionId: string, lectureId: string, updatedLecture: EnhancedLecture) => {
+  console.log('📝 Updating lecture content:', {
+    sectionId,
+    lectureId,
+    actualContentType: updatedLecture.actualContentType,
+    hasVideoContent: updatedLecture.hasVideoContent,
+    hasArticleContent: updatedLecture.hasArticleContent
+  });
+
+  // Store the enhanced lecture data
+  setEnhancedLectures(prev => ({
+    ...prev,
+    [lectureId]: updatedLecture
+  }));
+
+  // Also update the main sections state if you have one
+  // This depends on your actual state management
+  // Example:
+  // setSections(prevSections => 
+  //   prevSections.map(section => {
+  //     if (section.id === sectionId) {
+  //       return {
+  //         ...section,
+  //         lectures: section.lectures.map(lecture => 
+  //           lecture.id === lectureId ? { ...lecture, ...updatedLecture } : lecture
+  //         )
+  //       };
+  //     }
+  //     return section;
+  //   })
+  // );
+};
+
 
   // Handle description save
   // In your parent component
@@ -524,7 +570,7 @@ export default function SectionItem({
           toggleContentSection={toggleContentSection}
           updateQuizQuestions={updateQuizQuestions}
           sections={allSections}
-          allSections={allSections}
+          allSections={allSectionsWithEnhanced}
           onEditQuiz={handleEditQuiz} // Pass the edit handler
           // isDragging={isDragging}
           // handleDragEnd={handleDragEnd}
@@ -594,7 +640,8 @@ export default function SectionItem({
         updateCurrentDescription={updateCurrentDescription}
         saveDescription={handleSaveDescription} // Use the local wrapper function
         currentDescription={currentDescription}
-        allSections={allSections}
+        allSections={allSectionsWithEnhanced}
+        updateLectureContent={updateLectureContent}
       />
     );
   };

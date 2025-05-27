@@ -4,6 +4,9 @@ import {
   VideoContent,
   AttachedFile,
   ExternalResource,
+  PreviewSection,
+  EnhancedLecture,
+  ContentTypeDetector,
 } from "@/lib/types";
 import {
   ChevronDown,
@@ -136,66 +139,200 @@ const StudentVideoPreview = ({
     "overview" | "notes" | "announcements" | "reviews" | "learning-tools"
   >("overview");
   
-  // FIXED: Determine initial content type properly
-  const determineInitialContentType = (): string => {
-    // Check for quiz first
-    if (lecture.contentType === "quiz" && quizData) {
-      return "quiz";
+  // ENHANCED: Create a content type detector function
+const detectContentType = (
+  lectureId: string, 
+  lectureData?: Lecture,
+  hasVideoContent?: boolean,
+  hasArticleContent?: boolean
+): string => {
+  // For the initial lecture, use the provided props
+  if (lectureId === lecture.id) {
+    console.log('🔍 Detecting content type for initial lecture:', {
+      lectureId,
+      articleExists: !!(articleContent && articleContent.text && articleContent.text.trim() !== ''),
+      videoExists: !!videoContent.selectedVideoDetails,
+      articleTextLength: articleContent?.text?.length || 0,
+      videoUrl: videoContent.selectedVideoDetails?.url,
+      lectureContentType: lecture.contentType
+    });
+
+    // More precise content detection
+    const hasRealArticleContent = !!(articleContent && articleContent.text && articleContent.text.trim() !== '');
+    const hasRealVideoContent = !!(videoContent.selectedVideoDetails && videoContent.selectedVideoDetails.url);
+
+    // If both exist, there's a conflict - prefer the most recently set
+    if (hasRealArticleContent && hasRealVideoContent) {
+      console.warn('⚠️ Both article and video content exist - this should not happen');
+      // In this case, check the lecture's contentType or default to article
+      return lecture.contentType === 'video' ? 'video' : 'article';
     }
     
-    // Check for article content
-    const hasArticle = articleContent && 
-                      articleContent.text && 
-                      articleContent.text.trim() !== "";
-    
-    if (hasArticle) {
-      return "article";
+    if (hasRealArticleContent && !hasRealVideoContent) {
+      console.log('✅ Detected as article - has article content, no video');
+      return 'article';
     }
     
-    // Default to lecture content type or video
-    return lecture.contentType || "video";
-  };
+    if (hasRealVideoContent && !hasRealArticleContent) {
+      console.log('✅ Detected as video - has video content, no article');
+      return 'video';
+    }
+    
+    // Neither has content - use lecture content type
+    if (lecture.contentType) {
+      console.log('✅ Using lecture contentType:', lecture.contentType);
+      return lecture.contentType;
+    }
 
-  // Set activeItemType based on content type or article content
-  const [activeItemType, setActiveItemType] = useState<string>(determineInitialContentType());
+    console.log('✅ Defaulting to video type');
+    return 'video';
+  }
 
-  // Add an effect to update activeItemType if props change - ONLY for initial lecture
-  useEffect(() => {
-    // Only auto-set content type for the initial lecture (when activeItemId matches lecture.id)
-    if (activeItemId === lecture.id) {
-      const hasArticle =
-        articleContent &&
-        articleContent.text !== "" &&
-        articleContent.text.trim() !== "";
+  // For other lectures, use enhanced lecture data
+  if (lectureData) {
+    const enhancedLecture = lectureData as EnhancedLecture;
+    
+    console.log('🔍 Detecting content type for selected lecture:', {
+      lectureId,
+      lectureName: lectureData.name,
+      actualContentType: enhancedLecture.actualContentType,
+      hasVideoContent: enhancedLecture.hasVideoContent,
+      hasArticleContent: enhancedLecture.hasArticleContent,
+      contentType: lectureData.contentType
+    });
 
-      console.log("StudentVideoPreview content check:", {
-        hasArticle,
-        articleContentExists: !!articleContent?.text,
-        articleTextLength: articleContent?.text?.length || 0,
-        videoDetailsExists: !!videoContent.selectedVideoDetails,
-        lectureContentType: lecture.contentType,
-        currentActiveItemType: activeItemType,
-        quizDataExists: !!quizData,
-        lectureId: lecture.id,
-      });
+    // Use enhanced properties if available
+    if (enhancedLecture.actualContentType) {
+      console.log('✅ Using enhanced actualContentType:', enhancedLecture.actualContentType);
+      return enhancedLecture.actualContentType;
+    }
 
-      // Prioritize quiz content type if we have quiz data
-      if (lecture.contentType === "quiz" && quizData) {
-        setActiveItemType("quiz");
-        setActiveItemId(lecture.id);
-        console.log("Setting quiz as active:", lecture.id);
-      } else if (hasArticle && activeItemType !== "article") {
-        setActiveItemType("article");
-      } else if (
-        !hasArticle &&
-        activeItemType === "article" &&
-        lecture.contentType !== "article" &&
-        lecture.contentType !== "quiz"
-      ) {
-        setActiveItemType(lecture.contentType || "video");
+    // Check content flags
+    if (enhancedLecture.hasArticleContent) {
+      console.log('✅ Using enhanced hasArticleContent: article');
+      return 'article';
+    }
+    
+    if (enhancedLecture.hasVideoContent) {
+      console.log('✅ Using enhanced hasVideoContent: video');
+      return 'video';
+    }
+
+    // Use explicit content type
+    if (lectureData.contentType) {
+      console.log('✅ Using lecture contentType:', lectureData.contentType);
+      return lectureData.contentType;
+    }
+
+    console.log('✅ Defaulting to video');
+    return 'video';
+  }
+
+  return 'video'; // Default fallback
+};
+
+// ENHANCED: Update handleItemSelect to use enhanced lecture data
+const handleItemSelect = (itemId: string, itemType: string) => {
+  console.log(`🎯 Selected item: ${itemId}, type: ${itemType}`);
+  
+  // Find the selected item from the processedSections data
+  let selectedItem: SelectedItemType | undefined;
+  let selectedEnhancedLecture: EnhancedLecture | undefined;
+
+  // Search through all processed sections
+  for (const sectionData of processedSections) {
+    if (sectionData.lectures) {
+      const foundLecture = sectionData.lectures.find((l: Lecture) => l.id === itemId);
+      if (foundLecture) {
+        selectedItem = foundLecture;
+        selectedEnhancedLecture = foundLecture as EnhancedLecture;
+        break;
       }
     }
-  }, [articleContent, videoContent.selectedVideoDetails, lecture.contentType, quizData, lecture.id, activeItemId]);
+    
+    if (sectionData.quizzes) {
+      const foundQuiz = sectionData.quizzes.find((q: any) => q.id === itemId);
+      if (foundQuiz) {
+        selectedItem = foundQuiz;
+        break;
+      }
+    }
+    
+    if (sectionData.assignments) {
+      const foundAssignment = sectionData.assignments.find((a: any) => a.id === itemId);
+      if (foundAssignment) {
+        selectedItem = foundAssignment;
+        break;
+      }
+    }
+    
+    if (sectionData.codingExercises) {
+      const foundExercise = sectionData.codingExercises.find((e: any) => e.id === itemId);
+      if (foundExercise) {
+        selectedItem = foundExercise;
+        break;
+      }
+    }
+  }
+
+  console.log("📊 Selected item details:", {
+    itemId,
+    passedItemType: itemType,
+    foundItem: !!selectedItem,
+    isEnhancedLecture: !!selectedEnhancedLecture,
+    enhancedData: selectedEnhancedLecture ? {
+      actualContentType: selectedEnhancedLecture.actualContentType,
+      hasVideoContent: selectedEnhancedLecture.hasVideoContent,
+      hasArticleContent: selectedEnhancedLecture.hasArticleContent,
+      hasArticleText: !!(selectedEnhancedLecture.articleContent?.text),
+      hasVideoDetails: !!selectedEnhancedLecture.videoDetails
+    } : null
+  });
+
+  // CRITICAL: Use the passed itemType directly - it's already been determined correctly by the sidebar
+  setActiveItemId(itemId);
+  setActiveItemType(itemType);
+
+  if (selectedItem) {
+    setSelectedItemData(selectedItem);
+  }
+};
+
+  // ENHANCED: Better initial content type detection
+  const determineInitialContentType = (): string => {
+  const detectedType = detectContentType(lecture.id, lecture);
+  console.log('🚀 Initial content type determination:', {
+    lectureId: lecture.id,
+    detectedType,
+    articleContentExists: !!(articleContent && articleContent.text && articleContent.text.trim() !== ''),
+    videoContentExists: !!videoContent.selectedVideoDetails
+  });
+  return detectedType;
+};
+
+
+  // Set activeItemType based on enhanced content type detection
+  const [activeItemType, setActiveItemType] = useState<string>(determineInitialContentType());
+
+  // ENHANCED: Simplified useEffect with better content type detection
+  useEffect(() => {
+    // Only set initial content type once when component mounts
+    const initialContentType = determineInitialContentType();
+    console.log("🚀 Initial content type setup:", {
+      lectureId: lecture.id,
+      lectureName: lecture.name,
+      initialContentType,
+      hasArticleContent: !!(articleContent && articleContent.text),
+      hasVideoContent: !!videoContent.selectedVideoDetails,
+      articleTextLength: articleContent?.text?.length || 0,
+      quizDataExists: !!quizData,
+    });
+
+    if (activeItemType !== initialContentType) {
+      console.log(`📝 Updating activeItemType from ${activeItemType} to ${initialContentType}`);
+      setActiveItemType(initialContentType);
+    }
+  }, []); // Empty dependency array - only run once on mount
 
   type SelectedItemType = Lecture | Quiz | Assignment | CodingExercise;
 
@@ -235,13 +372,13 @@ const StudentVideoPreview = ({
 
     // Handle the new structure with nested sections
     if (section.sections && Array.isArray(section.sections)) {
-      console.log("Using nested sections structure:", section.sections);
+      console.log("📂 Using nested sections structure:", section.sections.length);
       return section.sections;
     }
     
     // Handle backward compatibility with single section
     if (section.lectures || section.quizzes || section.assignments || section.codingExercises) {
-      console.log("Using single section structure");
+      console.log("📂 Using single section structure");
       return [{
         id: section.id,
         name: section.name,
@@ -255,50 +392,6 @@ const StudentVideoPreview = ({
 
     return [];
   }, [section]);
-
-  // FIXED: Updated handleItemSelect function 
-  const handleItemSelect = (itemId: string, itemType: string) => {
-    console.log(`Selected item: ${itemId}, type: ${itemType}`);
-    setActiveItemId(itemId);
-    setActiveItemType(itemType);
-
-    // Find the selected item from the processedSections data with proper typing
-    let selectedItem: SelectedItemType | undefined;
-
-    // Search through all processed sections
-    for (const sectionData of processedSections) {
-      // Check lectures
-      if (sectionData.lectures) {
-        selectedItem = sectionData.lectures.find((l: Lecture) => l.id === itemId);
-        if (selectedItem) break;
-      }
-      
-      // Check quizzes if not found in lectures
-      if (!selectedItem && sectionData.quizzes) {
-        selectedItem = sectionData.quizzes.find((q: Quiz) => q.id === itemId);
-        if (selectedItem) break;
-      }
-      
-      // Check assignments if not found
-      if (!selectedItem && sectionData.assignments) {
-        selectedItem = sectionData.assignments.find((a: Assignment) => a.id === itemId);
-        if (selectedItem) break;
-      }
-      
-      // Check coding exercises if not found
-      if (!selectedItem && sectionData.codingExercises) {
-        selectedItem = sectionData.codingExercises.find((e: CodingExercise) => e.id === itemId);
-        if (selectedItem) break;
-      }
-    }
-
-    console.log("Selected item data:", selectedItem);
-
-    // Store the selected item data for use in the UI (if it exists)
-    if (selectedItem) {
-      setSelectedItemData(selectedItem);
-    }
-  };
 
   // Notes specific state
   const [notes, setNotes] = useState<VideoNote[]>([]);
@@ -373,12 +466,6 @@ const StudentVideoPreview = ({
       setShowLearningModal(false);
       // Here you would typically save the reminder
     }
-  };
-
-  type ExternalResource = {
-    title: string | React.ReactNode;
-    url: string;
-    name: string;
   };
 
   // Function to handle previous button in modal
@@ -483,50 +570,89 @@ const StudentVideoPreview = ({
     }
   }, []);
 
-  // FIXED: Updated getCurrentContent to properly handle article content
+  // ENHANCED: Updated getCurrentContent with enhanced content type detection
   const getCurrentContent = () => {
-    const currentSelectedItem = selectedItemData;
+  console.log('🎬 getCurrentContent called:', {
+    activeItemId,
+    activeItemType,
+    isInitialLecture: activeItemId === lecture.id,
+    selectedItemName: selectedItemData?.name
+  });
+  
+  if (activeItemType === "quiz") {
+    const currentQuizData = selectedItemData && 'questions' in selectedItemData 
+      ? selectedItemData as QuizData 
+      : quizData;
+    return { type: "quiz", data: currentQuizData };
+  } else if (activeItemType === "article") {
+    let currentArticleData: ArticleContent;
     
-    if (activeItemType === "quiz") {
-      // For quiz, use the selected item's data if available, otherwise fall back to quizData prop
-      const currentQuizData = currentSelectedItem && 'questions' in currentSelectedItem 
-        ? currentSelectedItem as QuizData 
-        : quizData;
-      return { type: "quiz", data: currentQuizData };
-    } else if (activeItemType === "article") {
-      // For articles, handle both initial lecture and selected items
-      let currentArticleData;
-      
-      if (activeItemId === lecture.id && articleContent && articleContent.text) {
-        // Use the articleContent prop for the initial lecture
-        currentArticleData = articleContent;
-      } else if (currentSelectedItem && 'text' in currentSelectedItem) {
-        // Use article content from selected item if available
-        currentArticleData = currentSelectedItem as ArticleContent;
-      } else if (currentSelectedItem && 'articleContent' in currentSelectedItem) {
-        // Alternative structure for article content
-        currentArticleData = (currentSelectedItem as any).articleContent;
-      } else {
-        // Fallback - use articleContent prop
-        currentArticleData = articleContent || { text: "No article content available" };
-      }
-      
-      console.log("Article content resolved for:", activeItemId, currentArticleData);
-      return { type: "article", data: currentArticleData };
-    } else if (activeItemType === "assignment") {
-      return { type: "assignment", data: currentSelectedItem };
-    } else if (activeItemType === "coding-exercise") {
-      return { type: "coding-exercise", data: currentSelectedItem };
+    if (activeItemId === lecture.id) {
+      // For the initial lecture, use the articleContent prop
+      currentArticleData = articleContent || { text: "" };
     } else {
-      // For video content, check if the selected item has video details
-      const currentVideoData = currentSelectedItem && 'videoUrl' in currentSelectedItem 
-        ? { selectedVideoDetails: { url: (currentSelectedItem as any).videoUrl, duration: (currentSelectedItem as any).duration } }
-        : videoContent;
-      return { type: "video", data: currentVideoData };
+      // For other selected items, try to get article content from the enhanced lecture data
+      const enhancedSelectedItem = selectedItemData as EnhancedLecture;
+      
+      if (enhancedSelectedItem?.articleContent?.text) {
+        currentArticleData = enhancedSelectedItem.articleContent;
+      } else if (enhancedSelectedItem?.description && enhancedSelectedItem.description.includes('<')) {
+        // If description looks like HTML, use it as article content
+        currentArticleData = { text: enhancedSelectedItem.description };
+      } else {
+        // Default article content
+        currentArticleData = { 
+          text: `<h1>${selectedItemData?.name || 'Article'}</h1><p>Article content for this lecture.</p>` 
+        };
+      }
     }
-  };
+    
+    console.log("📰 Article content:", {
+      itemId: activeItemId,
+      hasText: !!currentArticleData.text,
+      textLength: currentArticleData.text?.length || 0
+    });
+    
+    return { type: "article", data: currentArticleData };
+  } else if (activeItemType === "assignment") {
+    return { type: "assignment", data: selectedItemData };
+  } else if (activeItemType === "coding-exercise") {
+    return { type: "coding-exercise", data: selectedItemData };
+  } else {
+    // For video content
+    let currentVideoData;
+    
+    if (activeItemId === lecture.id) {
+      // For the initial lecture, use the videoContent prop
+      currentVideoData = videoContent;
+    } else {
+      // For other selected items, check for video data in enhanced lecture
+      const enhancedSelectedItem = selectedItemData as EnhancedLecture;
+      
+      if (enhancedSelectedItem?.videoDetails) {
+        currentVideoData = { 
+          ...videoContent,
+          selectedVideoDetails: enhancedSelectedItem.videoDetails 
+        };
+      } else {
+        // Default to no video selected
+        currentVideoData = {
+          ...videoContent,
+          selectedVideoDetails: null
+        };
+      }
+    }
+    
+    console.log("🎥 Video content:", {
+      itemId: activeItemId,
+      hasVideoDetails: !!currentVideoData.selectedVideoDetails
+    });
+    
+    return { type: "video", data: currentVideoData };
+  }
+};
 
-  // Early return check - updated to be more flexible
+  // ENHANCED: Better early return check with content type detection
   const shouldShowPreview = 
     videoContent.selectedVideoDetails || // Has video
     (articleContent && articleContent.text) || // Has article
@@ -537,7 +663,7 @@ const StudentVideoPreview = ({
     selectedItemData; // Has selected item data
 
   if (!shouldShowPreview) {
-    console.log("Early return - no content to display", {
+    console.log("❌ Early return - no content to display", {
       hasVideoContent: !!videoContent.selectedVideoDetails,
       hasArticleContent: !!(articleContent && articleContent.text),
       hasQuizContent: !!(quizData && activeItemType === "quiz"),
@@ -1007,15 +1133,18 @@ const StudentVideoPreview = ({
 
   const currentContent = getCurrentContent();
 
-  // Add debugging log
-  console.log("RENDER DEBUG:", {
+  // ENHANCED: Add debugging log with better content detection info
+  console.log("🎬 RENDER DEBUG:", {
     activeItemType,
     activeItemId,
     lectureId: lecture.id,
     isInitialLecture: activeItemId === lecture.id,
     contentDataType: currentContent.type,
     hasContentText: !!(currentContent.data as any)?.text,
-    selectedItemName: selectedItemData?.name
+    selectedItemName: selectedItemData?.name,
+    detectedContentType: activeItemId === lecture.id ? 
+      detectContentType(lecture.id, lecture) : 
+      'not-initial-lecture'
   });
 
   // Main render method
@@ -1033,6 +1162,7 @@ const StudentVideoPreview = ({
         >
           {/* Content area - FIXED HEIGHT */}
           <div className="flex-shrink-0" style={{ height: isContentFullscreen ? "100vh" : "calc(100vh - 280px)" }}>
+            {/* ENHANCED: More explicit content type checking with enhanced detection */}
             {activeItemType === "quiz" ? (
               // Quiz view - render QuizPreview component using selected quiz data
               <div className="bg-white relative h-full">
@@ -1106,7 +1236,90 @@ const StudentVideoPreview = ({
                   </button>
                 </div>
               </div>
+            ) : activeItemType === "article" ? (
+              // ENHANCED: Article content - render directly without video container
+              <div className="bg-white relative w-full h-full px-52">
+                <div className="relative w-full h-full px-8 py-6 overflow-y-auto">
+                  <h1 className="text-2xl font-bold mb-4">
+                    {selectedItemData?.name || "Article"}
+                  </h1>
+                  <div
+                    className="article-content prose max-w-none"
+                    dangerouslySetInnerHTML={{
+                      __html: (currentContent.data as ArticleContent)?.text || "",
+                    }}
+                  />
+
+                  {/* Resources section - filter by current item ID */}
+                  {(uploadedFiles.filter(f => f.lectureId === activeItemId).length > 0 ||
+                    sourceCodeFiles.filter(f => f.lectureId === activeItemId).length > 0 ||
+                    externalResources.filter(r => r.lectureId === activeItemId).length > 0) && (
+                    <div className="pt-6">
+                      <h2 className="text-xl font-semibold mb-4">
+                        Resources for this {activeItemType}
+                      </h2>
+
+                      <div className="space-y-3">
+                        {/* Downloadable Files */}
+                        {uploadedFiles.filter(f => f.lectureId === activeItemId).map((file, index) => (
+                          <div
+                            key={`uploaded-${index}`}
+                            className="flex items-center"
+                          >
+                            <FileDown className="w-5 h-5 text-gray-600 mr-2" />
+                            <a
+                              href="#"
+                              className="text-blue-600 hover:underline font-medium"
+                              onClick={(e) => e.preventDefault()}
+                            >
+                              {file.name}
+                            </a>
+                          </div>
+                        ))}
+
+                        {/* Source Code Files */}
+                        {sourceCodeFiles.filter(f => f.lectureId === activeItemId).map((file, index) => (
+                          <div
+                            key={`code-${index}`}
+                            className="flex items-center"
+                          >
+                            <Code className="w-5 h-5 text-gray-600 mr-2" />
+                            <a
+                              href="#"
+                              className="text-blue-600 hover:underline font-medium"
+                              onClick={(e) => e.preventDefault()}
+                            >
+                              {file.name || file.filename}
+                            </a>
+                          </div>
+                        ))}
+
+                        {/* External Links */}
+                        {externalResources.filter(r => r.lectureId === activeItemId).map((resource, index) => (
+                          <div
+                            key={`external-${index}`}
+                            className="flex items-center"
+                          >
+                            <SquareArrowOutUpRight className="w-5 h-5 text-gray-600 mr-2" />
+                            <a
+                              href={resource.url}
+                              className="text-blue-600 hover:underline font-medium"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              {typeof resource.title === "string"
+                                ? resource.title
+                                : resource.name}
+                            </a>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
             ) : (
+              // Video content - only render if activeItemType is 'video' or undefined
               <div className="bg-black relative w-full h-full">
                 <div
                   ref={playerContainerRef}
@@ -1115,133 +1328,51 @@ const StudentVideoPreview = ({
                   onMouseLeave={() => setShowControls(false)}
                 >
                   <div className="relative w-full h-full mx-auto text-left">
-                    {/* FIXED: Simplified render condition - ONLY check activeItemType */}
-                    {activeItemType === "article" ? (
-                      // Article content - using selected item's article data
-                      <div className="bg-white relative w-full h-full px-52">
-                        <div className="relative w-full h-full px-8 py-6 overflow-y-auto">
-                          <h1 className="text-2xl font-bold mb-4">
-                            {selectedItemData?.name || "Article"}
-                          </h1>
-                          <div
-                            className="article-content prose max-w-none"
-                            dangerouslySetInnerHTML={{
-                              __html: (currentContent.data as ArticleContent)?.text || "",
-                            }}
+                    <ReactPlayer
+                      ref={playerRef}
+                      url={
+                        (currentContent.data as any)?.selectedVideoDetails?.url ||
+                        videoContent.selectedVideoDetails?.url ||
+                        "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+                      }
+                      width="100%"
+                      height="100%"
+                      playing={playing}
+                      volume={volume}
+                      playbackRate={playbackRate}
+                      onProgress={handleProgress}
+                      onDuration={handleDuration}
+                      progressInterval={100}
+                      config={{
+                        file: {
+                          attributes: {
+                            controlsList: "nodownload",
+                          },
+                        },
+                      }}
+                    />
+
+                    {/* Play button overlay when paused - only for video content */}
+                    {!playing && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-40">
+                        <button
+                          className="rounded-full bg-black bg-opacity-70 p-4 hover:bg-opacity-90 transition-all"
+                          type="button"
+                          aria-label="Play video"
+                          onClick={() => setPlaying(true)}
+                        >
+                          <Play
+                            size={80}
+                            className="p-3 rounded-full bg-gray-800 text-white"
                           />
-
-                          {/* Resources section - filter by current item ID */}
-                          {(uploadedFiles.filter(f => f.lectureId === activeItemId).length > 0 ||
-                            sourceCodeFiles.filter(f => f.lectureId === activeItemId).length > 0 ||
-                            externalResources.filter(r => r.lectureId === activeItemId).length > 0) && (
-                            <div className="pt-6">
-                              <h2 className="text-xl font-semibold mb-4">
-                                Resources for this {activeItemType}
-                              </h2>
-
-                              <div className="space-y-3">
-                                {/* Downloadable Files */}
-                                {uploadedFiles.filter(f => f.lectureId === activeItemId).map((file, index) => (
-                                  <div
-                                    key={`uploaded-${index}`}
-                                    className="flex items-center"
-                                  >
-                                    <FileDown className="w-5 h-5 text-gray-600 mr-2" />
-                                    <a
-                                      href="#"
-                                      className="text-blue-600 hover:underline font-medium"
-                                      onClick={(e) => e.preventDefault()}
-                                    >
-                                      {file.name}
-                                    </a>
-                                  </div>
-                                ))}
-
-                                {/* Source Code Files */}
-                                {sourceCodeFiles.filter(f => f.lectureId === activeItemId).map((file, index) => (
-                                  <div
-                                    key={`code-${index}`}
-                                    className="flex items-center"
-                                  >
-                                    <Code className="w-5 h-5 text-gray-600 mr-2" />
-                                    <a
-                                      href="#"
-                                      className="text-blue-600 hover:underline font-medium"
-                                      onClick={(e) => e.preventDefault()}
-                                    >
-                                      {file.name || file.filename}
-                                    </a>
-                                  </div>
-                                ))}
-
-                                {/* External Links */}
-                                {externalResources.filter(r => r.lectureId === activeItemId).map((resource, index) => (
-                                  <div
-                                    key={`external-${index}`}
-                                    className="flex items-center"
-                                  >
-                                    <SquareArrowOutUpRight className="w-5 h-5 text-gray-600 mr-2" />
-                                    <a
-                                      href={resource.url}
-                                      className="text-blue-600 hover:underline font-medium"
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                    >
-                                      {typeof resource.title === "string"
-                                        ? resource.title
-                                        : resource.name}
-                                    </a>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                        </div>
+                        </button>
                       </div>
-                    ) : (
-                      // Video player with overlay - using selected item's video data
-                      <>
-                        <ReactPlayer
-                          ref={playerRef}
-                          url={
-                            (currentContent.data as any)?.selectedVideoDetails?.url ||
-                            videoContent.selectedVideoDetails?.url ||
-                            "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
-                          }
-                          width="100%"
-                          height="100%"
-                          playing={playing}
-                          volume={volume}
-                          playbackRate={playbackRate}
-                          onProgress={handleProgress}
-                          onDuration={handleDuration}
-                          progressInterval={100}
-                          config={{
-                            file: {
-                              attributes: {
-                                controlsList: "nodownload",
-                              },
-                            },
-                          }}
-                        />
+                    )}
+                  </div>
+                </div>
 
-                        {/* Play button overlay when paused - only for video content */}
-                        {!playing && (
-                          <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-40">
-                            <button
-                              className="rounded-full bg-black bg-opacity-70 p-4 hover:bg-opacity-90 transition-all"
-                              type="button"
-                              aria-label="Play video"
-                              onClick={() => setPlaying(true)}
-                            >
-                              <Play
-                                size={80}
-                                className="p-3 rounded-full bg-gray-800 text-white"
-                              />
-                            </button>
-                          </div>
-                        )}
-                            {activeItemType === "video" && (
+                {/* Video controls - ONLY show for video content */}
+                {activeItemType === "video" && (
                   <div className="h-12 bg-black w-full flex items-center px-4 text-white relative">
                     {/* Progress bar at the very top */}
                     <div className="absolute top-0 left-0 right-0 h-1 bg-gray-900">
@@ -1433,13 +1564,6 @@ const StudentVideoPreview = ({
                     </div>
                   </div>
                 )}
-                      </>
-                    )}
-                  </div>
-                </div>
-
-                {/* FIXED: Video controls - ONLY show for video content */}
-            
               </div>
             )}
           </div>
