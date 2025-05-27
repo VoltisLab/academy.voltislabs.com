@@ -1,6 +1,8 @@
+import RichTextEditor from "@/components/instructor/RichTextEditor";
 import { AssignmentQuestion, ExtendedLecture } from "@/lib/types";
-import { X } from "lucide-react";
+import { X, Edit2, Plus } from "lucide-react";
 import { useState, useEffect } from "react";
+import { toast } from "react-hot-toast";
 
 const QuestionsTab: React.FC<{
   data: ExtendedLecture;
@@ -8,77 +10,139 @@ const QuestionsTab: React.FC<{
 }> = ({ data, onChange }) => {
   const [showInfo, setShowInfo] = useState(true);
   const [questions, setQuestions] = useState<AssignmentQuestion[]>([]);
+  const [editingQuestionId, setEditingQuestionId] = useState<string | null>(
+    null
+  );
+  const [currentQuestionContent, setCurrentQuestionContent] = useState("");
+  const [questionToDelete, setQuestionToDelete] = useState<string | null>(null);
+  const [isAddingNewQuestion, setIsAddingNewQuestion] = useState(false);
 
-  // Initialize with at least one empty question
+  // Initialize with existing questions
   useEffect(() => {
     const existingQuestions = data.assignmentQuestions || [];
+    setQuestions(existingQuestions);
+
+    // Show editor if there are no questions
     if (existingQuestions.length === 0) {
-      const initialQuestion: AssignmentQuestion = {
-        id: Date.now().toString(),
-        content: '',
-        order: 1
-      };
-      setQuestions([initialQuestion]);
-      onChange('assignmentQuestions', [initialQuestion]);
-    } else {
-      setQuestions(existingQuestions);
+      setIsAddingNewQuestion(true);
     }
   }, [data.assignmentQuestions]);
 
-  const updateQuestion = (questionId: string, content: string) => {
-    const updatedQuestions = questions.map(q => 
-      q.id === questionId ? { ...q, content } : q
-    );
-    
-    // Auto-add a new question if the user is typing in the last question and it's not empty
-    const currentQuestionIndex = updatedQuestions.findIndex(q => q.id === questionId);
-    const isLastQuestion = currentQuestionIndex === updatedQuestions.length - 1;
-    const hasContent = content.trim().length > 0;
-    
-    if (isLastQuestion && hasContent && updatedQuestions.length < 12) {
-      // Check if there's already an empty question at the end
-      const hasEmptyLastQuestion = updatedQuestions[updatedQuestions.length - 1]?.content.trim() === '';
-      
-      if (!hasEmptyLastQuestion) {
-        const newQuestion: AssignmentQuestion = {
-          id: Date.now().toString() + Math.random(),
-          content: '',
-          order: updatedQuestions.length + 1
-        };
-        updatedQuestions.push(newQuestion);
-      }
+  const handleSubmitQuestion = () => {
+    const cleanContent = currentQuestionContent.replace(/<[^>]*>/g, "");
+    if (!cleanContent.trim()) {
+      toast.error("Question content cannot be empty");
+      return;
     }
-    
-    setQuestions(updatedQuestions);
-    onChange('assignmentQuestions', updatedQuestions);
+
+    if (editingQuestionId) {
+      // Update existing question
+      const updatedQuestions = questions.map((q) =>
+        q.id === editingQuestionId ? { ...q, content: cleanContent } : q
+      );
+      setQuestions(updatedQuestions);
+      onChange("assignmentQuestions", updatedQuestions);
+      setEditingQuestionId(null);
+    } else {
+      // Add new question
+      const newQuestion: AssignmentQuestion = {
+        id: Date.now().toString(),
+        content: cleanContent,
+        order: questions.length + 1,
+      };
+      const updatedQuestions = [...questions, newQuestion];
+      setQuestions(updatedQuestions);
+      onChange("assignmentQuestions", updatedQuestions);
+    }
+
+    setCurrentQuestionContent("");
+    setIsAddingNewQuestion(false);
   };
 
-  const removeQuestion = (questionId: string) => {
-    if (questions.length <= 1) return; // Always keep at least one question
-    
-    const updatedQuestions = questions.filter(q => q.id !== questionId);
+  const startEditing = (question: AssignmentQuestion) => {
+    setEditingQuestionId(question.id);
+    setCurrentQuestionContent(question.content);
+  };
+
+  const cancelEditing = () => {
+    setEditingQuestionId(null);
+    setCurrentQuestionContent("");
+    setIsAddingNewQuestion(false);
+  };
+
+  const confirmDeleteQuestion = (questionId: string) => {
+    const updatedQuestions = questions.filter((q) => q.id !== questionId);
     // Reorder the remaining questions
     const reorderedQuestions = updatedQuestions.map((q, index) => ({
       ...q,
-      order: index + 1
+      order: index + 1,
     }));
-    
+
     setQuestions(reorderedQuestions);
-    onChange('assignmentQuestions', reorderedQuestions);
+    onChange("assignmentQuestions", reorderedQuestions);
+    setQuestionToDelete(null);
+
+    // If we deleted the last question, show the editor again
+    if (reorderedQuestions.length === 0) {
+      setIsAddingNewQuestion(true);
+    }
   };
 
-  const addQuestion = () => {
-    if (questions.length >= 12) return;
-    
-    const newQuestion: AssignmentQuestion = {
-      id: Date.now().toString() + Math.random(),
-      content: '',
-      order: questions.length + 1
-    };
-    const updatedQuestions = [...questions, newQuestion];
-    setQuestions(updatedQuestions);
-    onChange('assignmentQuestions', updatedQuestions);
+  const startAddingNewQuestion = () => {
+    setIsAddingNewQuestion(true);
+    setEditingQuestionId(null);
+    setCurrentQuestionContent("");
   };
+
+  const renderQuestionEditor = (questionNumber: number) => (
+    <>
+      <div className="border border-gray-300 rounded-md mt-2">
+        <RichTextEditor
+          value={currentQuestionContent}
+          onChange={setCurrentQuestionContent}
+          type="assignmentQuestion"
+        />
+      </div>
+      <div className="flex gap-2 pt-4">
+        <button
+          onClick={handleSubmitQuestion}
+          className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
+        >
+          Submit
+        </button>
+        <button
+          onClick={cancelEditing}
+          className="px-4 py-2 text-gray-600 hover:text-gray-800"
+        >
+          Cancel
+        </button>
+      </div>
+    </>
+  );
+
+  const renderQuestionDisplay = (question: AssignmentQuestion) => (
+    <div className="mt-2">
+      <div className="prose max-w-none">
+        {question.content.split("\n").map((paragraph, i) => (
+          <p key={i}>{paragraph}</p>
+        ))}
+      </div>
+      <div className="flex gap-2 mt-2">
+        <button
+          onClick={() => startEditing(question)}
+          className="px-3 py-1 text-sm text-purple-600 hover:text-purple-800 border border-purple-600 rounded-md"
+        >
+          Edit
+        </button>
+        <button
+          onClick={() => setQuestionToDelete(question.id)}
+          className="px-3 py-1 text-sm text-red-600 hover:text-red-800 border border-red-600 rounded-md"
+        >
+          Delete
+        </button>
+      </div>
+    </div>
+  );
 
   return (
     <div className="p-6 space-y-6">
@@ -90,7 +154,8 @@ const QuestionsTab: React.FC<{
             </div>
             <div className="flex-1">
               <p className="text-gray-700 mb-3">
-                Each assignment must include at least one question. You can add a maximum of 12 questions. Please consider that students will type their answers into a text box next to each question.
+                Each assignment must include at least one question. You can add
+                a maximum of 12 questions.
               </p>
               <div className="flex gap-2">
                 <button className="px-4 py-2 border border-purple-600 text-purple-600 rounded-md hover:bg-purple-100">
@@ -108,82 +173,66 @@ const QuestionsTab: React.FC<{
         </div>
       )}
 
-      {questions.map((question, index) => (
-        <div key={question.id} className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-medium text-gray-900">
-              Question {index + 1}
-            </h3>
-            {questions.length > 1 && (
-              <button
-                onClick={() => removeQuestion(question.id)}
-                className="p-1 text-gray-400 hover:text-red-600"
-                title="Remove question"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            )}
-          </div>
-          
-          <div className="border border-gray-300 rounded-md">
-            <div className="border-b border-gray-200 p-2 flex gap-2">
-              <button 
-                type="button"
-                className="p-1 rounded hover:bg-gray-100"
-                onClick={() => {
-                  // Simple bold formatting - you can enhance this
-                  const textarea = document.querySelector(`textarea[data-question-id="${question.id}"]`) as HTMLTextAreaElement;
-                  if (textarea) {
-                    const start = textarea.selectionStart;
-                    const end = textarea.selectionEnd;
-                    const selectedText = textarea.value.substring(start, end);
-                    const newText = textarea.value.substring(0, start) + `**${selectedText}**` + textarea.value.substring(end);
-                    updateQuestion(question.id, newText);
-                  }
-                }}
-              >
-                <strong>B</strong>
-              </button>
-              <button 
-                type="button"
-                className="p-1 rounded hover:bg-gray-100"
-                onClick={() => {
-                  // Simple italic formatting
-                  const textarea = document.querySelector(`textarea[data-question-id="${question.id}"]`) as HTMLTextAreaElement;
-                  if (textarea) {
-                    const start = textarea.selectionStart;
-                    const end = textarea.selectionEnd;
-                    const selectedText = textarea.value.substring(start, end);
-                    const newText = textarea.value.substring(0, start) + `*${selectedText}*` + textarea.value.substring(end);
-                    updateQuestion(question.id, newText);
-                  }
-                }}
-              >
-                <em>I</em>
-              </button>
-            </div>
-            <textarea
-              data-question-id={question.id}
-              value={question.content}
-              onChange={(e) => updateQuestion(question.id, e.target.value)}
-              className="w-full p-3 border-none outline-none resize-none focus:ring-0"
-              rows={4}
-              placeholder={`Enter question ${index + 1}...`}
-            />
-          </div>
+      {/* Render existing questions */}
+      {questions.map((question) => (
+        <div key={question.id} className="pb-6">
+          <h3 className="text-lg font-medium text-gray-900">
+            Question {question.order}
+          </h3>
+          {editingQuestionId === question.id
+            ? renderQuestionEditor(question.order)
+            : renderQuestionDisplay(question)}
         </div>
       ))}
 
+      {/* Render editor for new question */}
+      {isAddingNewQuestion && (
+        <div className="pb-6">
+          <h3 className="text-lg font-medium text-gray-900">
+            Question {questions.length + 1}
+          </h3>
+          {renderQuestionEditor(questions.length + 1)}
+        </div>
+      )}
 
+      {/* Add new question button (shown when not currently adding) */}
+      {!isAddingNewQuestion && questions.length < 12 && (
+        <button
+          onClick={startAddingNewQuestion}
+          className="flex items-center gap-2 px-4 py-2 text-purple-600 hover:text-purple-800"
+        >
+          <Plus className="w-5 h-5" />
+          Add Question
+        </button>
+      )}
 
-      <div className="flex gap-2 pt-4 border-t border-gray-200">
-        <button className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700">
-          Submit
-        </button>
-        <button className="px-4 py-2 text-gray-600 hover:text-gray-800">
-          Cancel
-        </button>
-      </div>
+      {/* Delete confirmation modal */}
+      {questionToDelete && (
+        <div className="fixed inset-0 bg-black/30 bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">
+              Confirm Deletion
+            </h3>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to delete this question?
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setQuestionToDelete(null)}
+                className="px-4 py-2 text-gray-600 hover:text-gray-800"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => confirmDeleteQuestion(questionToDelete)}
+                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

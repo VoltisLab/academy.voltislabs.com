@@ -18,7 +18,7 @@ import ImageUploadModal from "../modals/ImageUploadModal";
 interface RichTextEditorProps {
   value: string;
   onChange: (value: string) => void;
-  type: "description" | "question" | "answer";
+  type: "description" | "question" | "answer" | "assignmentQuestion";
   onImageClick?: () => void;
   isFocusedAnswerId?: Boolean | null;
   setFocusedAnswerIndex?: (index: number) => void;
@@ -53,12 +53,6 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     };
     reader.readAsDataURL(file);
   };
-
-  const { getRootProps, getInputProps } = useDropzone({
-    accept: { "image/*": [] },
-    multiple: false,
-    onDrop,
-  });
 
   const insertImage = (imageUrl: string) => {
     if (!quillRef.current) return;
@@ -142,23 +136,6 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     };
   }, []);
 
-  // useEffect(() => {
-  //   const handleClickOutside = (event: MouseEvent) => {
-  //     if (
-  //       wrapperRef.current &&
-  //       !wrapperRef.current.contains(event.target as Node)
-  //     ) {
-  //       setIsFocused(false);
-  //     } else {
-  //       setIsFocused(true);
-  //       // if (type === "answer") setFocusedAnswerIndex?.(answerIndex as number);
-  //     }
-  //   };
-
-  //   document.addEventListener("mousedown", handleClickOutside);
-  //   return () => document.removeEventListener("mousedown", handleClickOutside);
-  // }, []);
-
   const wrapperRing = isFocused
     ? "border border-transparent ring-1 ring-purple-600"
     : "border-zinc-400 border";
@@ -167,6 +144,8 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     switch (type) {
       case "description":
         return "Quiz Description";
+      case "assignmentQuestion":
+        return "";
       case "question":
         return "";
       case "answer":
@@ -244,7 +223,12 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         onChange={onChange}
         className="my-quill no-border w-[100%]"
         placeholder={getPlaceholder()}
-        modules={{ toolbar: false }}
+        modules={{
+          toolbar: false,
+          clipboard: {
+            matchVisual: false,
+          },
+        }}
       />
 
       {/* Image Upload Modal */}
