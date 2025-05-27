@@ -6,7 +6,10 @@ import toast from "react-hot-toast";
 const InstructionsTab: React.FC<{
   data: ExtendedLecture;
   onChange: (field: string, value: any) => void;
-}> = ({ data, onChange }) => {
+  isEditing: boolean;
+  onEditToggle: (value: boolean) => void;
+  hasSubmitted: boolean;
+}> = ({ data, onChange, isEditing, onEditToggle, hasSubmitted }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [activeVideoTab, setActiveVideoTab] = useState<
     "upload" | "library" | null
@@ -15,6 +18,10 @@ const InstructionsTab: React.FC<{
   const [isEditingInstructions, setIsEditingInstructions] = useState(true);
   const [showVideoUploaded, setShowVideoUploaded] = useState(false);
   const [showChangeCancel, setShowChangeCancel] = useState(false);
+
+  const showEditor = isEditing || !hasSubmitted;
+
+  console.log("data", isEditingInstructions);
 
   // Sample library videos
   const libraryVideos = [
@@ -83,6 +90,7 @@ const InstructionsTab: React.FC<{
       toast.error("Please enter assignment instructions.");
       return;
     }
+
     const cleanedInstructions = data.assignmentInstructions
       .replace(/<p><br><\/p>/g, "") // remove <p><br></p>
       .replace(/<[^>]*>/g, "") // remove all HTML tags
@@ -94,12 +102,14 @@ const InstructionsTab: React.FC<{
     }
 
     setIsEditingInstructions(false);
+    onEditToggle(false);
     toast.success("Instructions saved successfully!");
     console.log("Instructions saved:", data.assignmentInstructions);
   };
 
   const handleEditInstructions = () => {
     setIsEditingInstructions(true);
+    onEditToggle(true);
   };
 
   const filteredVideos = libraryVideos.filter((video) =>
@@ -143,15 +153,15 @@ const InstructionsTab: React.FC<{
             {/* Upload Video Tab Content */}
             {activeVideoTab === "upload" && (
               <div>
-                <div className="border border-gray-300 rounded-md p-4 flex items-center justify-between">
-                  <span className="text-gray-500">
+                <div className="flex items-center gap-4">
+                  <span className="text-gray-500 max-w-xl w-full border border-zinc-700 py-3 px-4 rounded">
                     {data.instructionalVideo?.file
                       ? data.instructionalVideo.file.name
                       : "No file selected"}
                   </span>
                   <button
                     onClick={() => fileInputRef.current?.click()}
-                    className="px-4 py-2 border border-purple-600 text-purple-600 rounded-md hover:bg-purple-50"
+                    className="px-4 py-3 border border-purple-600 text-purple-600 rounded-md hover:bg-purple-50 cursor-pointer"
                   >
                     Select Video
                   </button>
@@ -159,7 +169,7 @@ const InstructionsTab: React.FC<{
                 {showChangeCancel && (
                   <button
                     onClick={handleCancelChange}
-                    className="mt-2 px-4 py-2 text-gray-600 hover:text-gray-800"
+                    className="mt-2 px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700   cursor-pointer"
                   >
                     Cancel
                   </button>
@@ -256,43 +266,17 @@ const InstructionsTab: React.FC<{
           </>
         ) : (
           <div className="space-y-4">
-            <div className="border border-gray-300 rounded-md p-4">
-              <div className="flex justify-between items-center">
+            <div className="border border-gray-300 rounded-md p-4 bg-gray-100">
+              <div className="flex justify-between items-center font-semibold">
                 <span className="text-gray-700">
                   {data.instructionalVideo?.file?.name ||
                     data.instructionalVideo?.url?.split("/").pop() ||
                     "No video selected"}
                 </span>
-                <div className="flex space-x-2">
-                  <button
-                    onClick={handleChangeVideo}
-                    className="px-4 py-2 text-purple-600 hover:text-purple-800"
-                  >
-                    Change
-                  </button>
-                  <button
-                    onClick={() => {
-                      // Clear the video state
-                      onChange("instructionalVideo", null);
-
-                      // Reset the file input
-                      if (fileInputRef.current) {
-                        fileInputRef.current.value = "";
-                      }
-
-                      // Reset all related states
-                      setShowVideoUploaded(false);
-                      setShowChangeCancel(false);
-                      setActiveVideoTab("upload");
-                    }}
-                    className="px-4 py-2 text-gray-600 hover:text-gray-800"
-                  >
-                    Delete
-                  </button>
-                </div>
               </div>
             </div>
-            <div className="h-32 flex items-center justify-center text-center text-gray-500">
+
+            <div className="h-80 flex items-center justify-center text-center text-gray-500">
               <p>
                 We've uploaded your file, and are processing it to ensure it
                 works smoothly on Udemy.
@@ -300,16 +284,45 @@ const InstructionsTab: React.FC<{
                 As soon as it's ready, we'll send you an email.
               </p>
             </div>
+
+            {/* Files change and delete buttons */}
+            <div className="flex space-x-2 mb-20">
+              <button
+                onClick={handleChangeVideo}
+                className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 cursor-pointer"
+              >
+                Change
+              </button>
+              <button
+                onClick={() => {
+                  // Clear the video state
+                  onChange("instructionalVideo", null);
+
+                  // Reset the file input
+                  if (fileInputRef.current) {
+                    fileInputRef.current.value = "";
+                  }
+
+                  // Reset all related states
+                  setShowVideoUploaded(false);
+                  setShowChangeCancel(false);
+                  setActiveVideoTab("upload");
+                }}
+                className="px-4 py-2 text-purple-600 hover:text-purple-800 border border-purple-600 rounded-md hover:bg-purple-50 cursor-pointer"
+              >
+                Delete
+              </button>
+            </div>
           </div>
         )}
       </div>
 
       {/* Assignment Instructions */}
-      <div>
-        <h3 className="text-lg font-medium text-gray-900 mb-4">
+      <div className="mt-10">
+        <h3 className="text-sm font-bold text-gray-900 mb-2">
           Assignment Instructions
         </h3>
-        {isEditingInstructions ? (
+        {showEditor ? (
           <>
             <RichTextEditor
               value={data.assignmentInstructions || ""}
@@ -319,15 +332,16 @@ const InstructionsTab: React.FC<{
             <div className="flex gap-2 mt-4">
               <button
                 onClick={handleSubmitInstructions}
-                className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
+                className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 cursor-pointer"
               >
-                Save
+                Submit
               </button>
               <button
                 onClick={() => {
                   setIsEditingInstructions(false);
+                  onEditToggle(false);
                 }}
-                className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                className="px-4 py-2 border border-purple-600 text-purple-600 rounded-md hover:bg-purple-50 cursor-pointer"
               >
                 Cancel
               </button>
@@ -343,7 +357,7 @@ const InstructionsTab: React.FC<{
             />
             <button
               onClick={handleEditInstructions}
-              className="text-purple-600 hover:text-purple-800"
+              className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 cursor-pointer"
             >
               Edit
             </button>
@@ -352,12 +366,12 @@ const InstructionsTab: React.FC<{
       </div>
 
       {/* Downloadable Resource */}
-      <div>
+      <div className="mt-10">
         <h3 className="text-lg font-medium text-gray-900 mb-4">
           Downloadable resource
         </h3>
-        <div className="border border-gray-300 rounded-md p-4 flex items-center justify-between">
-          <span className="text-gray-500">
+        <div className="flex items-center gap-4">
+          <span className="text-gray-500 max-w-xl w-full border border-zinc-700 py-3 px-4 rounded">
             {data.instructionalResource?.file
               ? data.instructionalResource.file.name
               : "No file selected"}
@@ -372,7 +386,7 @@ const InstructionsTab: React.FC<{
               };
               input.click();
             }}
-            className="px-4 py-2 border border-purple-600 text-purple-600 rounded-md hover:bg-purple-50"
+            className="px-4 py-3 border border-purple-600 text-purple-600 rounded-md hover:bg-purple-50 cursor-pointer"
           >
             Select File
           </button>

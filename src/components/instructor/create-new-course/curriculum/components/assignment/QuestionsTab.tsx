@@ -106,13 +106,13 @@ const QuestionsTab: React.FC<{
       <div className="flex gap-2 pt-4">
         <button
           onClick={handleSubmitQuestion}
-          className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
+          className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition cursor-pointer"
         >
           Submit
         </button>
         <button
           onClick={cancelEditing}
-          className="px-4 py-2 text-gray-600 hover:text-gray-800"
+          className="px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-200 cursor-pointer rounded-md transition"
         >
           Cancel
         </button>
@@ -130,13 +130,13 @@ const QuestionsTab: React.FC<{
       <div className="flex gap-2 mt-2">
         <button
           onClick={() => startEditing(question)}
-          className="px-3 py-1 text-sm text-purple-600 hover:text-purple-800 border border-purple-600 rounded-md"
+          className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition cursor-pointer"
         >
           Edit
         </button>
         <button
           onClick={() => setQuestionToDelete(question.id)}
-          className="px-3 py-1 text-sm text-red-600 hover:text-red-800 border border-red-600 rounded-md"
+          className="px-3 py-1 text-sm border border-purple-600 text-purple-600 rounded-md hover:bg-purple-50 cursor-pointer transition"
         >
           Delete
         </button>
@@ -199,10 +199,9 @@ const QuestionsTab: React.FC<{
       {!isAddingNewQuestion && questions.length < 12 && (
         <button
           onClick={startAddingNewQuestion}
-          className="flex items-center gap-2 px-4 py-2 text-purple-600 hover:text-purple-800"
+          className="flex items-center gap-2 px-4 py-2  border border-purple-600 text-purple-600 rounded-md hover:bg-purple-50 transition text-sm cursor-pointer"
         >
-          <Plus className="w-5 h-5" />
-          Add Question
+          Add More
         </button>
       )}
 
