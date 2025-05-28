@@ -4,6 +4,7 @@ import {
   VideoContent,
   AttachedFile,
   ExternalResource,
+  ExtendedLecture,
 } from "@/lib/types";
 import {
   ChevronDown,
@@ -31,6 +32,7 @@ import { ArticleContent } from "@/lib/types";
 import QuizPreview from "../quiz/QuizPreview";
 import { useEffect, useRef, useState } from "react";
 import React from "react";
+import AssignmentPreview from "../assignment/AssignmentPreview";
 
 // Add QuizData interface
 interface QuizData {
@@ -103,7 +105,7 @@ type ContentItemType =
   | "coding-exercise";
 
 const StudentVideoPreview = ({
- videoContent,
+  videoContent,
   setShowVideoPreview,
   lecture,
   uploadedFiles = [],
@@ -127,7 +129,7 @@ const StudentVideoPreview = ({
   const [activeTab, setActiveTab] = useState<
     "overview" | "notes" | "announcements" | "reviews" | "learning-tools"
   >("overview");
-  
+
   // Determine if this is an article based on actual content
   const hasArticleContent =
     articleContent &&
@@ -137,11 +139,11 @@ const StudentVideoPreview = ({
 
   // Set activeItemType based on content type or article content
   const [activeItemType, setActiveItemType] = useState<string>(
-    lecture.contentType === "quiz" 
-      ? "quiz" 
-      : hasArticleContent 
-        ? "article" 
-        : lecture.contentType || "video"
+    lecture.contentType === "quiz"
+      ? "quiz"
+      : hasArticleContent
+      ? "article"
+      : lecture.contentType || "video"
   );
 
   // Add an effect to update activeItemType if props change
@@ -178,7 +180,13 @@ const StudentVideoPreview = ({
     ) {
       setActiveItemType(lecture.contentType || "video");
     }
-  }, [articleContent, videoContent.selectedVideoDetails, lecture.contentType, quizData, lecture.id]);
+  }, [
+    articleContent,
+    videoContent.selectedVideoDetails,
+    lecture.contentType,
+    quizData,
+    lecture.id,
+  ]);
 
   type SelectedItemType = Lecture | Quiz | Assignment | CodingExercise;
 
@@ -221,19 +229,26 @@ const StudentVideoPreview = ({
       console.log("Using nested sections structure:", section.sections);
       return section.sections;
     }
-    
+
     // Handle backward compatibility with single section
-    if (section.lectures || section.quizzes || section.assignments || section.codingExercises) {
+    if (
+      section.lectures ||
+      section.quizzes ||
+      section.assignments ||
+      section.codingExercises
+    ) {
       console.log("Using single section structure");
-      return [{
-        id: section.id,
-        name: section.name,
-        lectures: section.lectures || [],
-        quizzes: section.quizzes || [],
-        assignments: section.assignments || [],
-        codingExercises: section.codingExercises || [],
-        isExpanded: true
-      }];
+      return [
+        {
+          id: section.id,
+          name: section.name,
+          lectures: section.lectures || [],
+          quizzes: section.quizzes || [],
+          assignments: section.assignments || [],
+          codingExercises: section.codingExercises || [],
+          isExpanded: true,
+        },
+      ];
     }
 
     return [];
@@ -252,25 +267,31 @@ const StudentVideoPreview = ({
     for (const sectionData of processedSections) {
       // Check lectures
       if (sectionData.lectures) {
-        selectedItem = sectionData.lectures.find((l: Lecture) => l.id === itemId);
+        selectedItem = sectionData.lectures.find(
+          (l: Lecture) => l.id === itemId
+        );
         if (selectedItem) break;
       }
-      
+
       // Check quizzes if not found in lectures
       if (!selectedItem && sectionData.quizzes) {
         selectedItem = sectionData.quizzes.find((q: Quiz) => q.id === itemId);
         if (selectedItem) break;
       }
-      
+
       // Check assignments if not found
       if (!selectedItem && sectionData.assignments) {
-        selectedItem = sectionData.assignments.find((a: Assignment) => a.id === itemId);
+        selectedItem = sectionData.assignments.find(
+          (a: Assignment) => a.id === itemId
+        );
         if (selectedItem) break;
       }
-      
+
       // Check coding exercises if not found
       if (!selectedItem && sectionData.codingExercises) {
-        selectedItem = sectionData.codingExercises.find((e: CodingExercise) => e.id === itemId);
+        selectedItem = sectionData.codingExercises.find(
+          (e: CodingExercise) => e.id === itemId
+        );
         if (selectedItem) break;
       }
     }
@@ -445,18 +466,20 @@ const StudentVideoPreview = ({
   // FIXED: Updated getCurrentContent to use selectedItemData properly
   const getCurrentContent = () => {
     const currentSelectedItem = selectedItemData;
-    
+
     if (activeItemType === "quiz") {
       // For quiz, use the selected item's data if available, otherwise fall back to quizData prop
-      const currentQuizData = currentSelectedItem && 'questions' in currentSelectedItem 
-        ? currentSelectedItem as QuizData 
-        : quizData;
+      const currentQuizData =
+        currentSelectedItem && "questions" in currentSelectedItem
+          ? (currentSelectedItem as QuizData)
+          : quizData;
       return { type: "quiz", data: currentQuizData };
     } else if (activeItemType === "article") {
       // For articles, check if the selected item has article content
-      const currentArticleData = currentSelectedItem && 'text' in currentSelectedItem 
-        ? currentSelectedItem as ArticleContent 
-        : articleContent;
+      const currentArticleData =
+        currentSelectedItem && "text" in currentSelectedItem
+          ? (currentSelectedItem as ArticleContent)
+          : articleContent;
       return { type: "article", data: currentArticleData };
     } else if (activeItemType === "assignment") {
       return { type: "assignment", data: currentSelectedItem };
@@ -464,15 +487,21 @@ const StudentVideoPreview = ({
       return { type: "coding-exercise", data: currentSelectedItem };
     } else {
       // For video content, check if the selected item has video details
-      const currentVideoData = currentSelectedItem && 'videoUrl' in currentSelectedItem 
-        ? { selectedVideoDetails: { url: (currentSelectedItem as any).videoUrl, duration: (currentSelectedItem as any).duration } }
-        : videoContent;
+      const currentVideoData =
+        currentSelectedItem && "videoUrl" in currentSelectedItem
+          ? {
+              selectedVideoDetails: {
+                url: (currentSelectedItem as any).videoUrl,
+                duration: (currentSelectedItem as any).duration,
+              },
+            }
+          : videoContent;
       return { type: "video", data: currentVideoData };
     }
   };
 
   // Early return check - updated to be more flexible
-  const shouldShowPreview = 
+  const shouldShowPreview =
     videoContent.selectedVideoDetails || // Has video
     (articleContent && articleContent.text) || // Has article
     (activeItemType === "quiz" && (quizData || selectedItemData)) || // Has quiz
@@ -488,7 +517,7 @@ const StudentVideoPreview = ({
       hasQuizContent: !!(quizData && activeItemType === "quiz"),
       activeItemType: activeItemType,
       hasSelectedItemData: !!selectedItemData,
-      shouldShow: shouldShowPreview
+      shouldShow: shouldShowPreview,
     });
     return null;
   }
@@ -953,7 +982,11 @@ const StudentVideoPreview = ({
   const currentContent = getCurrentContent();
 
   console.log("Current content data:", currentContent);
-  console.log("Active item:", { id: activeItemId, type: activeItemType, data: selectedItemData });
+  console.log("Active item:", {
+    id: activeItemId,
+    type: activeItemType,
+    data: selectedItemData,
+  });
 
   // Main render method
   return (
@@ -966,7 +999,10 @@ const StudentVideoPreview = ({
           style={{ width: "calc(100% - 320px)" }}
         >
           {/* Content area - FIXED HEIGHT */}
-          <div className="flex-shrink-0" style={{ height: "calc(100vh - 280px)" }}>
+          <div
+            className="flex-shrink-0"
+            style={{ height: "calc(100vh - 280px)" }}
+          >
             {activeItemType === "quiz" ? (
               // Quiz view - render QuizPreview component using selected quiz data
               <div className="bg-white relative h-full">
@@ -1014,31 +1050,11 @@ const StudentVideoPreview = ({
                 </div>
               </div>
             ) : activeItemType === "assignment" ? (
-              // Assignment view - using actual data from selected assignment
-              <div className="p-6 h-full overflow-y-auto">
-                <h1 className="text-2xl font-bold mb-6">
-                  {selectedItemData?.name || "Assignment"}
-                </h1>
-
-                <div className="text-gray-700 mb-8">
-                  {selectedItemData?.description ||
-                    "Complete this assignment according to the instructions."}
-                </div>
-
-                <div className="flex justify-end space-x-4 mt-8">
-                  <button
-                    className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-md font-medium"
-                    type="button"
-                  >
-                    Skip assignment
-                  </button>
-                  <button
-                    className="bg-[#6D28D2] hover:bg-[#7D28D2] text-white px-4 py-2 rounded-md font-medium"
-                    type="button"
-                  >
-                    Start assignment
-                  </button>
-                </div>
+              <div className="w-[79vw] h-full">
+                <AssignmentPreview
+                  assignmentData={currentContent.data as ExtendedLecture}
+                  // assignmentData={selectedItemData as ExtendedLecture}
+                />
               </div>
             ) : (
               <div className="bg-black relative w-[79.5vw] h-[64.8vh]">
@@ -1049,8 +1065,11 @@ const StudentVideoPreview = ({
                   onMouseLeave={() => setShowControls(false)}
                 >
                   <div className="relative w-full h-full mx-auto text-left">
-                    {activeItemType === "article" || 
-                    (currentContent.data && typeof currentContent.data === 'object' && 'text' in currentContent.data && currentContent.data.text !== "") ? (
+                    {activeItemType === "article" ||
+                    (currentContent.data &&
+                      typeof currentContent.data === "object" &&
+                      "text" in currentContent.data &&
+                      currentContent.data.text !== "") ? (
                       // Article content - using selected item's article data
                       <div className="bg-white relative w-full h-full px-52">
                         <div className="relative w-full h-full px-8 py-6 overflow-y-auto">
@@ -1060,14 +1079,22 @@ const StudentVideoPreview = ({
                           <div
                             className="article-content prose max-w-none"
                             dangerouslySetInnerHTML={{
-                              __html: (currentContent.data as ArticleContent)?.text || "",
+                              __html:
+                                (currentContent.data as ArticleContent)?.text ||
+                                "",
                             }}
                           />
 
                           {/* Resources section - filter by current item ID */}
-                          {(uploadedFiles.filter(f => f.lectureId === activeItemId).length > 0 ||
-                            sourceCodeFiles.filter(f => f.lectureId === activeItemId).length > 0 ||
-                            externalResources.filter(r => r.lectureId === activeItemId).length > 0) && (
+                          {(uploadedFiles.filter(
+                            (f) => f.lectureId === activeItemId
+                          ).length > 0 ||
+                            sourceCodeFiles.filter(
+                              (f) => f.lectureId === activeItemId
+                            ).length > 0 ||
+                            externalResources.filter(
+                              (r) => r.lectureId === activeItemId
+                            ).length > 0) && (
                             <div className="pt-6">
                               <h2 className="text-xl font-semibold mb-4">
                                 Resources for this {activeItemType}
@@ -1075,58 +1102,64 @@ const StudentVideoPreview = ({
 
                               <div className="space-y-3">
                                 {/* Downloadable Files */}
-                                {uploadedFiles.filter(f => f.lectureId === activeItemId).map((file, index) => (
-                                  <div
-                                    key={`uploaded-${index}`}
-                                    className="flex items-center"
-                                  >
-                                    <FileDown className="w-5 h-5 text-gray-600 mr-2" />
-                                    <a
-                                      href="#"
-                                      className="text-blue-600 hover:underline font-medium"
-                                      onClick={(e) => e.preventDefault()}
+                                {uploadedFiles
+                                  .filter((f) => f.lectureId === activeItemId)
+                                  .map((file, index) => (
+                                    <div
+                                      key={`uploaded-${index}`}
+                                      className="flex items-center"
                                     >
-                                      {file.name}
-                                    </a>
-                                  </div>
-                                ))}
+                                      <FileDown className="w-5 h-5 text-gray-600 mr-2" />
+                                      <a
+                                        href="#"
+                                        className="text-blue-600 hover:underline font-medium"
+                                        onClick={(e) => e.preventDefault()}
+                                      >
+                                        {file.name}
+                                      </a>
+                                    </div>
+                                  ))}
 
                                 {/* Source Code Files */}
-                                {sourceCodeFiles.filter(f => f.lectureId === activeItemId).map((file, index) => (
-                                  <div
-                                    key={`code-${index}`}
-                                    className="flex items-center"
-                                  >
-                                    <Code className="w-5 h-5 text-gray-600 mr-2" />
-                                    <a
-                                      href="#"
-                                      className="text-blue-600 hover:underline font-medium"
-                                      onClick={(e) => e.preventDefault()}
+                                {sourceCodeFiles
+                                  .filter((f) => f.lectureId === activeItemId)
+                                  .map((file, index) => (
+                                    <div
+                                      key={`code-${index}`}
+                                      className="flex items-center"
                                     >
-                                      {file.name || file.filename}
-                                    </a>
-                                  </div>
-                                ))}
+                                      <Code className="w-5 h-5 text-gray-600 mr-2" />
+                                      <a
+                                        href="#"
+                                        className="text-blue-600 hover:underline font-medium"
+                                        onClick={(e) => e.preventDefault()}
+                                      >
+                                        {file.name || file.filename}
+                                      </a>
+                                    </div>
+                                  ))}
 
                                 {/* External Links */}
-                                {externalResources.filter(r => r.lectureId === activeItemId).map((resource, index) => (
-                                  <div
-                                    key={`external-${index}`}
-                                    className="flex items-center"
-                                  >
-                                    <SquareArrowOutUpRight className="w-5 h-5 text-gray-600 mr-2" />
-                                    <a
-                                      href={resource.url}
-                                      className="text-blue-600 hover:underline font-medium"
-                                      target="_blank"
-                                      rel="noopener noreferrer"
+                                {externalResources
+                                  .filter((r) => r.lectureId === activeItemId)
+                                  .map((resource, index) => (
+                                    <div
+                                      key={`external-${index}`}
+                                      className="flex items-center"
                                     >
-                                      {typeof resource.title === "string"
-                                        ? resource.title
-                                        : resource.name}
-                                    </a>
-                                  </div>
-                                ))}
+                                      <SquareArrowOutUpRight className="w-5 h-5 text-gray-600 mr-2" />
+                                      <a
+                                        href={resource.url}
+                                        className="text-blue-600 hover:underline font-medium"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                      >
+                                        {typeof resource.title === "string"
+                                          ? resource.title
+                                          : resource.name}
+                                      </a>
+                                    </div>
+                                  ))}
                               </div>
                             </div>
                           )}
@@ -1138,7 +1171,8 @@ const StudentVideoPreview = ({
                         <ReactPlayer
                           ref={playerRef}
                           url={
-                            (currentContent.data as any)?.selectedVideoDetails?.url ||
+                            (currentContent.data as any)?.selectedVideoDetails
+                              ?.url ||
                             videoContent.selectedVideoDetails?.url ||
                             "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
                           }
@@ -1181,7 +1215,8 @@ const StudentVideoPreview = ({
                 </div>
 
                 {/* Video controls - ALWAYS show for video and article content */}
-                {(activeItemType === "video" || activeItemType === "article") && (
+                {(activeItemType === "video" ||
+                  activeItemType === "article") && (
                   <div className="h-12 bg-black w-full flex items-center px-4 text-white relative">
                     {/* Progress bar at the very top */}
                     <div className="absolute top-0 left-0 right-0 h-1 bg-gray-900">
@@ -1230,14 +1265,8 @@ const StudentVideoPreview = ({
                             fill="none"
                             xmlns="http://www.w3.org/2000/svg"
                           >
-                            <path
-                              d="M12.5 8V16L6.5 12L12.5 8Z"
-                              fill="white"
-                            />
-                            <path
-                              d="M18.5 8V16L12.5 12L18.5 8Z"
-                              fill="white"
-                            />
+                            <path d="M12.5 8V16L6.5 12L12.5 8Z" fill="white" />
+                            <path d="M18.5 8V16L12.5 12L18.5 8Z" fill="white" />
                           </svg>
                         </button>
                         {rewindLabel && (
@@ -1261,14 +1290,8 @@ const StudentVideoPreview = ({
                             fill="none"
                             xmlns="http://www.w3.org/2000/svg"
                           >
-                            <path
-                              d="M5.5 8V16L11.5 12L5.5 8Z"
-                              fill="white"
-                            />
-                            <path
-                              d="M11.5 8V16L17.5 12L11.5 8Z"
-                              fill="white"
-                            />
+                            <path d="M5.5 8V16L11.5 12L5.5 8Z" fill="white" />
+                            <path d="M11.5 8V16L17.5 12L11.5 8Z" fill="white" />
                           </svg>
                         </button>
                         {forwardLabel && (
@@ -1282,9 +1305,10 @@ const StudentVideoPreview = ({
                         <span>{formatTime(progress)}</span>
                         <span className="text-gray-400">/</span>
                         <span className="text-gray-400">
-                          {(currentContent.data as any)?.selectedVideoDetails?.duration ||
-                           videoContent.selectedVideoDetails?.duration || 
-                           formatTime(duration)}
+                          {(currentContent.data as any)?.selectedVideoDetails
+                            ?.duration ||
+                            videoContent.selectedVideoDetails?.duration ||
+                            formatTime(duration)}
                         </span>
                       </div>
                     </div>
@@ -1300,10 +1324,8 @@ const StudentVideoPreview = ({
                           const rates = [
                             0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2,
                           ];
-                          const currentIndex =
-                            rates.indexOf(playbackRate);
-                          const nextIndex =
-                            (currentIndex + 1) % rates.length;
+                          const currentIndex = rates.indexOf(playbackRate);
+                          const nextIndex = (currentIndex + 1) % rates.length;
                           setPlaybackRate(rates[nextIndex]);
                         }}
                         type="button"
@@ -1316,9 +1338,7 @@ const StudentVideoPreview = ({
                         <button
                           className="hover:text-gray-300 focus:outline-none"
                           onMouseEnter={() => setShowVolumeSlider(true)}
-                          onMouseLeave={() =>
-                            setShowVolumeSlider(false)
-                          }
+                          onMouseLeave={() => setShowVolumeSlider(false)}
                           type="button"
                         >
                           <Volume2 className="w-4 h-4" />
@@ -1327,12 +1347,8 @@ const StudentVideoPreview = ({
                         {showVolumeSlider && (
                           <div
                             className="absolute bottom-8 -left-1 bg-gray-900 p-2 rounded shadow-lg z-10"
-                            onMouseEnter={() =>
-                              setShowVolumeSlider(true)
-                            }
-                            onMouseLeave={() =>
-                              setShowVolumeSlider(false)
-                            }
+                            onMouseEnter={() => setShowVolumeSlider(true)}
+                            onMouseLeave={() => setShowVolumeSlider(false)}
                           >
                             <div
                               className="h-20 w-1 bg-gray-700 rounded-full cursor-pointer"
@@ -1340,11 +1356,8 @@ const StudentVideoPreview = ({
                                 const rect =
                                   e.currentTarget.getBoundingClientRect();
                                 const newVolume =
-                                  1 -
-                                  (e.clientY - rect.top) / rect.height;
-                                setVolume(
-                                  Math.max(0, Math.min(1, newVolume))
-                                );
+                                  1 - (e.clientY - rect.top) / rect.height;
+                                setVolume(Math.max(0, Math.min(1, newVolume)));
                               }}
                             >
                               <div
@@ -1378,9 +1391,7 @@ const StudentVideoPreview = ({
           </div>
 
           {/* Bottom content tabs - ALWAYS SHOW THESE - FIXED HEIGHT */}
-          <div
-            className="bg-white border-t border-gray-200 flex-shrink-0"
-          >
+          <div className="bg-white border-t border-gray-200 flex-shrink-0">
             {/* Tabs with Search icon/functionality */}
             <div className="flex items-center border-b border-gray-200">
               <button
@@ -1447,7 +1458,9 @@ const StudentVideoPreview = ({
                     <h3 className="text-xl font-bold mb-2 text-gray-800">
                       Start a new search
                     </h3>
-                    <p className="text-gray-600">To find lectures or resources</p>
+                    <p className="text-gray-600">
+                      To find lectures or resources
+                    </p>
                   </div>
                 </div>
               )}
@@ -1526,12 +1539,16 @@ const StudentVideoPreview = ({
 
                   {/* By the numbers section */}
                   <div className="mb-8 pb-8 border-b border-gray-200 grid grid-cols-3">
-                    <h3 className="text-gray-700 text-sm mb-4">By the numbers</h3>
+                    <h3 className="text-gray-700 text-sm mb-4">
+                      By the numbers
+                    </h3>
 
                     <div className="mr-12">
                       <p className="text-sm text-gray-700">Skill level:</p>
                       <p className="text-sm text-gray-700">Students: 0</p>
-                      <p className="text-sm text-gray-700">Languages: English</p>
+                      <p className="text-sm text-gray-700">
+                        Languages: English
+                      </p>
                       <p className="text-sm text-gray-700">Captions: No</p>
                     </div>
 
@@ -1575,7 +1592,8 @@ const StudentVideoPreview = ({
                           Content Details
                         </h4>
                         <p className="mb-4">
-                          {selectedItemData?.description || `This is a ${activeItemType} content item.`}
+                          {selectedItemData?.description ||
+                            `This is a ${activeItemType} content item.`}
                         </p>
                       </div>
                     </div>
@@ -1633,10 +1651,14 @@ const StudentVideoPreview = ({
                           <button className="px-2 py-1 text-sm font-bold">
                             B
                           </button>
-                          <button className="px-2 py-1 text-sm italic">I</button>
+                          <button className="px-2 py-1 text-sm italic">
+                            I
+                          </button>
                           <button className="px-2 py-1 text-sm">≡</button>
                           <button className="px-2 py-1 text-sm">≡</button>
-                          <button className="px-2 py-1 text-sm">&lt;&gt;</button>
+                          <button className="px-2 py-1 text-sm">
+                            &lt;&gt;
+                          </button>
                           <div className="ml-auto text-gray-400 text-sm">
                             1000
                           </div>
@@ -1644,7 +1666,9 @@ const StudentVideoPreview = ({
                         <textarea
                           className="w-full min-h-32 resize-none focus:outline-none focus:ring-0 border-0 p-2"
                           value={currentNoteContent}
-                          onChange={(e) => setCurrentNoteContent(e.target.value)}
+                          onChange={(e) =>
+                            setCurrentNoteContent(e.target.value)
+                          }
                           placeholder="Enter your note here..."
                           autoFocus
                         />
@@ -1819,9 +1843,9 @@ const StudentVideoPreview = ({
                       No announcements posted yet
                     </h3>
                     <p className="text-gray-600">
-                      The instructor hasn't added any announcements to this course
-                      yet. Announcements are used to inform you of updates or
-                      additions to the course.
+                      The instructor hasn't added any announcements to this
+                      course yet. Announcements are used to inform you of
+                      updates or additions to the course.
                     </p>
                   </div>
                 </div>
@@ -1843,7 +1867,9 @@ const StudentVideoPreview = ({
               {activeTab === "learning-tools" && !showSearch && (
                 <div className="p-6">
                   <div className="mb-6">
-                    <h3 className="text-xl font-bold mb-2">Learning reminders</h3>
+                    <h3 className="text-xl font-bold mb-2">
+                      Learning reminders
+                    </h3>
                     <p className="text-gray-600 mb-4">
                       Set up push notifications or calendar events to stay on
                       track for your learning goals.
@@ -1865,7 +1891,7 @@ const StudentVideoPreview = ({
         </div>
 
         {/* Right sidebar - Updated to pass proper sections array */}
-         <StudentPreviewSidebar
+        <StudentPreviewSidebar
           currentLectureId={activeItemId}
           setShowVideoPreview={setShowVideoPreview}
           sections={processedSections} // Use the processed sections
