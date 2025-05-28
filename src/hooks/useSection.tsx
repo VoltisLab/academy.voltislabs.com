@@ -620,6 +620,30 @@ export const useSections = (initialSections: Section[] = []) => {
     toast.success("Section moved successfully");
   };
 
+   const updateQuiz = (sectionId: string, quizId: string, title: string, description: string) => {
+    setSections(prevSections => prevSections.map(section => {
+      if (section.id === sectionId) {
+        return {
+          ...section,
+          lectures: section.lectures.map(lecture => {
+            if (lecture.id === quizId && lecture.contentType === 'quiz') {
+              return {
+                ...lecture,
+                name: title,
+                title: title,
+                description: description
+              };
+            }
+            return lecture;
+          })
+        };
+      }
+      return section;
+    }));
+    
+    toast.success("Quiz updated successfully");
+  };
+  
   return {
     sections,
     updateQuizQuestions,
@@ -643,5 +667,6 @@ export const useSections = (initialSections: Section[] = []) => {
     savePracticeCode,
     addExternalResource,
     getDefaultCodeTemplate,
+    updateQuiz
   };
 };

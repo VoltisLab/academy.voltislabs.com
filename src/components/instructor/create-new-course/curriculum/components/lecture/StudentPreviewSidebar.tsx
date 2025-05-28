@@ -12,12 +12,20 @@ import {
   X,
   FolderOpen
 } from "lucide-react";
-import { Lecture, SourceCodeFile, ExternalResourceItem, AttachedFile } from '@/lib/types';
+import { 
+  Lecture, 
+  SourceCodeFile, 
+  ExternalResourceItem, 
+  ExternalResource, // FIXED: Import both types
+  AttachedFile, 
+  EnhancedLecture, 
+  ContentTypeDetector 
+} from '@/lib/types';
 
 // Define the ContentItemType properly
 type ContentItemType = 'video' | 'article' | 'quiz' | 'assignment' | 'coding-exercise';
 
-// Define the ContentItem interface
+// FIXED: Updated ContentItem interface to include proper resource structure
 interface ContentItem {
   id: string;
   name: string;
@@ -26,10 +34,16 @@ interface ContentItem {
   hasResources?: boolean;
   isCompleted?: boolean;
   isActive?: boolean;
-  attachedFiles?: AttachedFile[];
-  externalResources?: ExternalResourceItem[];
-  sourceCodeFiles?: SourceCodeFile[];
+  // FIXED: Use the proper resource structure from EnhancedLecture
+  lectureResources?: {
+    uploadedFiles: Array<{ name: string; size: string; lectureId: string }>;
+    sourceCodeFiles: SourceCodeFile[];
+    externalResources: ExternalResourceItem[];
+  };
   description?: string;
+  actualContentType?: string;
+  hasVideoContent?: boolean;
+  hasArticleContent?: boolean;
 }
 
 interface SectionWithItems {
@@ -74,24 +88,21 @@ interface StudentPreviewSidebarProps {
     }>;
     isExpanded?: boolean;
   }>;
-  uploadedFiles?: Array<{name: string, size: string, lectureId?: string}>;
+  // FIXED: Accept both types and handle conversion internally
+  uploadedFiles?: Array<{ name: string; size: string; lectureId?: string }>;
   sourceCodeFiles?: SourceCodeFile[];
-  externalResources?: Array<{
-    title: string | React.ReactNode;
-    url: string;
-    name: string;
-    lectureId?: string;
-  }>;
+  externalResources?: (ExternalResource | ExternalResourceItem)[]; // Accept both types
 }
 
 const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
   currentLectureId,
   setShowVideoPreview,
   sections = [],
+  onSelectItem,
+  // FIXED: Accept resource props with defaults
   uploadedFiles = [],
   sourceCodeFiles = [],
-  externalResources = [],
-  onSelectItem
+  externalResources = []
 }) => {
   // State for managing which resource dropdowns are open
   const [openResourcesDropdowns, setOpenResourcesDropdowns] = useState<Record<string, boolean>>({});
@@ -100,204 +111,344 @@ const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
   // State for processed sections with their items
   const [processedSections, setProcessedSections] = useState<SectionWithItems[]>([]);
 
-  // Process the sections data when the component loads or sections change
-useEffect(() => {
-  console.log("StudentPreviewSidebar - Processing sections:", {
-    sectionsCount: sections.length,
-    sections: sections,
-    uploadedFilesCount: uploadedFiles.length,
-    sourceCodeFilesCount: sourceCodeFiles.length,
-    externalResourcesCount: externalResources.length,
-    currentLectureId
-  });
-  
-  // Early return if no sections
-  if (!sections || sections.length === 0) {
-    console.log("StudentPreviewSidebar - No sections to process");
-    setProcessedSections([]);
-    return;
-  }
-  
-  // Initialize expanded state for all sections
-  const initialExpandedState: Record<string, boolean> = {};
-  sections.forEach(section => {
-    initialExpandedState[section.id] = section.isExpanded !== false;
-  });
-  setExpandedSections(initialExpandedState);
-
-  // Process sections to format for sidebar display
-  const formatted = sections.map((section, sectionIndex) => {
-    console.log(`Processing section ${sectionIndex}:`, {
-      sectionId: section.id,
-      sectionName: section.name,
-      lecturesCount: section.lectures?.length || 0,
-      quizzesCount: section.quizzes?.length || 0,
-      assignmentsCount: section.assignments?.length || 0,
-      codingExercisesCount: section.codingExercises?.length || 0
-    });
-
-    const contentItems: ContentItem[] = [];
-    
-    // Add regular lectures (video/article content)
-    if (section.lectures && section.lectures.length > 0) {
-      section.lectures.forEach((lecture, index) => {
-        console.log(`Processing lecture ${lecture.id}:`, {
-          lectureId: lecture.id,
-          lectureName: lecture.name,
-          lectureContentType: lecture.contentType
-        });
-
-        // Find resources for this lecture - FIXED EXTERNAL RESOURCES FILTER
-        const lectureAttachedFiles: AttachedFile[] = uploadedFiles
-          .filter(file => file.lectureId === lecture.id)
-          .map(file => ({
-            url: "", 
-            name: file.name,
-            size: file.size
-          }));
-
-        const lectureSourceCodeFiles = sourceCodeFiles.filter(file => file.lectureId === lecture.id);
-
-        // FIXED: The bug was here - it was filtering by resource.lectureId === resource.lectureId instead of lecture.id
-        const lectureExternalResources: ExternalResourceItem[] = externalResources
-          .filter(resource => resource.lectureId === lecture.id) // FIXED THIS LINE
-          .map(resource => ({
-            title: typeof resource.title === 'string' ? resource.title : resource.name,
-            url: resource.url,
-            name: resource.name
-          }));
-
-        const hasResources = lectureAttachedFiles.length > 0 || 
-                            lectureSourceCodeFiles.length > 0 || 
-                            lectureExternalResources.length > 0;
-
-        console.log(`Lecture ${lecture.id} resources:`, {
-          attachedFiles: lectureAttachedFiles.length,
-          sourceCodeFiles: lectureSourceCodeFiles.length,
-          externalResources: lectureExternalResources.length,
-          hasResources: hasResources
-        });
-        
-        contentItems.push({
-          id: lecture.id,
-          name: lecture.name || lecture.title || `Lecture ${index + 1}`,
-          type: (lecture.contentType as ContentItemType) || 'video',
-          duration: lecture.duration || '2min',
-          hasResources: hasResources,
-          isCompleted: lecture.isCompleted || false,
-          isActive: lecture.id === currentLectureId,
-          attachedFiles: lectureAttachedFiles,
-          externalResources: lectureExternalResources,
-          sourceCodeFiles: lectureSourceCodeFiles,
-          description: lecture.description
-        });
-      });
+  // FIXED: Add helper function to convert ExternalResource to ExternalResourceItem
+  const convertExternalResource = (resource: ExternalResource | ExternalResourceItem): ExternalResourceItem => {
+    // If it's already ExternalResourceItem, return as is
+    if (typeof (resource as any).title === 'string') {
+      return resource as ExternalResourceItem;
     }
     
-    // Add quizzes
-    if (section.quizzes && section.quizzes.length > 0) {
-      section.quizzes.forEach((quiz, index) => {
-        contentItems.push({
-          id: quiz.id,
-          name: quiz.name || `Quiz ${index + 1}`,
-          type: 'quiz',
-          duration: quiz.duration || '10min',
-          isCompleted: false,
-          isActive: quiz.id === currentLectureId,
-          hasResources: false,
-          attachedFiles: [],
-          externalResources: [],
-          sourceCodeFiles: [],
-          description: quiz.description
-        });
-      });
-    }
-    
-    // Add assignments
-    if (section.assignments && section.assignments.length > 0) {
-      section.assignments.forEach((assignment, index) => {
-        contentItems.push({
-          id: assignment.id,
-          name: assignment.name || `Assignment ${index + 1}`,
-          type: 'assignment',
-          duration: assignment.duration || '30min',
-          isCompleted: false,
-          isActive: assignment.id === currentLectureId,
-          hasResources: false,
-          attachedFiles: [],
-          externalResources: [],
-          sourceCodeFiles: [],
-          description: assignment.description
-        });
-      });
-    }
-    
-    // Add coding exercises
-    if (section.codingExercises && section.codingExercises.length > 0) {
-      section.codingExercises.forEach((exercise, index) => {
-        contentItems.push({
-          id: exercise.id,
-          name: exercise.name || `Coding Exercise ${index + 1}`,
-          type: 'coding-exercise',
-          duration: exercise.duration || '15min',
-          isCompleted: false,
-          isActive: exercise.id === currentLectureId,
-          hasResources: false,
-          attachedFiles: [],
-          externalResources: [],
-          sourceCodeFiles: [],
-          description: exercise.description
-        });
-      });
-    }
-    
-    // Calculate totals
-    const totalItems = contentItems.length;
-    const completedItems = contentItems.filter(item => item.isCompleted).length;
-    
-    // Calculate total duration in minutes
-    const totalDurationMinutes = contentItems.reduce((total, item) => {
-      const durationMatch = item.duration?.match(/(\d+)/);
-      if (durationMatch && durationMatch[1]) {
-        return total + parseInt(durationMatch[1], 10);
-      }
-      return total + 2; // Default duration
-    }, 0);
-
-    const processedSection = {
-      id: section.id,
-      name: section.name || 'Untitled Section',
-      contentItems,
-      isExpanded: initialExpandedState[section.id],
-      totalDuration: `${totalDurationMinutes}min`,
-      completedItems,
-      totalItems
+    // Convert ExternalResource to ExternalResourceItem
+    const externalResource = resource as ExternalResource;
+    return {
+      title: typeof externalResource.title === 'string' 
+        ? externalResource.title 
+        : externalResource.name, // Convert ReactNode to string
+      url: externalResource.url,
+      name: externalResource.name,
+      lectureId: externalResource.lectureId,
+      filename: (externalResource as any).filename
     };
+  };
 
-    console.log(`Processed section ${section.id}:`, {
-      name: processedSection.name,
-      contentItemsCount: processedSection.contentItems.length,
-      isExpanded: processedSection.isExpanded,
-      totalDuration: processedSection.totalDuration,
-      contentItems: processedSection.contentItems.map(item => ({
-        id: item.id,
-        name: item.name,
-        type: item.type,
-        hasResources: item.hasResources,
-        resourcesCount: {
-          attached: item.attachedFiles?.length || 0,
-          source: item.sourceCodeFiles?.length || 0,
-          external: item.externalResources?.length || 0
-        }
-      }))
+  // FIXED: Enhanced content type detector function for lectures
+  const detectLectureContentType = (lecture: Lecture): string => {
+    const enhancedLecture = lecture as EnhancedLecture;
+    
+    console.log(`🔍 Detecting content type for lecture ${lecture.id}:`, {
+      lectureName: lecture.name,
+      contentType: lecture.contentType,
+      actualContentType: enhancedLecture.actualContentType,
+      hasVideoContent: enhancedLecture.hasVideoContent,
+      hasArticleContent: enhancedLecture.hasArticleContent,
+      videoDetails: !!enhancedLecture.videoDetails,
+      articleContent: !!enhancedLecture.articleContent?.text
     });
     
-    return processedSection;
-  });
-  
-  console.log("StudentPreviewSidebar - Final processed sections:", formatted);
-  setProcessedSections(formatted);
-}, [sections, currentLectureId, uploadedFiles, sourceCodeFiles, externalResources]);
+    // Priority 1: Check if it's explicitly a quiz
+    if (lecture.contentType === 'quiz' || enhancedLecture.actualContentType === 'quiz') {
+      return 'quiz';
+    }
+    
+    // Priority 2: Check if it's explicitly an assignment
+    if (lecture.contentType === 'assignment' || enhancedLecture.actualContentType === 'assignment') {
+      return 'assignment';
+    }
+    
+    // Priority 3: Check if it's explicitly a coding exercise
+    if (lecture.contentType === 'coding-exercise' || enhancedLecture.actualContentType === 'coding-exercise') {
+      return 'coding-exercise';
+    }
+    
+    // Priority 4: Use ContentTypeDetector if available
+    if (ContentTypeDetector) {
+      const detectedType = ContentTypeDetector.detectLectureContentType(enhancedLecture);
+      if (detectedType !== 'unknown' && detectedType !== 'video') {
+        console.log(`✅ ContentTypeDetector result: ${detectedType}`);
+        return detectedType;
+      }
+    }
+    
+    // Priority 5: Check enhanced lecture properties for article content
+    if (enhancedLecture.hasArticleContent || 
+        (enhancedLecture.articleContent && enhancedLecture.articleContent.text && enhancedLecture.articleContent.text.trim().length > 0)) {
+      console.log(`✅ Detected as article based on content`);
+      return 'article';
+    }
+    
+    // Priority 6: Check enhanced lecture properties for video content
+    if (enhancedLecture.hasVideoContent || enhancedLecture.videoDetails) {
+      console.log(`✅ Detected as video based on content`);
+      return 'video';
+    }
+    
+    // Priority 7: Check explicit content type
+    if (lecture.contentType === 'article') {
+      console.log(`✅ Explicit article content type`);
+      return 'article';
+    }
+    
+    // Priority 8: Default to video for regular lectures
+    console.log(`⚠️ Defaulting to video for lecture ${lecture.id}`);
+    return 'video';
+  };
+
+  // FIXED: Create resource map from props to aggregate all resources by lectureId
+  const createResourceMap = () => {
+    const resourcesByLectureId: Record<string, {
+      uploadedFiles: Array<{ name: string; size: string; lectureId: string }>;
+      sourceCodeFiles: SourceCodeFile[];
+      externalResources: ExternalResourceItem[];
+    }> = {};
+
+    console.log('🗂️ Creating resource map from props:', {
+      uploadedFilesCount: uploadedFiles.length,
+      sourceCodeFilesCount: sourceCodeFiles.length,
+      externalResourcesCount: externalResources.length
+    });
+
+    // Process uploaded files
+    uploadedFiles.forEach(file => {
+      if (file.lectureId) {
+        if (!resourcesByLectureId[file.lectureId]) {
+          resourcesByLectureId[file.lectureId] = {
+            uploadedFiles: [],
+            sourceCodeFiles: [],
+            externalResources: []
+          };
+        }
+        resourcesByLectureId[file.lectureId].uploadedFiles.push({
+          name: file.name,
+          size: file.size,
+          lectureId: file.lectureId
+        });
+      }
+    });
+
+    // Process source code files
+    sourceCodeFiles.forEach(file => {
+      if (file.lectureId) {
+        if (!resourcesByLectureId[file.lectureId]) {
+          resourcesByLectureId[file.lectureId] = {
+            uploadedFiles: [],
+            sourceCodeFiles: [],
+            externalResources: []
+          };
+        }
+        resourcesByLectureId[file.lectureId].sourceCodeFiles.push(file);
+      }
+    });
+
+    // FIXED: Process external resources with type conversion
+    externalResources.forEach(resource => {
+      if (resource.lectureId) {
+        if (!resourcesByLectureId[resource.lectureId]) {
+          resourcesByLectureId[resource.lectureId] = {
+            uploadedFiles: [],
+            sourceCodeFiles: [],
+            externalResources: []
+          };
+        }
+        // Convert to ExternalResourceItem before adding
+        const convertedResource = convertExternalResource(resource);
+        resourcesByLectureId[resource.lectureId].externalResources.push(convertedResource);
+      }
+    });
+
+    console.log('📦 Resource map created:', {
+      totalLecturesWithResources: Object.keys(resourcesByLectureId).length,
+      resourcesByLectureId
+    });
+
+    return resourcesByLectureId;
+  };
+
+  // Update the useEffect that processes sections
+  useEffect(() => {
+    console.log("StudentPreviewSidebar - Processing sections:", {
+      sectionsCount: sections.length,
+      currentLectureId,
+      totalUploadedFiles: uploadedFiles.length,
+      totalSourceCodeFiles: sourceCodeFiles.length,
+      totalExternalResources: externalResources.length
+    });
+    
+    if (!sections || sections.length === 0) {
+      console.log("StudentPreviewSidebar - No sections to process");
+      setProcessedSections([]);
+      return;
+    }
+    
+    // FIXED: Create resource map from props
+    const resourcesByLectureId = createResourceMap();
+    
+    // Initialize expanded state for all sections
+    const initialExpandedState: Record<string, boolean> = {};
+    sections.forEach(section => {
+      initialExpandedState[section.id] = section.isExpanded !== false;
+    });
+    setExpandedSections(initialExpandedState);
+
+    // Process sections to format for sidebar display
+    const formatted = sections.map((section, sectionIndex) => {
+      console.log(`Processing section ${sectionIndex}:`, {
+        sectionId: section.id,
+        sectionName: section.name,
+        lecturesCount: section.lectures?.length || 0
+      });
+
+      const contentItems: ContentItem[] = [];
+      
+      // Process lectures
+      if (section.lectures && section.lectures.length > 0) {
+        section.lectures.forEach((lecture, index) => {
+          // FIXED: Use the improved content type detection
+          const detectedContentType = detectLectureContentType(lecture);
+          
+          // FIXED: Get resources from the resource map instead of just the lecture
+          const lectureResources = resourcesByLectureId[lecture.id] || {
+            uploadedFiles: [],
+            sourceCodeFiles: [],
+            externalResources: []
+          };
+          
+          const hasResources = lectureResources.uploadedFiles.length > 0 || 
+                              lectureResources.sourceCodeFiles.length > 0 || 
+                              lectureResources.externalResources.length > 0;
+
+          console.log(`🎯 Processing lecture ${lecture.id}:`, {
+            lectureId: lecture.id,
+            lectureName: lecture.name,
+            detectedContentType,
+            hasResources,
+            resourceCounts: {
+              uploadedFiles: lectureResources.uploadedFiles.length,
+              sourceCodeFiles: lectureResources.sourceCodeFiles.length,
+              externalResources: lectureResources.externalResources.length
+            }
+          });
+          
+          const contentItem: ContentItem = {
+            id: lecture.id,
+            name: lecture.name || lecture.title || `Lecture ${index + 1}`,
+            type: detectedContentType as ContentItemType,
+            duration: lecture.duration || '2min',
+            hasResources: hasResources,
+            isCompleted: lecture.isCompleted || false,
+            isActive: lecture.id === currentLectureId,
+            lectureResources: lectureResources, // FIXED: Use resources from map
+            description: lecture.description,
+            actualContentType: detectedContentType,
+            hasVideoContent: detectedContentType === 'video',
+            hasArticleContent: detectedContentType === 'article'
+          };
+          
+          contentItems.push(contentItem);
+        });
+      }
+      
+      // Process other content types (quizzes, assignments, etc.) - unchanged
+      if (section.quizzes && section.quizzes.length > 0) {
+        section.quizzes.forEach((quiz, index) => {
+          contentItems.push({
+            id: quiz.id,
+            name: quiz.name || `Quiz ${index + 1}`,
+            type: 'quiz',
+            duration: quiz.duration || '10min',
+            isCompleted: false,
+            isActive: quiz.id === currentLectureId,
+            hasResources: false,
+            lectureResources: {
+              uploadedFiles: [],
+              sourceCodeFiles: [],
+              externalResources: []
+            },
+            description: quiz.description,
+            actualContentType: 'quiz'
+          });
+        });
+      }
+      
+      if (section.assignments && section.assignments.length > 0) {
+        section.assignments.forEach((assignment, index) => {
+          contentItems.push({
+            id: assignment.id,
+            name: assignment.name || `Assignment ${index + 1}`,
+            type: 'assignment',
+            duration: assignment.duration || '30min',
+            isCompleted: false,
+            isActive: assignment.id === currentLectureId,
+            hasResources: false,
+            lectureResources: {
+              uploadedFiles: [],
+              sourceCodeFiles: [],
+              externalResources: []
+            },
+            description: assignment.description,
+            actualContentType: 'assignment'
+          });
+        });
+      }
+      
+      if (section.codingExercises && section.codingExercises.length > 0) {
+        section.codingExercises.forEach((exercise, index) => {
+          contentItems.push({
+            id: exercise.id,
+            name: exercise.name || `Coding Exercise ${index + 1}`,
+            type: 'coding-exercise',
+            duration: exercise.duration || '15min',
+            isCompleted: false,
+            isActive: exercise.id === currentLectureId,
+            hasResources: false,
+            lectureResources: {
+              uploadedFiles: [],
+              sourceCodeFiles: [],
+              externalResources: []
+            },
+            description: exercise.description,
+            actualContentType: 'coding-exercise'
+          });
+        });
+      }
+      
+      // Calculate totals
+      const totalItems = contentItems.length;
+      const completedItems = contentItems.filter(item => item.isCompleted).length;
+      
+      // Calculate total duration
+      const totalDurationMinutes = contentItems.reduce((total, item) => {
+        const durationMatch = item.duration?.match(/(\d+)/);
+        if (durationMatch && durationMatch[1]) {
+          return total + parseInt(durationMatch[1], 10);
+        }
+        return total + 2;
+      }, 0);
+
+      const processedSection = {
+        id: section.id,
+        name: section.name || 'Untitled Section',
+        contentItems,
+        isExpanded: initialExpandedState[section.id],
+        totalDuration: `${totalDurationMinutes}min`,
+        completedItems,
+        totalItems
+      };
+
+      console.log(`✅ Processed section ${section.id} summary:`, {
+        name: processedSection.name,
+        totalItems: processedSection.contentItems.length,
+        itemsWithResources: processedSection.contentItems.filter(item => item.hasResources).length,
+        contentTypes: processedSection.contentItems.reduce((acc, item) => {
+          acc[item.actualContentType || item.type] = (acc[item.actualContentType || item.type] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>)
+      });
+      
+      return processedSection;
+    });
+    
+    setProcessedSections(formatted);
+  }, [sections, currentLectureId, uploadedFiles, sourceCodeFiles, externalResources]); // FIXED: Include resource props in dependencies
 
   // Toggle a section's expanded state
   const toggleSection = (sectionId: string) => {
@@ -321,27 +472,40 @@ useEffect(() => {
     });
   };
 
-  // Handle selecting an item
+  // FIXED: Handle selecting an item with proper content type detection
   const handleSelectItem = (itemId: string) => {
     const selectedItem = processedSections
       .flatMap(section => section.contentItems)
       .find(item => item.id === itemId);
     
     if (selectedItem) {
-      console.log('Selected item:', itemId, 'with type:', selectedItem.type);
+      // FIXED: Use actualContentType for accurate content type
+      const contentType = selectedItem.actualContentType || selectedItem.type;
+      
+      console.log('🎯 Selected item:', {
+        itemId,
+        itemName: selectedItem.name,
+        originalType: selectedItem.type,
+        actualContentType: selectedItem.actualContentType,
+        finalContentType: contentType,
+        hasVideoContent: selectedItem.hasVideoContent,
+        hasArticleContent: selectedItem.hasArticleContent
+      });
       
       if (onSelectItem) {
-        onSelectItem(itemId, selectedItem.type);
+        onSelectItem(itemId, contentType);
       }
     } else {
-      console.error('Item not found:', itemId);
+      console.error('❌ Item not found:', itemId);
       setShowVideoPreview(false);
     }
   };
 
-  // Get icon for content type
-  const getContentIcon = (type: ContentItemType) => {
-    switch (type) {
+  // FIXED: Get icon for content type with better detection
+  const getContentIcon = (item: ContentItem) => {
+    const contentType = item.actualContentType || item.type;
+    
+    switch (contentType) {
       case 'video':
         return <Play className="w-3 h-3 mr-1" />;
       case 'article':
@@ -357,98 +521,117 @@ useEffect(() => {
     }
   };
 
-  // Resources dropdown component
+  // FIXED: Resources dropdown component with proper resource handling
   const ResourcesDropdown: React.FC<{
-  item: ContentItem;
-  isOpen: boolean;
-  toggleOpen: (e?: React.MouseEvent) => void;
-}> = ({ item, isOpen, toggleOpen }) => {
-  // Only show for lectures (video/article) with resources
-  if (item.type !== 'video' && item.type !== 'article') return null;
-  if (!item.hasResources) return null;
-  
-  const handleButtonClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    e.preventDefault();
-    toggleOpen(e);
-  };
-  
-  // Check if there are actually resources to display
-  const hasAttachedFiles = item.attachedFiles && item.attachedFiles.length > 0;
-  const hasSourceCode = item.sourceCodeFiles && item.sourceCodeFiles.length > 0;
-  const hasExternalResources = item.externalResources && item.externalResources.length > 0;
-  
-  if (!hasAttachedFiles && !hasSourceCode && !hasExternalResources) {
-    return null;
-  }
-
-  console.log(`ResourcesDropdown for ${item.id}:`, {
-    hasAttachedFiles,
-    attachedFilesCount: item.attachedFiles?.length || 0,
-    hasSourceCode,
-    sourceCodeCount: item.sourceCodeFiles?.length || 0,
-    hasExternalResources,
-    externalResourcesCount: item.externalResources?.length || 0,
-    isOpen
-  });
-  
-  return (
-    <div className="relative" onClick={(e) => e.stopPropagation()}>
-      <button 
-        onClick={handleButtonClick}
-        className="flex items-center text-xs text-[#6D28D2] hover:text-[#6D28D2] border-[#6D28D2] border rounded px-2 py-1 font-medium"
-        type="button"
-      >
-        <div className=' flex flex-row gap-1'>
-          <FolderOpen size={14} />
-          <span>Resources</span>
-        </div>
-        {isOpen ? <ChevronUp className="w-3 h-3 ml-1" /> : <ChevronDown className="w-3 h-3 ml-1" />}
-      </button>
-      
-      {isOpen && (
-        <div 
-          className="absolute right-0 mt-1 w-64 bg-white border border-gray-200 rounded-md shadow-lg z-50"
-          onClick={(e) => e.stopPropagation()}
+    item: ContentItem;
+    isOpen: boolean;
+    toggleOpen: (e?: React.MouseEvent) => void;
+  }> = ({ item, isOpen, toggleOpen }) => {
+    // Show for lectures (video/article) with resources
+    const contentType = item.actualContentType || item.type;
+    if (contentType !== 'video' && contentType !== 'article') return null;
+    
+    const handleButtonClick = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      e.preventDefault();
+      toggleOpen(e);
+    };
+    
+    // FIXED: Use lectureResources structure
+    const resources = item.lectureResources;
+    if (!resources) return null;
+    
+    const hasUploadedFiles = resources.uploadedFiles.length > 0;
+    const hasSourceCode = resources.sourceCodeFiles.length > 0;
+    const hasExternalResources = resources.externalResources.length > 0;
+    
+    const totalResourceCount = resources.uploadedFiles.length + 
+                             resources.sourceCodeFiles.length + 
+                             resources.externalResources.length;
+    
+    // Don't show if no resources
+    if (totalResourceCount === 0) {
+      return null;
+    }
+    
+    console.log(`🔍 ResourcesDropdown for ${item.id}:`, {
+      itemName: item.name,
+      totalResourceCount,
+      hasUploadedFiles,
+      hasSourceCode,
+      hasExternalResources,
+      resources
+    });
+    
+    return (
+      <div className="relative" onClick={(e) => e.stopPropagation()}>
+        <button 
+          onClick={handleButtonClick}
+          className="flex items-center text-xs text-[#6D28D2] hover:text-[#6D28D2] border-[#6D28D2] border rounded px-2 py-1 font-medium"
+          type="button"
         >
-          <div className="p-2 max-h-48 overflow-y-auto">
-            {/* Attached Files */}
-            {hasAttachedFiles && item.attachedFiles!.map((file, index) => (
-              <div key={`dl-${index}`} className="flex items-center py-1 px-2 hover:bg-gray-50">
-                <FileDown className="w-4 h-4 mr-2 text-gray-600" />
-                <span className="text-sm">{file.name} {file.size && `(${file.size})`}</span>
-              </div>
-            ))}
-            
-            {/* Source Code Files */}
-            {hasSourceCode && item.sourceCodeFiles!.map((file, index) => (
-              <div key={`sc-${index}`} className="flex items-center py-1 px-2 hover:bg-gray-50">
-                <Code className="w-4 h-4 mr-2 text-gray-600" />
-                <span className="text-sm">{file.name || file.filename}</span>
-              </div>
-            ))}
-            
-            {/* External Resources */}
-            {hasExternalResources && item.externalResources!.map((resource, index) => (
-              <div key={`er-${index}`} className="flex items-center py-1 px-2 hover:bg-gray-50">
-                <SquareArrowOutUpRight className="w-4 h-4 mr-2 text-gray-600" />
-                <a 
-                  href={resource.url} 
-                  className="text-sm text-blue-600 hover:underline" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  {typeof resource.title === 'string' ? resource.title : resource.name}
-                </a>
-              </div>
-            ))}
+          <div className='flex flex-row gap-1 items-center'>
+            <FolderOpen size={14} />
+            <span>Resources</span>
           </div>
-        </div>
-      )}
-    </div>
-  );
-};
+          {isOpen ? <ChevronUp className="w-3 h-3 ml-1" /> : <ChevronDown className="w-3 h-3 ml-1" />}
+        </button>
+        
+        {isOpen && (
+          <div 
+            className="absolute right-0 mt-1 w-64 bg-white border border-gray-200 rounded-md shadow-lg z-50"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-2 max-h-48 overflow-y-auto">
+              {/* Uploaded Files */}
+              {hasUploadedFiles && (
+                <div className="mb-2">
+                  {resources.uploadedFiles.map((file, index) => (
+                    <div key={`dl-${index}`} className="flex items-center py-1 px-2 hover:bg-gray-50">
+                      <FileDown className="w-4 h-4 mr-2 text-gray-600" />
+                      <span className="text-sm">{file.name} {file.size && `(${file.size})`}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              
+              {/* Source Code Files */}
+              {hasSourceCode && (
+                <div className="mb-2">
+                  {resources.sourceCodeFiles.map((file, index) => (
+                    <div key={`sc-${index}`} className="flex items-center py-1 px-2 hover:bg-gray-50">
+                      <Code className="w-4 h-4 mr-2 text-gray-600" />
+                      <span className="text-sm">{file.name || file.filename}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              
+              {/* External Resources */}
+              {hasExternalResources && (
+                <div>
+                  {resources.externalResources.map((resource, index) => (
+                    <div key={`er-${index}`} className="flex items-center py-1 px-2 hover:bg-gray-50">
+                      <SquareArrowOutUpRight className="w-4 h-4 mr-2 text-gray-600" />
+                      <a 
+                        href={resource.url} 
+                        className="text-sm text-blue-600 hover:underline" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {resource.title} {/* Now guaranteed to be string */}
+                      </a>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className="w-[20vw] bg-white border-l border-gray-200 flex flex-col fixed top-0 right-0 h-full text-gray-700">
@@ -465,81 +648,88 @@ useEffect(() => {
         </button>
       </div>
       
-  
-<div className="flex-1 overflow-y-auto">
-  {processedSections.map((section, index )=> (
-    <div key={section.id} className="border-b border-gray-400 bg-gray-50">
-      {/* Section header - clickable to toggle */}
-      <div className="px-4 py-3">
-        <div 
-          className="flex justify-between items-center mb-2 cursor-pointer"
-          onClick={() => toggleSection(section.id)}
-        >
-          <h3 className="font-bold text-sm">Section {index+1}: {section.name}</h3>
-          {expandedSections[section.id] ? (
-            <ChevronUp className="w-4 h-4" />
-          ) : (
-            <ChevronDown className="w-4 h-4" />
-          )}
-        </div>
-        <p className="text-xs text-gray-500">
-          {section.completedItems}/{section.totalItems} | {section.totalDuration}
-        </p>
-      </div>
-      
-      {/* Section content items - only show if expanded */}
-      {expandedSections[section.id] && section.contentItems.length > 0 && (
-        <div className="">
-          {section.contentItems.map((item, index) => (
-            <div 
-              key={item.id} 
-              className={`px-4 py-2 ${
-                item.isActive 
-                  ? 'bg-gray-200 ' 
-                  : 'hover:bg-gray-50 bg-white'
-              } cursor-pointer hover:bg-gray-200  `}
-              onClick={() => handleSelectItem(item.id)}
-            >
-              <div className="flex items-start">
-                <input 
-                  type="checkbox" 
-                  className="mt-1 mr-3" 
-                  checked={item.isCompleted}
-                  onChange={() => {}}
-                  aria-label="Mark as complete"
-                />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between">
-                    <p className="font-medium text-sm truncate">
-                      {index + 1}. {item.name}
-                    </p>
-                  </div>
-                  {item.type === "video" || item.type === "article" ? (
-                    <div className="flex items-center justify-between">
-                    <div className="flex items-center text-xs ">
-                      <span className='text-gray-800 font-bold'>{getContentIcon(item.type)}</span>
-                      <span>{item.duration}</span>
-                    </div>
-                    
-                    {/* Show resources dropdown for lectures with resources */}
-                    {item.hasResources && (item.type === 'video' || item.type === 'article') && (
-                      <ResourcesDropdown 
-                        item={item}
-                        isOpen={!!openResourcesDropdowns[item.id]}
-                        toggleOpen={(e) => toggleResourcesDropdown(item.id, e)}
-                      />
-                    )}
-                  </div>
-                  ) : ""}
-                </div>
+      <div className="flex-1 overflow-y-auto">
+        {processedSections.map((section, index) => (
+          <div key={section.id} className="border-b border-gray-400 bg-gray-50">
+            {/* Section header - clickable to toggle */}
+            <div className="px-4 py-3">
+              <div 
+                className="flex justify-between items-center mb-2 cursor-pointer"
+                onClick={() => toggleSection(section.id)}
+              >
+                <h3 className="font-bold text-sm">Section {index+1}: {section.name}</h3>
+                {expandedSections[section.id] ? (
+                  <ChevronUp className="w-4 h-4" />
+                ) : (
+                  <ChevronDown className="w-4 h-4" />
+                )}
               </div>
+              <p className="text-xs text-gray-500">
+                {section.completedItems}/{section.totalItems} | {section.totalDuration}
+              </p>
             </div>
-          ))}
-        </div>
-      )}
-    </div>
-  ))}
-</div>
+            
+            {/* Section content items - only show if expanded */}
+            {expandedSections[section.id] && section.contentItems.length > 0 && (
+              <div className="">
+                {section.contentItems.map((item, itemIndex) => (
+                  <div 
+                    key={item.id} 
+                    className={`px-4 py-2 ${
+                      item.isActive 
+                        ? 'bg-gray-200 ' 
+                        : 'hover:bg-gray-50 bg-white'
+                    } cursor-pointer hover:bg-gray-200`}
+                    onClick={() => handleSelectItem(item.id)}
+                  >
+                    <div className="flex items-start">
+                      <input 
+                        type="checkbox" 
+                        className="mt-1 mr-3" 
+                        checked={item.isCompleted}
+                        onChange={() => {}}
+                        aria-label="Mark as complete"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between">
+                          <p className="font-medium text-sm truncate">
+                            {itemIndex + 1}. {item.name}
+                          </p>
+                        </div>
+                        {/* FIXED: Show duration and resources for video/article content */}
+                        {(item.actualContentType === "video" || item.actualContentType === "article") && (
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center text-xs">
+                              <span className='text-gray-800 font-bold'>{getContentIcon(item)}</span>
+                              <span>{item.duration}</span>
+                            </div>
+                            
+                            {/* FIXED: Show resources dropdown for lectures with resources */}
+                            {item.hasResources && (
+                              <ResourcesDropdown 
+                                item={item}
+                                isOpen={!!openResourcesDropdowns[item.id]}
+                                toggleOpen={(e) => toggleResourcesDropdown(item.id, e)}
+                              />
+                            )}
+                          </div>
+                        )}
+                        {/* For other content types, show basic info */}
+                        {item.actualContentType !== "video" && item.actualContentType !== "article" && (
+                          <div className="flex items-center text-xs">
+                            <span className='text-gray-800 font-bold'>{getContentIcon(item)}</span>
+                            <span>{item.duration}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
