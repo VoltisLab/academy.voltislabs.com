@@ -10,9 +10,7 @@ import { FaCircleCheck } from "react-icons/fa6";
 import { IoIosInformationCircleOutline } from "react-icons/io";
 
 export default function AssignmentPreview({
-
   assignmentData,
-  startAssignment,
   setAssignmentStatus,
   assignmentStatus,
 }: {
