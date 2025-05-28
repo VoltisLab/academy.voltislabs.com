@@ -953,7 +953,8 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({ quiz, onClose }) => {
                 {!fromResult && showFeedback && isCorrectAnswer && (
                   <div
                     className={`rounded-2xl w-full px-6 py-3 border border-green-700 flex gap-4 mb-6 ${
-                      !currentQuestion?.answers?.[correctAnswerIndex || 0]?.explanation
+                      !currentQuestion?.answers?.[correctAnswerIndex || 0]
+                        ?.explanation
                         ? "items-center"
                         : ""
                     }`}

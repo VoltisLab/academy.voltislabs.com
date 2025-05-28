@@ -7,6 +7,7 @@ import {
   PreviewSection,
   EnhancedLecture,
   ContentTypeDetector,
+  ExtendedLecture,
 } from "@/lib/types";
 import {
   ChevronDown,
@@ -36,6 +37,7 @@ import { ArticleContent } from "@/lib/types";
 import QuizPreview from "../quiz/QuizPreview";
 import { useEffect, useRef, useState } from "react";
 import React from "react";
+import AssignmentPreview from "../assignment/AssignmentPreview";
 
 // Add QuizData interface
 interface QuizData {
@@ -108,7 +110,7 @@ type ContentItemType =
   | "coding-exercise";
 
 const StudentVideoPreview = ({
- videoContent,
+  videoContent,
   setShowVideoPreview,
   lecture,
   uploadedFiles = [],
@@ -375,7 +377,7 @@ const handleItemSelect = (itemId: string, itemType: string) => {
       console.log("📂 Using nested sections structure:", section.sections.length);
       return section.sections;
     }
-    
+
     // Handle backward compatibility with single section
     if (section.lectures || section.quizzes || section.assignments || section.codingExercises) {
       console.log("📂 Using single section structure");
@@ -653,7 +655,7 @@ const handleItemSelect = (itemId: string, itemType: string) => {
 };
 
   // ENHANCED: Better early return check with content type detection
-  const shouldShowPreview = 
+  const shouldShowPreview =
     videoContent.selectedVideoDetails || // Has video
     (articleContent && articleContent.text) || // Has article
     (activeItemType === "quiz" && (quizData || selectedItemData)) || // Has quiz
@@ -669,7 +671,7 @@ const handleItemSelect = (itemId: string, itemType: string) => {
       hasQuizContent: !!(quizData && activeItemType === "quiz"),
       activeItemType: activeItemType,
       hasSelectedItemData: !!selectedItemData,
-      shouldShow: shouldShowPreview
+      shouldShow: shouldShowPreview,
     });
     return null;
   }
@@ -1210,31 +1212,11 @@ const handleItemSelect = (itemId: string, itemType: string) => {
                 </div>
               </div>
             ) : activeItemType === "assignment" ? (
-              // Assignment view - using actual data from selected assignment
-              <div className="p-6 h-full overflow-y-auto">
-                <h1 className="text-2xl font-bold mb-6">
-                  {selectedItemData?.name || "Assignment"}
-                </h1>
-
-                <div className="text-gray-700 mb-8">
-                  {selectedItemData?.description ||
-                    "Complete this assignment according to the instructions."}
-                </div>
-
-                <div className="flex justify-end space-x-4 mt-8">
-                  <button
-                    className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-md font-medium"
-                    type="button"
-                  >
-                    Skip assignment
-                  </button>
-                  <button
-                    className="bg-[#6D28D2] hover:bg-[#7D28D2] text-white px-4 py-2 rounded-md font-medium"
-                    type="button"
-                  >
-                    Start assignment
-                  </button>
-                </div>
+              <div className="w-[79vw] h-full">
+                <AssignmentPreview
+                  assignmentData={currentContent.data as ExtendedLecture}
+                  // assignmentData={selectedItemData as ExtendedLecture}
+                />
               </div>
             ) : activeItemType === "article" ? (
               // ENHANCED: Article content - render directly without video container
@@ -1419,14 +1401,8 @@ const handleItemSelect = (itemId: string, itemType: string) => {
                             fill="none"
                             xmlns="http://www.w3.org/2000/svg"
                           >
-                            <path
-                              d="M12.5 8V16L6.5 12L12.5 8Z"
-                              fill="white"
-                            />
-                            <path
-                              d="M18.5 8V16L12.5 12L18.5 8Z"
-                              fill="white"
-                            />
+                            <path d="M12.5 8V16L6.5 12L12.5 8Z" fill="white" />
+                            <path d="M18.5 8V16L12.5 12L18.5 8Z" fill="white" />
                           </svg>
                         </button>
                         {rewindLabel && (
@@ -1450,14 +1426,8 @@ const handleItemSelect = (itemId: string, itemType: string) => {
                             fill="none"
                             xmlns="http://www.w3.org/2000/svg"
                           >
-                            <path
-                              d="M5.5 8V16L11.5 12L5.5 8Z"
-                              fill="white"
-                            />
-                            <path
-                              d="M11.5 8V16L17.5 12L11.5 8Z"
-                              fill="white"
-                            />
+                            <path d="M5.5 8V16L11.5 12L5.5 8Z" fill="white" />
+                            <path d="M11.5 8V16L17.5 12L11.5 8Z" fill="white" />
                           </svg>
                         </button>
                         {forwardLabel && (
@@ -1471,9 +1441,10 @@ const handleItemSelect = (itemId: string, itemType: string) => {
                         <span>{formatTime(progress)}</span>
                         <span className="text-gray-400">/</span>
                         <span className="text-gray-400">
-                          {(currentContent.data as any)?.selectedVideoDetails?.duration ||
-                           videoContent.selectedVideoDetails?.duration || 
-                           formatTime(duration)}
+                          {(currentContent.data as any)?.selectedVideoDetails
+                            ?.duration ||
+                            videoContent.selectedVideoDetails?.duration ||
+                            formatTime(duration)}
                         </span>
                       </div>
                     </div>
@@ -1489,10 +1460,8 @@ const handleItemSelect = (itemId: string, itemType: string) => {
                           const rates = [
                             0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2,
                           ];
-                          const currentIndex =
-                            rates.indexOf(playbackRate);
-                          const nextIndex =
-                            (currentIndex + 1) % rates.length;
+                          const currentIndex = rates.indexOf(playbackRate);
+                          const nextIndex = (currentIndex + 1) % rates.length;
                           setPlaybackRate(rates[nextIndex]);
                         }}
                         type="button"
@@ -1505,9 +1474,7 @@ const handleItemSelect = (itemId: string, itemType: string) => {
                         <button
                           className="hover:text-gray-300 focus:outline-none"
                           onMouseEnter={() => setShowVolumeSlider(true)}
-                          onMouseLeave={() =>
-                            setShowVolumeSlider(false)
-                          }
+                          onMouseLeave={() => setShowVolumeSlider(false)}
                           type="button"
                         >
                           <Volume2 className="w-4 h-4" />
@@ -1516,12 +1483,8 @@ const handleItemSelect = (itemId: string, itemType: string) => {
                         {showVolumeSlider && (
                           <div
                             className="absolute bottom-8 -left-1 bg-gray-900 p-2 rounded shadow-lg z-10"
-                            onMouseEnter={() =>
-                              setShowVolumeSlider(true)
-                            }
-                            onMouseLeave={() =>
-                              setShowVolumeSlider(false)
-                            }
+                            onMouseEnter={() => setShowVolumeSlider(true)}
+                            onMouseLeave={() => setShowVolumeSlider(false)}
                           >
                             <div
                               className="h-20 w-1 bg-gray-700 rounded-full cursor-pointer"
@@ -1529,11 +1492,8 @@ const handleItemSelect = (itemId: string, itemType: string) => {
                                 const rect =
                                   e.currentTarget.getBoundingClientRect();
                                 const newVolume =
-                                  1 -
-                                  (e.clientY - rect.top) / rect.height;
-                                setVolume(
-                                  Math.max(0, Math.min(1, newVolume))
-                                );
+                                  1 - (e.clientY - rect.top) / rect.height;
+                                setVolume(Math.max(0, Math.min(1, newVolume)));
                               }}
                             >
                               <div

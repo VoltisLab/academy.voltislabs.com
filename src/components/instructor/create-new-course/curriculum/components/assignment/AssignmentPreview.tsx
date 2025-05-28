@@ -121,10 +121,11 @@ export default function AssignmentPreview({
   };
 
   return (
-    <div className="fixed top-0 left-0 w-full h-screen bg-white z-50">
-      <div className="h-full flex-1 overflow-y-auto relative px-2">
+    <div className=" w-full h-full relative ">
+      {/* <div className="h-full flex-1 overflow-y-auto "> */}
+      <main className="flex-1 overflow-y-auto h-full w-full pb-20 px-2">
         {assignmentStatus === "overview" && (
-          <div className="max-w-2xl">
+          <div className="max-w-3xl mx-auto pt-10">
             <h2 className="text-2xl font-bold mb-2 text-zinc-700">
               Assignment: <span>{assignmentData.assignmentTitle}</span>
             </h2>
@@ -149,7 +150,7 @@ export default function AssignmentPreview({
         {assignmentStatus === "summary/feedback" && (
           <div>
             <div className="bg-slate-50 h-48 flex items-center">
-              <div className="max-w-2xl mx-auto w-full space-y-2">
+              <div className="max-w-3xl mx-auto w-full space-y-2">
                 <h1 className="font-bold text-2xl">
                   Great job, you finished this assignment!
                 </h1>
@@ -171,7 +172,7 @@ export default function AssignmentPreview({
         {assignmentStatus === "assignment" && (
           <>
             {/* Nav */}
-            <div className="max-w-2xl mx-auto h-24 flex items-center sticky top-0 bg-white">
+            <div className="max-w-3xl mx-auto h-24 flex items-center sticky top-0 bg-white">
               <div className="flex items-center justify-evenly relative w-full z-10 ">
                 <div
                   onClick={() => handleStepNavigation("instructions")}
@@ -228,7 +229,7 @@ export default function AssignmentPreview({
             </div>
 
             {/* Content */}
-            <div className="max-w-2xl mx-auto py-6">
+            <div className="max-w-3xl mx-auto py-6">
               <div className="">
                 {step === "instructions" && (
                   <Instructions
@@ -268,70 +269,70 @@ export default function AssignmentPreview({
             </div>
           </>
         )}
+      </main>
 
-        {/* Controls */}
-        <div className="flex justify-between items-center mt-35 border-t-2 border-black px-4 h-14 sticky bottom-0 bg-white left-0">
-          {/* Left hand side */}
-          <div>
-            {isSubmitted && assignmentStatus === "overview" && (
+      {/* Controls */}
+      <div className="flex justify-between items-center border-t-2 border-black px-4 h-14 bg-white w-full absolute bottom-0 left-0">
+        {/* Left hand side */}
+        <div>
+          {isSubmitted && assignmentStatus === "overview" && (
+            <button
+              onClick={() => setAssignmentStatus("summary/feedback")}
+              className="px-3 py-1 border border-purple-600 text-purple-600 hover:bg-purple-100 transition cursor-pointer"
+            >
+              Go to summary
+            </button>
+          )}
+          {assignmentStatus === "summary/feedback" && (
+            <button
+              onClick={() => setAssignmentStatus("assignment")}
+              className="transition px-4 py-2 rounded hover:bg-neutral-200 cursor-pointer"
+            >
+              Back to assignment
+            </button>
+          )}
+        </div>
+
+        {/* Right hand side */}
+        <div>
+          {assignmentStatus === "overview" && (
+            <>
+              <button className="transition px-4 py-2 rounded hover:bg-neutral-200 cursor-pointer">
+                Skip Assignment
+              </button>
               <button
-                onClick={() => setAssignmentStatus("summary/feedback")}
-                className="px-3 py-1 border border-purple-600 text-purple-600 hover:bg-purple-100 transition cursor-pointer"
+                onClick={handleStartAssignment}
+                className="px-4 py-2 rounded bg-purple-600 text-white hover:bg-purple-700 cursor-pointer transition"
               >
-                Go to summary
+                Start assignment
               </button>
-            )}
-            {assignmentStatus === "summary/feedback" && (
+            </>
+          )}
+
+          {assignmentStatus === "assignment" && (
+            <>
+              {step !== "instructions" && (
+                <button
+                  onClick={handlePrevious}
+                  className="transition px-4 py-2 rounded hover:bg-neutral-200 cursor-pointer"
+                >
+                  Previous
+                </button>
+              )}
               <button
-                onClick={() => setAssignmentStatus("assignment")}
-                className="transition px-4 py-2 rounded hover:bg-neutral-200 cursor-pointer"
+                onClick={handleNext}
+                className="px-4 py-2 rounded bg-purple-600 text-white hover:bg-purple-700 cursor-pointer transition"
               >
-                Back to assignment
+                {step === "giveFeedback" ? "Go to feedback" : "Next"}
               </button>
-            )}
-          </div>
+            </>
+          )}
 
-          {/* Right hand side */}
-          <div>
-            {assignmentStatus === "overview" && (
-              <>
-                <button className="transition px-4 py-2 rounded hover:bg-neutral-200 cursor-pointer">
-                  Skip Assignment
-                </button>
-                <button
-                  onClick={handleStartAssignment}
-                  className="px-4 py-2 rounded bg-purple-600 text-white hover:bg-purple-700 cursor-pointer transition"
-                >
-                  Start assignment
-                </button>
-              </>
-            )}
-
-            {assignmentStatus === "assignment" && (
-              <>
-                {step !== "instructions" && (
-                  <button
-                    onClick={handlePrevious}
-                    className="transition px-4 py-2 rounded hover:bg-neutral-200 cursor-pointer"
-                  >
-                    Previous
-                  </button>
-                )}
-                <button
-                  onClick={handleNext}
-                  className="px-4 py-2 rounded bg-purple-600 text-white hover:bg-purple-700 cursor-pointer transition"
-                >
-                  {step === "giveFeedback" ? "Go to feedback" : "Next"}
-                </button>
-              </>
-            )}
-
-            {assignmentStatus === "summary/feedback" && (
-              <button className="px-4 py-2 rounded bg-purple-600 text-white hover:bg-purple-700 cursor-pointer transition">
-                Next lecture
-              </button>
-            )}
-          </div>
+          {assignmentStatus === "summary/feedback" && (
+            <button className="px-4 py-2 rounded bg-purple-600 text-white hover:bg-purple-700 cursor-pointer transition">
+              Next lecture
+            </button>
+          )}
         </div>
       </div>
     </div>

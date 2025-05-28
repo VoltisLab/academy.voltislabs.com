@@ -49,6 +49,7 @@ const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
       assignmentQuestions: [],
       isPublished: false,
     }),
+
     // Make sure isPublished is never undefined
     isPublished:
       initialData?.isPublished !== undefined ? initialData.isPublished : false,
