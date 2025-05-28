@@ -1158,7 +1158,7 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({ quiz, onClose }) => {
       )}
 
       {/* Footer controls */}
-      <div className="flex justify-between items-center mt-auto border-t-2 border-black px-4 h-14">
+      <div className="flex justify-between items-center mt-auto px-4 h-14">
         {quizStatus !== "Overview" && (
           <>
             <div className="">
