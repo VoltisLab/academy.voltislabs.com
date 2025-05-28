@@ -11,15 +11,22 @@ import { IoIosInformationCircleOutline } from "react-icons/io";
 
 export default function AssignmentPreview({
   assignmentData,
+  setAssignmentStatus,
+  assignmentStatus,
 }: {
   assignmentData: ExtendedLecture;
+  skipAssignment?: () => void;
+  startAssignment?: boolean;
+  setAssignmentStatus: React.Dispatch<
+    React.SetStateAction<
+      "overview" | "assignment" | "summary/feedback"
+    >
+  >
+  assignmentStatus?: "overview" | "assignment" | "summary/feedback";
 }) {
   const [step, setStep] = useState<
     "instructions" | "submissions" | "instructorExample" | "giveFeedback"
   >("instructions");
-  const [assignmentStatus, setAssignmentStatus] = useState<
-    "overview" | "assignment" | "summary/feedback"
-  >("overview");
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [submissionTime, setSubmissionTime] = useState("");
   const [answers, setAnswers] = useState<Record<string, string>>({});
@@ -31,11 +38,6 @@ export default function AssignmentPreview({
 
   // Calculate duration text
   const durationText = `${assignmentData.estimatedDuration} ${assignmentData.durationUnit}`;
-
-  // Handle start assignment
-  const handleStartAssignment = () => {
-    setAssignmentStatus("assignment");
-  };
 
   // Handle navigation to step
   const handleStepNavigation = (newStep: typeof step) => {
@@ -272,7 +274,7 @@ export default function AssignmentPreview({
       </main>
 
       {/* Controls */}
-      <div className="flex justify-between items-center border-t-2 border-black px-4 h-14 bg-white w-full absolute bottom-0 left-0">
+      <div className="flex justify-between items-center px-4 h-14 bg-white w-full absolute bottom-0 left-0">
         {/* Left hand side */}
         <div>
           {isSubmitted && assignmentStatus === "overview" && (
@@ -295,21 +297,7 @@ export default function AssignmentPreview({
 
         {/* Right hand side */}
         <div>
-          {assignmentStatus === "overview" && (
-            <>
-              <button className="transition px-4 py-2 rounded hover:bg-neutral-200 cursor-pointer">
-                Skip Assignment
-              </button>
-              <button
-                onClick={handleStartAssignment}
-                className="px-4 py-2 rounded bg-purple-600 text-white hover:bg-purple-700 cursor-pointer transition"
-              >
-                Start assignment
-              </button>
-            </>
-          )}
-
-          {assignmentStatus === "assignment" && (
+            {assignmentStatus === "assignment" && (
             <>
               {step !== "instructions" && (
                 <button
