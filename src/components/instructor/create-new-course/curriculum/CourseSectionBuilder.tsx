@@ -21,6 +21,7 @@ import NewFeatureAlert from "./NewFeatureAlert";
 import InfoBox from "./InfoBox";
 import CodingExerciseCreator from "./components/code/CodingExcerciseCreator";
 import AssignmentEditor from "./components/assignment/AssignmentEditor"; // Import the new component
+import { AssignmentProvider } from "@/context/AssignmentDataContext";
 
 interface CourseBuilderProps {
   onSaveNext?: () => void;
@@ -54,8 +55,12 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
   const [globalUploadedFiles, setGlobalUploadedFiles] = useState<
     Array<{ name: string; size: string; lectureId: string }>
   >([]);
-  const [globalSourceCodeFiles, setGlobalSourceCodeFiles] = useState<SourceCodeFile[]>([]);
-  const [globalExternalResources, setGlobalExternalResources] = useState<ExternalResourceItem[]>([]);
+  const [globalSourceCodeFiles, setGlobalSourceCodeFiles] = useState<
+    SourceCodeFile[]
+  >([]);
+  const [globalExternalResources, setGlobalExternalResources] = useState<
+    ExternalResourceItem[]
+  >([]);
 
   // Existing coding exercise modal state
   const [showCodingExerciseCreator, setShowCodingExerciseCreator] =
@@ -91,7 +96,7 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
     updateLectureWithUploadedContent,
     handleLectureDrop,
     savePracticeCode,
-    updateQuiz
+    updateQuiz,
   } = useSections([]);
 
   const contentSectionModal = useModal();
@@ -111,33 +116,44 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
   } = useCourseSectionsUpdate();
 
   // FIXED: Add resource management functions
-  const addUploadedFile = (file: { name: string; size: string; lectureId: string }) => {
-    setGlobalUploadedFiles(prev => [...prev, file]);
+  const addUploadedFile = (file: {
+    name: string;
+    size: string;
+    lectureId: string;
+  }) => {
+    setGlobalUploadedFiles((prev) => [...prev, file]);
   };
 
   const removeUploadedFile = (fileName: string, lectureId: string) => {
-    setGlobalUploadedFiles(prev => 
-      prev.filter(file => !(file.name === fileName && file.lectureId === lectureId))
+    setGlobalUploadedFiles((prev) =>
+      prev.filter(
+        (file) => !(file.name === fileName && file.lectureId === lectureId)
+      )
     );
   };
 
   const addSourceCodeFile = (file: SourceCodeFile) => {
-    setGlobalSourceCodeFiles(prev => [...prev, file]);
+    setGlobalSourceCodeFiles((prev) => [...prev, file]);
   };
 
   const removeSourceCodeFile = (fileName: string, lectureId: string) => {
-    setGlobalSourceCodeFiles(prev => 
-      prev.filter(file => !(file.name === fileName && file.lectureId === lectureId))
+    setGlobalSourceCodeFiles((prev) =>
+      prev.filter(
+        (file) => !(file.name === fileName && file.lectureId === lectureId)
+      )
     );
   };
 
   const addExternalResource = (resource: ExternalResourceItem) => {
-    setGlobalExternalResources(prev => [...prev, resource]);
+    setGlobalExternalResources((prev) => [...prev, resource]);
   };
 
   const removeExternalResource = (title: string, lectureId: string) => {
-    setGlobalExternalResources(prev => 
-      prev.filter(resource => !(resource.title === title && resource.lectureId === lectureId))
+    setGlobalExternalResources((prev) =>
+      prev.filter(
+        (resource) =>
+          !(resource.title === title && resource.lectureId === lectureId)
+      )
     );
   };
 
@@ -237,41 +253,24 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
   const handleSaveAssignment = (updatedAssignment: ExtendedLecture) => {
     if (!currentAssignment) return;
 
-    // Update the sections state with the assignment changes
-    setSections(
-      sections.map((section) => {
-        if (section.id === currentAssignment.sectionId) {
+    setSections((prevSections) =>
+      prevSections.map((section) => {
+        if (section.id === currentAssignment?.sectionId) {
           return {
             ...section,
             lectures: section.lectures.map((lecture) =>
               lecture.id === updatedAssignment.id
                 ? {
                     ...lecture,
-                    name:
-                      updatedAssignment.assignmentTitle ||
-                      updatedAssignment.name ||
-                      lecture.name,
-                    title:
-                      updatedAssignment.assignmentTitle ||
-                      updatedAssignment.title ||
-                      lecture.title,
+                    // Preserve existing fields
+                    // Update with assignment fields
+                    ...updatedAssignment,
+                    // Ensure basic fields are set
+                    name: updatedAssignment.assignmentTitle || lecture.name,
                     description:
                       updatedAssignment.assignmentDescription ||
                       lecture.description,
-                    // Add all the assignment-specific fields
-                    assignmentTitle: updatedAssignment.assignmentTitle,
-                    assignmentDescription:
-                      updatedAssignment.assignmentDescription,
-                    estimatedDuration: updatedAssignment.estimatedDuration,
-                    durationUnit: updatedAssignment.durationUnit,
-                    assignmentInstructions:
-                      updatedAssignment.assignmentInstructions,
-                    instructionalVideo: updatedAssignment.instructionalVideo,
-                    downloadableResource:
-                      updatedAssignment.downloadableResource,
-                    assignmentQuestions: updatedAssignment.assignmentQuestions,
-                    solutionVideo: updatedAssignment.solutionVideo,
-                    isPublished: updatedAssignment.isPublished,
+                    contentType: "assignment",
                   }
                 : lecture
             ),
@@ -281,11 +280,15 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
       })
     );
 
-    // Close the assignment editor
-    // setShowAssignmentEditor(false);
-    // setCurrentAssignment(null);
+    setCurrentAssignment((prev) =>
+      prev
+        ? {
+            ...prev,
+            data: updatedAssignment,
+          }
+        : null
+    );
 
-    // Show success message
     toast.success("Assignment updated successfully!");
   };
 
@@ -551,196 +554,203 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
   };
 
   // NEW: Check if assignment editor is open and render it
-  if (showAssignmentEditor && currentAssignment) {
-    return (
-      <AssignmentEditor
-        initialData={currentAssignment.data}
-        onClose={handleCloseAssignmentEditor}
-        onSave={handleSaveAssignment}
-      />
-    );
-  }
-
   return (
-    <div className="xl:max-w-5xl max-w-full mx-auto shadow-xl">
-      <div className="flex justify-between items-center mb-4 border-b px-10 border-gray-300 pb-5">
-        <h1 className="text-xl font-bold text-gray-800">Curriculum</h1>
-        <button className="px-3 py-1.5 bg-white text-[#6D28D2] border border-[#6D28D2] rounded-md text-sm font-medium hover:bg-indigo-50">
-          Bulk Uploader
-        </button>
-      </div>
-      <div className="p-4 pb-0 shadow-xl px-10">
-        <div className="mt-8">
-          {showInfoBox && <InfoBox onDismiss={() => setShowInfoBox(false)} />}
-
-          <div className="text-sm text-gray-700 mb-2">
-            Start putting together your course by creating sections, lectures
-            and practice (quizzes, coding exercises and assignments).
+    <AssignmentProvider initialData={currentAssignment?.data}>
+      {showAssignmentEditor && currentAssignment ? (
+        <AssignmentEditor
+          initialData={currentAssignment.data}
+          onClose={handleCloseAssignmentEditor}
+          onSave={handleSaveAssignment}
+        />
+      ) : (
+        <div className="xl:max-w-5xl max-w-full mx-auto shadow-xl">
+          <div className="flex justify-between items-center mb-4 border-b px-10 border-gray-300 pb-5">
+            <h1 className="text-xl font-bold text-gray-800">Curriculum</h1>
+            <button className="px-3 py-1.5 bg-white text-[#6D28D2] border border-[#6D28D2] rounded-md text-sm font-medium hover:bg-indigo-50">
+              Bulk Uploader
+            </button>
           </div>
-          <div className="text-sm text-gray-700 mb-4">
-            <span>
-              Start putting together your course by creating sections, lectures
-              and practice activities{" "}
-            </span>
-            <span className="text-[#6D28D2]">
-              (quizzes, coding exercises and assignments)
-            </span>
-            <span>. Use your </span>
-            <span className="text-[#6D28D2]">course outline</span>
-            <span>
-              {" "}
-              to structure your content and label your sections and lectures
-              clearly. If you're intending to offer your course for free, the
-              total length of video content must be less than 2 hours.
-            </span>
-          </div>
+          <div className="p-4 pb-0 shadow-xl px-10">
+            <div className="mt-8">
+              {showInfoBox && (
+                <InfoBox onDismiss={() => setShowInfoBox(false)} />
+              )}
 
-          {showNewFeatureAlert && (
-            <NewFeatureAlert onDismiss={() => setShowNewFeatureAlert(false)} />
-          )}
-          <button
-            onClick={() => setShowSectionForm(true)}
-            className="relative w-16 h-8 border-2 border-dashed border-gray-300 flex items-center justify-center hover:border-gray-400 hover:bg-gray-50 transition-all duration-200 rounded-r-[45px]"
-            aria-label="Add section"
-          >
-            <Plus className="h-6 w-6 text-gray-500" />
-          </button>
-        </div>
-        <div className="bg-white border border-gray-200 mb-6 mt-20">
-          {sections.length > 0 ? (
-            sections.map((section, index) => (
-              <SectionItem
-                key={section.id}
-                section={section}
-                index={index}
-                totalSections={sections.length}
-                editingSectionId={editingSectionId}
-                setEditingSectionId={setEditingSectionId}
-                updateSectionName={updateSectionName}
-                deleteSection={deleteSection}
-                moveSection={moveSection}
-                toggleSectionExpansion={toggleSectionExpansion}
-                isDragging={isDragging}
-                handleDragStart={handleDragStart}
-                handleDragEnd={handleDragEnd}
-                handleDragOver={(e) => handleDragOver(e, section.id)}
-                handleDragLeave={handleDragLeave}
-                handleDrop={(e) => handleDrop(e, section.id)}
-                addLecture={addLecture}
-                editingLectureId={editingLectureId}
-                setEditingLectureId={setEditingLectureId}
-                updateLectureName={updateLectureName}
-                deleteLecture={deleteLecture}
-                moveLecture={moveLecture}
-                toggleContentSection={contentSectionModal.toggle}
-                toggleAddResourceModal={toggleAddResourceModal}
-                toggleDescriptionEditor={toggleDescriptionEditor}
-                activeContentSection={contentSectionModal.activeSection}
-                addCurriculumItem={() => setShowContentTypeSelector(true)}
-                savePracticeCode={savePracticeCode}
-                draggedSection={draggedSection}
-                draggedLecture={draggedLecture}
-                dragTarget={dragTarget}
-                saveDescription={saveSectionDescription}
-                openCodingExerciseModal={handleOpenCodingExerciseModal}
-                // NEW: Pass the assignment editor handler
-                onEditAssignment={handleOpenAssignmentEditor}
-                allSections={getFormattedSectionsForPreview()}
-                updateQuiz={updateQuiz}
-                // FIXED: Pass global resource management functions
-                globalUploadedFiles={globalUploadedFiles}
-                globalSourceCodeFiles={globalSourceCodeFiles}
-                globalExternalResources={globalExternalResources}
-                addUploadedFile={addUploadedFile}
-                removeUploadedFile={removeUploadedFile}
-                addSourceCodeFile={addSourceCodeFile}
-                removeSourceCodeFile={removeSourceCodeFile}
-                addExternalResource={addExternalResource}
-                removeExternalResource={removeExternalResource}
-              />
-            ))
-          ) : (
-            <div className="flex justify-center border border-gray-400 bg-gray-100 items-center min-h-10 ">
-              {/* This is an empty state for when there are no sections */}
+              <div className="text-sm text-gray-700 mb-2">
+                Start putting together your course by creating sections,
+                lectures and practice (quizzes, coding exercises and
+                assignments).
+              </div>
+              <div className="text-sm text-gray-700 mb-4">
+                <span>
+                  Start putting together your course by creating sections,
+                  lectures and practice activities{" "}
+                </span>
+                <span className="text-[#6D28D2]">
+                  (quizzes, coding exercises and assignments)
+                </span>
+                <span>. Use your </span>
+                <span className="text-[#6D28D2]">course outline</span>
+                <span>
+                  {" "}
+                  to structure your content and label your sections and lectures
+                  clearly. If you're intending to offer your course for free,
+                  the total length of video content must be less than 2 hours.
+                </span>
+              </div>
+
+              {showNewFeatureAlert && (
+                <NewFeatureAlert
+                  onDismiss={() => setShowNewFeatureAlert(false)}
+                />
+              )}
+              <button
+                onClick={() => setShowSectionForm(true)}
+                className="relative w-16 h-8 border-2 border-dashed border-gray-300 flex items-center justify-center hover:border-gray-400 hover:bg-gray-50 transition-all duration-200 rounded-r-[45px]"
+                aria-label="Add section"
+              >
+                <Plus className="h-6 w-6 text-gray-500" />
+              </button>
             </div>
-          )}
+            <div className="bg-white border border-gray-200 mb-6 mt-20">
+              {sections.length > 0 ? (
+                sections.map((section, index) => (
+                  <SectionItem
+                    key={section.id}
+                    section={section}
+                    index={index}
+                    totalSections={sections.length}
+                    editingSectionId={editingSectionId}
+                    setEditingSectionId={setEditingSectionId}
+                    updateSectionName={updateSectionName}
+                    deleteSection={deleteSection}
+                    moveSection={moveSection}
+                    toggleSectionExpansion={toggleSectionExpansion}
+                    isDragging={isDragging}
+                    handleDragStart={handleDragStart}
+                    handleDragEnd={handleDragEnd}
+                    handleDragOver={(e) => handleDragOver(e, section.id)}
+                    handleDragLeave={handleDragLeave}
+                    handleDrop={(e) => handleDrop(e, section.id)}
+                    addLecture={addLecture}
+                    editingLectureId={editingLectureId}
+                    setEditingLectureId={setEditingLectureId}
+                    updateLectureName={updateLectureName}
+                    deleteLecture={deleteLecture}
+                    moveLecture={moveLecture}
+                    toggleContentSection={contentSectionModal.toggle}
+                    toggleAddResourceModal={toggleAddResourceModal}
+                    toggleDescriptionEditor={toggleDescriptionEditor}
+                    activeContentSection={contentSectionModal.activeSection}
+                    addCurriculumItem={() => setShowContentTypeSelector(true)}
+                    savePracticeCode={savePracticeCode}
+                    draggedSection={draggedSection}
+                    draggedLecture={draggedLecture}
+                    dragTarget={dragTarget}
+                    saveDescription={saveSectionDescription}
+                    openCodingExerciseModal={handleOpenCodingExerciseModal}
+                    // NEW: Pass the assignment editor handler
+                    onEditAssignment={handleOpenAssignmentEditor}
+                    allSections={getFormattedSectionsForPreview()}
+                    updateQuiz={updateQuiz}
+                    // FIXED: Pass global resource management functions
+                    globalUploadedFiles={globalUploadedFiles}
+                    globalSourceCodeFiles={globalSourceCodeFiles}
+                    globalExternalResources={globalExternalResources}
+                    addUploadedFile={addUploadedFile}
+                    removeUploadedFile={removeUploadedFile}
+                    addSourceCodeFile={addSourceCodeFile}
+                    removeSourceCodeFile={removeSourceCodeFile}
+                    addExternalResource={addExternalResource}
+                    removeExternalResource={removeExternalResource}
+                  />
+                ))
+              ) : (
+                <div className="flex justify-center border border-gray-400 bg-gray-100 items-center min-h-10 ">
+                  {/* This is an empty state for when there are no sections */}
+                </div>
+              )}
 
-          {showContentTypeSelector && (
-            <div className="absolute z-10 left-0 mt-2">
-              <ContentTypeSelector
-                sectionId={
-                  sections.length > 0 ? sections[sections.length - 1].id : ""
-                }
-                onSelect={addLecture}
-                onClose={() => setShowContentTypeSelector(false)}
-              />
+              {showContentTypeSelector && (
+                <div className="absolute z-10 left-0 mt-2">
+                  <ContentTypeSelector
+                    sectionId={
+                      sections.length > 0
+                        ? sections[sections.length - 1].id
+                        : ""
+                    }
+                    onSelect={addLecture}
+                    onClose={() => setShowContentTypeSelector(false)}
+                  />
+                </div>
+              )}
             </div>
-          )}
-        </div>
 
-        {showSectionForm && (
-          <div className="pb-20">
-            <SectionForm
-              onAddSection={handleAddSection}
-              onCancel={() => setShowSectionForm(false)}
-            />
+            {showSectionForm && (
+              <div className="pb-20">
+                <SectionForm
+                  onAddSection={handleAddSection}
+                  onCancel={() => setShowSectionForm(false)}
+                />
+              </div>
+            )}
+
+            {!showSectionForm && (
+              <button
+                onClick={() => setShowSectionForm(true)}
+                className="inline-flex items-center mb-8 px-3 py-1.5 border border-[#6D28D2] text-[#6D28D2] bg-white rounded text-sm font-bold hover:bg-indigo-50"
+              >
+                <Plus className="h-4 w-4 mr-1" color="#666" />
+                Section
+              </button>
+            )}
           </div>
-        )}
 
-        {!showSectionForm && (
-          <button
-            onClick={() => setShowSectionForm(true)}
-            className="inline-flex items-center mb-8 px-3 py-1.5 border border-[#6D28D2] text-[#6D28D2] bg-white rounded text-sm font-bold hover:bg-indigo-50"
-          >
-            <Plus className="h-4 w-4 mr-1" color="#666" />
-            Section
-          </button>
-        )}
-      </div>
+          {/* Hidden file input for file uploads */}
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={(e) => {
+              if (!contentSectionModal.activeSection) return;
 
-      {/* Hidden file input for file uploads */}
-      <input
-        type="file"
-        ref={fileInputRef}
-        onChange={(e) => {
-          if (!contentSectionModal.activeSection) return;
+              const contentType = fileInputRef.current
+                ?.getAttribute("accept")
+                ?.includes("video")
+                ? ContentType.VIDEO
+                : ContentType.FILE;
 
-          const contentType = fileInputRef.current
-            ?.getAttribute("accept")
-            ?.includes("video")
-            ? ContentType.VIDEO
-            : ContentType.FILE;
-
-          handleFileSelection(
-            e,
-            contentType,
-            contentSectionModal.activeSection.sectionId,
-            contentSectionModal.activeSection.lectureId
-          );
-        }}
-        className="hidden"
-      />
-
-      {/* Existing coding exercise modal */}
-      {showCodingExerciseCreator && currentCodingExercise && (
-        <div className="fixed inset-0 z-50 bg-black bg-opacity-50 overflow-auto">
-          <CodingExerciseCreator
-            lectureId={currentCodingExercise.lectureId}
-            onClose={() => {
-              setShowCodingExerciseCreator(false);
-              setCurrentCodingExercise(null);
+              handleFileSelection(
+                e,
+                contentType,
+                contentSectionModal.activeSection.sectionId,
+                contentSectionModal.activeSection.lectureId
+              );
             }}
-            onSave={handleSaveCodingExercise}
-            initialData={
-              findLecture(
-                currentCodingExercise.sectionId,
-                currentCodingExercise.lectureId
-              ) ?? undefined
-            }
+            className="hidden"
           />
+
+          {/* Existing coding exercise modal */}
+          {showCodingExerciseCreator && currentCodingExercise && (
+            <div className="fixed inset-0 z-50 bg-black bg-opacity-50 overflow-auto">
+              <CodingExerciseCreator
+                lectureId={currentCodingExercise.lectureId}
+                onClose={() => {
+                  setShowCodingExerciseCreator(false);
+                  setCurrentCodingExercise(null);
+                }}
+                onSave={handleSaveCodingExercise}
+                initialData={
+                  findLecture(
+                    currentCodingExercise.sectionId,
+                    currentCodingExercise.lectureId
+                  ) ?? undefined
+                }
+              />
+            </div>
+          )}
         </div>
       )}
-    </div>
+    </AssignmentProvider>
   );
 };
 

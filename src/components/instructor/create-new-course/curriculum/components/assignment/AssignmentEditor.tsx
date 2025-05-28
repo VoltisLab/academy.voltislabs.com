@@ -7,14 +7,7 @@ import InstructionsTab from "./InstructionsTab";
 import toast from "react-hot-toast";
 import { ExtendedLecture } from "@/lib/types";
 import AssignmentPreview from "./AssignmentPreview";
-
-// Types
-interface AssignmentQuestion {
-  id: string;
-  content: string;
-  order: number;
-  solution?: string; // Optional solution field for answers
-}
+import { useAssignment } from "@/context/AssignmentDataContext";
 
 interface AssignmentEditorProps {
   initialData?: ExtendedLecture;
@@ -30,30 +23,7 @@ const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState("basic-info");
 
-  const [assignmentData, setAssignmentData] = useState<ExtendedLecture>({
-    ...(initialData || {
-      id: Date.now().toString(),
-      name: "",
-      description: "",
-      captions: "",
-      lectureNotes: "",
-      attachedFiles: [],
-      videos: [],
-      contentType: "assignment",
-      isExpanded: false,
-      assignmentTitle: "",
-      assignmentDescription: "",
-      estimatedDuration: 0,
-      durationUnit: "minutes",
-      assignmentInstructions: "",
-      assignmentQuestions: [],
-      isPublished: false,
-    }),
-
-    // Make sure isPublished is never undefined
-    isPublished:
-      initialData?.isPublished !== undefined ? initialData.isPublished : false,
-  });
+  const { assignmentData, setAssignmentData } = useAssignment();
 
   const [showPublishModal, setShowPublishModal] = useState(false);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
@@ -85,7 +55,7 @@ const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
     } else {
       // Check all questions have answers
       const unansweredQuestions = assignmentData.assignmentQuestions.filter(
-        (q) => !q.solution?.trim()
+        (q: any) => !q.solution?.trim()
       );
       if (unansweredQuestions.length > 0) {
         errors.push("answers");
@@ -115,6 +85,7 @@ const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
     }
 
     const publishedData = { ...assignmentData, isPublished: true };
+    console.log("Editor saving:", publishedData);
     onSave(publishedData);
     setShowPublishModal(false);
     setPublishSuccess(true);
@@ -286,7 +257,7 @@ const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
   );
 
   const handleDataChange = (field: string, value: any) => {
-    setAssignmentData((prev) => ({
+    setAssignmentData((prev: any) => ({
       ...prev,
       [field]: value,
     }));
