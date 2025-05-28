@@ -135,16 +135,6 @@ const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
   const detectLectureContentType = (lecture: Lecture): string => {
     const enhancedLecture = lecture as EnhancedLecture;
     
-    console.log(`🔍 Detecting content type for lecture ${lecture.id}:`, {
-      lectureName: lecture.name,
-      contentType: lecture.contentType,
-      actualContentType: enhancedLecture.actualContentType,
-      hasVideoContent: enhancedLecture.hasVideoContent,
-      hasArticleContent: enhancedLecture.hasArticleContent,
-      videoDetails: !!enhancedLecture.videoDetails,
-      articleContent: !!enhancedLecture.articleContent?.text
-    });
-    
     // Priority 1: Check if it's explicitly a quiz
     if (lecture.contentType === 'quiz' || enhancedLecture.actualContentType === 'quiz') {
       return 'quiz';
@@ -201,12 +191,6 @@ const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
       externalResources: ExternalResourceItem[];
     }> = {};
 
-    console.log('🗂️ Creating resource map from props:', {
-      uploadedFilesCount: uploadedFiles.length,
-      sourceCodeFilesCount: sourceCodeFiles.length,
-      externalResourcesCount: externalResources.length
-    });
-
     // Process uploaded files
     uploadedFiles.forEach(file => {
       if (file.lectureId) {
@@ -255,26 +239,13 @@ const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
       }
     });
 
-    console.log('📦 Resource map created:', {
-      totalLecturesWithResources: Object.keys(resourcesByLectureId).length,
-      resourcesByLectureId
-    });
-
     return resourcesByLectureId;
   };
 
   // Update the useEffect that processes sections
   useEffect(() => {
-    console.log("StudentPreviewSidebar - Processing sections:", {
-      sectionsCount: sections.length,
-      currentLectureId,
-      totalUploadedFiles: uploadedFiles.length,
-      totalSourceCodeFiles: sourceCodeFiles.length,
-      totalExternalResources: externalResources.length
-    });
     
     if (!sections || sections.length === 0) {
-      console.log("StudentPreviewSidebar - No sections to process");
       setProcessedSections([]);
       return;
     }
@@ -291,12 +262,6 @@ const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
 
     // Process sections to format for sidebar display
     const formatted = sections.map((section, sectionIndex) => {
-      console.log(`Processing section ${sectionIndex}:`, {
-        sectionId: section.id,
-        sectionName: section.name,
-        lecturesCount: section.lectures?.length || 0
-      });
-
       const contentItems: ContentItem[] = [];
       
       // Process lectures
@@ -315,18 +280,6 @@ const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
           const hasResources = lectureResources.uploadedFiles.length > 0 || 
                               lectureResources.sourceCodeFiles.length > 0 || 
                               lectureResources.externalResources.length > 0;
-
-          console.log(`🎯 Processing lecture ${lecture.id}:`, {
-            lectureId: lecture.id,
-            lectureName: lecture.name,
-            detectedContentType,
-            hasResources,
-            resourceCounts: {
-              uploadedFiles: lectureResources.uploadedFiles.length,
-              sourceCodeFiles: lectureResources.sourceCodeFiles.length,
-              externalResources: lectureResources.externalResources.length
-            }
-          });
           
           const contentItem: ContentItem = {
             id: lecture.id,
@@ -434,16 +387,6 @@ const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
         totalItems
       };
 
-      console.log(`✅ Processed section ${section.id} summary:`, {
-        name: processedSection.name,
-        totalItems: processedSection.contentItems.length,
-        itemsWithResources: processedSection.contentItems.filter(item => item.hasResources).length,
-        contentTypes: processedSection.contentItems.reduce((acc, item) => {
-          acc[item.actualContentType || item.type] = (acc[item.actualContentType || item.type] || 0) + 1;
-          return acc;
-        }, {} as Record<string, number>)
-      });
-      
       return processedSection;
     });
     
@@ -481,16 +424,6 @@ const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
     if (selectedItem) {
       // FIXED: Use actualContentType for accurate content type
       const contentType = selectedItem.actualContentType || selectedItem.type;
-      
-      console.log('🎯 Selected item:', {
-        itemId,
-        itemName: selectedItem.name,
-        originalType: selectedItem.type,
-        actualContentType: selectedItem.actualContentType,
-        finalContentType: contentType,
-        hasVideoContent: selectedItem.hasVideoContent,
-        hasArticleContent: selectedItem.hasArticleContent
-      });
       
       if (onSelectItem) {
         onSelectItem(itemId, contentType);
@@ -553,15 +486,6 @@ const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
     if (totalResourceCount === 0) {
       return null;
     }
-    
-    console.log(`🔍 ResourcesDropdown for ${item.id}:`, {
-      itemName: item.name,
-      totalResourceCount,
-      hasUploadedFiles,
-      hasSourceCode,
-      hasExternalResources,
-      resources
-    });
     
     return (
       <div className="relative" onClick={(e) => e.stopPropagation()}>
@@ -634,7 +558,7 @@ const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
   };
 
   return (
-    <div className="w-[20vw] bg-white border-l border-gray-200 flex flex-col fixed top-0 right-0 h-full text-gray-700">
+    <div className="w-[25.5vw] bg-white border-l border-gray-200 flex flex-col fixed top-0 right-0 h-full text-gray-700">
       {/* Header */}
       <div className="flex justify-between items-center border-b border-gray-200 px-4 py-2">
         <h2 className="font-bold text-gray-700 text-sm">Course content</h2>
