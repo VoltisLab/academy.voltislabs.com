@@ -48,8 +48,12 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
   const [globalUploadedFiles, setGlobalUploadedFiles] = useState<
     Array<{ name: string; size: string; lectureId: string }>
   >([]);
-  const [globalSourceCodeFiles, setGlobalSourceCodeFiles] = useState<SourceCodeFile[]>([]);
-  const [globalExternalResources, setGlobalExternalResources] = useState<ExternalResourceItem[]>([]);
+  const [globalSourceCodeFiles, setGlobalSourceCodeFiles] = useState<
+    SourceCodeFile[]
+  >([]);
+  const [globalExternalResources, setGlobalExternalResources] = useState<
+    ExternalResourceItem[]
+  >([]);
 
   // Existing coding exercise modal state
   const [showCodingExerciseCreator, setShowCodingExerciseCreator] =
@@ -85,7 +89,7 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
     updateLectureWithUploadedContent,
     handleLectureDrop,
     savePracticeCode,
-    updateQuiz
+    updateQuiz,
   } = useSections([]);
 
   const contentSectionModal = useModal();
@@ -105,33 +109,44 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
   } = useCourseSectionsUpdate();
 
   // FIXED: Add resource management functions
-  const addUploadedFile = (file: { name: string; size: string; lectureId: string }) => {
-    setGlobalUploadedFiles(prev => [...prev, file]);
+  const addUploadedFile = (file: {
+    name: string;
+    size: string;
+    lectureId: string;
+  }) => {
+    setGlobalUploadedFiles((prev) => [...prev, file]);
   };
 
   const removeUploadedFile = (fileName: string, lectureId: string) => {
-    setGlobalUploadedFiles(prev => 
-      prev.filter(file => !(file.name === fileName && file.lectureId === lectureId))
+    setGlobalUploadedFiles((prev) =>
+      prev.filter(
+        (file) => !(file.name === fileName && file.lectureId === lectureId)
+      )
     );
   };
 
   const addSourceCodeFile = (file: SourceCodeFile) => {
-    setGlobalSourceCodeFiles(prev => [...prev, file]);
+    setGlobalSourceCodeFiles((prev) => [...prev, file]);
   };
 
   const removeSourceCodeFile = (fileName: string, lectureId: string) => {
-    setGlobalSourceCodeFiles(prev => 
-      prev.filter(file => !(file.name === fileName && file.lectureId === lectureId))
+    setGlobalSourceCodeFiles((prev) =>
+      prev.filter(
+        (file) => !(file.name === fileName && file.lectureId === lectureId)
+      )
     );
   };
 
   const addExternalResource = (resource: ExternalResourceItem) => {
-    setGlobalExternalResources(prev => [...prev, resource]);
+    setGlobalExternalResources((prev) => [...prev, resource]);
   };
 
   const removeExternalResource = (title: string, lectureId: string) => {
-    setGlobalExternalResources(prev => 
-      prev.filter(resource => !(resource.title === title && resource.lectureId === lectureId))
+    setGlobalExternalResources((prev) =>
+      prev.filter(
+        (resource) =>
+          !(resource.title === title && resource.lectureId === lectureId)
+      )
     );
   };
 

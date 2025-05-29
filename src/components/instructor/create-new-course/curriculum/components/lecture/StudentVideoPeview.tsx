@@ -41,8 +41,8 @@ import ReportAbuseModal from "./modals/ReportAbuseModal";
 import QuizPreview from "../quiz/QuizPreview";
 import AssignmentPreview from "../assignment/AssignmentPreview";
 import VideoControls from "./VideoControls";
-import LearningReminderModal from './modals/LearningReminderModal';
-import BottomTabsContainer from './BottomTabsContainer';
+import LearningReminderModal from "./modals/LearningReminderModal";
+import BottomTabsContainer from "./BottomTabsContainer";
 
 // Add QuizData interface
 interface QuizData {
@@ -153,9 +153,11 @@ const StudentVideoPreview = ({
   const [showLearningModal, setShowLearningModal] = useState<boolean>(false);
   const [activeItemId, setActiveItemId] = useState<string>(lecture.id);
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
-  const [showSettingsDropdown, setShowSettingsDropdown] = useState<boolean>(false);
+  const [showSettingsDropdown, setShowSettingsDropdown] =
+    useState<boolean>(false);
   const [showReportModal, setShowReportModal] = useState<boolean>(false);
-  const [isContentFullscreen, setIsContentFullscreen] = useState<boolean>(false);
+  const [isContentFullscreen, setIsContentFullscreen] =
+    useState<boolean>(false);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const [selectedItemData, setSelectedItemData] = useState<SelectedItemType | null>(lecture);
   const [showQuizKeyboardShortcuts, setShowQuizKeyboardShortcuts] = useState<boolean>(false);
@@ -171,76 +173,87 @@ const StudentVideoPreview = ({
   const [isAddingNote, setIsAddingNote] = useState<boolean>(false);
   const [currentNoteContent, setCurrentNoteContent] = useState<string>("");
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
-  const [allLecturesDropdownOpen, setAllLecturesDropdownOpen] = useState<boolean>(false);
+  const [allLecturesDropdownOpen, setAllLecturesDropdownOpen] =
+    useState<boolean>(false);
   const [sortByDropdownOpen, setSortByDropdownOpen] = useState<boolean>(false);
-  const [selectedLectureFilter, setSelectedLectureFilter] = useState<string>("All lectures");
-  const [selectedSortOption, setSelectedSortOption] = useState<string>("Sort by most recent");
+  const [selectedLectureFilter, setSelectedLectureFilter] =
+    useState<string>("All lectures");
+  const [selectedSortOption, setSelectedSortOption] = useState<string>(
+    "Sort by most recent"
+  );
   const [startAssignment, setStartAssignment] = useState<boolean>(false);
   const [assignmentStatus, setAssignmentStatus] = useState<
-      "overview" | "assignment" | "summary/feedback"
-    >("overview");
+    "overview" | "assignment" | "summary/feedback"
+  >("overview");
 
-   const handleStartAssignment = () => {
+  const handleStartAssignment = () => {
     setAssignmentStatus("assignment");
   };
-  
+
   const playerRef = useRef<ReactPlayer>(null);
   const playerContainerRef = useRef<HTMLDivElement>(null);
   const mainContentRef = useRef<HTMLDivElement>(null);
 
   // Content type detection
   const detectContentType = (
-    lectureId: string, 
+    lectureId: string,
     lectureData?: Lecture,
     hasVideoContent?: boolean,
     hasArticleContent?: boolean
   ): string => {
     if (lectureId === lecture.id) {
-      const hasRealArticleContent = !!(articleContent && articleContent.text && articleContent.text.trim() !== '');
-      const hasRealVideoContent = !!(videoContent.selectedVideoDetails && videoContent.selectedVideoDetails.url);
+      const hasRealArticleContent = !!(
+        articleContent &&
+        articleContent.text &&
+        articleContent.text.trim() !== ""
+      );
+      const hasRealVideoContent = !!(
+        videoContent.selectedVideoDetails &&
+        videoContent.selectedVideoDetails.url
+      );
 
       if (hasRealArticleContent && hasRealVideoContent) {
-        return lecture.contentType === 'video' ? 'video' : 'article';
+        return lecture.contentType === "video" ? "video" : "article";
       }
-      
+
       if (hasRealArticleContent && !hasRealVideoContent) {
-        return 'article';
+        return "article";
       }
-      
+
       if (hasRealVideoContent && !hasRealArticleContent) {
-        return 'video';
+        return "video";
       }
-      
+
       if (lecture.contentType) {
         return lecture.contentType;
       }
 
-      return 'video';
+      return "video";
     }
 
     if (lectureData) {
       const enhancedLecture = lectureData as EnhancedLecture;
-      
+
       if (enhancedLecture.actualContentType) {
         return enhancedLecture.actualContentType;
       }
 
       if (enhancedLecture.hasArticleContent) {
-        return 'article';
+        return "article";
       }
-      
+
       if (enhancedLecture.hasVideoContent) {
-        return 'video';
+        return "video";
       }
 
       if (lectureData.contentType) {
         return lectureData.contentType;
       }
 
-      return 'video';
+      return "video";
     }
 
-    return 'video';
+    return "video";
   };
 
   const determineInitialContentType = (): string => {
@@ -248,7 +261,9 @@ const StudentVideoPreview = ({
     return detectedType;
   };
 
-  const [activeItemType, setActiveItemType] = useState<string>(determineInitialContentType());
+  const [activeItemType, setActiveItemType] = useState<string>(
+    determineInitialContentType()
+  );
 
   // Process sections
   const processedSections = React.useMemo(() => {
@@ -258,16 +273,23 @@ const StudentVideoPreview = ({
       return section.sections;
     }
 
-    if (section.lectures || section.quizzes || section.assignments || section.codingExercises) {
-      return [{
-        id: section.id,
-        name: section.name,
-        lectures: section.lectures || [],
-        quizzes: section.quizzes || [],
-        assignments: section.assignments || [],
-        codingExercises: section.codingExercises || [],
-        isExpanded: true
-      }];
+    if (
+      section.lectures ||
+      section.quizzes ||
+      section.assignments ||
+      section.codingExercises
+    ) {
+      return [
+        {
+          id: section.id,
+          name: section.name,
+          lectures: section.lectures || [],
+          quizzes: section.quizzes || [],
+          assignments: section.assignments || [],
+          codingExercises: section.codingExercises || [],
+          isExpanded: true,
+        },
+      ];
     }
 
     return [];
@@ -275,49 +297,73 @@ const StudentVideoPreview = ({
 
   // Get all items in order for navigation
   const getAllItemsInOrder = () => {
-    const items: { id: string; type: string; sectionId: string; item: any }[] = [];
-    
-    processedSections.forEach(section => {
-      section.lectures?.forEach(lecture => {
-        items.push({ id: lecture.id, type: 'lecture', sectionId: section.id, item: lecture });
+    const items: { id: string; type: string; sectionId: string; item: any }[] =
+      [];
+
+    processedSections.forEach((section) => {
+      section.lectures?.forEach((lecture) => {
+        items.push({
+          id: lecture.id,
+          type: "lecture",
+          sectionId: section.id,
+          item: lecture,
+        });
       });
-      section.quizzes?.forEach(quiz => {
-        items.push({ id: quiz.id, type: 'quiz', sectionId: section.id, item: quiz });
+      section.quizzes?.forEach((quiz) => {
+        items.push({
+          id: quiz.id,
+          type: "quiz",
+          sectionId: section.id,
+          item: quiz,
+        });
       });
-      section.assignments?.forEach(assignment => {
-        items.push({ id: assignment.id, type: 'assignment', sectionId: section.id, item: assignment });
+      section.assignments?.forEach((assignment) => {
+        items.push({
+          id: assignment.id,
+          type: "assignment",
+          sectionId: section.id,
+          item: assignment,
+        });
       });
-      section.codingExercises?.forEach(exercise => {
-        items.push({ id: exercise.id, type: 'coding-exercise', sectionId: section.id, item: exercise });
+      section.codingExercises?.forEach((exercise) => {
+        items.push({
+          id: exercise.id,
+          type: "coding-exercise",
+          sectionId: section.id,
+          item: exercise,
+        });
       });
     });
-    
+
     return items;
   };
 
   // Check if current item is last in section
   const isLastItemInSection = () => {
     const allItems = getAllItemsInOrder();
-    const currentIndex = allItems.findIndex(item => item.id === activeItemId);
-    
+    const currentIndex = allItems.findIndex((item) => item.id === activeItemId);
+
     if (currentIndex === -1) return false;
-    
+
     const currentItem = allItems[currentIndex];
-    const sectionItems = allItems.filter(item => item.sectionId === currentItem.sectionId);
+    const sectionItems = allItems.filter(
+      (item) => item.sectionId === currentItem.sectionId
+    );
     const lastSectionItem = sectionItems[sectionItems.length - 1];
-    
+
     return currentItem.id === lastSectionItem.id;
   };
 
   // Navigate to next/previous item
-  const navigateToItem = (direction: 'next' | 'prev') => {
+  const navigateToItem = (direction: "next" | "prev") => {
     const allItems = getAllItemsInOrder();
-    const currentIndex = allItems.findIndex(item => item.id === activeItemId);
-    
+    const currentIndex = allItems.findIndex((item) => item.id === activeItemId);
+
     if (currentIndex === -1) return;
-    
-    let targetIndex = direction === 'next' ? currentIndex + 1 : currentIndex - 1;
-    
+
+    let targetIndex =
+      direction === "next" ? currentIndex + 1 : currentIndex - 1;
+
     if (targetIndex >= 0 && targetIndex < allItems.length) {
       const targetItem = allItems[targetIndex];
       handleItemSelect(targetItem.id, targetItem.type);
@@ -328,16 +374,17 @@ const StudentVideoPreview = ({
   // Go to first item of next section
   const goToNextSection = () => {
     const allItems = getAllItemsInOrder();
-    const currentIndex = allItems.findIndex(item => item.id === activeItemId);
-    
+    const currentIndex = allItems.findIndex((item) => item.id === activeItemId);
+
     if (currentIndex === -1) return;
-    
+
     const currentItem = allItems[currentIndex];
-    const nextSectionItems = allItems.filter(item => 
-      item.sectionId !== currentItem.sectionId && 
-      allItems.indexOf(item) > currentIndex
+    const nextSectionItems = allItems.filter(
+      (item) =>
+        item.sectionId !== currentItem.sectionId &&
+        allItems.indexOf(item) > currentIndex
     );
-    
+
     if (nextSectionItems.length > 0) {
       const firstItemInNextSection = nextSectionItems[0];
       handleItemSelect(firstItemInNextSection.id, firstItemInNextSection.type);
@@ -347,20 +394,22 @@ const StudentVideoPreview = ({
   // Handle item selection
   const handleItemSelect = (itemId: string, itemType: string) => {
     console.log(`🎯 Selected item: ${itemId}, type: ${itemType}`);
-    
+
     let selectedItem: SelectedItemType | undefined;
     let selectedEnhancedLecture: EnhancedLecture | undefined;
 
     for (const sectionData of processedSections) {
       if (sectionData.lectures) {
-        const foundLecture = sectionData.lectures.find((l: Lecture) => l.id === itemId);
+        const foundLecture = sectionData.lectures.find(
+          (l: Lecture) => l.id === itemId
+        );
         if (foundLecture) {
           selectedItem = foundLecture;
           selectedEnhancedLecture = foundLecture as EnhancedLecture;
           break;
         }
       }
-      
+
       if (sectionData.quizzes) {
         const foundQuiz = sectionData.quizzes.find((q: any) => q.id === itemId);
         if (foundQuiz) {
@@ -368,17 +417,21 @@ const StudentVideoPreview = ({
           break;
         }
       }
-      
+
       if (sectionData.assignments) {
-        const foundAssignment = sectionData.assignments.find((a: any) => a.id === itemId);
+        const foundAssignment = sectionData.assignments.find(
+          (a: any) => a.id === itemId
+        );
         if (foundAssignment) {
           selectedItem = foundAssignment;
           break;
         }
       }
-      
+
       if (sectionData.codingExercises) {
-        const foundExercise = sectionData.codingExercises.find((e: any) => e.id === itemId);
+        const foundExercise = sectionData.codingExercises.find(
+          (e: any) => e.id === itemId
+        );
         if (foundExercise) {
           selectedItem = foundExercise;
           break;
@@ -432,7 +485,9 @@ const StudentVideoPreview = ({
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen().catch((err) => {
-        console.error(`Error attempting to enable full-screen mode: ${err.message}`);
+        console.error(
+          `Error attempting to enable full-screen mode: ${err.message}`
+        );
       });
       setIsFullscreen(true);
     } else {
@@ -505,29 +560,35 @@ const StudentVideoPreview = ({
   // Get current content
   const getCurrentContent = () => {
     if (activeItemType === "quiz") {
-      const currentQuizData = selectedItemData && 'questions' in selectedItemData 
-        ? selectedItemData as QuizData 
-        : quizData;
+      const currentQuizData =
+        selectedItemData && "questions" in selectedItemData
+          ? (selectedItemData as QuizData)
+          : quizData;
       return { type: "quiz", data: currentQuizData };
     } else if (activeItemType === "article") {
       let currentArticleData: ArticleContent;
-      
+
       if (activeItemId === lecture.id) {
         currentArticleData = articleContent || { text: "" };
       } else {
         const enhancedSelectedItem = selectedItemData as EnhancedLecture;
-        
+
         if (enhancedSelectedItem?.articleContent?.text) {
           currentArticleData = enhancedSelectedItem.articleContent;
-        } else if (enhancedSelectedItem?.description && enhancedSelectedItem.description.includes('<')) {
+        } else if (
+          enhancedSelectedItem?.description &&
+          enhancedSelectedItem.description.includes("<")
+        ) {
           currentArticleData = { text: enhancedSelectedItem.description };
         } else {
-          currentArticleData = { 
-            text: `<h1>${selectedItemData?.name || 'Article'}</h1><p>Article content for this lecture.</p>` 
+          currentArticleData = {
+            text: `<h1>${
+              selectedItemData?.name || "Article"
+            }</h1><p>Article content for this lecture.</p>`,
           };
         }
       }
-      
+
       return { type: "article", data: currentArticleData };
     } else if (activeItemType === "assignment") {
       return { type: "assignment", data: selectedItemData };
@@ -535,25 +596,25 @@ const StudentVideoPreview = ({
       return { type: "coding-exercise", data: selectedItemData };
     } else {
       let currentVideoData;
-      
+
       if (activeItemId === lecture.id) {
         currentVideoData = videoContent;
       } else {
         const enhancedSelectedItem = selectedItemData as EnhancedLecture;
-        
+
         if (enhancedSelectedItem?.videoDetails) {
-          currentVideoData = { 
+          currentVideoData = {
             ...videoContent,
-            selectedVideoDetails: enhancedSelectedItem.videoDetails 
+            selectedVideoDetails: enhancedSelectedItem.videoDetails,
           };
         } else {
           currentVideoData = {
             ...videoContent,
-            selectedVideoDetails: null
+            selectedVideoDetails: null,
           };
         }
       }
-      
+
       return { type: "video", data: currentVideoData };
     }
   };
@@ -638,7 +699,11 @@ const StudentVideoPreview = ({
   // Effects
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (allLecturesDropdownOpen || sortByDropdownOpen || showSettingsDropdown) {
+      if (
+        allLecturesDropdownOpen ||
+        sortByDropdownOpen ||
+        showSettingsDropdown
+      ) {
         setAllLecturesDropdownOpen(false);
         setSortByDropdownOpen(false);
         setShowSettingsDropdown(false);
@@ -709,13 +774,18 @@ const StudentVideoPreview = ({
 
     return (
       <div className="bg-white border-t border-gray-200 flex items-center px-4 py-2 relative">
-        <div className="flex items-center justify-between w-full" style={{ maxWidth: isExpanded ? '100%' : '75.5vw' }}>
+        <div
+          className="flex items-center justify-between w-full"
+          style={{ maxWidth: isExpanded ? "100%" : "75.5vw" }}
+        >
           {/* Left side content */}
           <div className="flex items-center">
             {activeItemType === "assignment" && (
               <button
                 className="bg-white border border-gray-300 text-gray-700 px-4 py-1.5 rounded text-sm font-medium hover:bg-gray-50"
-                onClick={() => {/* Handle go to summary */}}
+                onClick={() => {
+                  /* Handle go to summary */
+                }}
                 type="button"
               >
                 Go to summary
@@ -835,7 +905,9 @@ const StudentVideoPreview = ({
               className="p-2 text-gray-600 hover:text-gray-800 focus:outline-none"
               onClick={handleContentFullscreen}
               type="button"
-              aria-label={isContentFullscreen ? "Exit fullscreen" : "Fullscreen"}
+              aria-label={
+                isContentFullscreen ? "Exit fullscreen" : "Fullscreen"
+              }
             >
               {isContentFullscreen ? (
                 <Minimize className="w-5 h-5" />
@@ -888,9 +960,9 @@ const StudentVideoPreview = ({
         <div
           ref={mainContentRef}
           className="flex flex-col overflow-y-auto"
-          style={{ 
+          style={{
             width: isExpanded ? "100%" : "75.5vw",
-            transition: "width 0.3s ease-in-out"
+            transition: "width 0.3s ease-in-out",
           }}
         >
           {/* Content area */}
@@ -1033,7 +1105,7 @@ const StudentVideoPreview = ({
               <div className="w-full h-full">
                 <AssignmentPreview
                   assignmentData={currentContent.data as ExtendedLecture}
-                  skipAssignment={() => navigateToItem('next')}
+                  skipAssignment={() => navigateToItem("next")}
                   startAssignment={startAssignment}
                   setAssignmentStatus={setAssignmentStatus}
                   assignmentStatus={assignmentStatus}
@@ -1048,70 +1120,81 @@ const StudentVideoPreview = ({
                   <div
                     className="article-content prose max-w-none"
                     dangerouslySetInnerHTML={{
-                      __html: (currentContent.data as ArticleContent)?.text || "",
+                      __html:
+                        (currentContent.data as ArticleContent)?.text || "",
                     }}
                   />
 
                   {/* Resources section */}
-                  {(uploadedFiles.filter(f => f.lectureId === activeItemId).length > 0 ||
-                    sourceCodeFiles.filter(f => f.lectureId === activeItemId).length > 0 ||
-                    externalResources.filter(r => r.lectureId === activeItemId).length > 0) && (
+                  {(uploadedFiles.filter((f) => f.lectureId === activeItemId)
+                    .length > 0 ||
+                    sourceCodeFiles.filter((f) => f.lectureId === activeItemId)
+                      .length > 0 ||
+                    externalResources.filter(
+                      (r) => r.lectureId === activeItemId
+                    ).length > 0) && (
                     <div className="pt-6">
                       <h2 className="text-xl font-semibold mb-4">
                         Resources for this {activeItemType}
                       </h2>
 
                       <div className="space-y-3">
-                        {uploadedFiles.filter(f => f.lectureId === activeItemId).map((file, index) => (
-                          <div
-                            key={`uploaded-${index}`}
-                            className="flex items-center"
-                          >
-                            <FileDown className="w-5 h-5 text-gray-600 mr-2" />
-                            <a
-                              href="#"
-                              className="text-blue-600 hover:underline font-medium"
-                              onClick={(e) => e.preventDefault()}
+                        {uploadedFiles
+                          .filter((f) => f.lectureId === activeItemId)
+                          .map((file, index) => (
+                            <div
+                              key={`uploaded-${index}`}
+                              className="flex items-center"
                             >
-                              {file.name}
-                            </a>
-                          </div>
-                        ))}
+                              <FileDown className="w-5 h-5 text-gray-600 mr-2" />
+                              <a
+                                href="#"
+                                className="text-blue-600 hover:underline font-medium"
+                                onClick={(e) => e.preventDefault()}
+                              >
+                                {file.name}
+                              </a>
+                            </div>
+                          ))}
 
-                        {sourceCodeFiles.filter(f => f.lectureId === activeItemId).map((file, index) => (
-                          <div
-                            key={`code-${index}`}
-                            className="flex items-center"
-                          >
-                            <Code className="w-5 h-5 text-gray-600 mr-2" />
-                            <a
-                              href="#"
-                              className="text-blue-600 hover:underline font-medium"
-                              onClick={(e) => e.preventDefault()}
+                        {sourceCodeFiles
+                          .filter((f) => f.lectureId === activeItemId)
+                          .map((file, index) => (
+                            <div
+                              key={`code-${index}`}
+                              className="flex items-center"
                             >
-                              {file.name || file.filename}
-                            </a>
-                          </div>
-                        ))}
+                              <Code className="w-5 h-5 text-gray-600 mr-2" />
+                              <a
+                                href="#"
+                                className="text-blue-600 hover:underline font-medium"
+                                onClick={(e) => e.preventDefault()}
+                              >
+                                {file.name || file.filename}
+                              </a>
+                            </div>
+                          ))}
 
-                        {externalResources.filter(r => r.lectureId === activeItemId).map((resource, index) => (
-                          <div
-                            key={`external-${index}`}
-                            className="flex items-center"
-                          >
-                            <SquareArrowOutUpRight className="w-5 h-5 text-gray-600 mr-2" />
-                            <a
-                              href={resource.url}
-                              className="text-blue-600 hover:underline font-medium"
-                              target="_blank"
-                              rel="noopener noreferrer"
+                        {externalResources
+                          .filter((r) => r.lectureId === activeItemId)
+                          .map((resource, index) => (
+                            <div
+                              key={`external-${index}`}
+                              className="flex items-center"
                             >
-                              {typeof resource.title === "string"
-                                ? resource.title
-                                : resource.name}
-                            </a>
-                          </div>
-                        ))}
+                              <SquareArrowOutUpRight className="w-5 h-5 text-gray-600 mr-2" />
+                              <a
+                                href={resource.url}
+                                className="text-blue-600 hover:underline font-medium"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                {typeof resource.title === "string"
+                                  ? resource.title
+                                  : resource.name}
+                              </a>
+                            </div>
+                          ))}
                       </div>
                     </div>
                   )}
@@ -1134,7 +1217,8 @@ const StudentVideoPreview = ({
                     <ReactPlayer
                       ref={playerRef}
                       url={
-                        (currentContent.data as any)?.selectedVideoDetails?.url ||
+                        (currentContent.data as any)?.selectedVideoDetails
+                          ?.url ||
                         videoContent.selectedVideoDetails?.url ||
                         "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
                       }
@@ -1239,7 +1323,10 @@ const StudentVideoPreview = ({
 
         {/* Sidebar */}
         {!isExpanded && (
-          <div className="flex-shrink-0" style={{ width: "calc(100vw - 75.5vw)" }}>
+          <div
+            className="flex-shrink-0"
+            style={{ width: "calc(100vw - 75.5vw)" }}
+          >
             <StudentPreviewSidebar
               currentLectureId={activeItemId}
               setShowVideoPreview={setShowVideoPreview}
