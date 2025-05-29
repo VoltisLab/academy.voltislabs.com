@@ -288,7 +288,6 @@ const handleSendCode = async () => {
       };
 
       const result = await login(credentials);
-      console.log(result);
 
       if (result.login?.success) {
         // onClose();
@@ -356,15 +355,12 @@ const handleSendCode = async () => {
       const result = await signUp(userData);
 
       if (result.register?.success) {
-        // Auto-login the user after successful signup
-        console.log("Signup successful, attempting auto-login...");
         
         // Use the same email and password for automatic login
         const loginResult = await performLogin(email, password);
         
         if (!loginResult.success) {
           // If auto-login fails, show the login form so user can login manually
-          console.log("Auto-login failed, showing login form");
           setHasAccount(true);
           setErrors({ general: "Account created successfully! Please login with your credentials." });
         }

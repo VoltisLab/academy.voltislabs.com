@@ -3,9 +3,6 @@ import { toast } from "react-hot-toast";
 import { Plus } from "lucide-react";
 import {
   ContentType,
-  ResourceTabType,
-  CourseSectionInput,
-  LectureInput,
   SourceCodeFile,
   ExternalResourceItem,
   ExtendedLecture,
@@ -37,9 +34,6 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
     useState<boolean>(false);
   const [currentDescription, setCurrentDescription] = useState<string>("");
   const [isDragging, setIsDragging] = useState<boolean>(false);
-  const [activeResourceTab, setActiveResourceTab] = useState<ResourceTabType>(
-    ResourceTabType.DOWNLOADABLE_FILE
-  );
   const [showSectionForm, setShowSectionForm] = useState<boolean>(false);
   const [draggedSection, setDraggedSection] = useState<string | null>(null);
   const [draggedLecture, setDraggedLecture] = useState<string | null>(null);
@@ -247,28 +241,17 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
               lecture.id === updatedAssignment.id
                 ? {
                     ...lecture,
-                    name:
-                      updatedAssignment.assignmentTitle ||
-                      updatedAssignment.name ||
-                      lecture.name,
-                    title:
-                      updatedAssignment.assignmentTitle ||
-                      updatedAssignment.title ||
-                      lecture.title,
-                    description:
-                      updatedAssignment.assignmentDescription ||
-                      lecture.description,
+                    name: updatedAssignment.assignmentTitle || updatedAssignment.name || lecture.name,
+                    title: updatedAssignment.assignmentTitle || updatedAssignment.title || lecture.title,
+                    description: updatedAssignment.assignmentDescription || lecture.description,
                     // Add all the assignment-specific fields
                     assignmentTitle: updatedAssignment.assignmentTitle,
-                    assignmentDescription:
-                      updatedAssignment.assignmentDescription,
+                    assignmentDescription:updatedAssignment.assignmentDescription,
                     estimatedDuration: updatedAssignment.estimatedDuration,
                     durationUnit: updatedAssignment.durationUnit,
-                    assignmentInstructions:
-                      updatedAssignment.assignmentInstructions,
+                    assignmentInstructions:updatedAssignment.assignmentInstructions,
                     instructionalVideo: updatedAssignment.instructionalVideo,
-                    downloadableResource:
-                      updatedAssignment.downloadableResource,
+                    downloadableResource: updatedAssignment.downloadableResource,
                     assignmentQuestions: updatedAssignment.assignmentQuestions,
                     solutionVideo: updatedAssignment.solutionVideo,
                     isPublished: updatedAssignment.isPublished,
@@ -292,19 +275,6 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
   const handleCloseAssignmentEditor = () => {
     setShowAssignmentEditor(false);
     setCurrentAssignment(null);
-  };
-
-  // Rest of your existing handlers remain the same...
-  const toggleContentSection = (sectionId: string, lectureId: string) => {
-    if (
-      activeContentSection &&
-      activeContentSection.sectionId === sectionId &&
-      activeContentSection.lectureId === lectureId
-    ) {
-      setActiveContentSection(null);
-    } else {
-      setActiveContentSection({ sectionId, lectureId });
-    }
   };
 
   const toggleDescriptionEditor = (
@@ -486,61 +456,6 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
         isExpanded: section.isExpanded !== false,
       };
     });
-  };
-
-  const handleSaveCourseSections = async (
-    e?: React.MouseEvent<HTMLButtonElement>
-  ) => {
-    if (e) e.preventDefault();
-
-    try {
-      const courseSections: CourseSectionInput[] = sections.map((section) => {
-        const lectures: LectureInput[] = section.lectures.map((lecture) => ({
-          name: lecture.name ?? lecture.title ?? "",
-          description: lecture.description || "",
-          captions: lecture.captions || "",
-          lectureNotes: lecture.lectureNotes || "",
-          attachedFiles: {
-            action: "ADD",
-            attachedFile: lecture.attachedFiles.map((file) => ({
-              url: file.url,
-            })),
-          },
-          videoUrls: {
-            action: "ADD",
-            videos: lecture.videos.map((video) => ({ url: video.url })),
-          },
-          code: lecture.code,
-          codeLanguage: lecture.codeLanguage,
-        }));
-
-        return {
-          sectionName: section.name,
-          lectures: lectures,
-        };
-      });
-
-      const courseIdNumber =
-        typeof courseId === "string" ? parseInt(courseId, 10) : courseId;
-      const result = await updateCourseSections({
-        courseId: courseIdNumber,
-        courseSections,
-      });
-
-      if (result.updateCourseInfo.success) {
-        toast.success("Course curriculum saved successfully!");
-        if (onSaveNext) onSaveNext();
-      } else {
-        toast.error(
-          result.updateCourseInfo.message || "Failed to save course curriculum"
-        );
-      }
-    } catch (error) {
-      console.error("Error saving course curriculum:", error);
-      toast.error(
-        error instanceof Error ? error.message : "An unexpected error occurred"
-      );
-    }
   };
 
   const findLecture = (sectionId: string, lectureId: string) => {

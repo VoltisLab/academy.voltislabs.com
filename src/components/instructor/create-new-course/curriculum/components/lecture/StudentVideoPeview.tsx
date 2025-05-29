@@ -32,6 +32,7 @@ import {
   Minimize,
   ChevronLeft,
   ChevronRight,
+  Keyboard,
 } from "lucide-react";
 import ReactPlayer from "react-player";
 import StudentPreviewSidebar from "./StudentPreviewSidebar";
@@ -128,6 +129,248 @@ type VideoNote = {
 
 type SelectedItemType = Lecture | Quiz | Assignment | CodingExercise;
 
+// QuizKeyboardShortcuts Component
+interface QuizKeyboardShortcutsProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+const QuizKeyboardShortcuts: React.FC<QuizKeyboardShortcutsProps> = ({
+  isOpen,
+  onClose,
+}) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white text-gray-800 rounded-lg p-6 max-w-md w-full mx-4 relative">
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 focus:outline-none"
+        >
+          <X className="w-5 h-5" />
+        </button>
+
+        <div className="flex items-center mb-6">
+          <h2 className="text-lg font-semibold">Keyboard shortcuts</h2>
+          <span className="ml-2 text-gray-400">?</span>
+        </div>
+
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <span>Select answer 1-9</span>
+            <div className="flex space-x-1">
+              {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
+                <kbd key={num} className="bg-gray-200 text-gray-700 px-2 py-1 rounded text-sm font-mono min-w-[24px] text-center">
+                  {num}
+                </kbd>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <span>Check answer / Next question</span>
+            <kbd className="bg-gray-200 text-gray-700 px-2 py-1 rounded text-sm font-mono">
+              →
+            </kbd>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <span>Skip question</span>
+            <div className="flex items-center space-x-1">
+              <kbd className="bg-gray-200 text-gray-700 px-2 py-1 rounded text-sm font-mono">
+                Shift
+              </kbd>
+              <span className="text-gray-400">+</span>
+              <kbd className="bg-gray-200 text-gray-700 px-2 py-1 rounded text-sm font-mono">
+                →
+              </kbd>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// CodingExerciseKeysMap Component
+const CodingExerciseKeysMap: React.FC = () => {
+  const shortcutSections = [
+    {
+      title: 'Main',
+      shortcuts: [
+        { action: 'Run tests', windows: 'Ctrl-F9', mac: 'Ctrl-F9' },
+        { action: 'Run emmet', windows: 'Tab', mac: 'Tab' },
+        { action: 'Undo', windows: 'Ctrl-Z', mac: 'Command-Z' },
+        { action: 'Redo', windows: 'Ctrl-Shift-Z, Ctrl-Y', mac: 'Command-Shift-Z, Command-Y' },
+        { action: 'Toggle comment', windows: 'Ctrl-/', mac: 'Command-/' },
+        { action: 'Indent', windows: 'Tab', mac: 'Tab' },
+        { action: 'Outdent', windows: 'Shift-Tab', mac: 'Shift-Tab' },
+      ]
+    },
+    {
+      title: 'Line Operations',
+      shortcuts: [
+        { action: 'Remove Line', windows: 'Ctrl-D', mac: 'Command-D' },
+        { action: 'Copy lines down', windows: 'Alt-Shift-Down', mac: 'Command-Option-Down' },
+        { action: 'Copy lines up', windows: 'Alt-Shift-Up', mac: 'Command-Option-Up' },
+        { action: 'Move lines down', windows: 'Alt-Shift-Down', mac: 'Option-Down' },
+        { action: 'Move lines up', windows: 'Alt-Shift-Up', mac: 'Option-Up' },
+        { action: 'Remove to line end', windows: 'Alt-Delete', mac: 'Ctrl-K' },
+        { action: 'Remove to line start', windows: 'Alt-Backspace', mac: 'Command-Backspace' },
+        { action: 'Remove word left', windows: 'Ctrl-Backspace', mac: 'Option-Backspace, Ctrl-Option-Backspace' },
+        { action: 'Remove word right', windows: 'Ctrl-Delete', mac: 'Option-Delete' },
+        { action: 'Split line', windows: '---', mac: 'Ctrl-O' },
+      ]
+    },
+    {
+      title: 'Selection',
+      shortcuts: [
+        { action: 'Select all', windows: 'Ctrl-A', mac: 'Command-A' },
+        { action: 'Select left', windows: 'Shift-Left', mac: 'Shift-Left' },
+        { action: 'Select right', windows: 'Shift-Right', mac: 'Shift-Right' },
+        { action: 'Select word left', windows: 'Ctrl-Shift-Left', mac: 'Option-Shift-Left' },
+        { action: 'Select word right', windows: 'Ctrl-Shift-Right', mac: 'Option-Shift-Right' },
+        { action: 'Select line start', windows: 'Shift-Home', mac: 'Shift-Home' },
+        { action: 'Select line end', windows: 'Shift-End', mac: 'Shift-End' },
+        { action: 'Select to line end', windows: 'Alt-Shift-Right', mac: 'Command-Shift-Right' },
+        { action: 'Select to line start', windows: 'Alt-Shift-Left', mac: 'Command-Shift-Left' },
+        { action: 'Select up', windows: 'Shift-Up', mac: 'Shift-Up' },
+        { action: 'Select down', windows: 'Shift-Down', mac: 'Shift-Down' },
+        { action: 'Select page up', windows: 'Shift-PageUp', mac: 'Shift-PageUp' },
+        { action: 'Select page down', windows: 'Shift-PageDown', mac: 'Shift-PageDown' },
+        { action: 'Select to start', windows: 'Ctrl-Shift-Home', mac: 'Command-Shift-Up' },
+        { action: 'Select to end', windows: 'Ctrl-Shift-End', mac: 'Command-Shift-Down' },
+        { action: 'Duplicate selection', windows: 'Ctrl-Shift-D', mac: 'Command-Shift-D' },
+        { action: 'Select to matching bracket', windows: 'Ctrl-Shift-P', mac: '---' },
+      ]
+    },
+    {
+      title: 'Multi-cursor',
+      shortcuts: [
+        { action: 'Add multi-cursor above', windows: 'Ctrl-Alt-Up', mac: 'Ctrl-Option-Up' },
+        { action: 'Add multi-cursor below', windows: 'Ctrl-Alt-Down', mac: 'Ctrl-Option-Down' },
+        { action: 'Add next occurrence to multi-selection', windows: 'Ctrl-Alt-Right', mac: 'Ctrl-Option-Right' },
+        { action: 'Add previous occurrence to multi-selection', windows: 'Ctrl-Alt-Left', mac: 'Ctrl-Option-Left' },
+        { action: 'Move multi-cursor from current line to the line above', windows: 'Ctrl-Alt-Shift-Up', mac: 'Ctrl-Option-Shift-Up' },
+        { action: 'Move multi-cursor from current line to the line below', windows: 'Ctrl-Alt-Shift-Down', mac: 'Ctrl-Option-Shift-Down' },
+        { action: 'Remove current occurrence from multi-selection and move to next', windows: 'Ctrl-Alt-Shift-Right', mac: 'Ctrl-Option-Shift-Right' },
+        { action: 'Remove current occurrence from multi-selection and move to previous', windows: 'Ctrl-Alt-Shift-Left', mac: 'Ctrl-Option-Shift-Left' },
+        { action: 'Select all from multi-selection', windows: 'Ctrl-Shift-L', mac: 'Ctrl-Shift-L' },
+      ]
+    },
+    {
+      title: 'Go to',
+      shortcuts: [
+        { action: 'Go to left', windows: 'Left', mac: 'Left, Ctrl-B' },
+        { action: 'Go to right', windows: 'Right', mac: 'Right, Ctrl-F' },
+        { action: 'Go to word left', windows: 'Ctrl-Left', mac: 'Option-Left' },
+        { action: 'Go to word right', windows: 'Ctrl-Right', mac: 'Option-Right' },
+        { action: 'Go line up', windows: 'Up', mac: 'Up, Ctrl-P' },
+        { action: 'Go line down', windows: 'Down', mac: 'Down, Ctrl-N' },
+        { action: 'Go to line start', windows: 'Alt-Left, Home', mac: 'Command-Left, Home, Ctrl-A' },
+        { action: 'Go to line end', windows: 'Alt-Right, End', mac: 'Command-Right, End, Ctrl-E' },
+        { action: 'Go to page up', windows: 'PageUp', mac: 'Option-PageUp' },
+        { action: 'Go to page down', windows: 'PageDown', mac: 'Option-PageDown, Ctrl-V' },
+        { action: 'Go to start', windows: 'Ctrl-Home', mac: 'Command-Home, Command-Up' },
+        { action: 'Go to end', windows: 'Ctrl-End', mac: 'Command-End, Command-Down' },
+        { action: 'Scroll line down', windows: 'Ctrl-Down', mac: 'Command-Down' },
+        { action: 'Scroll line up', windows: 'Ctrl-Up', mac: '---' },
+        { action: 'Go to matching bracket', windows: 'Ctrl-P', mac: '---' },
+        { action: 'Scroll page down', windows: '---', mac: 'Option-PageDown' },
+      ]
+    },
+    {
+      title: 'Find/Replace',
+      shortcuts: [
+        { action: 'Find', windows: 'Ctrl-F', mac: 'Command-F' },
+        { action: 'Find next', windows: 'Ctrl-K', mac: 'Command-G' },
+        { action: 'Find previous', windows: 'Ctrl-Shift-K', mac: 'Command-Shift-G' },
+      ]
+    },
+    {
+      title: 'Folding',
+      shortcuts: [
+        { action: 'Fold selection', windows: 'Alt-L, Ctrl-F1', mac: 'Command-Option-L, Command-F1' },
+        { action: 'Unfold', windows: 'Alt-Shift-L, Ctrl-Shift-F1', mac: 'Command-Option-Shift-L, Command-Shift-F1' },
+        { action: 'Fold all', windows: 'Alt-0', mac: 'Command-Option-0' },
+        { action: 'Unfold all', windows: 'Alt-Shift-0', mac: 'Command-Option-Shift-0' },
+      ]
+    },
+    {
+      title: 'Other',
+      shortcuts: [
+        { action: 'Transpose letters', windows: 'Ctrl-T', mac: 'Ctrl-T' },
+        { action: 'Change to lower case', windows: 'Ctrl-Shift-U', mac: 'Ctrl-Shift-U' },
+        { action: 'Change to upper case', windows: 'Ctrl-U', mac: 'Ctrl-U' },
+        { action: 'Overwrite', windows: 'Insert', mac: 'Insert' },
+        { action: 'Macros replay', windows: 'Ctrl-Shift-E', mac: 'Command-Shift-E' },
+      ]
+    }
+  ];
+
+  return (
+    <div className="min-h-screen bg-white">
+      {/* Header */}
+      <div className="bg-white border-b border-gray-200 px-6 py-4">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex items-center space-x-4">
+            <div className="text-orange-500 font-bold text-xl">udemy</div>
+            <nav className="flex space-x-6 text-sm">
+              <a href="#" className="text-gray-600 hover:text-gray-900">Explore</a>
+            </nav>
+            <div className="flex-1 max-w-md">
+              <input
+                type="text"
+                placeholder="Find your next course by skill, topic, or instructor"
+                className="w-full px-4 py-2 border border-gray-300 rounded-full text-sm"
+              />
+            </div>
+            <div className="flex items-center space-x-4 text-sm">
+              <a href="#" className="text-gray-600 hover:text-gray-900">Udemy Business</a>
+              <a href="#" className="text-gray-600 hover:text-gray-900">Instructor</a>
+              <a href="#" className="text-gray-600 hover:text-gray-900">My learning</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="max-w-6xl mx-auto px-6 py-8">
+        <h1 className="text-2xl font-bold text-center mb-8">Keyboard shortcuts of coding exercise</h1>
+        
+        <div className="space-y-8">
+          {shortcutSections.map((section, sectionIndex) => (
+            <div key={sectionIndex}>
+              <h2 className="text-lg font-semibold mb-4">{section.title}</h2>
+              <div className="bg-white border border-gray-300 rounded-lg overflow-hidden">
+                <table className="w-full">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-900 border-b border-gray-300">Action</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-900 border-b border-gray-300">Windows/Linux</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-900 border-b border-gray-300">Mac</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {section.shortcuts.map((shortcut, index) => (
+                      <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                        <td className="px-4 py-3 text-sm text-gray-900 border-b border-gray-200">{shortcut.action}</td>
+                        <td className="px-4 py-3 text-sm text-blue-600 border-b border-gray-200">{shortcut.windows}</td>
+                        <td className="px-4 py-3 text-sm text-blue-600 border-b border-gray-200">{shortcut.mac}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const StudentVideoPreview = ({
   videoContent,
   setShowVideoPreview,
@@ -155,6 +398,8 @@ const StudentVideoPreview = ({
   const [isContentFullscreen, setIsContentFullscreen] = useState<boolean>(false);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const [selectedItemData, setSelectedItemData] = useState<SelectedItemType | null>(lecture);
+  const [showQuizKeyboardShortcuts, setShowQuizKeyboardShortcuts] = useState<boolean>(false);
+  const [showCodingKeysMap, setShowCodingKeysMap] = useState<boolean>(false);
 
   const [activeTab, setActiveTab] = useState<
     "overview" | "notes" | "announcements" | "reviews" | "learning-tools"
@@ -461,6 +706,17 @@ const StudentVideoPreview = ({
     setShowReportModal(false);
   };
 
+  // Handle keyboard shortcuts
+  const handleKeyboardShortcuts = () => {
+    setShowSettingsDropdown(false);
+    
+    if (activeItemType === 'quiz') {
+      setShowQuizKeyboardShortcuts(true);
+    } else if (activeItemType === 'coding-exercise') {
+      setShowCodingKeysMap(true);
+    }
+  };
+
   // Get current content
   const getCurrentContent = () => {
     if (activeItemType === "quiz") {
@@ -655,6 +911,23 @@ const StudentVideoPreview = ({
 
   const currentContent = getCurrentContent();
 
+  // Show coding exercise keys map if requested
+  if (showCodingKeysMap) {
+    return (
+      <div className="fixed inset-0 z-[9999] bg-white">
+        <div className="absolute top-4 right-4 z-10">
+          <button
+            onClick={() => setShowCodingKeysMap(false)}
+            className="bg-white border border-gray-300 rounded-md p-2 shadow-lg hover:bg-gray-50"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        <CodingExerciseKeysMap />
+      </div>
+    );
+  }
+
   // Render bottom bar based on content type
   const renderBottomBar = () => {
     if (isContentFullscreen) return null;
@@ -679,10 +952,10 @@ const StudentVideoPreview = ({
           </div>
 
           {/* Center content - Article navigation */}
-          {activeItemType === "article" && (
+          {activeItemType === "article" || activeItemType === "video" && (
             <div className="flex items-center relative ">
               <button
-                className="p-1 text-white focus:outline-none bg-[#6D28D2] absolute  -top-52 -left-[455px]"
+                className={`p-1 text-white focus:outline-none bg-[#6D28D2] absolute  -top-52 -left-[455px]`}
                 onClick={() => navigateToItem('prev')}
                 type="button"
                 aria-label="Previous"
@@ -690,7 +963,7 @@ const StudentVideoPreview = ({
                 <ChevronLeft className="w-5 h-5" />
               </button>
               <button
-                className="p-1 text-white focus:outline-none bg-[#6D28D2] absolute -top-52 -right-[570px]"
+                className={`p-1 text-white focus:outline-none bg-[#6D28D2] absolute -top-52 -right-[570px]`}
                 onClick={() => navigateToItem('next')}
                 type="button"
                 aria-label="Next"
@@ -750,7 +1023,17 @@ const StudentVideoPreview = ({
               </button>
 
               {showSettingsDropdown && (
-                <div className="absolute bottom-full right-0 mb-2 bg-white border border-gray-200 rounded-md shadow-lg z-10 min-w-[120px]">
+                <div className="absolute bottom-full right-0 mb-2 bg-white border border-gray-200 rounded-md shadow-lg z-10 min-w-[160px]">
+                  {/* Keyboard shortcuts option - only show for quiz and coding exercise */}
+                  {(activeItemType === 'quiz' || activeItemType === 'coding-exercise') && (
+                    <button
+                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 focus:outline-none flex items-center"
+                      onClick={handleKeyboardShortcuts}
+                      type="button"
+                    >
+                      Keyboard shortcuts
+                    </button>
+                  )}
                   <button
                     className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 focus:outline-none"
                     onClick={handleReportAbuse}
@@ -1031,6 +1314,7 @@ const StudentVideoPreview = ({
                           onExpand={handleExpand}
                           formatTime={formatTime}
                           currentVideoDetails={(currentContent.data as any)?.selectedVideoDetails}
+                          onReportAbuse={handleReportAbuse}
                         />
                       </div>
                     )}
@@ -1112,6 +1396,11 @@ const StudentVideoPreview = ({
         isOpen={showReportModal}
         onClose={() => setShowReportModal(false)}
         onSubmit={handleReportSubmit}
+      />
+
+      <QuizKeyboardShortcuts
+        isOpen={showQuizKeyboardShortcuts}
+        onClose={() => setShowQuizKeyboardShortcuts(false)}
       />
     </div>
   );

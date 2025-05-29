@@ -340,7 +340,6 @@ const InstructorVideoPreview = ({
 
   // Handle item selection
   const handleItemSelect = (itemId: string, itemType: string) => {
-    console.log(`🎯 Selected item: ${itemId}, type: ${itemType}`);
     
     let selectedItem: SelectedItemType | undefined;
     let selectedEnhancedLecture: EnhancedLecture | undefined;
