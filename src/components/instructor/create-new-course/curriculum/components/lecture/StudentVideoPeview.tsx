@@ -43,7 +43,6 @@ import AssignmentPreview from "../assignment/AssignmentPreview";
 import VideoControls from "./VideoControls";
 import LearningReminderModal from './modals/LearningReminderModal';
 import BottomTabsContainer from './BottomTabsContainer';
-import { useRouter } from 'next/router';
 
 // Add QuizData interface
 interface QuizData {
@@ -161,7 +160,6 @@ const StudentVideoPreview = ({
   const [selectedItemData, setSelectedItemData] = useState<SelectedItemType | null>(lecture);
   const [showQuizKeyboardShortcuts, setShowQuizKeyboardShortcuts] = useState<boolean>(false);
   const [showVideoKeyboardShortcuts, setShowVideoKeyboardShortcuts] = useState<boolean>(false);
-  const router = useRouter();
 
 
   const [activeTab, setActiveTab] = useState<
@@ -477,7 +475,7 @@ const StudentVideoPreview = ({
     if (activeItemType === 'quiz') {
       setShowQuizKeyboardShortcuts(true);
     } else if (activeItemType === 'coding-exercise') {
-      router.push('/coding-excercise');
+      window.location.href = '/coding-excercise'
     }
   };
 
@@ -1208,7 +1206,7 @@ const StudentVideoPreview = ({
           {renderBottomBar()}
 
           {/* Bottom content tabs */}
-          {!isContentFullscreen && activeItemType !== "video" && (
+          {!isContentFullscreen && (
             <BottomTabsContainer
               activeTab={activeTab}
               setActiveTab={setActiveTab}
