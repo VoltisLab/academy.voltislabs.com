@@ -18,10 +18,8 @@ export default function AssignmentPreview({
   skipAssignment?: () => void;
   startAssignment?: boolean;
   setAssignmentStatus: React.Dispatch<
-    React.SetStateAction<
-      "overview" | "assignment" | "summary/feedback"
-    >
-  >
+    React.SetStateAction<"overview" | "assignment" | "summary/feedback">
+  >;
   assignmentStatus?: "overview" | "assignment" | "summary/feedback";
 }) {
   const [step, setStep] = useState<
@@ -297,7 +295,7 @@ export default function AssignmentPreview({
 
         {/* Right hand side */}
         <div>
-            {assignmentStatus === "assignment" && (
+          {assignmentStatus === "assignment" && (
             <>
               {step !== "instructions" && (
                 <button

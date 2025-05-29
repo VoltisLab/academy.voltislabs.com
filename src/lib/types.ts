@@ -252,7 +252,7 @@ export interface SelectedVideoDetails {
 // Video and content interfaces
 export interface VideoContent {
   uploadTab: { selectedFile: File | null };
-  libraryTab: { 
+  libraryTab: {
     searchQuery: string;
     selectedVideo: string | null;
     videos: StoredVideo[];
@@ -372,14 +372,19 @@ export interface Lecture {
 // FIXED: Enhanced Lecture interface with proper resource structure
 export interface EnhancedLecture extends Lecture {
   // Content type detection properties
-  actualContentType?: 'video' | 'article' | 'quiz' | 'assignment' | 'coding-exercise';
+  actualContentType?:
+    | "video"
+    | "article"
+    | "quiz"
+    | "assignment"
+    | "coding-exercise";
   hasVideoContent?: boolean;
   hasArticleContent?: boolean;
-  
+
   // Enhanced content storage
   articleContent?: ArticleContent;
   videoDetails?: SelectedVideoDetails;
-  
+
   // Content metadata
   contentMetadata?: {
     createdAt: Date;
@@ -388,7 +393,7 @@ export interface EnhancedLecture extends Lecture {
     videoDuration?: string;
     articleWordCount?: number;
   };
-  
+
   // FIXED: Added lectureResources property with proper typing
   lectureResources?: {
     uploadedFiles: Array<{ name: string; size: string; lectureId: string }>;
@@ -422,118 +427,149 @@ export interface ExtendedLecture extends Lecture {
     file: File | null;
     url?: string;
   };
+  isPublished?: boolean;
 }
 
 // ENHANCED: Content Type Detector utility class
 export class ContentTypeDetector {
-  static detectLectureContentType(lecture: EnhancedLecture): 'video' | 'article' | 'quiz' | 'assignment' | 'coding-exercise' | 'unknown' {
+  static detectLectureContentType(
+    lecture: EnhancedLecture
+  ):
+    | "video"
+    | "article"
+    | "quiz"
+    | "assignment"
+    | "coding-exercise"
+    | "unknown" {
     // Priority 1: Check for explicit actualContentType
     if (lecture.actualContentType) {
       return lecture.actualContentType;
     }
 
     // Priority 2: Check for non-video/article content types first
-    if (lecture.contentType === 'quiz') {
-      return 'quiz';
+    if (lecture.contentType === "quiz") {
+      return "quiz";
     }
-    
-    if (lecture.contentType === 'assignment') {
-      return 'assignment';
+
+    if (lecture.contentType === "assignment") {
+      return "assignment";
     }
-    
-    if (lecture.contentType === 'coding-exercise') {
-      return 'coding-exercise';
+
+    if (lecture.contentType === "coding-exercise") {
+      return "coding-exercise";
     }
 
     // Priority 3: Check for content presence flags
     if (lecture.hasVideoContent && lecture.videoDetails) {
-      return 'video';
+      return "video";
     }
-    
+
     if (lecture.hasArticleContent && lecture.articleContent?.text) {
-      return 'article';
+      return "article";
     }
 
     // Priority 4: Check stored content directly
-    if (lecture.videoDetails?.url || (lecture.videos && lecture.videos.length > 0)) {
-      return 'video';
+    if (
+      lecture.videoDetails?.url ||
+      (lecture.videos && lecture.videos.length > 0)
+    ) {
+      return "video";
     }
 
-    if (lecture.articleContent?.text && lecture.articleContent.text.trim() !== '') {
-      return 'article';
+    if (
+      lecture.articleContent?.text &&
+      lecture.articleContent.text.trim() !== ""
+    ) {
+      return "article";
     }
 
     // Priority 5: Check legacy contentType
-    if (lecture.contentType === 'article') {
-      return 'article';
+    if (lecture.contentType === "article") {
+      return "article";
     }
 
-    if (lecture.contentType === 'video' || !lecture.contentType) {
-      return 'video'; // Default fallback
+    if (lecture.contentType === "video" || !lecture.contentType) {
+      return "video"; // Default fallback
     }
 
-    return 'unknown';
+    return "unknown";
   }
 
   static updateLectureContentType(
-    lecture: EnhancedLecture, 
-    contentType: 'video' | 'article' | 'quiz' | 'assignment' | 'coding-exercise',
+    lecture: EnhancedLecture,
+    contentType:
+      | "video"
+      | "article"
+      | "quiz"
+      | "assignment"
+      | "coding-exercise",
     contentData?: any
   ): EnhancedLecture {
     const now = new Date();
-    
+
     return {
       ...lecture,
       actualContentType: contentType,
       contentType: contentType,
-      hasVideoContent: contentType === 'video',
-      hasArticleContent: contentType === 'article',
-      ...(contentType === 'video' && contentData && {
-        videoDetails: contentData,
-        articleContent: undefined // Clear article content when setting video
-      }),
-      ...(contentType === 'article' && contentData && {
-        articleContent: contentData,
-        videoDetails: undefined // Clear video content when setting article
-      }),
+      hasVideoContent: contentType === "video",
+      hasArticleContent: contentType === "article",
+      ...(contentType === "video" &&
+        contentData && {
+          videoDetails: contentData,
+          articleContent: undefined, // Clear article content when setting video
+        }),
+      ...(contentType === "article" &&
+        contentData && {
+          articleContent: contentData,
+          videoDetails: undefined, // Clear video content when setting article
+        }),
       contentMetadata: {
         ...lecture.contentMetadata,
         lastModified: now,
         createdAt: lecture.contentMetadata?.createdAt || now,
-        ...(contentType === 'article' && contentData?.text && {
-          articleWordCount: contentData.text.split(/\s+/).length
-        }),
-        ...(contentType === 'video' && contentData?.duration && {
-          videoDuration: contentData.duration
-        })
-      }
+        ...(contentType === "article" &&
+          contentData?.text && {
+            articleWordCount: contentData.text.split(/\s+/).length,
+          }),
+        ...(contentType === "video" &&
+          contentData?.duration && {
+            videoDuration: contentData.duration,
+          }),
+      },
     };
   }
 
   // Helper method to create enhanced lecture from regular lecture
   static createEnhancedLecture(
-    lecture: Lecture, 
-    videoContent?: VideoContent, 
+    lecture: Lecture,
+    videoContent?: VideoContent,
     articleContent?: ArticleContent
   ): EnhancedLecture {
-    const hasVideoContent = !!(videoContent?.selectedVideoDetails);
-    const hasArticleContent = !!(articleContent?.text && articleContent.text.trim() !== '');
-    
-    let actualContentType: 'video' | 'article' | 'quiz' | 'assignment' | 'coding-exercise' = 'video';
-    
+    const hasVideoContent = !!videoContent?.selectedVideoDetails;
+    const hasArticleContent = !!(
+      articleContent?.text && articleContent.text.trim() !== ""
+    );
+
+    let actualContentType:
+      | "video"
+      | "article"
+      | "quiz"
+      | "assignment"
+      | "coding-exercise" = "video";
+
     // Determine actual content type based on available content
-    if (lecture.contentType === 'quiz') {
-      actualContentType = 'quiz';
-    } else if (lecture.contentType === 'assignment') {
-      actualContentType = 'assignment';
-    } else if (lecture.contentType === 'coding-exercise') {
-      actualContentType = 'coding-exercise';
+    if (lecture.contentType === "quiz") {
+      actualContentType = "quiz";
+    } else if (lecture.contentType === "assignment") {
+      actualContentType = "assignment";
+    } else if (lecture.contentType === "coding-exercise") {
+      actualContentType = "coding-exercise";
     } else if (hasArticleContent && !hasVideoContent) {
-      actualContentType = 'article';
+      actualContentType = "article";
     } else if (hasVideoContent) {
-      actualContentType = 'video';
-    } else if (lecture.contentType === 'article') {
-      actualContentType = 'article';
+      actualContentType = "video";
+    } else if (lecture.contentType === "article") {
+      actualContentType = "article";
     }
 
     const enhancedLecture: EnhancedLecture = {
@@ -542,29 +578,34 @@ export class ContentTypeDetector {
       hasVideoContent,
       hasArticleContent,
       articleContent: hasArticleContent ? articleContent : undefined,
-      videoDetails: hasVideoContent ? (videoContent?.selectedVideoDetails || undefined) : undefined,
+      videoDetails: hasVideoContent
+        ? videoContent?.selectedVideoDetails || undefined
+        : undefined,
       contentMetadata: {
         createdAt: new Date(),
         lastModified: new Date(),
         ...(articleContent?.text && {
-          articleWordCount: articleContent.text.split(/\s+/).length
+          articleWordCount: articleContent.text.split(/\s+/).length,
         }),
         ...(videoContent?.selectedVideoDetails?.duration && {
-          videoDuration: videoContent.selectedVideoDetails.duration
-        })
-      }
+          videoDuration: videoContent.selectedVideoDetails.duration,
+        }),
+      },
     };
 
     return enhancedLecture;
   }
 
   // FIXED: Helper function to convert ExternalResource to ExternalResourceItem
-  static convertExternalResource(resource: ExternalResource): ExternalResourceItem {
+  static convertExternalResource(
+    resource: ExternalResource
+  ): ExternalResourceItem {
     return {
-      title: typeof resource.title === 'string' ? resource.title : resource.name,
+      title:
+        typeof resource.title === "string" ? resource.title : resource.name,
       url: resource.url,
       name: resource.name,
-      lectureId: resource.lectureId
+      lectureId: resource.lectureId,
     };
   }
 }
@@ -810,24 +851,48 @@ export interface LectureItemProps {
   sectionId: string;
   editingLectureId: string | null;
   setEditingLectureId: (id: string | null) => void;
-  updateLectureName: (sectionId: string, lectureId: string, newName: string) => void;
+  updateLectureName: (
+    sectionId: string,
+    lectureId: string,
+    newName: string
+  ) => void;
   deleteLecture: (sectionId: string, lectureId: string) => void;
-  moveLecture: (sectionId: string, lectureId: string, direction: 'up' | 'down') => void;
-  updateLectureContent?: (sectionId: string, lectureId: string, updatedLecture: EnhancedLecture) => void;
+  moveLecture: (
+    sectionId: string,
+    lectureId: string,
+    direction: "up" | "down"
+  ) => void;
+  updateLectureContent?: (
+    sectionId: string,
+    lectureId: string,
+    updatedLecture: EnhancedLecture
+  ) => void;
   toggleContentSection?: (sectionId: string, lectureId: string) => void;
   toggleAddResourceModal?: (sectionId: string, lectureId: string) => void;
-  toggleDescriptionEditor?: (sectionId: string, lectureId: string, currentText: string) => void;
+  toggleDescriptionEditor?: (
+    sectionId: string,
+    lectureId: string,
+    currentText: string
+  ) => void;
   activeContentSection?: { sectionId: string; lectureId: string } | null;
   activeResourceSection?: { sectionId: string; lectureId: string } | null;
   activeDescriptionSection?: { sectionId: string; lectureId: string } | null;
   isDragging: boolean;
-  handleDragStart: (e: React.DragEvent, sectionId: string, lectureId?: string) => void;
+  handleDragStart: (
+    e: React.DragEvent,
+    sectionId: string,
+    lectureId?: string
+  ) => void;
   handleDragOver: (e: React.DragEvent) => void;
-  handleDrop: (e: React.DragEvent, targetSectionId: string, targetLectureId?: string) => void;
+  handleDrop: (
+    e: React.DragEvent,
+    targetSectionId: string,
+    targetLectureId?: string
+  ) => void;
   handleDragEnd?: () => void;
   handleDragLeave?: () => void;
   draggedLecture?: string | null;
-  dragTarget?: { sectionId: string | null; lectureId: string | null; };
+  dragTarget?: { sectionId: string | null; lectureId: string | null };
   sections?: any[];
   updateCurrentDescription?: (description: string) => void;
   saveDescription?: () => void;
@@ -835,10 +900,18 @@ export interface LectureItemProps {
   children?: React.ReactNode;
   onEditAssignment?: (lecture: ExtendedLecture) => void;
   allSections: PreviewSection[];
-  globalUploadedFiles?: Array<{ name: string; size: string; lectureId: string }>;
+  globalUploadedFiles?: Array<{
+    name: string;
+    size: string;
+    lectureId: string;
+  }>;
   globalSourceCodeFiles?: SourceCodeFile[];
   globalExternalResources?: ExternalResourceItem[];
-  addUploadedFile?: (file: { name: string; size: string; lectureId: string }) => void;
+  addUploadedFile?: (file: {
+    name: string;
+    size: string;
+    lectureId: string;
+  }) => void;
   removeUploadedFile?: (fileName: string, lectureId: string) => void;
   addSourceCodeFile?: (file: SourceCodeFile) => void;
   removeSourceCodeFile?: (fileName: string, lectureId: string) => void;
@@ -901,3 +974,37 @@ export type Language = {
   additionalInfo?: string;
   isNew?: boolean;
 };
+
+export interface CodingExercisePreviewData {
+  exercise: {
+    id: string;
+    title: string;
+    language: string;
+    version: string;
+    learningObjective: string;
+    contentType: "coding-exercise";
+  };
+  content: {
+    instructions: string;
+    hints: string;
+    solutionExplanation: string;
+    files: {
+      id: string;
+      name: string;
+      content: string;
+      language: string;
+      isTestFile: boolean;
+    }[];
+    solutionCode: string;
+    testCode: string;
+  };
+  testResults: {
+    success: boolean;
+    message: string;
+    results: {
+      name: string;
+      passed: boolean;
+      error?: string;
+    }[];
+  } | null;
+}

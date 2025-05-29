@@ -61,9 +61,9 @@ const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
   const [showValidation, setShowValidation] = useState(false);
   const [publishSuccess, setPublishSuccess] = useState(false);
   const [isEditingInstructions, setIsEditingInstructions] = useState(true);
-   const [assignmentStatus, setAssignmentStatus] = useState<
-        "overview" | "assignment" | "summary/feedback"
-      >("overview");
+  const [assignmentStatus, setAssignmentStatus] = useState<
+    "overview" | "assignment" | "summary/feedback"
+  >("overview");
 
   const validateAssignment = () => {
     const errors: string[] = [];
@@ -440,9 +440,12 @@ const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
         </div>
       )}
 
-      {assignmentData.isPublished && (
-        <AssignmentPreview setAssignmentStatus={setAssignmentStatus} assignmentData={assignmentData} />
-      )}
+      {/* {assignmentData.isPublished && (
+        <AssignmentPreview
+          setAssignmentStatus={setAssignmentStatus}
+          assignmentData={assignmentData}
+        />
+      )} */}
     </div>
   );
 };
