@@ -1,6 +1,12 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Trash2, Edit3, ChevronDown, ChevronUp, X, Plus } from "lucide-react";
-import { Lecture, EnhancedLecture, ContentTypeDetector, ExternalResourceItem, SourceCodeFile } from "@/lib/types";
+import {
+  Lecture,
+  EnhancedLecture,
+  ContentTypeDetector,
+  ExternalResourceItem,
+  SourceCodeFile,
+} from "@/lib/types";
 import QuestionForm from "./QuestionForm";
 import { FaCircleCheck } from "react-icons/fa6";
 import { GoQuestion } from "react-icons/go";
@@ -46,7 +52,12 @@ interface QuizItemProps {
   ) => void;
   sections: any[]; // All sections for preview
   allSections: any[];
-  onEditQuiz?: (sectionId: string, quizId: string, title: string, description: string) => void;
+  onEditQuiz?: (
+    sectionId: string,
+    quizId: string,
+    title: string,
+    description: string
+  ) => void;
   enhancedLectures?: Record<string, EnhancedLecture>; // Enhanced lectures prop
   // Resource arrays to properly pass to quiz preview
   uploadedFiles?: Array<{ name: string; size: string; lectureId: string }>;
@@ -97,7 +108,9 @@ const QuizItem: React.FC<QuizItemProps> = ({
   // Preview-related states (similar to LectureItem)
   const [showPreviewDropdown, setShowPreviewDropdown] = useState(false);
   const [showVideoPreview, setShowVideoPreview] = useState(false);
-  const [previewMode, setPreviewMode] = useState<"instructor" | "student" | null>(null);
+  const [previewMode, setPreviewMode] = useState<
+    "instructor" | "student" | null
+  >(null);
   const [showEditQuizForm, setShowEditQuizForm] = useState(false);
 
   const [questions, setQuestions] = useState<Question[]>(
@@ -114,35 +127,38 @@ const QuizItem: React.FC<QuizItemProps> = ({
     if (!allSections || allSections.length === 0) {
       return allSections;
     }
-    
+
     // Create a comprehensive map of all resources by lecture ID with proper typing
-    const resourcesByLectureId: Record<string, {
-      uploadedFiles: Array<{ name: string; size: string; lectureId: string }>;
-      sourceCodeFiles: SourceCodeFile[];
-      externalResources: ExternalResourceItem[];
-    }> = {};
+    const resourcesByLectureId: Record<
+      string,
+      {
+        uploadedFiles: Array<{ name: string; size: string; lectureId: string }>;
+        sourceCodeFiles: SourceCodeFile[];
+        externalResources: ExternalResourceItem[];
+      }
+    > = {};
 
     // Collect ALL resources from the component state
-    uploadedFiles.forEach(file => {
+    uploadedFiles.forEach((file) => {
       if (file.lectureId) {
         if (!resourcesByLectureId[file.lectureId]) {
           resourcesByLectureId[file.lectureId] = {
             uploadedFiles: [],
             sourceCodeFiles: [],
-            externalResources: []
+            externalResources: [],
           };
         }
         resourcesByLectureId[file.lectureId].uploadedFiles.push(file);
       }
     });
 
-    sourceCodeFiles.forEach(file => {
+    sourceCodeFiles.forEach((file) => {
       if (file.lectureId) {
         if (!resourcesByLectureId[file.lectureId]) {
           resourcesByLectureId[file.lectureId] = {
             uploadedFiles: [],
             sourceCodeFiles: [],
-            externalResources: []
+            externalResources: [],
           };
         }
         resourcesByLectureId[file.lectureId].sourceCodeFiles.push(file);
@@ -150,113 +166,133 @@ const QuizItem: React.FC<QuizItemProps> = ({
     });
 
     // Convert ExternalResource to ExternalResourceItem when collecting
-    externalResources.forEach(resource => {
+    externalResources.forEach((resource) => {
       if (resource.lectureId) {
         if (!resourcesByLectureId[resource.lectureId]) {
           resourcesByLectureId[resource.lectureId] = {
             uploadedFiles: [],
             sourceCodeFiles: [],
-            externalResources: []
+            externalResources: [],
           };
         }
         // Convert to ExternalResourceItem if needed
         const convertedResource: ExternalResourceItem = {
-          title: typeof resource.title === 'string' ? resource.title : resource.name,
+          title:
+            typeof resource.title === "string" ? resource.title : resource.name,
           url: resource.url,
           name: resource.name,
           lectureId: resource.lectureId,
-          filename: resource.filename
+          filename: resource.filename,
         };
-        resourcesByLectureId[resource.lectureId].externalResources.push(convertedResource);
+        resourcesByLectureId[resource.lectureId].externalResources.push(
+          convertedResource
+        );
       }
     });
 
-    console.log('📦 Quiz: Complete resources map:', resourcesByLectureId);
+    console.log("📦 Quiz: Complete resources map:", resourcesByLectureId);
 
     // Process all sections and enhance ALL lectures
-    return allSections.map(section => ({
+    return allSections.map((section) => ({
       ...section,
-      lectures: section.lectures?.map((lec: Lecture) => {
-        // Check if we have enhanced data for this lecture
-        const enhancedData = enhancedLectures[lec.id];
-        let enhancedLecture: EnhancedLecture;
-        
-        if (enhancedData) {
-          // Merge the enhanced data with the lecture
-          console.log(`Using enhanced data for lecture ${lec.id}:`, {
-            actualContentType: enhancedData.actualContentType,
-            hasVideoContent: enhancedData.hasVideoContent,
-            hasArticleContent: enhancedData.hasArticleContent
-          });
-          enhancedLecture = { ...lec, ...enhancedData };
-        } else {
-          // Check if the lecture already has enhanced properties
-          const existingEnhanced = lec as EnhancedLecture;
-          
-          if (existingEnhanced.actualContentType || 
-              existingEnhanced.hasVideoContent !== undefined || 
-              existingEnhanced.hasArticleContent !== undefined) {
-            enhancedLecture = existingEnhanced;
+      lectures:
+        section.lectures?.map((lec: Lecture) => {
+          // Check if we have enhanced data for this lecture
+          const enhancedData = enhancedLectures[lec.id];
+          let enhancedLecture: EnhancedLecture;
+
+          if (enhancedData) {
+            // Merge the enhanced data with the lecture
+            console.log(`Using enhanced data for lecture ${lec.id}:`, {
+              actualContentType: enhancedData.actualContentType,
+              hasVideoContent: enhancedData.hasVideoContent,
+              hasArticleContent: enhancedData.hasArticleContent,
+            });
+            enhancedLecture = { ...lec, ...enhancedData };
           } else {
-            // Create a basic enhanced lecture based on contentType
-            enhancedLecture = {
-              ...lec,
-              actualContentType: (lec.contentType as any) || 'video',
-              hasVideoContent: lec.contentType === 'video' || (!lec.contentType && lec.videos && lec.videos.length > 0),
-              hasArticleContent: lec.contentType === 'article',
-              contentMetadata: {
-                createdAt: new Date(),
-                lastModified: new Date()
+            // Check if the lecture already has enhanced properties
+            const existingEnhanced = lec as EnhancedLecture;
+
+            if (
+              existingEnhanced.actualContentType ||
+              existingEnhanced.hasVideoContent !== undefined ||
+              existingEnhanced.hasArticleContent !== undefined
+            ) {
+              enhancedLecture = existingEnhanced;
+            } else {
+              // Create a basic enhanced lecture based on contentType
+              enhancedLecture = {
+                ...lec,
+                actualContentType: (lec.contentType as any) || "video",
+                hasVideoContent:
+                  lec.contentType === "video" ||
+                  (!lec.contentType && lec.videos && lec.videos.length > 0),
+                hasArticleContent: lec.contentType === "article",
+                contentMetadata: {
+                  createdAt: new Date(),
+                  lastModified: new Date(),
+                },
+              };
+
+              // If the lecture has a description that looks like article content, mark it as article
+              if (
+                !enhancedLecture.hasArticleContent &&
+                lec.description &&
+                lec.description.length > 100 &&
+                lec.description.includes("<")
+              ) {
+                enhancedLecture.hasArticleContent = true;
+                enhancedLecture.actualContentType = "article";
+                enhancedLecture.articleContent = { text: lec.description };
               }
-            };
-            
-            // If the lecture has a description that looks like article content, mark it as article
-            if (!enhancedLecture.hasArticleContent && lec.description && lec.description.length > 100 && lec.description.includes('<')) {
-              enhancedLecture.hasArticleContent = true;
-              enhancedLecture.actualContentType = 'article';
-              enhancedLecture.articleContent = { text: lec.description };
             }
           }
-        }
-        
-        // Properly attach resources to each lecture
-        const lectureResources = resourcesByLectureId[lec.id];
-        if (lectureResources) {
-          enhancedLecture.lectureResources = {
-            uploadedFiles: lectureResources.uploadedFiles,
-            sourceCodeFiles: lectureResources.sourceCodeFiles,
-            externalResources: lectureResources.externalResources
-          };
-        } else {
-          // Ensure empty arrays if no resources
-          enhancedLecture.lectureResources = {
-            uploadedFiles: [],
-            sourceCodeFiles: [],
-            externalResources: []
-          };
-        }
-        
-        console.log(`Enhanced lecture ${lec.id} in quiz preview:`, {
-          name: lec.name,
-          originalType: lec.contentType,
-          actualContentType: enhancedLecture.actualContentType,
-          hasVideoContent: enhancedLecture.hasVideoContent,
-          hasArticleContent: enhancedLecture.hasArticleContent,
-          hasResources: !!lectureResources,
-          resourceCounts: lectureResources ? {
-            uploaded: lectureResources.uploadedFiles.length,
-            sourceCode: lectureResources.sourceCodeFiles.length,
-            external: lectureResources.externalResources.length
-          } : { uploaded: 0, sourceCode: 0, external: 0 }
-        });
-        
-        return enhancedLecture;
-      }) || []
+
+          // Properly attach resources to each lecture
+          const lectureResources = resourcesByLectureId[lec.id];
+          if (lectureResources) {
+            enhancedLecture.lectureResources = {
+              uploadedFiles: lectureResources.uploadedFiles,
+              sourceCodeFiles: lectureResources.sourceCodeFiles,
+              externalResources: lectureResources.externalResources,
+            };
+          } else {
+            // Ensure empty arrays if no resources
+            enhancedLecture.lectureResources = {
+              uploadedFiles: [],
+              sourceCodeFiles: [],
+              externalResources: [],
+            };
+          }
+
+          console.log(`Enhanced lecture ${lec.id} in quiz preview:`, {
+            name: lec.name,
+            originalType: lec.contentType,
+            actualContentType: enhancedLecture.actualContentType,
+            hasVideoContent: enhancedLecture.hasVideoContent,
+            hasArticleContent: enhancedLecture.hasArticleContent,
+            hasResources: !!lectureResources,
+            resourceCounts: lectureResources
+              ? {
+                  uploaded: lectureResources.uploadedFiles.length,
+                  sourceCode: lectureResources.sourceCodeFiles.length,
+                  external: lectureResources.externalResources.length,
+                }
+              : { uploaded: 0, sourceCode: 0, external: 0 },
+          });
+
+          return enhancedLecture;
+        }) || [],
     }));
   };
 
   // Quiz edit handler
-  const handleQuizEditSubmit = (sectionId: string, quizId: string, title: string, description: string) => {
+  const handleQuizEditSubmit = (
+    sectionId: string,
+    quizId: string,
+    title: string,
+    description: string
+  ) => {
     if (onEditQuiz) {
       onEditQuiz(sectionId, quizId, title, description);
     }
@@ -266,8 +302,8 @@ const QuizItem: React.FC<QuizItemProps> = ({
   // Edit button click handler - Now properly expands the quiz item
   const handleEditQuiz = (e: React.MouseEvent) => {
     e.stopPropagation();
-    console.log('Edit quiz clicked, setting showEditQuizForm to true');
-    
+    console.log("Edit quiz clicked, setting showEditQuizForm to true");
+
     // IMPORTANT: Expand the quiz item first if it's collapsed
     if (!expanded) {
       setExpanded(true);
@@ -275,10 +311,10 @@ const QuizItem: React.FC<QuizItemProps> = ({
         toggleContentSection(sectionId, lecture.id);
       }
     }
-    
+
     // Then show the edit form
     setShowEditQuizForm(true);
-    
+
     // Clear conflicting states
     setShowQuestionForm(false);
     setShowQuestionTypeSelector(false);
@@ -288,19 +324,25 @@ const QuizItem: React.FC<QuizItemProps> = ({
 
   // Debug effect to track showEditQuizForm changes
   useEffect(() => {
-    console.log('showEditQuizForm state changed:', showEditQuizForm);
+    console.log("showEditQuizForm state changed:", showEditQuizForm);
   }, [showEditQuizForm]);
 
   // Debug effect to track enhanced lectures
   useEffect(() => {
-    console.log('QuizItem enhanced lectures updated:', {
+    console.log("QuizItem enhanced lectures updated:", {
       quizId: lecture.id,
       enhancedLecturesCount: Object.keys(enhancedLectures).length,
       uploadedFilesCount: uploadedFiles.length,
       sourceCodeFilesCount: sourceCodeFiles.length,
-      externalResourcesCount: externalResources.length
+      externalResourcesCount: externalResources.length,
     });
-  }, [enhancedLectures, lecture.id, uploadedFiles, sourceCodeFiles, externalResources]);
+  }, [
+    enhancedLectures,
+    lecture.id,
+    uploadedFiles,
+    sourceCodeFiles,
+    externalResources,
+  ]);
 
   useEffect(() => {
     if (editingLectureId === lecture.id && lectureNameInputRef.current) {
@@ -317,7 +359,9 @@ const QuizItem: React.FC<QuizItemProps> = ({
     const handleClickOutside = (event: MouseEvent): void => {
       if (!showPreviewDropdown) return;
 
-      const dropdownElement = document.getElementById(`quiz-preview-dropdown-${lecture.id}`);
+      const dropdownElement = document.getElementById(
+        `quiz-preview-dropdown-${lecture.id}`
+      );
       const target = event.target as Node;
 
       if (dropdownElement && !dropdownElement.contains(target)) {
@@ -379,16 +423,19 @@ const QuizItem: React.FC<QuizItemProps> = ({
   const handlePreviewSelection = (mode: "instructor" | "student"): void => {
     console.log(`Quiz Preview mode: ${mode}, Quiz ID: ${lecture.id}`);
     console.log("All sections available:", allSections.length);
-    console.log("Enhanced lectures available:", Object.keys(enhancedLectures).length);
-    
+    console.log(
+      "Enhanced lectures available:",
+      Object.keys(enhancedLectures).length
+    );
+
     setPreviewMode(mode);
     setShowPreviewDropdown(false);
-    
+
     setTimeout(() => {
       setShowVideoPreview(true);
     }, 50);
   };
-  
+
   const quizData = {
     id: lecture.id,
     name: lecture.name || "New quiz",
@@ -405,27 +452,37 @@ const QuizItem: React.FC<QuizItemProps> = ({
   const QuizPreviewPage: React.FC = () => {
     // Create enhanced sections with proper content type detection and resources
     const enhancedSections = createEnhancedSections();
-    
-    console.log('📊 Quiz preview sections enhanced:', {
+
+    console.log("📊 Quiz preview sections enhanced:", {
       totalSections: enhancedSections.length,
-      totalLectures: enhancedSections.reduce((acc, section) => 
-        acc + (section.lectures?.length || 0), 0
+      totalLectures: enhancedSections.reduce(
+        (acc, section) => acc + (section.lectures?.length || 0),
+        0
       ),
-      lecturesWithActualContentType: enhancedSections.reduce((acc, section) => 
-        acc + (section.lectures?.filter((l: Lecture) => (l as EnhancedLecture).actualContentType)?.length || 0), 0
+      lecturesWithActualContentType: enhancedSections.reduce(
+        (acc, section) =>
+          acc +
+          (section.lectures?.filter(
+            (l: Lecture) => (l as EnhancedLecture).actualContentType
+          )?.length || 0),
+        0
       ),
-      lecturesWithResources: enhancedSections.reduce((acc, section) => 
-        acc + (section.lectures?.filter((l: Lecture) => {
-          const enhanced = l as EnhancedLecture;
-          return enhanced.lectureResources && (
-            enhanced.lectureResources.uploadedFiles.length > 0 ||
-            enhanced.lectureResources.sourceCodeFiles.length > 0 ||
-            enhanced.lectureResources.externalResources.length > 0
-          );
-        }).length || 0), 0
-      )
+      lecturesWithResources: enhancedSections.reduce(
+        (acc, section) =>
+          acc +
+          (section.lectures?.filter((l: Lecture) => {
+            const enhanced = l as EnhancedLecture;
+            return (
+              enhanced.lectureResources &&
+              (enhanced.lectureResources.uploadedFiles.length > 0 ||
+                enhanced.lectureResources.sourceCodeFiles.length > 0 ||
+                enhanced.lectureResources.externalResources.length > 0)
+            );
+          }).length || 0),
+        0
+      ),
     });
-    
+
     return (
       <StudentVideoPreview
         videoContent={{
@@ -450,9 +507,9 @@ const QuizItem: React.FC<QuizItemProps> = ({
         sourceCodeFiles={sourceCodeFiles}
         externalResources={externalResources}
         section={{
-          id: 'all-sections',
-          name: 'All Sections',
-          sections: enhancedSections // Pass enhanced sections with proper content types and resources
+          id: "all-sections",
+          name: "All Sections",
+          sections: enhancedSections, // Pass enhanced sections with proper content types and resources
         }}
         quizData={quizData}
       />
@@ -495,7 +552,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
                   onClick={(e) => e.stopPropagation()}
                 />
               ) : (
-                <h4 className="font-medium text-sm">
+                <h4 className="font-medium text-sm w-max">
                   {lecture.name || "New quiz"}
                 </h4>
               )}
@@ -681,19 +738,17 @@ const QuizItem: React.FC<QuizItemProps> = ({
             }}
             className="cursor-pointer p-1 ml-auto"
           >
-            {expanded ? (
-              !showEditForm && (
-                <div className="cursor-pointer p-1 ml-auto rounded hover:bg-gray-200">
-                  <ChevronUp size={20} className=" text-gray-500" />
-                </div>
-              )
-            ) : (
-              !showEditForm && (
-                <div className="cursor-pointer p-1 ml-auto rounded hover:bg-gray-200">
-                  <ChevronDown size={20} className=" text-gray-500 " />
-                </div>
-              )
-            )}
+            {expanded
+              ? !showEditForm && (
+                  <div className="cursor-pointer p-1 ml-auto rounded hover:bg-gray-200">
+                    <ChevronUp size={20} className=" text-gray-500" />
+                  </div>
+                )
+              : !showEditForm && (
+                  <div className="cursor-pointer p-1 ml-auto rounded hover:bg-gray-200">
+                    <ChevronDown size={20} className=" text-gray-500 " />
+                  </div>
+                )}
           </button>
           <button className="w-7 cursor-move hover:bg-gray-200 p-1 rounded">
             {isHovering && (
@@ -817,7 +872,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
                     New Question
                   </button>
                 </div>
-                
+
                 {/* Preview dropdown - similar to LectureItem */}
                 <div
                   className="relative inline-flex gap-4"
@@ -908,7 +963,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
           )}
         </div>
       )}
-      
+
       {/* Show preview component when needed */}
       {showVideoPreview && <QuizPreviewPage />}
     </div>
