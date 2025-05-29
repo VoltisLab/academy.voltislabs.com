@@ -17,10 +17,11 @@ const ReportAbuseModal: React.FC<ReportAbuseModalProps> = ({
   const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
 
   const issueTypes = [
-    "Inappropriate Content",
-    "Spam",
-    "Harassment",
-    "Copyright Violation",
+    "Inappropriate Content-Harmful, Violent, Hateful or Criminal",
+    "Inappropriate Content-other",
+    "Inappropriate behaviour",
+    "Voltis Academy Policy Violation",
+    "Spammy Content",
     "Technical Issue",
     "Other",
   ];
@@ -43,8 +44,8 @@ const ReportAbuseModal: React.FC<ReportAbuseModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[10000] backdrop-blur-sm bg-black bg-opacity-50 flex items-center justify-center">
-      <div className="bg-white rounded-lg w-full max-w-md shadow-lg">
+    <div className="fixed inset-0 z-[10000] backdrop-blur-sm bg-transparent bg-opacity-50 flex items-center justify-center">
+      <div className="bg-white rounded-lg w-full max-w-xl shadow-lg">
         <div className="p-4 flex justify-between items-center border-b border-gray-200">
           <h2 className="text-lg font-medium">Report abuse</h2>
           <button

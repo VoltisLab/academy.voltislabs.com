@@ -7,11 +7,13 @@ interface VideoControlsProps {
   duration: number;
   volume: number;
   playbackRate: number;
+  videoQuality: string;
   onPlayPause: () => void;
   onRewind: () => void;
   onForward: () => void;
   onVolumeChange: (volume: number) => void;
   onPlaybackRateChange: (rate: number) => void;
+  onVideoQualityChange: (quality: string) => void;
   onFullscreen: () => void;
   onExpand: () => void;
   formatTime: (seconds: number) => string;
@@ -22,201 +24,19 @@ interface VideoControlsProps {
   onShowKeyboardShortcuts?: () => void;
 }
 
-// VideoSettingsModal Component
-interface VideoSettingsModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onShowKeyboardShortcuts: () => void;
-  onReportAbuse: () => void;
-  videoQuality: string;
-  onVideoQualityChange: (quality: string) => void;
-  autoplay: boolean;
-  onAutoplayToggle: () => void;
-}
-
-const VideoSettingsModal: React.FC<VideoSettingsModalProps> = ({
-  isOpen,
-  onClose,
-  onShowKeyboardShortcuts,
-  onReportAbuse,
-  videoQuality,
-  onVideoQualityChange,
-  autoplay,
-  onAutoplayToggle,
-}) => {
-  if (!isOpen) return null;
-
-  const qualityOptions = ['1080p', '720p', '576p', '430p', '360p', 'Auto'];
-
-  const handleQualitySelect = (quality: string) => {
-    onVideoQualityChange(quality);
-  };
-
-  const handleDownloadLecture = () => {
-    console.log('Download lecture clicked');
-    onClose();
-  };
-
-  const handleContentInformation = () => {
-    console.log('Content information clicked');
-    onClose();
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-gray-900 text-white rounded-lg p-0 w-80 max-w-sm">
-        <div className="flex items-center justify-between p-4 border-b border-gray-700">
-          <h3 className="text-lg font-medium">Settings</h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-white focus:outline-none">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        <div className="p-4 border-b border-gray-700">
-          <div className="space-y-2">
-            {qualityOptions.map((quality) => (
-              <div key={quality} className="flex items-center justify-between">
-                <button
-                  onClick={() => handleQualitySelect(quality)}
-                  className={`flex-1 text-left px-3 py-2 rounded hover:bg-gray-800 transition-colors ${
-                    videoQuality === quality ? 'bg-purple-600' : ''
-                  }`}
-                >
-                  {quality}
-                </button>
-                {videoQuality === quality && (
-                  <div className="w-2 h-2 rounded-full bg-purple-500 ml-2"></div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="p-4 border-b border-gray-700">
-          <div className="flex items-center justify-between">
-            <span>Autoplay</span>
-            <button
-              onClick={onAutoplayToggle}
-              className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors focus:outline-none ${
-                autoplay ? 'bg-purple-600' : 'bg-gray-600'
-              }`}
-            >
-              <span
-                className={`inline-block w-4 h-4 transform bg-white rounded-full transition-transform ${
-                  autoplay ? 'translate-x-6' : 'translate-x-1'
-                }`}
-              />
-            </button>
-          </div>
-        </div>
-
-        <div className="p-2">
-          <button
-            onClick={handleDownloadLecture}
-            className="w-full flex items-center px-3 py-2 text-left hover:bg-gray-800 rounded transition-colors"
-          >
-            <Download className="w-4 h-4 mr-3" />
-            Download lecture
-          </button>
-          
-          <button
-            onClick={onShowKeyboardShortcuts}
-            className="w-full flex items-center px-3 py-2 text-left hover:bg-gray-800 rounded transition-colors"
-          >
-            <Keyboard className="w-4 h-4 mr-3" />
-            Keyboard shortcuts
-          </button>
-          
-          <button
-            onClick={handleContentInformation}
-            className="w-full flex items-center px-3 py-2 text-left hover:bg-gray-800 rounded transition-colors"
-          >
-            <Info className="w-4 h-4 mr-3" />
-            Content information
-          </button>
-          
-          <button
-            onClick={onReportAbuse}
-            className="w-full flex items-center px-3 py-2 text-left hover:bg-gray-800 rounded transition-colors"
-          >
-            <AlertTriangle className="w-4 h-4 mr-3" />
-            Report abuse
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// VideoKeyboardShortcuts Component
-interface VideoKeyboardShortcutsProps {
-  isOpen: boolean;
-  onClose: () => void;
-}
-
-const VideoKeyboardShortcuts: React.FC<VideoKeyboardShortcutsProps> = ({
-  isOpen,
-  onClose,
-}) => {
-  if (!isOpen) return null;
-
-  const shortcuts = [
-    { action: 'Play / pause', key: 'Space' },
-    { action: 'Go back 5s', key: '←' },
-    { action: 'Go forward 5s', key: '→' },
-    { action: 'Speed slower', key: 'Shift + ←' },
-    { action: 'Speed faster', key: 'Shift + →' },
-    { action: 'Volume up', key: '↑' },
-    { action: 'Volume down', key: '↓' },
-    { action: 'Mute', key: 'M' },
-    { action: 'Fullscreen', key: 'F' },
-    { action: 'Exit fullscreen', key: 'ESC' },
-    { action: 'Add note', key: 'B' },
-    { action: 'Toggle captions', key: 'C' },
-    { action: 'Content information', key: 'I' },
-  ];
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50">
-      <div className="bg-black text-white rounded-lg p-6 max-w-2xl w-full mx-4 relative">
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-white focus:outline-none"
-        >
-          <X className="w-6 h-6" />
-        </button>
-
-        <div className="flex items-center mb-6">
-          <h2 className="text-xl font-semibold">Keyboard shortcuts</h2>
-          <span className="ml-2 text-gray-400">?</span>
-        </div>
-
-        <div className="grid grid-cols-2 gap-x-8 gap-y-4">
-          {shortcuts.map((shortcut, index) => (
-            <div key={index} className="flex items-center justify-between">
-              <span className="text-gray-300">{shortcut.action}</span>
-              <kbd className="bg-gray-800 text-white px-2 py-1 rounded text-sm font-mono min-w-[60px] text-center">
-                {shortcut.key}
-              </kbd>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-};
-
 const VideoControls: React.FC<VideoControlsProps> = ({
   playing,
   progress,
   duration,
   volume,
   playbackRate,
+  videoQuality,
   onPlayPause,
   onRewind,
   onForward,
   onVolumeChange,
   onPlaybackRateChange,
+  onVideoQualityChange,
   onFullscreen,
   onExpand,
   formatTime,
@@ -227,9 +47,22 @@ const VideoControls: React.FC<VideoControlsProps> = ({
   const [rewindLabel, setRewindLabel] = useState<boolean>(false);
   const [forwardLabel, setForwardLabel] = useState<boolean>(false);
   const [showVolumeSlider, setShowVolumeSlider] = useState<boolean>(false);
-  const [showSettingsModal, setShowSettingsModal] = useState<boolean>(false);
-  const [videoQuality, setVideoQuality] = useState<string>('Auto');
+  const [showSettingsDropdown, setShowSettingsDropdown] = useState<boolean>(false);
   const [autoplay, setAutoplay] = useState<boolean>(false);
+
+  // Close settings dropdown when clicking outside
+  React.useEffect(() => {
+    const handleClickOutside = () => {
+      if (showSettingsDropdown) {
+        setShowSettingsDropdown(false);
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, [showSettingsDropdown]);
 
   const handleRewind = () => {
     onRewind();
@@ -251,24 +84,33 @@ const VideoControls: React.FC<VideoControlsProps> = ({
   };
 
   const handleVideoQualityChange = (quality: string) => {
-    setVideoQuality(quality);
-    // Here you would implement the actual video quality change logic
+    onVideoQualityChange(quality);
     console.log('Video quality changed to:', quality);
   };
 
   const handleShowKeyboardShortcuts = () => {
-    setShowSettingsModal(false);
+    setShowSettingsDropdown(false);
     if (onShowKeyboardShortcuts) {
       onShowKeyboardShortcuts();
     }
   };
 
   const handleReportAbuse = () => {
-    console.log("Report abuse clicked in VideoControls"); // Debug log
-    setShowSettingsModal(false);
+    console.log("Report abuse clicked in VideoControls");
+    setShowSettingsDropdown(false);
     if (onReportAbuse) {
       onReportAbuse();
     }
+  };
+
+  const handleDownloadLecture = () => {
+    console.log('Download lecture clicked');
+    setShowSettingsDropdown(false);
+  };
+
+  const handleContentInformation = () => {
+    console.log('Content information clicked');
+    setShowSettingsDropdown(false);
   };
 
   return (
@@ -413,13 +255,99 @@ const VideoControls: React.FC<VideoControlsProps> = ({
             )}
           </div>
 
-          <button
-            className="hover:text-gray-300 focus:outline-none"
-            onClick={() => setShowSettingsModal(true)}
-            type="button"
-          >
-            <Settings className="w-4 h-4" />
-          </button>
+          <div className="relative">
+            <button
+              className="hover:text-gray-300 focus:outline-none"
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowSettingsDropdown(!showSettingsDropdown);
+              }}
+              type="button"
+            >
+              <Settings className="w-4 h-4" />
+            </button>
+
+            {/* Settings Dropdown */}
+            {showSettingsDropdown && (
+              <div 
+                className="absolute bottom-full right-0 mb-2 bg-gray-900 text-white rounded shadow-xl border border-gray-700 z-50 min-w-[190px] h-70 overflow-y-auto text-xs"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Quality Options */}
+                <div className="p-2 border-b border-gray-700">
+                  <div className="space-y-2">
+                    {['1080p', '720p', '576p', '432p', '360p', 'Auto'].map((quality) => (
+                      <div key={quality} className="flex items-center justify-between">
+                        <button
+                          onClick={() => handleVideoQualityChange(quality)}
+                          className={`flex-1 text-left px-3 py-1 rounded hover:bg-gray-800 transition-colors`}
+                        >
+                          {quality}
+                        </button>
+                        {videoQuality === quality && (
+                          <div className="w-2 h-2 rounded-full bg-purple-500 ml-2"></div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Autoplay Toggle */}
+                <div className="px-4 py-2 border-b border-gray-700">
+                  <div className="flex items-center justify-between">
+                    <span>Autoplay</span>
+                    <button
+                      onClick={() => setAutoplay(!autoplay)}
+                      className={`relative inline-flex items-center h-5 rounded-full w-10 transition-colors focus:outline-none ${
+                        autoplay ? 'bg-purple-600' : 'bg-gray-600'
+                      }`}
+                    >
+                      <span
+                        className={`inline-block w-4 h-4 transform bg-white rounded-full transition-transform ${
+                          autoplay ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Menu Options */}
+                <div className="p-2">
+                  <button
+                    onClick={handleDownloadLecture}
+                    className="w-full flex items-center px-3 py-1 text-left hover:bg-gray-800 rounded transition-colors"
+                  >
+                    <Download className="w-4 h-4 mr-3" />
+                    Download lecture
+                  </button>
+                  
+                  <button
+                    onClick={handleShowKeyboardShortcuts}
+                    className="w-full flex items-center px-3 py-1 text-left hover:bg-gray-800 rounded transition-colors"
+                  >
+                    <Keyboard className="w-4 h-4 mr-3" />
+                    Keyboard shortcuts
+                  </button>
+                  
+                  <button
+                    onClick={handleContentInformation}
+                    className="w-full flex items-center px-3 py-1 text-left hover:bg-gray-800 rounded transition-colors"
+                  >
+                    <Info className="w-4 h-4 mr-3" />
+                    Content information
+                  </button>
+                  
+                  <button
+                    onClick={handleReportAbuse}
+                    className="w-full flex items-center px-3 py-1 text-left hover:bg-gray-800 rounded transition-colors"
+                  >
+                    <AlertTriangle className="w-4 h-4 mr-3" />
+                    Report abuse
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
 
           <button
             className="hover:text-gray-300 focus:outline-none"
@@ -454,18 +382,6 @@ const VideoControls: React.FC<VideoControlsProps> = ({
           </div>
         </div>
       </div>
-
-      {/* Video Settings Modal */}
-      <VideoSettingsModal
-        isOpen={showSettingsModal}
-        onClose={() => setShowSettingsModal(false)}
-        onShowKeyboardShortcuts={handleShowKeyboardShortcuts}
-        onReportAbuse={handleReportAbuse}
-        videoQuality={videoQuality}
-        onVideoQualityChange={handleVideoQualityChange}
-        autoplay={autoplay}
-        onAutoplayToggle={() => setAutoplay(!autoplay)}
-      />
     </>
   );
 };
