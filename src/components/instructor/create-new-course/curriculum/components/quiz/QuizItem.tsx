@@ -552,7 +552,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
                   onClick={(e) => e.stopPropagation()}
                 />
               ) : (
-                <h4 className="font-medium text-sm w-max">
+                <h4 className="font-medium text-sm w-max shrink-0">
                   {lecture.name || "New quiz"}
                 </h4>
               )}
