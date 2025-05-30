@@ -7,6 +7,7 @@ import InstructionsTab from "./InstructionsTab";
 import toast from "react-hot-toast";
 import { ExtendedLecture } from "@/lib/types";
 import AssignmentPreview from "./AssignmentPreview";
+import { useAssignment } from "@/context/AssignmentDataContext";
 
 // Types
 interface AssignmentQuestion {
@@ -30,30 +31,30 @@ const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState("basic-info");
 
-  const [assignmentData, setAssignmentData] = useState<ExtendedLecture>({
-    ...(initialData || {
-      id: Date.now().toString(),
-      name: "",
-      description: "",
-      captions: "",
-      lectureNotes: "",
-      attachedFiles: [],
-      videos: [],
-      contentType: "assignment",
-      isExpanded: false,
-      assignmentTitle: "",
-      assignmentDescription: "",
-      estimatedDuration: 0,
-      durationUnit: "minutes",
-      assignmentInstructions: "",
-      assignmentQuestions: [],
-      isPublished: false,
-    }),
+  // const [assignmentData, setAssignmentData] = useState<ExtendedLecture>({
+  //   ...(initialData || {
+  //     id: Date.now().toString(),
+  //     name: "",
+  //     description: "",
+  //     captions: "",
+  //     lectureNotes: "",
+  //     attachedFiles: [],
+  //     videos: [],
+  //     contentType: "assignment",
+  //     isExpanded: false,
+  //     assignmentTitle: "",
+  //     assignmentDescription: "",
+  //     estimatedDuration: 0,
+  //     durationUnit: "minutes",
+  //     assignmentInstructions: "",
+  //     assignmentQuestions: [],
+  //     isPublished: false,
+  //   }),
 
-    // Make sure isPublished is never undefined
-    isPublished:
-      initialData?.isPublished !== undefined ? initialData.isPublished : false,
-  });
+  //   // Make sure isPublished is never undefined
+  //   isPublished:
+  //     initialData?.isPublished !== undefined ? initialData.isPublished : false,
+  // });
 
   const [showPublishModal, setShowPublishModal] = useState(false);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
@@ -64,6 +65,8 @@ const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
   const [assignmentStatus, setAssignmentStatus] = useState<
     "overview" | "assignment" | "summary/feedback"
   >("overview");
+
+  const { assignmentData, setAssignmentData } = useAssignment();
 
   const validateAssignment = () => {
     const errors: string[] = [];
@@ -289,7 +292,7 @@ const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
   );
 
   const handleDataChange = (field: string, value: any) => {
-    setAssignmentData((prev) => ({
+    setAssignmentData((prev: any) => ({
       ...prev,
       [field]: value,
     }));

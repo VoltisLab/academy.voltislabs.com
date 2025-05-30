@@ -22,11 +22,19 @@ import AssignmentEditor from "./components/assignment/AssignmentEditor"; // Impo
 interface CourseBuilderProps {
   onSaveNext?: () => void;
   courseId: number | undefined;
+  currentAssignment: {
+    sectionId: string;
+    lectureId: string;
+    data: ExtendedLecture;
+  } | null;
+  setCurrentAssignment: any;
 }
 
 const CourseBuilder: React.FC<CourseBuilderProps> = ({
   onSaveNext,
   courseId,
+  currentAssignment,
+  setCurrentAssignment,
 }) => {
   const [editingSectionId, setEditingSectionId] = useState<string | null>(null);
   const [editingLectureId, setEditingLectureId] = useState<string | null>(null);
@@ -66,11 +74,11 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
   // NEW: Assignment editor state
   const [showAssignmentEditor, setShowAssignmentEditor] =
     useState<boolean>(false);
-  const [currentAssignment, setCurrentAssignment] = useState<{
-    sectionId: string;
-    lectureId: string;
-    data: ExtendedLecture;
-  } | null>(null);
+  // const [currentAssignment, setCurrentAssignment] = useState<{
+  //   sectionId: string;
+  //   lectureId: string;
+  //   data: ExtendedLecture;
+  // } | null>(null);
 
   const {
     sections,
@@ -256,17 +264,28 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
               lecture.id === updatedAssignment.id
                 ? {
                     ...lecture,
-                    name: updatedAssignment.assignmentTitle || updatedAssignment.name || lecture.name,
-                    title: updatedAssignment.assignmentTitle || updatedAssignment.title || lecture.title,
-                    description: updatedAssignment.assignmentDescription || lecture.description,
+                    name:
+                      updatedAssignment.assignmentTitle ||
+                      updatedAssignment.name ||
+                      lecture.name,
+                    title:
+                      updatedAssignment.assignmentTitle ||
+                      updatedAssignment.title ||
+                      lecture.title,
+                    description:
+                      updatedAssignment.assignmentDescription ||
+                      lecture.description,
                     // Add all the assignment-specific fields
                     assignmentTitle: updatedAssignment.assignmentTitle,
-                    assignmentDescription:updatedAssignment.assignmentDescription,
+                    assignmentDescription:
+                      updatedAssignment.assignmentDescription,
                     estimatedDuration: updatedAssignment.estimatedDuration,
                     durationUnit: updatedAssignment.durationUnit,
-                    assignmentInstructions:updatedAssignment.assignmentInstructions,
+                    assignmentInstructions:
+                      updatedAssignment.assignmentInstructions,
                     instructionalVideo: updatedAssignment.instructionalVideo,
-                    downloadableResource: updatedAssignment.downloadableResource,
+                    downloadableResource:
+                      updatedAssignment.downloadableResource,
                     assignmentQuestions: updatedAssignment.assignmentQuestions,
                     solutionVideo: updatedAssignment.solutionVideo,
                     isPublished: updatedAssignment.isPublished,
