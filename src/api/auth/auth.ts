@@ -71,7 +71,6 @@ export const login = async (credentials: LoginData): Promise<LoginResponse> => {
 
     // Store tokens on successful login
     if (data.login.success && typeof window !== 'undefined') {
-      console.log(data);
       // Set auth cookies instead of using localStorage
       setCookie('auth_token', data.login.token);
       setCookie('refresh_token', data.login.refreshToken || '');
@@ -97,8 +96,6 @@ export const sendVerificationCode = async (email: string) => {
     if (!email) {
       throw new Error('Email address not found');
     }
-
-    console.log(email);
 
     const { data, errors } = await apolloClient.mutate({
       mutation: SEND_VERIFICATION_EMAIL_MUTATION,

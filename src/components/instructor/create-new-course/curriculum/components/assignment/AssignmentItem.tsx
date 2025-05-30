@@ -114,8 +114,6 @@ const AssignmentItem: React.FC<AssignmentItemProps> = ({
     }
   };
 
-  console.log("AssignmentItem rendered for lecture:", lecture.isPublished);
-
   return (
     <div
       className={`mb-3 bg-white border border-gray-300 ${

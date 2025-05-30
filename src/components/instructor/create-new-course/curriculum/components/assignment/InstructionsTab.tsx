@@ -21,8 +21,6 @@ const InstructionsTab: React.FC<{
 
   const showEditor = isEditing || !hasSubmitted;
 
-  console.log("data", isEditingInstructions);
-
   // Sample library videos
   const libraryVideos = [
     {

@@ -49,10 +49,6 @@ import Cookies from "js-cookie";
       }
   
       const result = await response.json() as ApiResponse<T>;
-  
-      // Debug logging
-      console.log('API Response:', result);
-  
       if (result.errors?.length) {
         throw new Error(result.errors[0].message);
       }

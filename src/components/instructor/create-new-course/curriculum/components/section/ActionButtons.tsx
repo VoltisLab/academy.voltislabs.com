@@ -111,7 +111,8 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
       </button>
       <button
         onClick={() => onAddLecture(sectionId, 'practice')}
-        className="inline-flex items-center text-xs font-medium text-[#6D28D2] rounded-md p-1 m-1 hover:bg-gray-200 focus:outline-none "
+        className="inline-flex items-center text-xs font-medium text-[#6D28D2] cursor-not-allowed rounded-md p-1 m-1 hover:bg-gray-200 focus:outline-none "
+      disabled
       >
         <Plus className="w-3 h-3 mr-1" />
         Practice
@@ -125,7 +126,8 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
       </button>
       <button
         onClick={() => onAddLecture(sectionId, 'role-play')}
-        className="inline-flex items-center text-xs font-medium m-1 text-[#6D28D2] rounded-md hover:bg-gray-200 focus:outline-none  relative"
+        className="inline-flex items-center text-xs font-medium m-1 text-[#6D28D2] cursor-not-allowed rounded-md hover:bg-gray-200 focus:outline-none  relative"
+      disabled
       >
         <div className="absolute top-1 left-20 bg-indigo-200 text-black text-xs px-1 rounded">Beta</div>
         <Plus className="w-3 h-3 mr-1" />
