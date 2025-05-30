@@ -11,7 +11,6 @@ import QuestionForm from "./QuestionForm";
 import { FaCircleCheck } from "react-icons/fa6";
 import { GoQuestion } from "react-icons/go";
 import { RxHamburgerMenu } from "react-icons/rx";
-// Import the updated StudentVideoPreview component that supports quizData
 import StudentVideoPreview from "../lecture/StudentVideoPeview";
 import QuizForm from "./QuizForm";
 

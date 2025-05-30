@@ -32,6 +32,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Keyboard,
+  ChevronDown,
 } from "lucide-react";
 import ReactPlayer from "react-player";
 import StudentPreviewSidebar from "./StudentPreviewSidebar";
@@ -43,6 +44,55 @@ import LearningReminderModal from "./modals/LearningReminderModal";
 import BottomTabsContainer from "./BottomTabsContainer";
 import { useRouter } from "next/navigation";
 import { useAssignment } from "@/context/AssignmentDataContext";
+
+// Add ContentInformationDisplay component
+const ContentInformationDisplay: React.FC<{
+  isOpen: boolean;
+  onClose: () => void;
+  contentData: {
+    contentType: string;
+    isEncrypted: boolean;
+    courseHasEncryptedVideos: boolean;
+  };
+}> = ({ isOpen, onClose, contentData }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="absolute inset-0 bg-black flex justify-center z-50">
+      <div className="text-white rounded-lg p-8 w-full mx-4 relative">
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 focus:outline-none"
+        >
+          <X className="w-6 h-6" />
+        </button>
+
+        <h2 className="text-xl font-semibold mb-6 text-center">
+          Content information
+        </h2>
+
+        <div className="space-y-4">
+          <div>
+            <span className="font-medium">Content type: </span>
+            <span className="capitalize">{contentData.contentType}</span>
+          </div>
+
+          <div>
+            <span className="font-medium">
+              Course contains encrypted videos:{" "}
+            </span>
+            <span>{contentData.courseHasEncryptedVideos ? "Yes" : "No"}</span>
+          </div>
+
+          <div>
+            <span className="font-medium">Is this video encrypted: </span>
+            <span>{contentData.isEncrypted ? "Yes" : "No"}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 // Add QuizData interface
 interface QuizData {
@@ -164,6 +214,9 @@ const StudentVideoPreview = ({
   const [showQuizKeyboardShortcuts, setShowQuizKeyboardShortcuts] =
     useState<boolean>(false);
   const [showVideoKeyboardShortcuts, setShowVideoKeyboardShortcuts] =
+    useState<boolean>(false);
+  // Add state for content information modal
+  const [showContentInformation, setShowContentInformation] =
     useState<boolean>(false);
 
   const [activeTab, setActiveTab] = useState<
@@ -516,7 +569,7 @@ const StudentVideoPreview = ({
     setIsExpanded(!isExpanded);
   };
 
-  // Handle report abuse
+  // Handle keyboard shortcuts
   const handleKeyboardShortcuts = (e?: React.MouseEvent) => {
     if (e) {
       e.stopPropagation();
@@ -560,6 +613,11 @@ const StudentVideoPreview = ({
   // Handle video keyboard shortcuts (from video controls)
   const handleVideoKeyboardShortcuts = () => {
     setShowVideoKeyboardShortcuts(true);
+  };
+
+  // Handle content information
+  const handleContentInformation = () => {
+    setShowContentInformation(true);
   };
 
   // Handle video quality change
@@ -1282,6 +1340,19 @@ const StudentVideoPreview = ({
                   transition: "width 0.3s ease-in-out",
                 }}
               >
+                {/* Content Information Display - shows over video player */}
+                {showContentInformation && (
+                  <ContentInformationDisplay
+                    isOpen={showContentInformation}
+                    onClose={() => setShowContentInformation(false)}
+                    contentData={{
+                      contentType: activeItemType,
+                      isEncrypted: false,
+                      courseHasEncryptedVideos: false,
+                    }}
+                  />
+                )}
+
                 <div
                   ref={playerContainerRef}
                   className="relative w-full h-full flex"
@@ -1354,6 +1425,7 @@ const StudentVideoPreview = ({
                           }
                           onReportAbuse={handleReportAbuse}
                           onShowKeyboardShortcuts={handleVideoKeyboardShortcuts}
+                          onShowContentInformation={handleContentInformation}
                         />
                       </div>
                     )}
@@ -1398,6 +1470,30 @@ const StudentVideoPreview = ({
           )}
         </div>
 
+        {/* Course Content Button - only shows when sidebar is collapsed */}
+        {isExpanded && (
+          <div className="fixed top-1/5 right-0 transform -translate-y-1/2 z-50">
+            <div className="group">
+              <button
+                onClick={() => setIsExpanded(false)}
+                className="bg-purple-600 hover:bg-purple-700 text-white rounded-l shadow-lg flex items-center transition-all duration-300 ease-in-out transform translate-x-24 group-hover:translate-x-0"
+                style={{
+                  paddingTop: "12px",
+                  paddingBottom: "12px",
+                  paddingLeft: "8px",
+                  paddingRight: "16px",
+                  minWidth: "140px",
+                }}
+              >
+                <ChevronLeft className="w-5 h-5 mr-2" />
+                <span className="text-sm font-medium whitespace-nowrap">
+                  Course content
+                </span>
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Sidebar */}
         {!isExpanded && (
           <div
@@ -1428,7 +1524,7 @@ const StudentVideoPreview = ({
         </button>
       )}
 
-      {/* Modals */}
+      {/* Other Modals */}
       <LearningReminderModal
         isOpen={showLearningModal}
         onClose={() => setShowLearningModal(false)}

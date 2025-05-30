@@ -134,16 +134,37 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
   };
 
   const addSourceCodeFile = (file: SourceCodeFile) => {
-    setGlobalSourceCodeFiles((prev) => [...prev, file]);
-  };
-
-  const removeSourceCodeFile = (fileName: string, lectureId: string) => {
-    setGlobalSourceCodeFiles((prev) =>
-      prev.filter(
-        (file) => !(file.name === fileName && file.lectureId === lectureId)
-      )
+  setGlobalSourceCodeFiles((prev) => {
+    // Prevent duplicates by checking both name and filename
+    const isDuplicate = prev.some(existingFile => 
+      (existingFile.name === file.name || 
+       existingFile.filename === file.filename || 
+       existingFile.name === file.filename || 
+       existingFile.filename === file.name) && 
+      existingFile.lectureId === file.lectureId
     );
-  };
+    
+    if (isDuplicate) {
+      console.log('⚠️ Duplicate source code file detected, skipping add');
+      return prev;
+    }
+    
+    return [...prev, file];
+  });
+};
+
+const removeSourceCodeFile = (fileName: string | undefined, lectureId: string) => {
+  setGlobalSourceCodeFiles((prev) =>
+    prev.filter((file) => {
+      // Check BOTH name AND filename properties
+      const nameMatch = file.name === fileName || file.filename === fileName;
+      const lectureMatch = file.lectureId === lectureId;
+      
+      // Return true to keep, false to remove
+      return !(nameMatch && lectureMatch);
+    })
+  );
+};
 
   const addExternalResource = (resource: ExternalResourceItem) => {
     setGlobalExternalResources((prev) => [...prev, resource]);

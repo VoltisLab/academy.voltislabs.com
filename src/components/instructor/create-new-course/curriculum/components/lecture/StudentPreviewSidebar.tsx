@@ -557,6 +557,8 @@ const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
     );
   };
 
+  
+
   return (
     <div className="w-[25.5vw] bg-white border-l border-gray-200 flex flex-col fixed top-0 right-0 h-full text-gray-700">
       {/* Header */}
