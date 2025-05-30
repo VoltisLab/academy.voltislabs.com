@@ -85,6 +85,49 @@ const BottomTabsContainer: React.FC<BottomTabsContainerProps> = ({
     }
   };
 
+  // Function to clean HTML content for display
+  const cleanHtmlContent = (htmlString: string): string => {
+    if (!htmlString || htmlString.trim() === '') return '';
+    
+    // Handle React Quill's empty content pattern
+    if (htmlString === '<p><br></p>' || htmlString === '<p></p>') {
+      return '';
+    }
+    
+    let cleaned = htmlString;
+    
+    // Remove outer p tags if the content is just a single paragraph
+    // FIXED: Use [\s\S]* instead of .* with /s flag for ES5+ compatibility
+    if (cleaned.match(/^<p[^>]*>[\s\S]*<\/p>$/) && !cleaned.includes('</p><p>')) {
+      cleaned = cleaned.replace(/^<p[^>]*>/, '').replace(/<\/p>$/, '');
+    }
+    
+    // Clean up other unwanted p tag patterns
+    cleaned = cleaned
+      .replace(/<p><\/p>/g, '') // Remove empty p tags
+      .replace(/<p>\s*<\/p>/g, '') // Remove p tags with only whitespace
+      .replace(/^<p><br><\/p>$/, '') // Remove single br in p tag
+      .trim();
+    
+    return cleaned;
+  };
+
+  // Function to strip HTML tags completely (for plain text display)
+  const stripHtmlTags = (htmlString: string): string => {
+    if (!htmlString) return '';
+    return htmlString.replace(/<[^>]*>/g, '').trim();
+  };
+
+  // Get cleaned description for display
+  const getDisplayDescription = () => {
+    const description = selectedItemData?.description;
+    if (!description) return `This is a ${activeItemType} content item.`;
+    
+    // First clean the HTML, then strip remaining tags for plain text display
+    const cleaned = cleanHtmlContent(description);
+    return stripHtmlTags(cleaned) || `This is a ${activeItemType} content item.`;
+  };
+
   return (
     <div className="bg-white border-t border-gray-200 flex-shrink-0">
       <div className="" style={{ maxWidth: isExpanded ? '100%' : '79.5vw' }}>
@@ -273,7 +316,7 @@ const BottomTabsContainer: React.FC<BottomTabsContainerProps> = ({
                       Content Details
                     </h4>
                     <p className="mb-4">
-                      {selectedItemData?.description || `This is a ${activeItemType} content item.`}
+                      {getDisplayDescription()}
                     </p>
                   </div>
                 </div>

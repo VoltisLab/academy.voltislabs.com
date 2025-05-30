@@ -32,6 +32,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Keyboard,
+  ChevronDown,
 } from "lucide-react";
 import ReactPlayer from "react-player";
 import StudentPreviewSidebar from "./StudentPreviewSidebar";
@@ -42,6 +43,51 @@ import VideoControls from "./VideoControls";
 import LearningReminderModal from "./modals/LearningReminderModal";
 import BottomTabsContainer from "./BottomTabsContainer";
 import { useRouter } from 'next/navigation'; 
+
+// Add ContentInformationDisplay component
+const ContentInformationDisplay: React.FC<{
+  isOpen: boolean;
+  onClose: () => void;
+  contentData: {
+    contentType: string;
+    isEncrypted: boolean;
+    courseHasEncryptedVideos: boolean;
+  };
+}> = ({ isOpen, onClose, contentData }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="absolute inset-0 bg-black flex justify-center z-50">
+      <div className="text-white rounded-lg p-8 w-full mx-4 relative">
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 focus:outline-none"
+        >
+          <X className="w-6 h-6" />
+        </button>
+        
+        <h2 className="text-xl font-semibold mb-6 text-center">Content information</h2>
+        
+        <div className="space-y-4">
+          <div>
+            <span className="font-medium">Content type: </span>
+            <span className="capitalize">{contentData.contentType}</span>
+          </div>
+          
+          <div>
+            <span className="font-medium">Course contains encrypted videos: </span>
+            <span>{contentData.courseHasEncryptedVideos ? 'Yes' : 'No'}</span>
+          </div>
+          
+          <div>
+            <span className="font-medium">Is this video encrypted: </span>
+            <span>{contentData.isEncrypted ? 'Yes' : 'No'}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 // Add QuizData interface
 interface QuizData {
@@ -161,7 +207,9 @@ const InstructorVideoPreview = ({
   const [selectedItemData, setSelectedItemData] = useState<SelectedItemType | null>(lecture);
   const [showQuizKeyboardShortcuts, setShowQuizKeyboardShortcuts] = useState<boolean>(false);
   const [showVideoKeyboardShortcuts, setShowVideoKeyboardShortcuts] = useState<boolean>(false);
-
+  
+  // Add state for content information modal
+  const [showContentInformation, setShowContentInformation] = useState<boolean>(false);
 
   const [activeTab, setActiveTab] = useState<
     "overview" | "notes" | "announcements" | "reviews" | "learning-tools"
@@ -511,41 +559,41 @@ const InstructorVideoPreview = ({
     setIsExpanded(!isExpanded);
   };
 
-  // Handle report abuse
+  // Handle keyboard shortcuts
   const handleKeyboardShortcuts = (e?: React.MouseEvent) => {
-  if (e) {
-    e.stopPropagation();
-    e.preventDefault();
-  }
-  
-  console.log(activeItemType + " active item");
-  setShowSettingsDropdown(false);
-  
-  if (activeItemType === 'quiz') {
-    setShowQuizKeyboardShortcuts(true);
-  } else if (activeItemType === 'coding-exercise') {
-    // Use router.push with proper error handling
-    try {
-      router.push('/coding-excercise');
-    } catch (error) {
-      console.error('Navigation error:', error);
-      // Fallback: show a message or handle the error
-      alert('Navigation to coding exercise page failed');
+    if (e) {
+      e.stopPropagation();
+      e.preventDefault();
     }
-  }
-};
+    
+    console.log(activeItemType + " active item");
+    setShowSettingsDropdown(false);
+    
+    if (activeItemType === 'quiz') {
+      setShowQuizKeyboardShortcuts(true);
+    } else if (activeItemType === 'coding-exercise') {
+      // Use router.push with proper error handling
+      try {
+        router.push('/coding-excercise');
+      } catch (error) {
+        console.error('Navigation error:', error);
+        // Fallback: show a message or handle the error
+        alert('Navigation to coding exercise page failed');
+      }
+    }
+  };
 
-// Fixed handleReportAbuse function
-const handleReportAbuse = (e?: React.MouseEvent) => {
-  if (e) {
-    e.stopPropagation();
-    e.preventDefault();
-  }
-  
-  console.log("Report abuse clicked - setting modal to show");
-  setShowSettingsDropdown(false);
-  setShowReportModal(true);
-};
+  // Fixed handleReportAbuse function
+  const handleReportAbuse = (e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+    
+    console.log("Report abuse clicked - setting modal to show");
+    setShowSettingsDropdown(false);
+    setShowReportModal(true);
+  };
 
   const handleReportSubmit = (issueType: string, issueDetails: string) => {
     console.log("Report submitted:", { issueType, issueDetails });
@@ -555,6 +603,11 @@ const handleReportAbuse = (e?: React.MouseEvent) => {
   // Handle video keyboard shortcuts (from video controls)
   const handleVideoKeyboardShortcuts = () => {
     setShowVideoKeyboardShortcuts(true);
+  };
+
+  // Handle content information
+  const handleContentInformation = () => {
+    setShowContentInformation(true);
   };
 
   // Handle video quality change
@@ -716,83 +769,82 @@ const handleReportAbuse = (e?: React.MouseEvent) => {
 
   // Effects
   useEffect(() => {
-  const handleClickOutside = (event: MouseEvent) => {
-    const target = event.target as Element;
-    
-    // Check if click is inside settings dropdown or its button
-    const settingsDropdown = document.querySelector('.absolute.bottom-full');
-    const settingsButton = document.querySelector('[aria-label="Settings"]');
-    
-    if (
-      settingsDropdown && 
-      (settingsDropdown.contains(target) || settingsButton?.contains(target))
-    ) {
-      return; // Don't close if clicking inside settings dropdown
-    }
-    
-    if (showSettingsDropdown) {
-      setShowSettingsDropdown(false);
-    }
-    
-    if (allLecturesDropdownOpen) {
-      setAllLecturesDropdownOpen(false);
-    }
-    
-    if (sortByDropdownOpen) {
-      setSortByDropdownOpen(false);
-    }
-  };
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      
+      // Check if click is inside settings dropdown or its button
+      const settingsDropdown = document.querySelector('.absolute.bottom-full');
+      const settingsButton = document.querySelector('[aria-label="Settings"]');
+      
+      if (
+        settingsDropdown && 
+        (settingsDropdown.contains(target) || settingsButton?.contains(target))
+      ) {
+        return; // Don't close if clicking inside settings dropdown
+      }
+      
+      if (showSettingsDropdown) {
+        setShowSettingsDropdown(false);
+      }
+      
+      if (allLecturesDropdownOpen) {
+        setAllLecturesDropdownOpen(false);
+      }
+      
+      if (sortByDropdownOpen) {
+        setSortByDropdownOpen(false);
+      }
+    };
 
-  document.addEventListener("mousedown", handleClickOutside);
-  return () => {
-    document.removeEventListener("mousedown", handleClickOutside);
-  };
-}, [allLecturesDropdownOpen, sortByDropdownOpen, showSettingsDropdown]);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [allLecturesDropdownOpen, sortByDropdownOpen, showSettingsDropdown]);
 
-  
-useEffect(() => {
-  const handleKeyDown = (e: KeyboardEvent) => {
-    // Check if user is currently typing in an input field
-    const activeElement = document.activeElement;
-    const isTypingInFormField = activeElement && (
-      activeElement.tagName === 'INPUT' ||
-      activeElement.tagName === 'TEXTAREA' ||
-      activeElement.tagName === 'SELECT' ||
-      (activeElement as HTMLElement).contentEditable === 'true'
-    );
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Check if user is currently typing in an input field
+      const activeElement = document.activeElement;
+      const isTypingInFormField = activeElement && (
+        activeElement.tagName === 'INPUT' ||
+        activeElement.tagName === 'TEXTAREA' ||
+        activeElement.tagName === 'SELECT' ||
+        (activeElement as HTMLElement).contentEditable === 'true'
+      );
 
-    // Don't handle keyboard shortcuts if user is typing in a form field
-    if (isTypingInFormField) {
-      return;
-    }
+      // Don't handle keyboard shortcuts if user is typing in a form field
+      if (isTypingInFormField) {
+        return;
+      }
 
-    if (e.code === "Space" && activeItemType === "video") {
-      setPlaying(!playing);
-      e.preventDefault();
-    } else if (e.code === "KeyB" && activeTab === "notes" && !isAddingNote) {
-      handleCreateNote();
-      e.preventDefault();
-    } else if (e.code === "ArrowRight" && activeItemType === "video") {
-      handleForward();
-      e.preventDefault();
-    } else if (e.code === "ArrowLeft" && activeItemType === "video") {
-      handleRewind();
-      e.preventDefault();
-    }
-  };
+      if (e.code === "Space" && activeItemType === "video") {
+        setPlaying(!playing);
+        e.preventDefault();
+      } else if (e.code === "KeyB" && activeTab === "notes" && !isAddingNote) {
+        handleCreateNote();
+        e.preventDefault();
+      } else if (e.code === "ArrowRight" && activeItemType === "video") {
+        handleForward();
+        e.preventDefault();
+      } else if (e.code === "ArrowLeft" && activeItemType === "video") {
+        handleRewind();
+        e.preventDefault();
+      }
+    };
 
-  const handleFullscreenChange = () => {
-    setIsFullscreen(!!document.fullscreenElement);
-  };
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
 
-  document.addEventListener("keydown", handleKeyDown);
-  document.addEventListener("fullscreenchange", handleFullscreenChange);
+    document.addEventListener("keydown", handleKeyDown);
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
 
-  return () => {
-    document.removeEventListener("keydown", handleKeyDown);
-    document.removeEventListener("fullscreenchange", handleFullscreenChange);
-  };
-}, [playing, activeTab, isAddingNote, activeItemType]);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+    };
+  }, [playing, activeTab, isAddingNote, activeItemType]);
 
   const shouldShowPreview =
     videoContent.selectedVideoDetails ||
@@ -926,30 +978,30 @@ useEffect(() => {
                 >
                   {/* Keyboard shortcuts option - only show for quiz and coding exercise */}
                   {(activeItemType === 'quiz' || activeItemType === 'coding-exercise') && (
-  <button
-    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 focus:outline-none"
-    onClick={(e) => {
-      e.stopPropagation();
-      e.preventDefault();
-      handleKeyboardShortcuts();
-    }}
-    type="button"
-  >
-    Keyboard shortcuts
-  </button>
-)}
+                    <button
+                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 focus:outline-none"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        handleKeyboardShortcuts();
+                      }}
+                      type="button"
+                    >
+                      Keyboard shortcuts
+                    </button>
+                  )}
 
-<button
-  className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 focus:outline-none"
-  onClick={(e) => {
-    e.stopPropagation();
-    e.preventDefault();
-    handleReportAbuse();
-  }}
-  type="button"
->
-  Report abuse
-</button>
+                  <button
+                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 focus:outline-none"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      handleReportAbuse();
+                    }}
+                    type="button"
+                  >
+                    Report abuse
+                  </button>
                 </div>
               )}
             </div>
@@ -1260,6 +1312,19 @@ useEffect(() => {
             width: isExpanded ? "100%" : "75.5vw",
             transition: "width 0.3s ease-in-out"
           }}>
+                {/* Content Information Display - shows over video player */}
+                {showContentInformation && (
+                  <ContentInformationDisplay
+                    isOpen={showContentInformation}
+                    onClose={() => setShowContentInformation(false)}
+                    contentData={{
+                      contentType: activeItemType,
+                      isEncrypted: false,
+                      courseHasEncryptedVideos: false,
+                    }}
+                  />
+                )}
+
                 <div
                   ref={playerContainerRef}
                   className="relative w-full h-full flex"
@@ -1330,6 +1395,7 @@ useEffect(() => {
                           currentVideoDetails={(currentContent.data as any)?.selectedVideoDetails}
                           onReportAbuse={handleReportAbuse}
                           onShowKeyboardShortcuts={handleVideoKeyboardShortcuts}
+                          onShowContentInformation={handleContentInformation}
                         />
                       </div>
                     )}
@@ -1374,6 +1440,30 @@ useEffect(() => {
           )}
         </div>
 
+        {/* Course Content Button - only shows when sidebar is collapsed */}
+        {isExpanded && (
+          <div className="fixed top-1/5 right-0 transform -translate-y-1/2 z-50">
+            <div className="group">
+              <button
+                onClick={() => setIsExpanded(false)}
+                className="bg-purple-600 hover:bg-purple-700 text-white rounded-l shadow-lg flex items-center transition-all duration-300 ease-in-out transform translate-x-24 group-hover:translate-x-0"
+                style={{ 
+                  paddingTop: '12px', 
+                  paddingBottom: '12px',
+                  paddingLeft: '8px',
+                  paddingRight: '16px',
+                  minWidth: '140px'
+                }}
+              >
+                <ChevronLeft className="w-5 h-5 mr-2" />
+                <span className="text-sm font-medium whitespace-nowrap">
+                  Course content
+                </span>
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Sidebar */}
         {!isExpanded && (
           <div
@@ -1404,7 +1494,7 @@ useEffect(() => {
         </button>
       )}
 
-      {/* Modals */}
+      {/* Other Modals */}
       <LearningReminderModal
         isOpen={showLearningModal}
         onClose={() => setShowLearningModal(false)}
@@ -1419,4 +1509,4 @@ useEffect(() => {
   );
 };
 
-export default InstructorVideoPreview;
+export default InstructorVideoPreview
