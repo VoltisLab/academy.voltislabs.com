@@ -75,7 +75,6 @@ const handleSourceFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     if (onSourceFileSelect) {
       onSourceFileSelect(file);
     }
-    console.log("Source file selected:", file);
   }
 };
   
@@ -138,7 +137,7 @@ const handleSourceFileChange = (e: ChangeEvent<HTMLInputElement>) => {
       if (onFileSelect) {
         onFileSelect(file);
       }
-      console.log("File selected:", file);
+
     }
   };
   
@@ -175,18 +174,6 @@ const handleSourceFileChange = (e: ChangeEvent<HTMLInputElement>) => {
       }, 3000);
     }
   };
-
-  // Select an item from the library
-  const handleSelectLibraryItem = (item: StoredVideo) => {
-    const itemExists = selectedLibraryItems.some(selected => selected.id === item.id);
-    if (!itemExists) {
-      setSelectedLibraryItems([...selectedLibraryItems, item]);
-      console.log(`Selected library item: ${item.filename}`);
-    }
-  };
-
-
-  
   
   // Custom input styles with focus state
   const inputClasses = "w-full px-3 py-2 border border-gray-500 rounded text-gray-700 focus:outline-none focus:1 focus:ring-[#6D28D2] focus:border-[#6D28D2]";

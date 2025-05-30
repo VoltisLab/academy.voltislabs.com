@@ -185,9 +185,8 @@ export const BasicInformationForm = ({ onSaveNext }: BasicInformationFormProps) 
         
         // Extract course ID and pass it to the parent component
         const courseId = response.createCourseBasicInfo?.course?.id;
-        console.log(response)
         if (courseId) {
-          console.log("Course created with ID:", courseId);
+
           onSaveNext(courseId); // Pass the course ID to the parent
         } else {
           console.error("Course ID not found in response");
