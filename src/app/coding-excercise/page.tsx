@@ -117,53 +117,30 @@ const CodingExerciseKeysMap: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex items-center space-x-4">
-            <div className="text-orange-500 font-bold text-xl">udemy</div>
-            <nav className="flex space-x-6 text-sm">
-              <a href="#" className="text-gray-600 hover:text-gray-900">Explore</a>
-            </nav>
-            <div className="flex-1 max-w-md">
-              <input
-                type="text"
-                placeholder="Find your next course by skill, topic, or instructor"
-                className="w-full px-4 py-2 border border-gray-300 rounded-full text-sm"
-              />
-            </div>
-            <div className="flex items-center space-x-4 text-sm">
-              <a href="#" className="text-gray-600 hover:text-gray-900">Udemy Business</a>
-              <a href="#" className="text-gray-600 hover:text-gray-900">Instructor</a>
-              <a href="#" className="text-gray-600 hover:text-gray-900">My learning</a>
-            </div>
-          </div>
-        </div>
-      </div>
 
       {/* Main Content */}
-      <div className="max-w-6xl mx-auto px-6 py-8">
-        <h1 className="text-2xl font-bold text-center mb-8">Keyboard shortcuts of coding exercise</h1>
+      <div className="max-w-6xl mx-auto px-6 py-8 mt-16">
+        <h1 className="text-lg font-bold text-center mb-8">Keyboard shortcuts of coding exercise</h1>
         
         <div className="space-y-8">
           {shortcutSections.map((section, sectionIndex) => (
             <div key={sectionIndex}>
-              <h2 className="text-lg font-semibold mb-4">{section.title}</h2>
+              <h2 className="text-lg font-bold mb-4 text-gray-800">{section.title}</h2>
               <div className="bg-white border border-gray-300 rounded-lg overflow-hidden">
                 <table className="w-full">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-900 border-b border-gray-300">Action</th>
-                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-900 border-b border-gray-300">Windows/Linux</th>
-                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-900 border-b border-gray-300">Mac</th>
+                      <th className="px-4 py-3 text-left text-sm font-bold text-gray-800 border-b border-gray-300">Action</th>
+                      <th className="px-4 py-3 text-left text-sm font-bold text-gray-800 border-b border-gray-300">Windows/Linux</th>
+                      <th className="px-4 py-3 text-left text-sm font-bold text-gray-800 border-b border-gray-300">Mac</th>
                     </tr>
                   </thead>
                   <tbody>
                     {section.shortcuts.map((shortcut, index) => (
-                      <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                        <td className="px-4 py-3 text-sm text-gray-900 border-b border-gray-200">{shortcut.action}</td>
-                        <td className="px-4 py-3 text-sm text-blue-600 border-b border-gray-200">{shortcut.windows}</td>
-                        <td className="px-4 py-3 text-sm text-blue-600 border-b border-gray-200">{shortcut.mac}</td>
+                      <tr key={index} >
+                        <td className="px-4 py-3 text-sm text-gray-800 border-b border-gray-200">{shortcut.action}</td>
+                        <td className="px-4 py-3 text-sm text-gray-800 border-b border-gray-200">{shortcut.windows}</td>
+                        <td className="px-4 py-3 text-sm text-gray-800 border-b border-gray-200">{shortcut.mac}</td>
                       </tr>
                     ))}
                   </tbody>

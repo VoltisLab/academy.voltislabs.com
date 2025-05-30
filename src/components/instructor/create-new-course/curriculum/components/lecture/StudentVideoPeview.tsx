@@ -13,8 +13,6 @@ import {
   ArticleContent,
 } from "@/lib/types";
 import {
-  ChevronDown,
-  ChevronUp,
   Play,
   X,
   Volume2,
@@ -43,6 +41,7 @@ import AssignmentPreview from "../assignment/AssignmentPreview";
 import VideoControls from "./VideoControls";
 import LearningReminderModal from "./modals/LearningReminderModal";
 import BottomTabsContainer from "./BottomTabsContainer";
+import { useRouter } from 'next/navigation'; 
 
 // Add QuizData interface
 interface QuizData {
@@ -185,6 +184,7 @@ const StudentVideoPreview = ({
   const [assignmentStatus, setAssignmentStatus] = useState<
     "overview" | "assignment" | "summary/feedback"
   >("overview");
+   const router = useRouter();
 
   const handleStartAssignment = () => {
     setAssignmentStatus("assignment");
@@ -512,26 +512,44 @@ const StudentVideoPreview = ({
   };
 
   // Handle report abuse
-  const handleReportAbuse = () => {
-    console.log("Report abuse clicked - setting modal to show");
-    setShowReportModal(true);
-    setShowSettingsDropdown(false);
-  };
+  const handleKeyboardShortcuts = (e?: React.MouseEvent) => {
+  if (e) {
+    e.stopPropagation();
+    e.preventDefault();
+  }
+  
+  console.log(activeItemType + " active item");
+  setShowSettingsDropdown(false);
+  
+  if (activeItemType === 'quiz') {
+    setShowQuizKeyboardShortcuts(true);
+  } else if (activeItemType === 'coding-exercise') {
+    // Use router.push with proper error handling
+    try {
+      router.push('/coding-excercise');
+    } catch (error) {
+      console.error('Navigation error:', error);
+      // Fallback: show a message or handle the error
+      alert('Navigation to coding exercise page failed');
+    }
+  }
+};
+
+// Fixed handleReportAbuse function
+const handleReportAbuse = (e?: React.MouseEvent) => {
+  if (e) {
+    e.stopPropagation();
+    e.preventDefault();
+  }
+  
+  console.log("Report abuse clicked - setting modal to show");
+  setShowSettingsDropdown(false);
+  setShowReportModal(true);
+};
 
   const handleReportSubmit = (issueType: string, issueDetails: string) => {
     console.log("Report submitted:", { issueType, issueDetails });
     setShowReportModal(false);
-  };
-
-  // Handle keyboard shortcuts
-  const handleKeyboardShortcuts = () => {
-    setShowSettingsDropdown(false);
-    
-    if (activeItemType === 'quiz') {
-      setShowQuizKeyboardShortcuts(true);
-    } else if (activeItemType === 'coding-exercise') {
-      window.location.href = '/coding-excercise'
-    }
   };
 
   // Handle video keyboard shortcuts (from video controls)
@@ -698,53 +716,83 @@ const StudentVideoPreview = ({
 
   // Effects
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        allLecturesDropdownOpen ||
-        sortByDropdownOpen ||
-        showSettingsDropdown
-      ) {
-        setAllLecturesDropdownOpen(false);
-        setSortByDropdownOpen(false);
-        setShowSettingsDropdown(false);
-      }
-    };
+  const handleClickOutside = (event: MouseEvent) => {
+    const target = event.target as Element;
+    
+    // Check if click is inside settings dropdown or its button
+    const settingsDropdown = document.querySelector('.absolute.bottom-full');
+    const settingsButton = document.querySelector('[aria-label="Settings"]');
+    
+    if (
+      settingsDropdown && 
+      (settingsDropdown.contains(target) || settingsButton?.contains(target))
+    ) {
+      return; // Don't close if clicking inside settings dropdown
+    }
+    
+    if (showSettingsDropdown) {
+      setShowSettingsDropdown(false);
+    }
+    
+    if (allLecturesDropdownOpen) {
+      setAllLecturesDropdownOpen(false);
+    }
+    
+    if (sortByDropdownOpen) {
+      setSortByDropdownOpen(false);
+    }
+  };
 
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [allLecturesDropdownOpen, sortByDropdownOpen, showSettingsDropdown]);
+  document.addEventListener("mousedown", handleClickOutside);
+  return () => {
+    document.removeEventListener("mousedown", handleClickOutside);
+  };
+}, [allLecturesDropdownOpen, sortByDropdownOpen, showSettingsDropdown]);
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.code === "Space" && activeItemType === "video") {
-        setPlaying(!playing);
-        e.preventDefault();
-      } else if (e.code === "KeyB" && activeTab === "notes" && !isAddingNote) {
-        handleCreateNote();
-        e.preventDefault();
-      } else if (e.code === "ArrowRight" && activeItemType === "video") {
-        handleForward();
-        e.preventDefault();
-      } else if (e.code === "ArrowLeft" && activeItemType === "video") {
-        handleRewind();
-        e.preventDefault();
-      }
-    };
+  
+useEffect(() => {
+  const handleKeyDown = (e: KeyboardEvent) => {
+    // Check if user is currently typing in an input field
+    const activeElement = document.activeElement;
+    const isTypingInFormField = activeElement && (
+      activeElement.tagName === 'INPUT' ||
+      activeElement.tagName === 'TEXTAREA' ||
+      activeElement.tagName === 'SELECT' ||
+      (activeElement as HTMLElement).contentEditable === 'true'
+    );
 
-    const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
-    };
+    // Don't handle keyboard shortcuts if user is typing in a form field
+    if (isTypingInFormField) {
+      return;
+    }
 
-    document.addEventListener("keydown", handleKeyDown);
-    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    if (e.code === "Space" && activeItemType === "video") {
+      setPlaying(!playing);
+      e.preventDefault();
+    } else if (e.code === "KeyB" && activeTab === "notes" && !isAddingNote) {
+      handleCreateNote();
+      e.preventDefault();
+    } else if (e.code === "ArrowRight" && activeItemType === "video") {
+      handleForward();
+      e.preventDefault();
+    } else if (e.code === "ArrowLeft" && activeItemType === "video") {
+      handleRewind();
+      e.preventDefault();
+    }
+  };
 
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-      document.removeEventListener("fullscreenchange", handleFullscreenChange);
-    };
-  }, [playing, activeTab, isAddingNote, activeItemType]);
+  const handleFullscreenChange = () => {
+    setIsFullscreen(!!document.fullscreenElement);
+  };
+
+  document.addEventListener("keydown", handleKeyDown);
+  document.addEventListener("fullscreenchange", handleFullscreenChange);
+
+  return () => {
+    document.removeEventListener("keydown", handleKeyDown);
+    document.removeEventListener("fullscreenchange", handleFullscreenChange);
+  };
+}, [playing, activeTab, isAddingNote, activeItemType]);
 
   const shouldShowPreview =
     videoContent.selectedVideoDetails ||
@@ -878,24 +926,30 @@ const StudentVideoPreview = ({
                 >
                   {/* Keyboard shortcuts option - only show for quiz and coding exercise */}
                   {(activeItemType === 'quiz' || activeItemType === 'coding-exercise') && (
-                    <button
-                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 focus:outline-none items-center"
-                      onClick={handleKeyboardShortcuts}
-                      type="button"
-                    >
-                      Keyboard shortcuts
-                    </button>
-                  )}
-                  <button
-                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 focus:outline-none"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleReportAbuse();
-                    }}
-                    type="button"
-                  >
-                    Report abuse
-                  </button>
+  <button
+    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 focus:outline-none"
+    onClick={(e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      handleKeyboardShortcuts();
+    }}
+    type="button"
+  >
+    Keyboard shortcuts
+  </button>
+)}
+
+<button
+  className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 focus:outline-none"
+  onClick={(e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    handleReportAbuse();
+  }}
+  type="button"
+>
+  Report abuse
+</button>
                 </div>
               )}
             </div>
@@ -968,47 +1022,46 @@ const StudentVideoPreview = ({
           {/* Content area */}
           <div className="flex-shrink-0" style={{ height: isContentFullscreen ? "100vh" : "calc(100vh - 170px)" }}>
             {showQuizKeyboardShortcuts ? (
-              <div className="bg-white h-full flex items-center justify-center p-8">
-                <div className="bg-white text-gray-800 rounded-lg p-6 max-w-md w-full mx-4 relative border border-gray-200 shadow-lg">
-                  <button
+              <div className="bg-black h-full flex items-center justify-center p-8">
+                <button
                     onClick={() => setShowQuizKeyboardShortcuts(false)}
-                    className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 focus:outline-none"
+                    className="absolute top-8 right-[500px] text-white hover:text-white focus:outline-none"
                   >
                     <X className="w-5 h-5" />
                   </button>
+                <div className="bg-black text-white rounded-lg p-5 h-full max-w-2xl relative text-center justify-center items-center flex flex-col gap-20">
+                
 
-                  <div className="flex items-center mb-6">
-                    <h2 className="text-lg font-semibold">Keyboard shortcuts</h2>
-                    <span className="ml-2 text-gray-400">?</span>
+                  <div className="flex items-center mb-6 text-center">
+                    <h2 className="text-2xl font-bold text-center">Keyboard shortcuts</h2>
+                    <span className="ml-2 text-white bg-gray-700 px-2">?</span>
                   </div>
 
                   <div className="space-y-4">
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between gap-10">
                       <span>Select answer 1-9</span>
                       <div className="flex space-x-1">
-                        {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
-                          <kbd key={num} className="bg-gray-200 text-gray-700 px-2 py-1 rounded text-sm font-mono min-w-[24px] text-center">
-                            {num}
-                          </kbd>
-                        ))}
+                        <kbd className="bg-gray-700 text-white px-2 py-1 rounded text-sm font-mono min-w-[24px] text-center">
+                          1-9
+                        </kbd>
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between gap-10">
                       <span>Check answer / Next question</span>
-                      <kbd className="bg-gray-200 text-gray-700 px-2 py-1 rounded text-sm font-mono">
+                      <kbd className="bg-gray-700 text-white px-2 py-1 rounded text-sm font-mono">
                         →
                       </kbd>
                     </div>
 
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between gap-10">
                       <span>Skip question</span>
                       <div className="flex items-center space-x-1">
-                        <kbd className="bg-gray-200 text-gray-700 px-2 py-1 rounded text-sm font-mono">
+                        <kbd className="bg-gray-700 text-white px-2 py-1 rounded text-sm font-mono">
                           Shift
                         </kbd>
                         <span className="text-gray-400">+</span>
-                        <kbd className="bg-gray-200 text-gray-700 px-2 py-1 rounded text-sm font-mono">
+                        <kbd className="bg-gray-700 text-white px-2 py-1 rounded text-sm font-mono">
                           →
                         </kbd>
                       </div>
