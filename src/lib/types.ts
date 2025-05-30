@@ -914,7 +914,7 @@ export interface LectureItemProps {
   }) => void;
   removeUploadedFile?: (fileName: string, lectureId: string) => void;
   addSourceCodeFile?: (file: SourceCodeFile) => void;
-  removeSourceCodeFile?: (fileName: string, lectureId: string) => void;
+  removeSourceCodeFile?: (fileName: string | undefined, lectureId: string) => void;
   addExternalResource?: (resource: ExternalResourceItem) => void;
   removeExternalResource?: (title: string, lectureId: string) => void;
 }

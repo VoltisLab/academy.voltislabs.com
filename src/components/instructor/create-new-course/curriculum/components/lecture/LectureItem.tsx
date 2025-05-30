@@ -1763,7 +1763,7 @@ const createEnhancedLectureForPreview = (): EnhancedLecture => {
     </h3>
     {currentLectureUploadedFiles.map((file, index) => (
       <div
-        key={`file-${file.name}-${file.lectureId}`} // Better key
+        key={`uploaded-${file.name}-${file.lectureId}-${index}`} // More unique key
         className="flex justify-between items-center py-1"
       >
         <div className="flex items-center text-gray-800">
@@ -1774,7 +1774,6 @@ const createEnhancedLectureForPreview = (): EnhancedLecture => {
         </div>
         <button
           onClick={() => {
-            // Use the global remove function instead of local setState
             if (removeUploadedFile) {
               removeUploadedFile(file.name, lecture.id);
             }
@@ -1788,21 +1787,52 @@ const createEnhancedLectureForPreview = (): EnhancedLecture => {
   </div>
 )}
 
-{/* Display Source Code section if files exist for this lecture */}
+{/* Display Source Code section if files exist for this lecture - FIXED */}
+{currentLectureSourceCodeFiles.length > 0 && (
+  <div className="mb-4 border-b border-gray-400 pb-2">
+    <h3 className="text-sm font-bold text-gray-700 mb-2">
+      Source Code
+    </h3>
+    {currentLectureSourceCodeFiles.map((file, index) => (
+      <div
+        key={`source-code-${file.filename}-${file.lectureId}-${index}`} // Fixed unique key
+        className="flex justify-between items-center py-1"
+      >
+        <div className="flex items-center text-gray-800">
+          <span className="text-sm text-gray-800">
+            {file.filename || file.name}
+          </span>
+        </div>
+        <button
+          onClick={() => {
+            if (removeSourceCodeFile) {
+              removeSourceCodeFile(file.name, lecture.id);
+            }
+          }}
+          className="text-gray-400 hover:bg-gray-200 p-2 rounded"
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
+      </div>
+    ))}
+  </div>
+)}
+
+{/* Display External Resources section if files exist for this lecture - FIXED */}
 {currentLectureExternalResources.length > 0 && (
   <div className="mb-4 border-b border-gray-400 pb-2">
     <h3 className="text-sm font-bold text-gray-700 mb-2">
       External Resources
     </h3>
     {currentLectureExternalResources.map((resource, index) => {
-      // FIXED: Get the resource title, handling undefined cases
+      // Get the resource title, handling undefined cases
       const resourceTitle = typeof resource.title === 'string' 
         ? resource.title 
         : resource.name || `Resource ${index + 1}`;
         
       return (
         <div
-          key={`resource-${resourceTitle}-${resource.lectureId}`} // Use computed title
+          key={`external-${resourceTitle}-${resource.lectureId}-${index}`} // Fixed unique key
           className="flex justify-between items-center py-1"
         >
           <div className="flex items-center text-gray-800">
@@ -1813,7 +1843,6 @@ const createEnhancedLectureForPreview = (): EnhancedLecture => {
           </div>
           <button
             onClick={() => {
-              // FIXED: Use the computed resourceTitle which is guaranteed to be a string
               if (removeExternalResource) {
                 removeExternalResource(resourceTitle, lecture.id);
               }
@@ -1827,40 +1856,6 @@ const createEnhancedLectureForPreview = (): EnhancedLecture => {
     })}
   </div>
 )}
-
-{/* External Resources section - only for this lecture */}
-{currentLectureExternalResources.length > 0 && (
-  <div className="mb-4 border-b border-gray-400 pb-2">
-    <h3 className="text-sm font-bold text-gray-700 mb-2">
-      External Resources
-    </h3>
-    {currentLectureExternalResources.map((resource, index) => (
-      <div
-        key={`resource-${resource.title}-${resource.lectureId}`} // Better key
-        className="flex justify-between items-center py-1"
-      >
-        <div className="flex items-center text-gray-800">
-          <SquareArrowOutUpRight size={13} className="mr-1 text-gray-800" />
-          <span className="text-sm text-gray-800">
-            {typeof resource.title === 'string' ? resource.title : resource.name}
-          </span>
-        </div>
-        <button
-          onClick={() => {
-            // Use the global remove function
-            if (removeExternalResource) {
-              removeExternalResource(resource.title, lecture.id);
-            }
-          }}
-          className="text-gray-400 hover:bg-gray-200 p-2 rounded"
-        >
-          <Trash2 className="w-4 h-4" />
-        </button>
-      </div>
-    ))}
-  </div>
-)}
-
                     {articleContent.text &&
                       articleContent.text.trim() !== "" &&
                       !videoContent.selectedVideoDetails && (

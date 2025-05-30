@@ -22,6 +22,7 @@ interface VideoControlsProps {
   };
   onReportAbuse?: () => void;
   onShowKeyboardShortcuts?: () => void;
+  onShowContentInformation?: () => void;
 }
 
 const VideoControls: React.FC<VideoControlsProps> = ({
@@ -43,6 +44,7 @@ const VideoControls: React.FC<VideoControlsProps> = ({
   currentVideoDetails,
   onReportAbuse,
   onShowKeyboardShortcuts,
+  onShowContentInformation,
 }) => {
   const [rewindLabel, setRewindLabel] = useState<boolean>(false);
   const [forwardLabel, setForwardLabel] = useState<boolean>(false);
@@ -111,6 +113,9 @@ const VideoControls: React.FC<VideoControlsProps> = ({
   const handleContentInformation = () => {
     console.log('Content information clicked');
     setShowSettingsDropdown(false);
+    if (onShowContentInformation) {
+      onShowContentInformation();
+    }
   };
 
   return (
@@ -356,6 +361,7 @@ const VideoControls: React.FC<VideoControlsProps> = ({
           >
             <Maximize className="w-4 h-4" />
           </button>
+          
 
           {/* Expand button - added to video controls */}
           <div className="border-l border-gray-700 pl-3 ml-3">
