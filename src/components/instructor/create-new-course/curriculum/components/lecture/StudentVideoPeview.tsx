@@ -1,5 +1,5 @@
-"use client"
-import React, { useState, useEffect, useRef } from 'react';
+"use client";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Lecture,
   SourceCodeFile,
@@ -42,7 +42,8 @@ import AssignmentPreview from "../assignment/AssignmentPreview";
 import VideoControls from "./VideoControls";
 import LearningReminderModal from "./modals/LearningReminderModal";
 import BottomTabsContainer from "./BottomTabsContainer";
-import { useRouter } from 'next/navigation'; 
+import { useRouter } from "next/navigation";
+import { useAssignment } from "@/context/AssignmentDataContext";
 
 // Add ContentInformationDisplay component
 const ContentInformationDisplay: React.FC<{
@@ -65,23 +66,27 @@ const ContentInformationDisplay: React.FC<{
         >
           <X className="w-6 h-6" />
         </button>
-        
-        <h2 className="text-xl font-semibold mb-6 text-center">Content information</h2>
-        
+
+        <h2 className="text-xl font-semibold mb-6 text-center">
+          Content information
+        </h2>
+
         <div className="space-y-4">
           <div>
             <span className="font-medium">Content type: </span>
             <span className="capitalize">{contentData.contentType}</span>
           </div>
-          
+
           <div>
-            <span className="font-medium">Course contains encrypted videos: </span>
-            <span>{contentData.courseHasEncryptedVideos ? 'Yes' : 'No'}</span>
+            <span className="font-medium">
+              Course contains encrypted videos:{" "}
+            </span>
+            <span>{contentData.courseHasEncryptedVideos ? "Yes" : "No"}</span>
           </div>
-          
+
           <div>
             <span className="font-medium">Is this video encrypted: </span>
-            <span>{contentData.isEncrypted ? 'Yes' : 'No'}</span>
+            <span>{contentData.isEncrypted ? "Yes" : "No"}</span>
           </div>
         </div>
       </div>
@@ -193,7 +198,7 @@ const StudentVideoPreview = ({
   const [showControls, setShowControls] = useState<boolean>(false);
   const [volume, setVolume] = useState<number>(0.8);
   const [playbackRate, setPlaybackRate] = useState<number>(1);
-  const [videoQuality, setVideoQuality] = useState<string>('Auto');
+  const [videoQuality, setVideoQuality] = useState<string>("Auto");
   const [showSearch, setShowSearch] = useState<boolean>(false);
   const [showLearningModal, setShowLearningModal] = useState<boolean>(false);
   const [activeItemId, setActiveItemId] = useState<string>(lecture.id);
@@ -204,12 +209,15 @@ const StudentVideoPreview = ({
   const [isContentFullscreen, setIsContentFullscreen] =
     useState<boolean>(false);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
-  const [selectedItemData, setSelectedItemData] = useState<SelectedItemType | null>(lecture);
-  const [showQuizKeyboardShortcuts, setShowQuizKeyboardShortcuts] = useState<boolean>(false);
-  const [showVideoKeyboardShortcuts, setShowVideoKeyboardShortcuts] = useState<boolean>(false);
-  
+  const [selectedItemData, setSelectedItemData] =
+    useState<SelectedItemType | null>(lecture);
+  const [showQuizKeyboardShortcuts, setShowQuizKeyboardShortcuts] =
+    useState<boolean>(false);
+  const [showVideoKeyboardShortcuts, setShowVideoKeyboardShortcuts] =
+    useState<boolean>(false);
   // Add state for content information modal
-  const [showContentInformation, setShowContentInformation] = useState<boolean>(false);
+  const [showContentInformation, setShowContentInformation] =
+    useState<boolean>(false);
 
   const [activeTab, setActiveTab] = useState<
     "overview" | "notes" | "announcements" | "reviews" | "learning-tools"
@@ -232,7 +240,9 @@ const StudentVideoPreview = ({
   const [assignmentStatus, setAssignmentStatus] = useState<
     "overview" | "assignment" | "summary/feedback"
   >("overview");
-   const router = useRouter();
+
+  const { assignmentData } = useAssignment();
+  const router = useRouter();
 
   const handleStartAssignment = () => {
     setAssignmentStatus("assignment");
@@ -565,20 +575,20 @@ const StudentVideoPreview = ({
       e.stopPropagation();
       e.preventDefault();
     }
-    
+
     console.log(activeItemType + " active item");
     setShowSettingsDropdown(false);
-    
-    if (activeItemType === 'quiz') {
+
+    if (activeItemType === "quiz") {
       setShowQuizKeyboardShortcuts(true);
-    } else if (activeItemType === 'coding-exercise') {
+    } else if (activeItemType === "coding-exercise") {
       // Use router.push with proper error handling
       try {
-        router.push('/coding-excercise');
+        router.push("/coding-excercise");
       } catch (error) {
-        console.error('Navigation error:', error);
+        console.error("Navigation error:", error);
         // Fallback: show a message or handle the error
-        alert('Navigation to coding exercise page failed');
+        alert("Navigation to coding exercise page failed");
       }
     }
   };
@@ -589,7 +599,7 @@ const StudentVideoPreview = ({
       e.stopPropagation();
       e.preventDefault();
     }
-    
+
     console.log("Report abuse clicked - setting modal to show");
     setShowSettingsDropdown(false);
     setShowReportModal(true);
@@ -613,13 +623,14 @@ const StudentVideoPreview = ({
   // Handle video quality change
   const handleVideoQualityChange = (quality: string) => {
     setVideoQuality(quality);
-    
+
     // For ReactPlayer, we can implement a basic quality system
     // Note: This is a simplified implementation as ReactPlayer doesn't have built-in quality control for all sources
-    if (quality === 'Auto') {
+    if (quality === "Auto") {
       // Implement auto quality selection based on connection or random selection
-      const qualities = ['1080p', '720p', '576p', '432p', '360p'];
-      const randomQuality = qualities[Math.floor(Math.random() * qualities.length)];
+      const qualities = ["1080p", "720p", "576p", "432p", "360p"];
+      const randomQuality =
+        qualities[Math.floor(Math.random() * qualities.length)];
       console.log(`Auto quality selected: ${randomQuality}`);
     } else {
       console.log(`Video quality changed to: ${quality}`);
@@ -771,26 +782,26 @@ const StudentVideoPreview = ({
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Element;
-      
+
       // Check if click is inside settings dropdown or its button
-      const settingsDropdown = document.querySelector('.absolute.bottom-full');
+      const settingsDropdown = document.querySelector(".absolute.bottom-full");
       const settingsButton = document.querySelector('[aria-label="Settings"]');
-      
+
       if (
-        settingsDropdown && 
+        settingsDropdown &&
         (settingsDropdown.contains(target) || settingsButton?.contains(target))
       ) {
         return; // Don't close if clicking inside settings dropdown
       }
-      
+
       if (showSettingsDropdown) {
         setShowSettingsDropdown(false);
       }
-      
+
       if (allLecturesDropdownOpen) {
         setAllLecturesDropdownOpen(false);
       }
-      
+
       if (sortByDropdownOpen) {
         setSortByDropdownOpen(false);
       }
@@ -806,12 +817,12 @@ const StudentVideoPreview = ({
     const handleKeyDown = (e: KeyboardEvent) => {
       // Check if user is currently typing in an input field
       const activeElement = document.activeElement;
-      const isTypingInFormField = activeElement && (
-        activeElement.tagName === 'INPUT' ||
-        activeElement.tagName === 'TEXTAREA' ||
-        activeElement.tagName === 'SELECT' ||
-        (activeElement as HTMLElement).contentEditable === 'true'
-      );
+      const isTypingInFormField =
+        activeElement &&
+        (activeElement.tagName === "INPUT" ||
+          activeElement.tagName === "TEXTAREA" ||
+          activeElement.tagName === "SELECT" ||
+          (activeElement as HTMLElement).contentEditable === "true");
 
       // Don't handle keyboard shortcuts if user is typing in a form field
       if (isTypingInFormField) {
@@ -897,11 +908,11 @@ const StudentVideoPreview = ({
           </div>
 
           {/* Center content - Article navigation */}
-          {(activeItemType === "article") && (
+          {activeItemType === "article" && (
             <div className="flex items-center relative ">
               <button
                 className={`p-1 text-white focus:outline-none bg-[#6D28D2] absolute  -top-52 -left-[455px]`}
-                onClick={() => navigateToItem('prev')}
+                onClick={() => navigateToItem("prev")}
                 type="button"
                 aria-label="Previous"
               >
@@ -909,7 +920,7 @@ const StudentVideoPreview = ({
               </button>
               <button
                 className={`p-1 text-white focus:outline-none bg-[#6D28D2] absolute -top-52 -right-[570px]`}
-                onClick={() => navigateToItem('next')}
+                onClick={() => navigateToItem("next")}
                 type="button"
                 aria-label="Next"
               >
@@ -926,14 +937,15 @@ const StudentVideoPreview = ({
                 {isLastItemInSection() && (
                   <button
                     className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-1.5 rounded text-sm font-medium"
-                    onClick={() => navigateToItem('next')}
+                    onClick={() => navigateToItem("next")}
                     type="button"
                   >
                     Next
                   </button>
                 )}
-                <button className="transition px-4 py-2 rounded hover:bg-neutral-200 cursor-pointer"
-                  onClick={() => navigateToItem('next')}
+                <button
+                  className="transition px-4 py-2 rounded hover:bg-neutral-200 cursor-pointer"
+                  onClick={() => navigateToItem("next")}
                 >
                   Skip Assignment
                 </button>
@@ -947,15 +959,18 @@ const StudentVideoPreview = ({
             )}
 
             {/* Next button for quiz, article, and coding exercise (only if last item in section) */}
-            {(activeItemType === "quiz" || activeItemType === "article" || activeItemType === "coding-exercise") && isLastItemInSection() && (
-              <button
-                className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-1.5 rounded text-sm font-medium"
-                onClick={goToNextSection}
-                type="button"
-              >
-                Next
-              </button>
-            )}
+            {(activeItemType === "quiz" ||
+              activeItemType === "article" ||
+              activeItemType === "coding-exercise") &&
+              isLastItemInSection() && (
+                <button
+                  className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-1.5 rounded text-sm font-medium"
+                  onClick={goToNextSection}
+                  type="button"
+                >
+                  Next
+                </button>
+              )}
 
             {/* Settings dropdown */}
             <div className="relative">
@@ -972,12 +987,13 @@ const StudentVideoPreview = ({
               </button>
 
               {showSettingsDropdown && (
-                <div 
+                <div
                   className="absolute bottom-full right-0 mb-2 bg-white border border-gray-200 rounded-md shadow-lg z-10 min-w-[160px]"
                   onClick={(e) => e.stopPropagation()}
                 >
                   {/* Keyboard shortcuts option - only show for quiz and coding exercise */}
-                  {(activeItemType === 'quiz' || activeItemType === 'coding-exercise') && (
+                  {(activeItemType === "quiz" ||
+                    activeItemType === "coding-exercise") && (
                     <button
                       className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 focus:outline-none"
                       onClick={(e) => {
@@ -1072,20 +1088,25 @@ const StudentVideoPreview = ({
           }}
         >
           {/* Content area */}
-          <div className="flex-shrink-0" style={{ height: isContentFullscreen ? "100vh" : "calc(100vh - 170px)" }}>
+          <div
+            className="flex-shrink-0"
+            style={{
+              height: isContentFullscreen ? "100vh" : "calc(100vh - 170px)",
+            }}
+          >
             {showQuizKeyboardShortcuts ? (
               <div className="bg-black h-full flex items-center justify-center p-8">
                 <button
-                    onClick={() => setShowQuizKeyboardShortcuts(false)}
-                    className="absolute top-8 right-[500px] text-white hover:text-white focus:outline-none"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
+                  onClick={() => setShowQuizKeyboardShortcuts(false)}
+                  className="absolute top-8 right-[500px] text-white hover:text-white focus:outline-none"
+                >
+                  <X className="w-5 h-5" />
+                </button>
                 <div className="bg-black text-white rounded-lg p-5 h-full max-w-2xl relative text-center justify-center items-center flex flex-col gap-20">
-                
-
                   <div className="flex items-center mb-6 text-center">
-                    <h2 className="text-2xl font-bold text-center">Keyboard shortcuts</h2>
+                    <h2 className="text-2xl font-bold text-center">
+                      Keyboard shortcuts
+                    </h2>
                     <span className="ml-2 text-white bg-gray-700 px-2">?</span>
                   </div>
 
@@ -1132,27 +1153,32 @@ const StudentVideoPreview = ({
                   </button>
 
                   <div className="flex items-center mb-6">
-                    <h2 className="text-xl font-semibold">Keyboard shortcuts</h2>
+                    <h2 className="text-xl font-semibold">
+                      Keyboard shortcuts
+                    </h2>
                     <span className="ml-2 text-gray-400">?</span>
                   </div>
 
                   <div className="grid grid-cols-2 gap-x-8 gap-y-4">
                     {[
-                      { action: 'Play / pause', key: 'Space' },
-                      { action: 'Go back 5s', key: '←' },
-                      { action: 'Go forward 5s', key: '→' },
-                      { action: 'Speed slower', key: 'Shift + ←' },
-                      { action: 'Speed faster', key: 'Shift + →' },
-                      { action: 'Volume up', key: '↑' },
-                      { action: 'Volume down', key: '↓' },
-                      { action: 'Mute', key: 'M' },
-                      { action: 'Fullscreen', key: 'F' },
-                      { action: 'Exit fullscreen', key: 'ESC' },
-                      { action: 'Add note', key: 'B' },
-                      { action: 'Toggle captions', key: 'C' },
-                      { action: 'Content information', key: 'I' },
+                      { action: "Play / pause", key: "Space" },
+                      { action: "Go back 5s", key: "←" },
+                      { action: "Go forward 5s", key: "→" },
+                      { action: "Speed slower", key: "Shift + ←" },
+                      { action: "Speed faster", key: "Shift + →" },
+                      { action: "Volume up", key: "↑" },
+                      { action: "Volume down", key: "↓" },
+                      { action: "Mute", key: "M" },
+                      { action: "Fullscreen", key: "F" },
+                      { action: "Exit fullscreen", key: "ESC" },
+                      { action: "Add note", key: "B" },
+                      { action: "Toggle captions", key: "C" },
+                      { action: "Content information", key: "I" },
                     ].map((shortcut, index) => (
-                      <div key={index} className="flex items-center justify-between">
+                      <div
+                        key={index}
+                        className="flex items-center justify-between"
+                      >
                         <span className="text-gray-300">{shortcut.action}</span>
                         <kbd className="bg-gray-800 text-white px-2 py-1 rounded text-sm font-mono min-w-[60px] text-center">
                           {shortcut.key}
@@ -1209,7 +1235,7 @@ const StudentVideoPreview = ({
             ) : activeItemType === "assignment" ? (
               <div className="w-full h-full">
                 <AssignmentPreview
-                  assignmentData={currentContent.data as ExtendedLecture}
+                  assignmentData={assignmentData as ExtendedLecture}
                   skipAssignment={() => navigateToItem("next")}
                   startAssignment={startAssignment}
                   setAssignmentStatus={setAssignmentStatus}
@@ -1307,11 +1333,13 @@ const StudentVideoPreview = ({
               </div>
             ) : (
               // Video content
-              <div className="bg-black relative h-full"
-               style={{ 
-            width: isExpanded ? "100%" : "75.5vw",
-            transition: "width 0.3s ease-in-out"
-          }}>
+              <div
+                className="bg-black relative h-full"
+                style={{
+                  width: isExpanded ? "100%" : "75.5vw",
+                  transition: "width 0.3s ease-in-out",
+                }}
+              >
                 {/* Content Information Display - shows over video player */}
                 {showContentInformation && (
                   <ContentInformationDisplay
@@ -1392,7 +1420,9 @@ const StudentVideoPreview = ({
                           onFullscreen={handleContentFullscreen}
                           onExpand={handleExpand}
                           formatTime={formatTime}
-                          currentVideoDetails={(currentContent.data as any)?.selectedVideoDetails}
+                          currentVideoDetails={
+                            (currentContent.data as any)?.selectedVideoDetails
+                          }
                           onReportAbuse={handleReportAbuse}
                           onShowKeyboardShortcuts={handleVideoKeyboardShortcuts}
                           onShowContentInformation={handleContentInformation}
@@ -1447,12 +1477,12 @@ const StudentVideoPreview = ({
               <button
                 onClick={() => setIsExpanded(false)}
                 className="bg-purple-600 hover:bg-purple-700 text-white rounded-l shadow-lg flex items-center transition-all duration-300 ease-in-out transform translate-x-24 group-hover:translate-x-0"
-                style={{ 
-                  paddingTop: '12px', 
-                  paddingBottom: '12px',
-                  paddingLeft: '8px',
-                  paddingRight: '16px',
-                  minWidth: '140px'
+                style={{
+                  paddingTop: "12px",
+                  paddingBottom: "12px",
+                  paddingLeft: "8px",
+                  paddingRight: "16px",
+                  minWidth: "140px",
                 }}
               >
                 <ChevronLeft className="w-5 h-5 mr-2" />
