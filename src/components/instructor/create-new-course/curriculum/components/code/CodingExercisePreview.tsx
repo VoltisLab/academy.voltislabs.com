@@ -74,10 +74,28 @@ const CodingExercisePreview: React.FC<CodingExercisePreviewProps> = ({
     try {
       // Capture console.log outputs
       const originalConsoleLog = console.log;
+      const originalPrint = window.print; // Save original print function
       const logs: string[] = [];
 
+      // Override print to capture output instead of opening print dialog
+      window.print = (...args: any[]) => {
+        const printMessage = args
+          .map((arg) =>
+            typeof arg === "object" ? JSON.stringify(arg) : String(arg)
+          )
+          .join(" ");
+        logs.push(printMessage);
+        originalConsoleLog(...args);
+        return true; // Prevent default print behavior
+      };
+
       console.log = (...args) => {
-        logs.push(args.join(" "));
+        const logMessage = args
+          .map((arg) =>
+            typeof arg === "object" ? JSON.stringify(arg) : String(arg)
+          )
+          .join(" ");
+        logs.push(logMessage);
         originalConsoleLog(...args);
       };
 
@@ -105,15 +123,45 @@ const CodingExercisePreview: React.FC<CodingExercisePreviewProps> = ({
         }
       } else if (data.exercise.language === "html") {
         setPreviewOutput(code);
+      } else if (data.exercise.language === "python") {
+        // For Python-like output in our preview
+        try {
+          // Replace Python-style print with console.log
+          const processedCode = code.replace(
+            /print\((.*)\)/g,
+            "console.log($1)"
+          );
+          const fn = new Function(`
+            ${processedCode}
+            return { output: typeof total !== 'undefined' ? total : null };
+          `);
+          const result = fn();
+          setPreviewOutput(
+            result.output !== null
+              ? String(result.output)
+              : "Code executed (check logs for output)"
+          );
+        } catch (e) {
+          setPreviewOutput(
+            `Error: ${e instanceof Error ? e.message : "Unknown error"}`
+          );
+        }
       } else {
-        // For other languages, show a generic message
-        setPreviewOutput(
-          `Execution output for ${data.exercise.language} would appear here`
-        );
+        // For other languages
+        try {
+          const fn = new Function(code);
+          fn();
+          setPreviewOutput("Code executed (check logs for output)");
+        } catch (e) {
+          setPreviewOutput(
+            `Execution output for ${data.exercise.language} would appear here`
+          );
+        }
       }
 
       setUserLogs(logs);
       console.log = originalConsoleLog;
+      window.print = originalPrint; // Restore original print function
     } catch (error) {
       setPreviewOutput(
         `Error: ${error instanceof Error ? error.message : "Unknown error"}`
@@ -145,35 +193,94 @@ const CodingExercisePreview: React.FC<CodingExercisePreviewProps> = ({
 
   const runTests = () => {
     setIsRunningTests(true);
-    setIsTestResultOpen(true);
-    setTerminalType("testResult");
 
-    // Simulate test running
-    setTimeout(() => {
-      const results = {
-        success: Math.random() > 0.5, // Random success for demo
-        message: "Tests completed",
-        results: [
-          {
-            name: "testBasicFunctionality",
-            passed: Math.random() > 0.5,
-            error: Math.random() > 0.5 ? undefined : "Expected 5 but got 3",
-          },
-          {
-            name: "testEdgeCases",
-            passed: Math.random() > 0.5,
-            error: Math.random() > 0.5 ? undefined : "Did not handle null case",
-          },
-        ],
+    // Clear previous logs
+    setUserLogs([]);
+
+    try {
+      // Create a test execution environment
+      const logs: string[] = [];
+      const originalConsoleLog = console.log;
+
+      console.log = (...args) => {
+        const logMessage = args.join(" ");
+        logs.push(logMessage);
+        originalConsoleLog(...args);
       };
 
-      setTestResults(results);
-      setIsRunningTests(false);
+      // Process Python test code to remove imports and handle Python-specific syntax
+      let processedTestCode = data.content.testCode
+        .replace(/^import .*$/gm, "") // Remove import statements
+        .replace(/sys\.stdout/g, "console") // Replace Python stdout with console
+        .replace(/io\.StringIO\(\)/g, '{ getvalue: () => logs.join("\\n") }'); // Mock StringIO
 
-      if (!results.success) {
+      // Wrap user code in a function for testing
+      const wrappedCode = `
+        function studentSolution() {
+          ${userCode.replace(/print\((.*)\)/g, "console.log($1)")}
+        }
+        
+        ${processedTestCode
+          .replace(/student_func\(\)/g, "studentSolution()")
+          .replace(
+            /def test_student_code\(student_func\):/,
+            "function testStudentCode(studentFunc) {"
+          )
+          .replace(/\bdef\b/g, "function")
+          .replace(/\bprint\(/g, "console.log(")}
+        
+        console.log(testStudentCode(studentSolution));
+      `;
+
+      // Execute the test
+      const testFn = new Function(wrappedCode);
+      testFn();
+
+      // Check if the test passed by looking for specific output
+      const testOutput = logs.join("\n");
+      const passed =
+        testOutput.includes("✅") ||
+        testOutput.toLowerCase().includes("correct") ||
+        !testOutput.toLowerCase().includes("❌");
+
+      setTestResults({
+        success: passed,
+        message: passed ? "All tests passed!" : "Some tests failed",
+        results: [
+          {
+            name: "Code Validation",
+            passed: passed,
+            error: passed ? undefined : testOutput,
+          },
+        ],
+      });
+
+      if (passed) {
+        setFailedAttempts(0);
+      } else {
         setFailedAttempts((prev) => prev + 1);
       }
-    }, 1500);
+
+      setUserLogs(logs);
+      console.log = originalConsoleLog;
+    } catch (error) {
+      setTestResults({
+        success: false,
+        message: "Error running tests",
+        results: [
+          {
+            name: "Code Validation",
+            passed: false,
+            error: error instanceof Error ? error.message : "Unknown error",
+          },
+        ],
+      });
+      setFailedAttempts((prev) => prev + 1);
+    } finally {
+      setIsRunningTests(false);
+      setIsTestResultOpen(true);
+      setTerminalType("testResult");
+    }
   };
 
   const resetCode = () => {
@@ -182,32 +289,19 @@ const CodingExercisePreview: React.FC<CodingExercisePreviewProps> = ({
     executeCodeForPreview(data.content.solutionCode);
   };
 
-  const toggleExpand = (section: ExpandableSection) => {
-    setExpandedSection(expandedSection === section ? null : section);
-  };
-
-  const getSectionWidth = (section: ExpandableSection) => {
-    if (expandedSection) {
-      return expandedSection === section ? "w-full" : "w-0 overflow-hidden";
-    }
-  };
-
   const toggleFirstSection = () => {
     setHideFirstSection(!hideFirstSection);
   };
 
-  const getMainContentHeight = () => {
-    return isTestResultOpen ? "h-[calc(100%-15rem)]" : "h-[calc(100%-3rem)]";
-  };
-
-  const canAccessHints = failedAttempts >= 2;
-  const canAccessSolution = failedAttempts >= 3;
+  const canAccessHints = failedAttempts >= 2 || (testResults?.success ?? false);
+  const canAccessSolution =
+    failedAttempts >= 3 || (testResults?.success ?? false);
 
   return (
     <div className="fixed left-0 top-0 h-screen w-full bg-white flex z-50 overflow-hidden">
       {/* Reset Confirmation Modal */}
       {showResetModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/10 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
             <div className="flex justify-between items-center mb-4">
               <h3 className="font-bold text-lg">Reset solution</h3>
@@ -433,13 +527,11 @@ const CodingExercisePreview: React.FC<CodingExercisePreviewProps> = ({
                     onClick={runTests}
                     disabled={isRunningTests}
                   >
+                    <PlayCircleIcon size={16} />
                     {isRunningTests ? (
                       <span className="animate-pulse">Running...</span>
                     ) : (
-                      <>
-                        <PlayCircleIcon size={16} />
-                        <span>Run tests</span>
-                      </>
+                      <span>Run tests</span>
                     )}
                   </button>
                   <button
@@ -526,9 +618,9 @@ const CodingExercisePreview: React.FC<CodingExercisePreviewProps> = ({
                   {testResults.success ? "Success" : "Failed"}
                 </button>
               )}
-              {isRunningTests && (
+              {/* {isRunningTests && (
                 <span className="animate-pulse">Running tests...</span>
-              )}
+              )} */}
             </div>
             {(testResults || isRunningTests) && (
               <ArrowDown
@@ -656,7 +748,7 @@ const CodingExercisePreview: React.FC<CodingExercisePreviewProps> = ({
                         </div>
 
                         {!test.passed && test.error && (
-                          <div className="bg-gray-800 p-2 rounded mt-1">
+                          <div className="bg-gray-800 p-2 rounded mt-1 whitespace-pre-wrap">
                             {test.error}
                           </div>
                         )}
@@ -666,7 +758,7 @@ const CodingExercisePreview: React.FC<CodingExercisePreviewProps> = ({
                 )}
 
                 {terminalType === "userLogs" && (
-                  <div>
+                  <div className="whitespace-pre-wrap">
                     {userLogs.length > 0 ? (
                       userLogs.map((log, index) => (
                         <div key={index} className="mb-1">
