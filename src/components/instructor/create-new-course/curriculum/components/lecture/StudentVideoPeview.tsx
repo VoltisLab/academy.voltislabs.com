@@ -11,6 +11,7 @@ import {
   ContentTypeDetector,
   ExtendedLecture,
   ArticleContent,
+  VideoNote,
 } from "@/lib/types";
 import {
   Play,
@@ -43,51 +44,7 @@ import VideoControls from "./VideoControls";
 import LearningReminderModal from "./modals/LearningReminderModal";
 import BottomTabsContainer from "./BottomTabsContainer";
 import { useRouter } from 'next/navigation'; 
-
-// Add ContentInformationDisplay component
-const ContentInformationDisplay: React.FC<{
-  isOpen: boolean;
-  onClose: () => void;
-  contentData: {
-    contentType: string;
-    isEncrypted: boolean;
-    courseHasEncryptedVideos: boolean;
-  };
-}> = ({ isOpen, onClose, contentData }) => {
-  if (!isOpen) return null;
-
-  return (
-    <div className="absolute inset-0 bg-black flex justify-center z-50">
-      <div className="text-white rounded-lg p-8 w-full mx-4 relative">
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 focus:outline-none"
-        >
-          <X className="w-6 h-6" />
-        </button>
-        
-        <h2 className="text-xl font-semibold mb-6 text-center">Content information</h2>
-        
-        <div className="space-y-4">
-          <div>
-            <span className="font-medium">Content type: </span>
-            <span className="capitalize">{contentData.contentType}</span>
-          </div>
-          
-          <div>
-            <span className="font-medium">Course contains encrypted videos: </span>
-            <span>{contentData.courseHasEncryptedVideos ? 'Yes' : 'No'}</span>
-          </div>
-          
-          <div>
-            <span className="font-medium">Is this video encrypted: </span>
-            <span>{contentData.isEncrypted ? 'Yes' : 'No'}</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
+import ContentInformationDisplay from './ContentInformationDisplay';
 
 // Add QuizData interface
 interface QuizData {
@@ -161,18 +118,6 @@ interface CodingExercise {
   contentType?: string;
 }
 
-// Define a type for notes
-type VideoNote = {
-  id: string;
-  timestamp: number;
-  formattedTime: string;
-  content: string;
-  lectureId: string;
-  lectureName?: string;
-  sectionName: string;
-  createdAt: Date;
-};
-
 type SelectedItemType = Lecture | Quiz | Assignment | CodingExercise;
 
 const StudentVideoPreview = ({
@@ -192,21 +137,21 @@ const StudentVideoPreview = ({
   const [duration, setDuration] = useState<number>(0);
   const [showControls, setShowControls] = useState<boolean>(false);
   const [volume, setVolume] = useState<number>(0.8);
+  const [muted, setMuted] = useState<boolean>(false);
   const [playbackRate, setPlaybackRate] = useState<number>(1);
   const [videoQuality, setVideoQuality] = useState<string>('Auto');
   const [showSearch, setShowSearch] = useState<boolean>(false);
   const [showLearningModal, setShowLearningModal] = useState<boolean>(false);
   const [activeItemId, setActiveItemId] = useState<string>(lecture.id);
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
-  const [showSettingsDropdown, setShowSettingsDropdown] =
-    useState<boolean>(false);
+  const [showSettingsDropdown, setShowSettingsDropdown] = useState<boolean>(false);
   const [showReportModal, setShowReportModal] = useState<boolean>(false);
-  const [isContentFullscreen, setIsContentFullscreen] =
-    useState<boolean>(false);
+  const [isContentFullscreen, setIsContentFullscreen] = useState<boolean>(false);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const [selectedItemData, setSelectedItemData] = useState<SelectedItemType | null>(lecture);
   const [showQuizKeyboardShortcuts, setShowQuizKeyboardShortcuts] = useState<boolean>(false);
   const [showVideoKeyboardShortcuts, setShowVideoKeyboardShortcuts] = useState<boolean>(false);
+  const [showCaptions, setShowCaptions] = useState<boolean>(false);
   
   // Add state for content information modal
   const [showContentInformation, setShowContentInformation] = useState<boolean>(false);
@@ -220,19 +165,16 @@ const StudentVideoPreview = ({
   const [isAddingNote, setIsAddingNote] = useState<boolean>(false);
   const [currentNoteContent, setCurrentNoteContent] = useState<string>("");
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
-  const [allLecturesDropdownOpen, setAllLecturesDropdownOpen] =
-    useState<boolean>(false);
+  const [allLecturesDropdownOpen, setAllLecturesDropdownOpen] = useState<boolean>(false);
   const [sortByDropdownOpen, setSortByDropdownOpen] = useState<boolean>(false);
-  const [selectedLectureFilter, setSelectedLectureFilter] =
-    useState<string>("All lectures");
-  const [selectedSortOption, setSelectedSortOption] = useState<string>(
-    "Sort by most recent"
-  );
+  const [selectedLectureFilter, setSelectedLectureFilter] = useState<string>("All lectures");
+  const [selectedSortOption, setSelectedSortOption] = useState<string>("Sort by most recent");
   const [startAssignment, setStartAssignment] = useState<boolean>(false);
   const [assignmentStatus, setAssignmentStatus] = useState<
     "overview" | "assignment" | "summary/feedback"
   >("overview");
-   const router = useRouter();
+  
+  const router = useRouter();
 
   const handleStartAssignment = () => {
     setAssignmentStatus("assignment");
@@ -241,6 +183,168 @@ const StudentVideoPreview = ({
   const playerRef = useRef<ReactPlayer>(null);
   const playerContainerRef = useRef<HTMLDivElement>(null);
   const mainContentRef = useRef<HTMLDivElement>(null);
+
+  // Video control handlers for keyboard shortcuts
+  const handlePlayPause = (): void => {
+    setPlaying(!playing);
+  };
+
+  const handleMute = (): void => {
+    const newMuted = !muted;
+    setMuted(newMuted);
+    console.log('Mute toggled:', newMuted, 'Current volume:', volume);
+    
+    // Force update ReactPlayer mute state
+    if (playerRef.current) {
+      setTimeout(() => {
+        const player = playerRef.current?.getInternalPlayer();
+        if (player) {
+          if (newMuted) {
+            player.mute?.();
+            player.setVolume?.(0);
+          } else {
+            player.unMute?.();
+            player.setVolume?.(volume * 100);
+          }
+        }
+      }, 100);
+    }
+  };
+
+  const handleVolumeUp = (): void => {
+    if (muted) {
+      setMuted(false); // Unmute if muted when increasing volume
+    }
+    setVolume(prevVolume => {
+      const newVolume = Math.min(1, prevVolume + 0.1);
+      console.log('Volume up - Previous:', prevVolume, 'New:', newVolume, 'Muted:', muted);
+      
+      // Multiple approaches to ensure volume change works
+      if (playerRef.current) {
+        // Approach 1: ReactPlayer internal player
+        setTimeout(() => {
+          const player = playerRef.current?.getInternalPlayer();
+          if (player) {
+            console.log('Setting volume via internal player:', newVolume);
+            if (player.setVolume) {
+              // Try different volume scales
+              player.setVolume(newVolume * 100); // YouTube scale
+              player.setVolume(newVolume); // HTML5 scale
+            }
+            player.unMute?.();
+          }
+          
+          // Approach 2: Direct HTML5 video element access
+          const videoElement = playerRef.current?.getInternalPlayer('video') as HTMLVideoElement;
+          if (videoElement && videoElement.tagName === 'VIDEO') {
+            console.log('Setting volume via HTML5 video element:', newVolume);
+            videoElement.volume = newVolume;
+            videoElement.muted = false;
+          }
+          
+          // Approach 3: Query for video elements in the container
+          const container = playerContainerRef.current;
+          if (container) {
+            const videos = container.querySelectorAll('video');
+            videos.forEach(video => {
+              console.log('Setting volume via queried video element:', newVolume);
+              video.volume = newVolume;
+              video.muted = false;
+            });
+          }
+        }, 100);
+      }
+      
+      return newVolume;
+    });
+  };
+
+  const handleVolumeDown = (): void => {
+    setVolume(prevVolume => {
+      const newVolume = Math.max(0, prevVolume - 0.1);
+      console.log('Volume down - Previous:', prevVolume, 'New:', newVolume, 'Muted:', muted);
+      
+      // Auto-mute if volume reaches 0
+      if (newVolume === 0) {
+        setMuted(true);
+      }
+      
+      // Multiple approaches to ensure volume change works
+      if (playerRef.current) {
+        setTimeout(() => {
+          const player = playerRef.current?.getInternalPlayer();
+          if (player && newVolume > 0) {
+            console.log('Setting volume via internal player:', newVolume);
+            if (player.setVolume) {
+              player.setVolume(newVolume * 100); // YouTube scale
+              player.setVolume(newVolume); // HTML5 scale
+            }
+            player.unMute?.();
+          } else if (player && newVolume === 0) {
+            player.mute?.();
+          }
+          
+          // Direct HTML5 video element access
+          const videoElement = playerRef.current?.getInternalPlayer('video') as HTMLVideoElement;
+          if (videoElement && videoElement.tagName === 'VIDEO') {
+            console.log('Setting volume via HTML5 video element:', newVolume);
+            videoElement.volume = newVolume;
+            videoElement.muted = newVolume === 0;
+          }
+          
+          // Query for video elements in the container
+          const container = playerContainerRef.current;
+          if (container) {
+            const videos = container.querySelectorAll('video');
+            videos.forEach(video => {
+              console.log('Setting volume via queried video element:', newVolume);
+              video.volume = newVolume;
+              video.muted = newVolume === 0;
+            });
+          }
+        }, 100);
+      }
+      
+      return newVolume;
+    });
+  };
+
+  const handleSpeedSlower = (): void => {
+    setPlaybackRate(prevRate => {
+      const newRate = Math.max(0.25, prevRate - 0.25);
+      console.log('Speed slower:', newRate);
+      return newRate;
+    });
+  };
+
+  const handleSpeedFaster = (): void => {
+    setPlaybackRate(prevRate => {
+      const newRate = Math.min(2, prevRate + 0.25);
+      console.log('Speed faster:', newRate);
+      return newRate;
+    });
+  };
+
+  const handleToggleCaptions = (): void => {
+    setShowCaptions(!showCaptions);
+    console.log('Captions toggled:', !showCaptions);
+  };
+
+  const handleSeekBackward = (): void => {
+    if (playerRef.current) {
+      const newTime = Math.max(0, progress - 5);
+      console.log('Seeking backward to:', newTime);
+      playerRef.current.seekTo(newTime, 'seconds');
+    }
+  };
+
+  const handleSeekForward = (): void => {
+    if (playerRef.current) {
+      const newTime = Math.min(duration, progress + 5);
+      console.log('Seeking forward to:', newTime);
+      playerRef.current.seekTo(newTime, 'seconds');
+    }
+  };
 
   // Content type detection
   const detectContentType = (
@@ -345,8 +449,7 @@ const StudentVideoPreview = ({
 
   // Get all items in order for navigation
   const getAllItemsInOrder = () => {
-    const items: { id: string; type: string; sectionId: string; item: any }[] =
-      [];
+    const items: { id: string; type: string; sectionId: string; item: any }[] = [];
 
     processedSections.forEach((section) => {
       section.lectures?.forEach((lecture) => {
@@ -409,8 +512,7 @@ const StudentVideoPreview = ({
 
     if (currentIndex === -1) return;
 
-    let targetIndex =
-      direction === "next" ? currentIndex + 1 : currentIndex - 1;
+    let targetIndex = direction === "next" ? currentIndex + 1 : currentIndex - 1;
 
     if (targetIndex >= 0 && targetIndex < allItems.length) {
       const targetItem = allItems[targetIndex];
@@ -802,6 +904,31 @@ const StudentVideoPreview = ({
     };
   }, [allLecturesDropdownOpen, sortByDropdownOpen, showSettingsDropdown]);
 
+  // Effect to handle volume changes and ensure they're applied to ReactPlayer
+  useEffect(() => {
+    if (playerRef.current) {
+      const player = playerRef.current.getInternalPlayer();
+      if (player) {
+        console.log('Applying volume change:', volume, 'Muted:', muted);
+        
+        // Handle different player types
+        if (muted) {
+          player.mute?.();
+          player.setVolume?.(0);
+        } else {
+          player.unMute?.();
+          // Different players use different volume scales
+          if (player.setVolume) {
+            // YouTube uses 0-100, others might use 0-1
+            const volumeValue = player.getVideoUrl?.()?.includes('youtube') ? volume * 100 : volume;
+            player.setVolume(volumeValue);
+          }
+        }
+      }
+    }
+  }, [volume, muted]);
+
+  // Comprehensive keyboard shortcuts implementation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Check if user is currently typing in an input field
@@ -818,18 +945,95 @@ const StudentVideoPreview = ({
         return;
       }
 
-      if (e.code === "Space" && activeItemType === "video") {
-        setPlaying(!playing);
+      // Only handle video shortcuts when video is active and notes tab is not active
+      const shouldHandleVideoShortcuts = activeItemType === "video" && activeTab !== "notes";
+      
+      // Only handle note shortcut when notes tab is active and not adding a note
+      const shouldHandleNoteShortcut = activeTab === "notes" && !isAddingNote;
+
+      if (shouldHandleVideoShortcuts) {
+        switch (e.code) {
+          case "Space": // Play/pause
+            e.preventDefault();
+            handlePlayPause();
+            break;
+            
+          case "ArrowLeft": // Go back 5s or speed slower
+            if (e.shiftKey) {
+              // Speed slower (Shift + ←)
+              e.preventDefault();
+              handleSpeedSlower();
+            } else {
+              // Go back 5s (←)
+              e.preventDefault();
+              handleSeekBackward();
+            }
+            break;
+            
+          case "ArrowRight": // Go forward 5s or speed faster
+            if (e.shiftKey) {
+              // Speed faster (Shift + →)
+              e.preventDefault();
+              handleSpeedFaster();
+            } else {
+              // Go forward 5s (→)
+              e.preventDefault();
+              handleSeekForward();
+            }
+            break;
+            
+          case "ArrowUp": // Volume up
+            e.preventDefault();
+            console.log('Arrow Up pressed for volume up');
+            handleVolumeUp();
+            break;
+            
+          case "ArrowDown": // Volume down
+            e.preventDefault();
+            console.log('Arrow Down pressed for volume down');
+            handleVolumeDown();
+            break;
+            
+          case "KeyM": // Mute
+            e.preventDefault();
+            handleMute();
+            break;
+            
+          case "KeyF": // Content Fullscreen (not browser fullscreen)
+            e.preventDefault();
+            console.log('F key pressed - entering content fullscreen');
+            handleContentFullscreen();
+            break;
+            
+          case "Escape": // Exit content fullscreen
+            e.preventDefault();
+            if (isContentFullscreen) {
+              console.log('ESC key pressed - exiting content fullscreen');
+              handleContentFullscreen(); // Toggle off content fullscreen
+            }
+            break;
+            
+          case "KeyC": // Toggle captions
+            e.preventDefault();
+            handleToggleCaptions();
+            break;
+            
+          case "KeyI": // Content information - use existing functionality
+            e.preventDefault();
+            console.log('I key pressed - toggling content info');
+            setShowContentInformation(!showContentInformation);
+            break;
+            
+          default:
+            // No action for other keys
+            break;
+        }
+      }
+
+      // Handle note creation shortcut (B key) when notes tab is active
+      if (shouldHandleNoteShortcut && e.code === "KeyB") {
         e.preventDefault();
-      } else if (e.code === "KeyB" && activeTab === "notes" && !isAddingNote) {
         handleCreateNote();
-        e.preventDefault();
-      } else if (e.code === "ArrowRight" && activeItemType === "video") {
-        handleForward();
-        e.preventDefault();
-      } else if (e.code === "ArrowLeft" && activeItemType === "video") {
-        handleRewind();
-        e.preventDefault();
       }
     };
 
@@ -844,7 +1048,20 @@ const StudentVideoPreview = ({
       document.removeEventListener("keydown", handleKeyDown);
       document.removeEventListener("fullscreenchange", handleFullscreenChange);
     };
-  }, [playing, activeTab, isAddingNote, activeItemType]);
+  }, [
+    playing, 
+    activeTab, 
+    isAddingNote, 
+    activeItemType, 
+    volume, 
+    muted, 
+    playbackRate,
+    showCaptions,
+    showContentInformation,
+    isContentFullscreen,
+    progress,
+    duration
+  ]);
 
   const shouldShowPreview =
     videoContent.selectedVideoDetails ||
@@ -1082,7 +1299,6 @@ const StudentVideoPreview = ({
                     <X className="w-5 h-5" />
                   </button>
                 <div className="bg-black text-white rounded-lg p-5 h-full max-w-2xl relative text-center justify-center items-center flex flex-col gap-20">
-                
 
                   <div className="flex items-center mb-6 text-center">
                     <h2 className="text-2xl font-bold text-center">Keyboard shortcuts</h2>
@@ -1343,17 +1559,44 @@ const StudentVideoPreview = ({
                       width="100%"
                       height="100%"
                       playing={playing}
-                      volume={volume}
+                      volume={muted ? 0 : volume}
+                      muted={muted}
                       playbackRate={playbackRate}
                       onProgress={handleProgress}
                       onDuration={handleDuration}
                       progressInterval={100}
+                      controls={false}
                       config={{
+                        youtube: {
+                          playerVars: {
+                            controls: 0,
+                            modestbranding: 1,
+                            rel: 0,
+                            showinfo: 0,
+                            disablekb: 1, // Disable YouTube's keyboard controls
+                          }
+                        },
+                        vimeo: {
+                          playerOptions: {
+                            controls: false,
+                            keyboard: false,
+                          }
+                        },
                         file: {
                           attributes: {
                             controlsList: "nodownload",
+                            disablePictureInPicture: true,
                           },
                         },
+                      }}
+                      onReady={() => {
+                        console.log('ReactPlayer ready, setting initial volume:', volume);
+                        if (playerRef.current) {
+                          const player = playerRef.current.getInternalPlayer();
+                          if (player && player.setVolume) {
+                            player.setVolume(volume * 100); // YouTube uses 0-100
+                          }
+                        }
                       }}
                     />
 
@@ -1386,7 +1629,11 @@ const StudentVideoPreview = ({
                           onPlayPause={() => setPlaying(!playing)}
                           onRewind={handleRewind}
                           onForward={handleForward}
-                          onVolumeChange={setVolume}
+                          onVolumeChange={(newVolume: number) => {
+                            console.log('Volume changed via controls:', newVolume);
+                            setVolume(newVolume);
+                            setMuted(newVolume === 0);
+                          }}
                           onPlaybackRateChange={setPlaybackRate}
                           onVideoQualityChange={handleVideoQualityChange}
                           onFullscreen={handleContentFullscreen}
@@ -1397,6 +1644,13 @@ const StudentVideoPreview = ({
                           onShowKeyboardShortcuts={handleVideoKeyboardShortcuts}
                           onShowContentInformation={handleContentInformation}
                         />
+                      </div>
+                    )}
+
+                    {/* Caption indicator */}
+                    {showCaptions && activeItemType === "video" && (
+                      <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-75 text-white px-3 py-1 rounded text-sm">
+                        Captions: ON
                       </div>
                     )}
                   </div>
