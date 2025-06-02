@@ -36,7 +36,6 @@ import Article from "./Article";
 import StudentVideoPreview from "./StudentVideoPeview";
 import InstructorVideoPreview from "./InstructorVideoPeview";
 import { FaCircleCheck } from "react-icons/fa6";
-import StudentPreviewSidebar from "./StudentPreviewSidebar";
 
 interface SelectedVideoDetails {
   id: string;
@@ -64,6 +63,16 @@ interface ExternalResourceItem {
   name: string;
   lectureId?: string;
   filename?: string;
+}
+
+// Updated LectureItemProps interface with async functions
+interface UpdatedLectureItemProps extends Omit<LectureItemProps, 'updateLectureName' | 'deleteLecture'> {
+  updateLectureName: (
+    sectionId: string,
+    lectureId: string,
+    newName: string
+  ) => Promise<void>;
+  deleteLecture: (sectionId: string, lectureId: string) => Promise<void>;
 }
 
 export default function LectureItem({
@@ -106,7 +115,7 @@ export default function LectureItem({
   removeSourceCodeFile,
   addExternalResource,
   removeExternalResource,
-}: LectureItemProps) {
+}: UpdatedLectureItemProps) {
   const lectureNameInputRef = useRef<HTMLInputElement>(null);
   const [showContentTypeSelector, setShowContentTypeSelector] = useState(false);
   const [isHovering, setIsHovering] = useState(false);
@@ -123,6 +132,8 @@ export default function LectureItem({
   const [showEditLectureForm, setShowEditLectureForm] =
     useState<boolean>(false);
   const [editLectureTitle, setEditLectureTitle] = useState<string>("");
+  const [editLoading, setEditLoading] = useState<boolean>(false);
+  const [deleteLoading, setDeleteLoading] = useState<boolean>(false);
   const lectureFormRef = useRef<HTMLDivElement>(null);
   const [activeContentType, setActiveContentType] =
     useState<ContentItemType | null>(null);
@@ -198,7 +209,6 @@ export default function LectureItem({
   const [articleContent, setArticleContent] = useState<ArticleContent>({
     text: "",
   });
-  const [selectedResources, setSelectedResources] = useState<StoredVideo[]>([]);
 
   // Add this useEffect to initialize the edit form when opened
   useEffect(() => {
@@ -214,86 +224,36 @@ export default function LectureItem({
   };
 
   const handleSaveArticle = (articleContent: string) => {
-  console.log('💾 Saving article content:', {
-    contentLength: articleContent.length,
-    hasVideoContent: !!videoContent.selectedVideoDetails
-  });
-  
-  // Save the article content
-  setArticleContent({ text: articleContent });
-  
-  // CRITICAL: Clear video content when saving article
-  if (videoContent.selectedVideoDetails) {
-    setVideoContent({
-      ...videoContent,
-      selectedVideoDetails: null
+    console.log('💾 Saving article content:', {
+      contentLength: articleContent.length,
+      hasVideoContent: !!videoContent.selectedVideoDetails
     });
-  }
+    
+    // Save the article content
+    setArticleContent({ text: articleContent });
+    
+    // CRITICAL: Clear video content when saving article
+    if (videoContent.selectedVideoDetails) {
+      setVideoContent({
+        ...videoContent,
+        selectedVideoDetails: null
+      });
+    }
 
-  // CRITICAL: Update the lecture's content type to 'article'
-  if (updateLectureContent) {
-    const updatedLecture = ContentTypeDetector.updateLectureContentType(
-      createEnhancedLectureForPreview(),
-      'article',
-      { text: articleContent }
-    );
-    updateLectureContent(sectionId, lecture.id, updatedLecture);
-  }
-
-  // Close the content section and show the article summary
-  setActiveContentType(null);
-
-  // Make sure lecture stays expanded
-  if (
-    toggleContentSection &&
-    (!activeContentSection ||
-      activeContentSection.sectionId !== sectionId ||
-      activeContentSection.lectureId !== lecture.id)
-  ) {
-    toggleContentSection(sectionId, lecture.id);
-  }
-};
-
-// CRITICAL FIX: Update selectVideo to properly set content type
-const selectVideo = (videoId: string) => {
-  const selectedVideo = videoContent.libraryTab.videos.find(
-    (v) => v.id === videoId
-  );
-
-  if (selectedVideo) {
-    const selectedDetails: SelectedVideoDetails = {
-      id: selectedVideo.id,
-      filename: selectedVideo.filename,
-      duration: "01:45",
-      thumbnailUrl: "https://via.placeholder.com/160x120/000000/FFFFFF/?text=Netflix",
-      isDownloadable: false,
-      url: selectedVideo.url || "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-    };
-
-    setVideoContent({
-      ...videoContent,
-      libraryTab: {
-        ...videoContent.libraryTab,
-        selectedVideo: videoId,
-      },
-      selectedVideoDetails: selectedDetails,
-    });
-
-    // CRITICAL: Clear article content when selecting a video
-    setArticleContent({ text: "" });
-
-    // CRITICAL: Update the lecture's content type to 'video'
+    // CRITICAL: Update the lecture's content type to 'article'
     if (updateLectureContent) {
       const updatedLecture = ContentTypeDetector.updateLectureContentType(
         createEnhancedLectureForPreview(),
-        'video',
-        selectedDetails
+        'article',
+        { text: articleContent }
       );
       updateLectureContent(sectionId, lecture.id, updatedLecture);
     }
 
+    // Close the content section and show the article summary
     setActiveContentType(null);
 
+    // Make sure lecture stays expanded
     if (
       toggleContentSection &&
       (!activeContentSection ||
@@ -302,8 +262,59 @@ const selectVideo = (videoId: string) => {
     ) {
       toggleContentSection(sectionId, lecture.id);
     }
-  }
-};
+  };
+
+  // CRITICAL FIX: Update selectVideo to properly set content type
+  const selectVideo = (videoId: string) => {
+    const selectedVideo = videoContent.libraryTab.videos.find(
+      (v) => v.id === videoId
+    );
+
+    if (selectedVideo) {
+      const selectedDetails: SelectedVideoDetails = {
+        id: selectedVideo.id,
+        filename: selectedVideo.filename,
+        duration: "01:45",
+        thumbnailUrl: "https://via.placeholder.com/160x120/000000/FFFFFF/?text=Netflix",
+        isDownloadable: false,
+        url: selectedVideo.url || "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      };
+
+      setVideoContent({
+        ...videoContent,
+        libraryTab: {
+          ...videoContent.libraryTab,
+          selectedVideo: videoId,
+        },
+        selectedVideoDetails: selectedDetails,
+      });
+
+      // CRITICAL: Clear article content when selecting a video
+      setArticleContent({ text: "" });
+
+      // CRITICAL: Update the lecture's content type to 'video'
+      if (updateLectureContent) {
+        const updatedLecture = ContentTypeDetector.updateLectureContentType(
+          createEnhancedLectureForPreview(),
+          'video',
+          selectedDetails
+        );
+        updateLectureContent(sectionId, lecture.id, updatedLecture);
+      }
+
+      setActiveContentType(null);
+
+      if (
+        toggleContentSection &&
+        (!activeContentSection ||
+          activeContentSection.sectionId !== sectionId ||
+          activeContentSection.lectureId !== lecture.id)
+      ) {
+        toggleContentSection(sectionId, lecture.id);
+      }
+    }
+  };
+
   const handleSourceCodeSelect = (file: LibraryFileWithSize) => {
     if (addSourceCodeFile) {
       addSourceCodeFile({
@@ -319,11 +330,19 @@ const selectVideo = (videoId: string) => {
     }
   };
 
-  // Add this function to save the lecture edit
-  const handleSaveLectureEdit = () => {
+  // NEW: Updated function to save the lecture edit with backend integration
+  const handleSaveLectureEdit = async () => {
     if (editLectureTitle.trim()) {
-      updateLectureName(sectionId, lecture.id, editLectureTitle.trim());
-      setShowEditLectureForm(false);
+      try {
+        setEditLoading(true);
+        await updateLectureName(sectionId, lecture.id, editLectureTitle.trim());
+        setShowEditLectureForm(false);
+      } catch (error) {
+        console.error("Failed to save lecture edit:", error);
+        // Error is already handled in the service with toast
+      } finally {
+        setEditLoading(false);
+      }
     }
   };
 
@@ -339,6 +358,20 @@ const selectVideo = (videoId: string) => {
       handleSaveLectureEdit();
     } else if (e.key === "Escape") {
       handleCancelLectureEdit();
+    }
+  };
+
+  // NEW: Updated handleDeleteLecture with backend integration
+  const handleDeleteLecture = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      setDeleteLoading(true);
+      await deleteLecture(sectionId, lecture.id);
+    } catch (error) {
+      console.error("Failed to delete lecture:", error);
+      // Error is already handled in the service with toast
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -405,18 +438,8 @@ const selectVideo = (videoId: string) => {
     }
   };
 
-
-const convertExternalResource = (resource: ExternalResource): ExternalResourceItem => {
-  return {
-    title: typeof resource.title === 'string' ? resource.title : resource.name,
-    url: resource.url,
-    name: resource.name,
-    lectureId: resource.lectureId
-  };
-};
-
-// FIXED: Updated createEnhancedSections function with proper type conversion
- const createEnhancedSections = () => {
+  // FIXED: Updated createEnhancedSections function with proper type conversion
+  const createEnhancedSections = () => {
     if (!allSections || allSections.length === 0) {
       return allSections;
     }
@@ -498,8 +521,8 @@ const convertExternalResource = (resource: ExternalResource): ExternalResourceIt
     }));
   };
 
-// FIXED: Updated handleExternalResourceAdd function with proper typing
-const handleExternalResourceAdd = (title: string, url: string, name: string) => {
+  // FIXED: Updated handleExternalResourceAdd function with proper typing
+  const handleExternalResourceAdd = (title: string, url: string, name: string) => {
     if (addExternalResource) {
       addExternalResource({
         title: title,
@@ -514,178 +537,154 @@ const handleExternalResourceAdd = (title: string, url: string, name: string) => 
     }
   };
 
-  const removeSourceCodeFileHandler = (fileName: string) => {
-    if (removeSourceCodeFile) {
-      removeSourceCodeFile(fileName, lecture.id);
+  // FIXED: Don't filter resources in handlePreviewSelection - pass ALL resources
+  const handlePreviewSelection = (mode: "instructor" | "student"): void => {
+    const enhancedLecture = createEnhancedLectureForPreview();
+    
+    let detectedContentType: string;
+    if (ContentTypeDetector && typeof ContentTypeDetector.detectLectureContentType === 'function') {
+      detectedContentType = ContentTypeDetector.detectLectureContentType(enhancedLecture);
+    } else {
+      detectedContentType = enhancedLecture.actualContentType || 'video';
     }
+
+    setPreviewMode(mode);
+    setShowPreviewDropdown(false);
+    setPreviewContentType(detectedContentType);
+
+    setTimeout(() => {
+      setShowVideoPreview(true);
+    }, 50);
   };
 
-  const removeExternalResourceHandler = (title: string) => {
-    if (removeExternalResource) {
-      removeExternalResource(title, lecture.id);
+  const createEnhancedLectureForPreview = (): EnhancedLecture => {
+    // FIXED: More precise content detection logic
+    const hasRealVideoContent = !!(videoContent.selectedVideoDetails && videoContent.selectedVideoDetails.url);
+    const hasRealArticleContent = !!(articleContent && articleContent.text && articleContent.text.trim() !== '');
+
+    const enhancedLecture: EnhancedLecture = {
+      ...lecture,
+      // FIXED: Only set to true if content actually exists
+      hasVideoContent: hasRealVideoContent,
+      hasArticleContent: hasRealArticleContent,
+      articleContent: hasRealArticleContent ? articleContent : undefined,
+      // FIXED: Handle null case by converting to undefined
+      videoDetails: hasRealVideoContent && videoContent.selectedVideoDetails ? videoContent.selectedVideoDetails : undefined,
+      contentMetadata: {
+        createdAt: new Date(),
+        lastModified: new Date(),
+        ...(hasRealArticleContent && {
+          articleWordCount: articleContent.text.split(/\s+/).length
+        }),
+        ...(hasRealVideoContent && videoContent.selectedVideoDetails?.duration && {
+          videoDuration: videoContent.selectedVideoDetails.duration
+        })
+      }
+    };
+
+    // FIXED: Enhanced content type detection logic with proper typing
+    let detectedType: "article" | "video" | "quiz" | "coding-exercise" | "assignment";
+    
+    // IMPORTANT: Check for actual content, not just the presence of objects
+    if (hasRealArticleContent && !hasRealVideoContent) {
+      detectedType = 'article';
+    } else if (hasRealVideoContent && !hasRealArticleContent) {
+      detectedType = 'video';
+    } else if (hasRealArticleContent && hasRealVideoContent) {
+      // This should not happen - log a warning
+      console.warn('⚠️ Both article and video content exist - this is unexpected');
+      // Default to the most recently set content (article takes precedence as it's set last)
+      detectedType = 'article';
+    } else {
+      // Neither has content, use the original content type or default to video
+      detectedType = (lecture.contentType as "article" | "video" | "quiz" | "coding-exercise" | "assignment") || 'video';
     }
+    
+    enhancedLecture.actualContentType = detectedType;
+    enhancedLecture.contentType = detectedType;
+
+    return enhancedLecture;
   };
-
-  const removeUploadedFileHandler = (fileName: string) => {
-    if (removeUploadedFile) {
-      removeUploadedFile(fileName, lecture.id);
-    }
-  };
-
-// FIXED: Don't filter resources in handlePreviewSelection - pass ALL resources
-const handlePreviewSelection = (mode: "instructor" | "student"): void => {
-  const enhancedLecture = createEnhancedLectureForPreview();
-  
-  let detectedContentType: string;
-  if (ContentTypeDetector && typeof ContentTypeDetector.detectLectureContentType === 'function') {
-    detectedContentType = ContentTypeDetector.detectLectureContentType(enhancedLecture);
-  } else {
-    detectedContentType = enhancedLecture.actualContentType || 'video';
-  }
-
-  setPreviewMode(mode);
-  setShowPreviewDropdown(false);
-  setPreviewContentType(detectedContentType);
-
-  setTimeout(() => {
-    setShowVideoPreview(true);
-  }, 50);
-};
-
-
-const createEnhancedLectureForPreview = (): EnhancedLecture => {
-  // FIXED: More precise content detection logic
-  const hasRealVideoContent = !!(videoContent.selectedVideoDetails && videoContent.selectedVideoDetails.url);
-  const hasRealArticleContent = !!(articleContent && articleContent.text && articleContent.text.trim() !== '');
-
-  const enhancedLecture: EnhancedLecture = {
-    ...lecture,
-    // FIXED: Only set to true if content actually exists
-    hasVideoContent: hasRealVideoContent,
-    hasArticleContent: hasRealArticleContent,
-    articleContent: hasRealArticleContent ? articleContent : undefined,
-    // FIXED: Handle null case by converting to undefined
-    videoDetails: hasRealVideoContent && videoContent.selectedVideoDetails ? videoContent.selectedVideoDetails : undefined,
-    contentMetadata: {
-      createdAt: new Date(),
-      lastModified: new Date(),
-      ...(hasRealArticleContent && {
-        articleWordCount: articleContent.text.split(/\s+/).length
-      }),
-      ...(hasRealVideoContent && videoContent.selectedVideoDetails?.duration && {
-        videoDuration: videoContent.selectedVideoDetails.duration
-      })
-    }
-  };
-
-  // FIXED: Enhanced content type detection logic with proper typing
-  let detectedType: "article" | "video" | "quiz" | "coding-exercise" | "assignment";
-  
-  // IMPORTANT: Check for actual content, not just the presence of objects
-  if (hasRealArticleContent && !hasRealVideoContent) {
-    detectedType = 'article';
-  } else if (hasRealVideoContent && !hasRealArticleContent) {
-    detectedType = 'video';
-  } else if (hasRealArticleContent && hasRealVideoContent) {
-    // This should not happen - log a warning
-    console.warn('⚠️ Both article and video content exist - this is unexpected');
-    // Default to the most recently set content (article takes precedence as it's set last)
-    detectedType = 'article';
-  } else {
-    // Neither has content, use the original content type or default to video
-    detectedType = (lecture.contentType as "article" | "video" | "quiz" | "coding-exercise" | "assignment") || 'video';
-  }
-  
-  enhancedLecture.actualContentType = detectedType;
-  enhancedLecture.contentType = detectedType;
-
-  return enhancedLecture;
-};
 
   // For debugging
- const VideoPreviewPage: React.FC = () => {
-  const enhancedLecture = createEnhancedLectureForPreview();
-  const enhancedSections = createEnhancedSections(); // This now includes all resources properly
-  
-  const hasArticleContent = !!(articleContent && articleContent.text && articleContent.text.trim() !== '') && 
-    !videoContent.selectedVideoDetails;
+  const VideoPreviewPage: React.FC = () => {
+    const enhancedLecture = createEnhancedLectureForPreview();
+    const enhancedSections = createEnhancedSections(); // This now includes all resources properly
+    
+    const hasArticleContent = !!(articleContent && articleContent.text && articleContent.text.trim() !== '') && 
+      !videoContent.selectedVideoDetails;
 
-  const [activeItemId, setActiveItemId] = useState<string>(lecture.id);
-  const [activeItemType, setActiveItemType] = useState<string>(
-    hasArticleContent ? "article" : previewContentType || enhancedLecture.actualContentType || "video"
-  );
-
-  useEffect(() => {
-    console.log("🚀 VideoPreviewPage initialized with enhanced sections:", {
-      hasArticleContent,
-      articleTextExists: !!articleContent?.text,
-      articleLength: articleContent?.text?.length || 0,
-      videoDetailsExists: !!videoContent.selectedVideoDetails,
-      previewContentType,
-      activeItemType,
-      enhancedSectionsCount: enhancedSections.length,
-      totalLecturesWithResources: enhancedSections.reduce((acc, section) => 
-        acc + section.lectures.filter((l: EnhancedLecture) => 
-          l.lectureResources && (
-            l.lectureResources.uploadedFiles.length > 0 || 
-            l.lectureResources.sourceCodeFiles.length > 0 || 
-            l.lectureResources.externalResources.length > 0
-          )
-        ).length, 0
-      )
-    });
-  }, []);
-
-  const handleItemSelect = (itemId: string, itemType: string) => {
-    console.log(`🎯 Switching to item ${itemId} of type ${itemType}`);
-    setActiveItemId(itemId);
-    setActiveItemType(itemType);
-  };
-
-  if (previewMode === "student") {
-    return (
-      <StudentVideoPreview
-      videoContent={videoContent}
-      articleContent={articleContent}
-      setShowVideoPreview={setShowVideoPreview}
-      lecture={enhancedLecture}
-      uploadedFiles={globalUploadedFiles} // Pass global arrays
-      sourceCodeFiles={globalSourceCodeFiles} // Pass global arrays
-      externalResources={globalExternalResources} // Pass global arrays
-      section={{
-        id: 'all-sections',
-        name: 'All Sections',
-        sections: enhancedSections
-      }}
-    />
+    const [activeItemId, setActiveItemId] = useState<string>(lecture.id);
+    const [activeItemType, setActiveItemType] = useState<string>(
+      hasArticleContent ? "article" : previewContentType || enhancedLecture.actualContentType || "video"
     );
-  }
 
-  // Instructor preview
-  const currentSection = enhancedSections.find(section => section.id === sectionId) || {
-    id: sectionId,
-    name: "Section",
-    lectures: [enhancedLecture],
-    quizzes: [],
-    assignments: [],
-    codingExercises: [],
-    isExpanded: true
-  };
+    useEffect(() => {
+      console.log("🚀 VideoPreviewPage initialized with enhanced sections:", {
+        hasArticleContent,
+        articleTextExists: !!articleContent?.text,
+        articleLength: articleContent?.text?.length || 0,
+        videoDetailsExists: !!videoContent.selectedVideoDetails,
+        previewContentType,
+        activeItemType,
+        enhancedSectionsCount: enhancedSections.length,
+        totalLecturesWithResources: enhancedSections.reduce((acc, section) => 
+          acc + section.lectures.filter((l: EnhancedLecture) => 
+            l.lectureResources && (
+              l.lectureResources.uploadedFiles.length > 0 || 
+              l.lectureResources.sourceCodeFiles.length > 0 || 
+              l.lectureResources.externalResources.length > 0
+            )
+          ).length, 0
+        )
+      });
+    }, []);
 
-  return (
-    <InstructorVideoPreview
-      videoContent={videoContent}
-      articleContent={articleContent}
-      setShowVideoPreview={setShowVideoPreview}
-      lecture={enhancedLecture}
-      section={currentSection}
-    />
-  );
-};
- 
+    const handleItemSelect = (itemId: string, itemType: string) => {
+      console.log(`🎯 Switching to item ${itemId} of type ${itemType}`);
+      setActiveItemId(itemId);
+      setActiveItemType(itemType);
+    };
 
-  const removeSelectedResource = (videoId: string) => {
-    setSelectedResources(selectedResources.filter((v) => v.id !== videoId));
+    if (previewMode === "student") {
+      return (
+        <StudentVideoPreview
+        videoContent={videoContent}
+        articleContent={articleContent}
+        setShowVideoPreview={setShowVideoPreview}
+        lecture={enhancedLecture}
+        uploadedFiles={globalUploadedFiles} // Pass global arrays
+        sourceCodeFiles={globalSourceCodeFiles} // Pass global arrays
+        externalResources={globalExternalResources} // Pass global arrays
+        section={{
+          id: 'all-sections',
+          name: 'All Sections',
+          sections: enhancedSections
+        }}
+      />
+      );
+    }
+
+    // Instructor preview
+    const currentSection = enhancedSections.find(section => section.id === sectionId) || {
+      id: sectionId,
+      name: "Section",
+      lectures: [enhancedLecture],
+      quizzes: [],
+      assignments: [],
+      codingExercises: [],
+      isExpanded: true
+    };
+
+    return (
+      <InstructorVideoPreview
+        videoContent={videoContent}
+        articleContent={articleContent}
+        setShowVideoPreview={setShowVideoPreview}
+        lecture={enhancedLecture}
+        section={currentSection}
+      />
+    );
   };
 
   // Add the closing event handler for clicking outside the dropdown
@@ -719,8 +718,6 @@ const createEnhancedLectureForPreview = (): EnhancedLecture => {
     );
   };
 
-
-
   const handleLibraryItemSelect = (item: LibraryFileWithSize) => {
     if (addUploadedFile) {
       addUploadedFile({
@@ -734,7 +731,6 @@ const createEnhancedLectureForPreview = (): EnhancedLecture => {
       toggleAddResourceModal(sectionId, lecture.id);
     }
   };
-
 
   // Add this function to handle the video file upload and progress
   const handleVideoFileUpload = (
@@ -814,12 +810,6 @@ const createEnhancedLectureForPreview = (): EnhancedLecture => {
     }
   };
 
-  const formatFileSize = (bytes: number): string => {
-    if (bytes < 1024) return bytes + " B";
-    else if (bytes < 1048576) return (bytes / 1024).toFixed(1) + " KB";
-    else return (bytes / 1048576).toFixed(1) + " MB";
-  };
-
   // Function to handle saving description
   const handleSaveDescription = () => {
     if (saveDescription) {
@@ -841,31 +831,31 @@ const createEnhancedLectureForPreview = (): EnhancedLecture => {
 
   // Determine lecture type label based on contentType
   const getLectureTypeLabel = (): string => {
-  // ENHANCED: Use enhanced content type detection
-  const enhancedLecture = createEnhancedLectureForPreview();
-  
-  let detectedType: string;
-  if (ContentTypeDetector && typeof ContentTypeDetector.detectLectureContentType === 'function') {
-    detectedType = ContentTypeDetector.detectLectureContentType(enhancedLecture);
-  } else {
-    detectedType = enhancedLecture.actualContentType || 'video';
-  }
-  
-  switch (detectedType) {
-    case "video":
-      return "Lecture";
-    case "article":
-      return "Article";
-    case "quiz":
-      return "Quiz";
-    case "coding-exercise":
-      return "Coding Exercise";
-    case "assignment":
-      return "Assignment";
-    default:
-      return "Item";
-  }
-};
+    // ENHANCED: Use enhanced content type detection
+    const enhancedLecture = createEnhancedLectureForPreview();
+    
+    let detectedType: string;
+    if (ContentTypeDetector && typeof ContentTypeDetector.detectLectureContentType === 'function') {
+      detectedType = ContentTypeDetector.detectLectureContentType(enhancedLecture);
+    } else {
+      detectedType = enhancedLecture.actualContentType || 'video';
+    }
+    
+    switch (detectedType) {
+      case "video":
+        return "Lecture";
+      case "article":
+        return "Article";
+      case "quiz":
+        return "Quiz";
+      case "coding-exercise":
+        return "Coding Exercise";
+      case "assignment":
+        return "Assignment";
+      default:
+        return "Item";
+    }
+  };
 
   // Handle search in library tab
   const handleSearchLibrary = (event: React.FormEvent) => {
@@ -875,47 +865,47 @@ const createEnhancedLectureForPreview = (): EnhancedLecture => {
   };
 
   // Updated for clarity - when initializing with handleContentTypeSelect
- const handleContentTypeSelect = (contentType: ContentItemType) => {
-  console.log('🔄 Switching content type to:', contentType);
-  
-  setActiveContentType(contentType);
-  setShowContentTypeSelector(false);
-
-  if (contentType === "video") {
-    // FIXED: Clear article content when switching to video
-    setArticleContent({ text: "" });
+  const handleContentTypeSelect = (contentType: ContentItemType) => {
+    console.log('🔄 Switching content type to:', contentType);
     
-    // Keep existing videos in the library when initializing
-    const existingVideos = videoContent.libraryTab.videos;
-    const existingSelectedVideoDetails = videoContent.selectedVideoDetails;
+    setActiveContentType(contentType);
+    setShowContentTypeSelector(false);
 
-    setVideoContent({
-      uploadTab: { selectedFile: null },
-      libraryTab: {
-        searchQuery: "",
-        selectedVideo: null,
-        videos: existingVideos,
-      },
-      activeTab: "uploadVideo",
-      selectedVideoDetails: existingSelectedVideoDetails,
-    });
-  } else if (contentType === "video-slide") {
-    // FIXED: Clear other content types
-    setArticleContent({ text: "" });
-    setVideoSlideContent({
-      video: { selectedFile: null },
-      presentation: { selectedFile: null },
-      step: 1,
-    });
-  } else if (contentType === "article") {
-    // FIXED: Clear video content when switching to article
-    setVideoContent({
-      ...videoContent,
-      selectedVideoDetails: null // Clear selected video
-    });
-    setArticleContent({ text: "" });
-  }
-};
+    if (contentType === "video") {
+      // FIXED: Clear article content when switching to video
+      setArticleContent({ text: "" });
+      
+      // Keep existing videos in the library when initializing
+      const existingVideos = videoContent.libraryTab.videos;
+      const existingSelectedVideoDetails = videoContent.selectedVideoDetails;
+
+      setVideoContent({
+        uploadTab: { selectedFile: null },
+        libraryTab: {
+          searchQuery: "",
+          selectedVideo: null,
+          videos: existingVideos,
+        },
+        activeTab: "uploadVideo",
+        selectedVideoDetails: existingSelectedVideoDetails,
+      });
+    } else if (contentType === "video-slide") {
+      // FIXED: Clear other content types
+      setArticleContent({ text: "" });
+      setVideoSlideContent({
+        video: { selectedFile: null },
+        presentation: { selectedFile: null },
+        step: 1,
+      });
+    } else if (contentType === "article") {
+      // FIXED: Clear video content when switching to article
+      setVideoContent({
+        ...videoContent,
+        selectedVideoDetails: null // Clear selected video
+      });
+      setArticleContent({ text: "" });
+    }
+  };
 
   // Function to delete a video from the library
   const deleteVideo = (videoId: string) => {
@@ -1228,47 +1218,49 @@ const createEnhancedLectureForPreview = (): EnhancedLecture => {
 
   // Simulate uploading a file for resources
   const triggerFileUpload = (contentType: ContentType) => {
-  setIsUploading(true);
-  const interval = setInterval(() => {
-    setUploadProgress((prev) => {
-      if (prev >= 100) {
-        clearInterval(interval);
-        setTimeout(() => {
-          setIsUploading(false);
-          setUploadProgress(0);
+    setIsUploading(true);
+    const interval = setInterval(() => {
+      setUploadProgress((prev) => {
+        if (prev >= 100) {
+          clearInterval(interval);
+          setTimeout(() => {
+            setIsUploading(false);
+            setUploadProgress(0);
 
-          // Add a new dummy file to the list with lecture association
-          const filename =
-            contentType === ContentType.VIDEO
-              ? "2025-05-01-025523.webm"
-              : "course_materials.pdf";
+            // Add a new dummy file to the list with lecture association
+            const filename =
+              contentType === ContentType.VIDEO
+                ? "2025-05-01-025523.webm"
+                : "course_materials.pdf";
 
-          // FIXED: Use the global add function instead of local setState
-          if (addUploadedFile) {
-            addUploadedFile({
-              name: filename,
-              size: contentType === ContentType.VIDEO ? "263.5 kB" : "1.2 MB",
-              lectureId: lecture.id, // Associate with current lecture
-            });
-          }
-        }, 500);
-        return 100;
-      }
-      return prev + 10;
-    });
-  }, 300);
-};
+            // FIXED: Use the global add function instead of local setState
+            if (addUploadedFile) {
+              addUploadedFile({
+                name: filename,
+                size: contentType === ContentType.VIDEO ? "263.5 kB" : "1.2 MB",
+                lectureId: lecture.id, // Associate with current lecture
+              });
+            }
+          }, 500);
+          return 100;
+        }
+        return prev + 10;
+      });
+    }, 300);
+  };
 
   const maxLength = 80;
 
   const hasExistingContent = (lecture: Lecture): boolean => {
-  return Boolean(
-    (lecture.videos && lecture.videos.length > 0) ||
-    lecture.contentType === "article" ||
-    videoContent.selectedVideoDetails !== null ||
-    (articleContent.text && articleContent.text.trim() !== "")
-  );
-};
+    return Boolean(
+      (lecture.videos && lecture.videos.length > 0) ||
+      lecture.contentType === "article" ||
+      videoContent.selectedVideoDetails !== null ||
+      (articleContent.text && articleContent.text.trim() !== "")
+    );
+  };
+
+  const isLoading = editLoading || deleteLoading;
 
   return (
     <div
@@ -1318,6 +1310,7 @@ const createEnhancedLectureForPreview = (): EnhancedLecture => {
                   className="w-full border border-gray-300 focus:outline-none focus:ring-1 focus:ring-purple-500 px-2 py-1 rounded-md"
                   autoFocus
                   maxLength={80}
+                  disabled={isLoading}
                 />
                 <div className="text-right text-sm text-gray-500 mt-1">
                   {maxLength - editLectureTitle.length}
@@ -1328,15 +1321,16 @@ const createEnhancedLectureForPreview = (): EnhancedLecture => {
               <button
                 onClick={handleCancelLectureEdit}
                 className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md"
+                disabled={isLoading}
               >
                 Cancel
               </button>
               <button
                 onClick={handleSaveLectureEdit}
-                disabled={!editLectureTitle.trim()}
-                className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:bg-purple-300"
+                disabled={!editLectureTitle.trim() || isLoading}
+                className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:bg-purple-300 disabled:cursor-not-allowed"
               >
-                Save Lecture
+                {editLoading ? "Saving..." : "Save Lecture"}
               </button>
             </div>
           </div>
@@ -1381,7 +1375,7 @@ const createEnhancedLectureForPreview = (): EnhancedLecture => {
                   <span className="truncate overflow-hidden ml-1">
                     {lecture.name}
                   </span>
-                  {isHovering && (
+                  {isHovering && !isLoading && (
                     <div>
                       <button
                         onClick={handleEditLecture}
@@ -1391,14 +1385,12 @@ const createEnhancedLectureForPreview = (): EnhancedLecture => {
                         <Edit3 className="w-4 h-4" />
                       </button>
                       <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          deleteLecture(sectionId, lecture.id);
-                        }}
+                        onClick={handleDeleteLecture}
                         className="p-1 text-gray-400 hover:text-red-600"
                         aria-label="Delete"
+                        disabled={deleteLoading}
                       >
-                        <Trash2 className="w-4 h-4 text-gray-400 hover:bg-gray-200 p-2 rounded" />
+                        <Trash2 className={`w-4 h-4 text-gray-400 hover:bg-gray-200 p-2 rounded ${deleteLoading ? 'opacity-50 cursor-not-allowed' : ''}`} />
                       </button>
                     </div>
                   )}
@@ -1433,6 +1425,7 @@ const createEnhancedLectureForPreview = (): EnhancedLecture => {
                       ? "text-gray-800 font-normal border-b-0 border-l border-t border-r border-gray-400 -mb-[12px] bg-white pb-2"
                       : "text-[#6D28D2] font-medium border-[#6D28D2] hover:bg-indigo-50 rounded "
                   } text-xs sm:text-sm px-2 sm:px-3 py-2 flex items-center ml-1 sm:ml-2 border`}
+                  disabled={isLoading}
                 >
                   {/* This is the content button that changes label based on state */}
                   {isResourceSectionActive ? (
@@ -1528,6 +1521,7 @@ const createEnhancedLectureForPreview = (): EnhancedLecture => {
                   }
                 }}
                 aria-label={isExpanded ? "Collapse" : "Expand"}
+                disabled={isLoading}
               >
                 {isExpanded ? (
                   <ChevronUp className="w-5 h-5" />
@@ -1535,7 +1529,7 @@ const createEnhancedLectureForPreview = (): EnhancedLecture => {
                   <ChevronDown className="w-5 h-5" />
                 )}
               </button>
-              {isHovering && (
+              {isHovering && !isLoading && (
                 <div className="">
                   <AlignJustify className="w-5 h-5 text-gray-500 cursor-move" />
                 </div>
@@ -1543,6 +1537,7 @@ const createEnhancedLectureForPreview = (): EnhancedLecture => {
             </div>
           </div>
 
+          {/* Rest of the component remains the same - just truncating for brevity */}
           {/* Expanded content area - this is where we update the code */}
           {(isExpanded ||
             isResourceSectionActive ||
@@ -1755,107 +1750,108 @@ const createEnhancedLectureForPreview = (): EnhancedLecture => {
                       </div>
                     )}
                  
-{/* Display Downloadable Materials section if files exist for this lecture */}
-{currentLectureUploadedFiles.length > 0 && (
-  <div className="mb-4 border-b border-gray-400 pb-2">
-    <h3 className="text-sm font-bold text-gray-700 mb-2">
-      Downloadable materials
-    </h3>
-    {currentLectureUploadedFiles.map((file, index) => (
-      <div
-        key={`uploaded-${file.name}-${file.lectureId}-${index}`} // More unique key
-        className="flex justify-between items-center py-1"
-      >
-        <div className="flex items-center text-gray-800">
-          <FileDown size={13} className="text-gray-800 mr-1" />
-          <span className="text-sm text-gray-800">
-            {file.name} ({file.size})
-          </span>
-        </div>
-        <button
-          onClick={() => {
-            if (removeUploadedFile) {
-              removeUploadedFile(file.name, lecture.id);
-            }
-          }}
-          className="text-gray-400 hover:bg-gray-200 p-2 rounded"
-        >
-          <Trash2 className="w-4 h-4" />
-        </button>
-      </div>
-    ))}
-  </div>
-)}
+                    {/* Display Downloadable Materials section if files exist for this lecture */}
+                    {currentLectureUploadedFiles.length > 0 && (
+                      <div className="mb-4 border-b border-gray-400 pb-2">
+                        <h3 className="text-sm font-bold text-gray-700 mb-2">
+                          Downloadable materials
+                        </h3>
+                        {currentLectureUploadedFiles.map((file, index) => (
+                          <div
+                            key={`uploaded-${file.name}-${file.lectureId}-${index}`} // More unique key
+                            className="flex justify-between items-center py-1"
+                          >
+                            <div className="flex items-center text-gray-800">
+                              <FileDown size={13} className="text-gray-800 mr-1" />
+                              <span className="text-sm text-gray-800">
+                                {file.name} ({file.size})
+                              </span>
+                            </div>
+                            <button
+                              onClick={() => {
+                                if (removeUploadedFile) {
+                                  removeUploadedFile(file.name, lecture.id);
+                                }
+                              }}
+                              className="text-gray-400 hover:bg-gray-200 p-2 rounded"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
 
-{/* Display Source Code section if files exist for this lecture - FIXED */}
-{currentLectureSourceCodeFiles.length > 0 && (
-  <div className="mb-4 border-b border-gray-400 pb-2">
-    <h3 className="text-sm font-bold text-gray-700 mb-2">
-      Source Code
-    </h3>
-    {currentLectureSourceCodeFiles.map((file, index) => (
-      <div
-        key={`source-code-${file.filename}-${file.lectureId}-${index}`} // Fixed unique key
-        className="flex justify-between items-center py-1"
-      >
-        <div className="flex items-center text-gray-800">
-          <span className="text-sm text-gray-800">
-            {file.filename || file.name}
-          </span>
-        </div>
-        <button
-          onClick={() => {
-            if (removeSourceCodeFile) {
-              removeSourceCodeFile(file.name, lecture.id);
-            }
-          }}
-          className="text-gray-400 hover:bg-gray-200 p-2 rounded"
-        >
-          <Trash2 className="w-4 h-4" />
-        </button>
-      </div>
-    ))}
-  </div>
-)}
+                    {/* Display Source Code section if files exist for this lecture - FIXED */}
+                    {currentLectureSourceCodeFiles.length > 0 && (
+                      <div className="mb-4 border-b border-gray-400 pb-2">
+                        <h3 className="text-sm font-bold text-gray-700 mb-2">
+                          Source Code
+                        </h3>
+                        {currentLectureSourceCodeFiles.map((file, index) => (
+                          <div
+                            key={`source-code-${file.filename}-${file.lectureId}-${index}`} // Fixed unique key
+                            className="flex justify-between items-center py-1"
+                          >
+                            <div className="flex items-center text-gray-800">
+                              <span className="text-sm text-gray-800">
+                                {file.filename || file.name}
+                              </span>
+                            </div>
+                            <button
+                              onClick={() => {
+                                if (removeSourceCodeFile) {
+                                  removeSourceCodeFile(file.name, lecture.id);
+                                }
+                              }}
+                              className="text-gray-400 hover:bg-gray-200 p-2 rounded"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
 
-{/* Display External Resources section if files exist for this lecture - FIXED */}
-{currentLectureExternalResources.length > 0 && (
-  <div className="mb-4 border-b border-gray-400 pb-2">
-    <h3 className="text-sm font-bold text-gray-700 mb-2">
-      External Resources
-    </h3>
-    {currentLectureExternalResources.map((resource, index) => {
-      // Get the resource title, handling undefined cases
-      const resourceTitle = typeof resource.title === 'string' 
-        ? resource.title 
-        : resource.name || `Resource ${index + 1}`;
-        
-      return (
-        <div
-          key={`external-${resourceTitle}-${resource.lectureId}-${index}`} // Fixed unique key
-          className="flex justify-between items-center py-1"
-        >
-          <div className="flex items-center text-gray-800">
-            <SquareArrowOutUpRight size={13} className="mr-1 text-gray-800" />
-            <span className="text-sm text-gray-800">
-              {resourceTitle}
-            </span>
-          </div>
-          <button
-            onClick={() => {
-              if (removeExternalResource) {
-                removeExternalResource(resourceTitle, lecture.id);
-              }
-            }}
-            className="text-gray-400 hover:bg-gray-200 p-2 rounded"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
-        </div>
-      );
-    })}
-  </div>
-)}
+                    {/* Display External Resources section if files exist for this lecture - FIXED */}
+                    {currentLectureExternalResources.length > 0 && (
+                      <div className="mb-4 border-b border-gray-400 pb-2">
+                        <h3 className="text-sm font-bold text-gray-700 mb-2">
+                          External Resources
+                        </h3>
+                        {currentLectureExternalResources.map((resource, index) => {
+                          // Get the resource title, handling undefined cases
+                          const resourceTitle = typeof resource.title === 'string' 
+                            ? resource.title 
+                            : resource.name || `Resource ${index + 1}`;
+                            
+                          return (
+                            <div
+                              key={`external-${resourceTitle}-${resource.lectureId}-${index}`} // Fixed unique key
+                              className="flex justify-between items-center py-1"
+                            >
+                              <div className="flex items-center text-gray-800">
+                                <SquareArrowOutUpRight size={13} className="mr-1 text-gray-800" />
+                                <span className="text-sm text-gray-800">
+                                  {resourceTitle}
+                                </span>
+                              </div>
+                              <button
+                                onClick={() => {
+                                  if (removeExternalResource) {
+                                    removeExternalResource(resourceTitle, lecture.id);
+                                  }
+                                }}
+                                className="text-gray-400 hover:bg-gray-200 p-2 rounded"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+
                     {articleContent.text &&
                       articleContent.text.trim() !== "" &&
                       !videoContent.selectedVideoDetails && (
@@ -1984,6 +1980,7 @@ const createEnhancedLectureForPreview = (): EnhancedLecture => {
                           }
                         }}
                         className="flex items-center gap-2 py-1.5 sm:py-2 px-2 sm:px-4 text-xs sm:text-sm text-[#6D28D2] font-medium border border-[#6D28D2] rounded-sm hover:bg-gray-50"
+                        disabled={isLoading}
                       >
                         <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
                         <span className="font-bold">Description</span>
@@ -2002,6 +1999,7 @@ const createEnhancedLectureForPreview = (): EnhancedLecture => {
                         className={`flex items-center ${
                           !lecture.description ? "mt-2" : ""
                         } gap-2 py-1.5 sm:py-2 px-2 sm:px-4 text-xs sm:text-sm text-[#6D28D2] font-medium border border-[#6D28D2] rounded-sm hover:bg-gray-50`}
+                        disabled={isLoading}
                       >
                         <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
                         <span className="font-bold">Resources</span>

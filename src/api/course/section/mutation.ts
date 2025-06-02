@@ -49,6 +49,7 @@ export const UPDATE_SECTION = gql`
   }
 `;
 
+
 // TypeScript interfaces
 export interface CreateSectionVariables {
   courseId: number;
