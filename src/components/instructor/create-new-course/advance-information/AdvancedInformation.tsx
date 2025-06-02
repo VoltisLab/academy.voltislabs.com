@@ -76,45 +76,48 @@ export const AdvanceInformationForm = ({ onSaveNext, courseId}: BasicInformation
     setCourseInfo(prev => ({ ...prev, courseRequirements: requirements }));
   };
 
-  async function handleCourseUpdate(e: MouseEvent<HTMLButtonElement>) {
-    e.preventDefault();
-    setLoading(true);
+ async function handleCourseUpdate(e: MouseEvent<HTMLButtonElement>) {
+  e.preventDefault();
+  setLoading(true);
+  
+  try {
+    // Filter out empty strings and prepare arrays
+    const teachingPointsArray = courseInfo.teachingPoints.filter(point => point.trim() !== '');
+    const targetAudienceArray = courseInfo.targetAudience.filter(item => item.trim() !== '');
+    const courseRequirementsArray = courseInfo.courseRequirements.filter(req => req.trim() !== '');
     
-    try {
-      // Filter out empty strings and prepare arrays
-      const teachingPointsArray = courseInfo.teachingPoints.filter(point => point.trim() !== '');
-      const targetAudienceArray = courseInfo.targetAudience.filter(item => item.trim() !== '');
-      const courseRequirementsArray = courseInfo.courseRequirements.filter(req => req.trim() !== '');
-      
-      courseId = Number(courseId)
-      // Prepare mutation variables
-      const mutationVariables = {
-        courseId,
-        courseThumbnail: courseInfo.courseThumbnail,
-        teachingPoints: teachingPointsArray,
-        targetAudience: targetAudienceArray,
-        courseRequirements: courseRequirementsArray,
-        description: courseInfo.courseDescription // Changed from courseDescription to description
-      };
-      
-      console.log("Sending data to backend:", mutationVariables);
-      
-      // Call the mutation
-      const result = await updateCourseInfo(mutationVariables);
-      
-      if (result.updateCourseInfo.success) {
-        toast.success("Course information updated successfully!");
-        onSaveNext();
-      } else {
-        toast.error(result.updateCourseInfo.message || "Failed to update course information");
-      }
-    } catch (error) {
-      console.error("Error updating course:", error);
-      toast.error(error instanceof Error ? error.message : "An unexpected error occurred");
-    } finally {
-      setLoading(false);
+    courseId = Number(courseId)
+    // Prepare mutation variables - banner as object with thumbnail and url
+    const mutationVariables = {
+      courseId,
+      banner: {
+        thumbnail: courseInfo.courseThumbnail,
+        url: courseInfo.secondaryThumbnail || courseInfo.courseThumbnail
+      },
+      teachingPoints: teachingPointsArray,
+      targetAudience: targetAudienceArray,
+      requirements: courseRequirementsArray,
+      description: courseInfo.courseDescription
+    };
+    
+    console.log("Sending data to backend:", mutationVariables);
+    
+    // Call the mutation
+    const result = await updateCourseInfo(mutationVariables);
+    
+    if (result.updateCourse.success) {
+      toast.success("Course information updated successfully!");
+      onSaveNext();
+    } else {
+      toast.error(result.updateCourse.message || "Failed to update course information");
     }
+  } catch (error) {
+    console.error("Error updating course:", error);
+    toast.error(error instanceof Error ? error.message : "An unexpected error occurred");
+  } finally {
+    setLoading(false);
   }
+}
 
   return (
     <section className="space-y-10">

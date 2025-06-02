@@ -1,7 +1,7 @@
 import { gql } from "@apollo/client";
 
 export const CREATE_COURSE_BASIC_INFO = gql`
-  mutation CreateCourseBasicInfo(
+  mutation CreateCourse(
     $title: String!
     $subtitle: String!
     $categoryId: Int!
@@ -13,7 +13,7 @@ export const CREATE_COURSE_BASIC_INFO = gql`
     $description: String!
     $duration: DurationInputType!
   ) {
-    createCourseBasicInfo(
+    createCourse(
       title: $title
       subtitle: $subtitle
       categoryId: $categoryId
@@ -34,7 +34,6 @@ export const CREATE_COURSE_BASIC_INFO = gql`
       title
       topic
       createdAt
-      courseLevel
       description
       category {
         id
@@ -61,18 +60,18 @@ export const GET_CATEGORIES = gql`
 `;
 
 export const UPDATE_COURSE_INFO = gql`
-  mutation UpdateCourseInfo(
+  mutation UpdateCourse(
     $courseId: Int!
-    $courseRequirements: [String]!
-    $courseThumbnail: String!
+    $requirements: [String]!
+    $banner: BannerInput!
     $targetAudience: [String]!
     $teachingPoints: [String]!
     $description: String
   ) {
-    updateCourseInfo(
+    updateCourse(
       courseId: $courseId
-      courseRequirements: $courseRequirements
-      courseThumbnail: $courseThumbnail
+      requirements: $requirements
+      banner: $banner
       targetAudience: $targetAudience
       teachingPoints: $teachingPoints
       description: $description
