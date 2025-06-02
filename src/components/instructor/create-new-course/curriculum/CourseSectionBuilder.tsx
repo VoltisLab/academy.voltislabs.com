@@ -6,11 +6,13 @@ import {
   SourceCodeFile,
   ExternalResourceItem,
   ExtendedLecture,
+  ContentItemType,
 } from "@/lib/types";
 import { useSections } from "@/hooks/useSection";
 import { useFileUpload } from "@/hooks/useFileUpload";
 import { useModal } from "@/hooks/useModal";
 import { useSectionService } from "@/services/useSectionService";
+import { useLectureService } from "@/services/useLectureService";
 import { ContentTypeSelector } from "../../ContentTypeSelector";
 import SectionItem from "./components/section/SectionItem";
 import { useCourseSectionsUpdate } from "@/services/courseSectionsService";
@@ -88,19 +90,20 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
   const [showAssignmentEditor, setShowAssignmentEditor] =
     useState<boolean>(false);
 
-  // Section service for backend operations
+  // Services for backend operations
   const { createSection, updateSection, loading: sectionLoading, error: sectionError } = useSectionService();
+  const { createLecture, updateLecture, deleteLecture, deleteSection, loading: lectureLoading, error: lectureError } = useLectureService();
 
   const {
     sections,
     setSections,
     addSection: addLocalSection,
-    addLecture,
-    deleteSection,
-    deleteLecture,
+    addLecture: addLocalLecture,
+    deleteSection: deleteLocalSection,
+    deleteLecture: deleteLocalLecture,
     toggleSectionExpansion,
     updateSectionName: updateLocalSectionName,
-    updateLectureName,
+    updateLectureName: updateLocalLectureName,
     moveSection,
     moveLecture,
     updateLectureContent,
@@ -236,8 +239,6 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
         description: objective || ""
       });
 
-      console.log(response)
-
       if (response.createSection.success) {
         // Add to local state with backend ID
         const backendSectionId = response.createSection.section.id;
@@ -287,6 +288,108 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
       
     } catch (error) {
       console.error("Failed to update section:", error);
+      // Error is already handled in the service with toast
+    }
+  };
+
+  // NEW: Backend-integrated section deletion
+  const handleDeleteSection = async (sectionId: string) => {
+    try {
+      // Delete on backend
+      await deleteSection({
+        sectionId: Number(sectionId)
+      });
+
+      // Delete from local state
+      deleteLocalSection(sectionId);
+      
+    } catch (error) {
+      console.error("Failed to delete section:", error);
+      // Error is already handled in the service with toast
+    }
+  };
+
+  // NEW: Backend-integrated lecture creation
+  const handleAddLecture = async (
+    sectionId: string,
+    contentType: ContentItemType,
+    title?: string
+  ): Promise<string> => {
+    try {
+      // Create lecture on backend
+      const response = await createLecture({
+        sectionId: Number(sectionId),
+        title: title || "New Lecture"
+      });
+
+      if (response.createLecture.success) {
+        // Add to local state with backend ID
+        const backendLectureId = response.createLecture.lecture.id;
+        const localLectureId = addLocalLecture(sectionId, contentType, title);
+        
+        // Update the local lecture with the backend ID
+        setSections(prevSections => 
+          prevSections.map(section => {
+            if (section.id === sectionId) {
+              return {
+                ...section,
+                lectures: section.lectures.map(lecture => 
+                  lecture.id === localLectureId 
+                    ? { ...lecture, id: backendLectureId }
+                    : lecture
+                )
+              };
+            }
+            return section;
+          })
+        );
+
+        return backendLectureId;
+      }
+      
+      return "";
+    } catch (error) {
+      console.error("Failed to create lecture:", error);
+      // Error is already handled in the service with toast
+      return "";
+    }
+  };
+
+  // NEW: Backend-integrated lecture update
+  const updateLectureName = async (
+    sectionId: string,
+    lectureId: string,
+    newName: string
+  ) => {
+    try {
+      // Update on backend
+      await updateLecture({
+        lectureId: Number(lectureId),
+        title: newName
+      });
+
+      // Update local state
+      updateLocalLectureName(sectionId, lectureId, newName);
+      
+    } catch (error) {
+      console.error("Failed to update lecture:", error);
+      // Error is already handled in the service with toast
+    }
+  };
+
+  // NEW: Backend-integrated lecture deletion
+  const handleDeleteLecture = async (sectionId: string, lectureId: string) => {
+    try {
+      // Delete on backend
+      await deleteLecture({
+        lectureId: Number(lectureId)
+      });
+
+      // Delete from local state
+      deleteLocalLecture(sectionId, lectureId);
+      
+    } catch (error) {
+      console.error("Failed to delete lecture:", error);
       // Error is already handled in the service with toast
     }
   };
@@ -607,6 +710,8 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
     );
   }
 
+  const isLoading = sectionLoading || lectureLoading;
+
   return (
     <div className="xl:max-w-5xl max-w-full mx-auto shadow-xl">
       <div className="flex justify-between items-center mb-4 border-b px-10 border-gray-300 pb-5">
@@ -648,7 +753,7 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
             onClick={() => setShowSectionForm(true)}
             className="relative w-16 h-8 border-2 border-dashed border-gray-300 flex items-center justify-center hover:border-gray-400 hover:bg-gray-50 transition-all duration-200 rounded-r-[45px]"
             aria-label="Add section"
-            disabled={sectionLoading}
+            disabled={isLoading}
           >
             <Plus className="h-6 w-6 text-gray-500" />
           </button>
@@ -664,7 +769,7 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
                 editingSectionId={editingSectionId}
                 setEditingSectionId={setEditingSectionId}
                 updateSectionName={updateSectionName}
-                deleteSection={deleteSection}
+                deleteSection={handleDeleteSection}
                 moveSection={moveSection}
                 toggleSectionExpansion={toggleSectionExpansion}
                 isDragging={isDragging}
@@ -673,11 +778,11 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
                 handleDragOver={(e) => handleDragOver(e, section.id)}
                 handleDragLeave={handleDragLeave}
                 handleDrop={(e) => handleDrop(e, section.id)}
-                addLecture={addLecture}
+                addLecture={handleAddLecture}
                 editingLectureId={editingLectureId}
                 setEditingLectureId={setEditingLectureId}
                 updateLectureName={updateLectureName}
-                deleteLecture={deleteLecture}
+                deleteLecture={handleDeleteLecture}
                 moveLecture={moveLecture}
                 toggleContentSection={contentSectionModal.toggle}
                 toggleAddResourceModal={toggleAddResourceModal}
@@ -704,6 +809,8 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
                 removeSourceCodeFile={removeSourceCodeFile}
                 addExternalResource={addExternalResource}
                 removeExternalResource={removeExternalResource}
+                // NEW: Pass loading state
+                isLoading={isLoading}
               />
             ))
           ) : (
@@ -718,7 +825,7 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
                 sectionId={
                   sections.length > 0 ? sections[sections.length - 1].id : ""
                 }
-                onSelect={addLecture}
+                onSelect={handleAddLecture}
                 onClose={() => setShowContentTypeSelector(false)}
               />
             </div>
@@ -730,7 +837,7 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
             <SectionForm
               onAddSection={handleAddSection}
               onCancel={() => setShowSectionForm(false)}
-              isLoading={sectionLoading}
+              isLoading={isLoading}
             />
           </div>
         )}
@@ -739,7 +846,7 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
           <button
             onClick={() => setShowSectionForm(true)}
             className="inline-flex items-center mb-8 px-3 py-1.5 border border-[#6D28D2] text-[#6D28D2] bg-white rounded text-sm font-bold hover:bg-indigo-50"
-            disabled={sectionLoading}
+            disabled={isLoading}
           >
             <Plus className="h-4 w-4 mr-1" color="#666" />
             Section
