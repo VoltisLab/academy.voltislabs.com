@@ -109,6 +109,8 @@ export const BasicInformationForm = ({ onSaveNext }: BasicInformationFormProps) 
         },
         fetchPolicy: 'no-cache' // Force network request, bypass cache
       });
+
+      console.log("Creating course with variables ",data.createCourse )
       
       if (errors) {
         console.error("GraphQL errors:", errors);
@@ -180,11 +182,11 @@ export const BasicInformationForm = ({ onSaveNext }: BasicInformationFormProps) 
         }
       });
   
-      if (response?.createCourseBasicInfo?.success) {
-        toast.success(response.createCourseBasicInfo.message || "Course information saved successfully!");
+      if (response?.createCourse?.success) {
+        toast.success(response.createCourse.message || "Course information saved successfully!");
         
         // Extract course ID and pass it to the parent component
-        const courseId = response.createCourseBasicInfo?.course?.id;
+        const courseId = response.createCourse?.course?.id;
         if (courseId) {
 
           onSaveNext(courseId); // Pass the course ID to the parent

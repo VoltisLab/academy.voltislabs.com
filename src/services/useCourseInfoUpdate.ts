@@ -4,17 +4,22 @@ import { apolloClient } from '@/lib/apollo-client'
 import { UPDATE_COURSE_INFO } from '@/api/course/mutation';
 import Cookies from 'js-cookie';
 
+export interface BannerInput {
+  thumbnail: string;
+  url: string;
+}
+
 export interface UpdateCourseInfoVariables {
   courseId: number;
-  courseRequirements: string[]; // Changed to string[]
-  courseThumbnail: string;
-  targetAudience: string[]; // Changed to string[]
-  teachingPoints: string[]; // Changed to string[]
-  description?: string; // Changed from courseDescription to description
+  requirements: string[];
+  banner: BannerInput;
+  targetAudience: string[];
+  teachingPoints: string[];
+  description?: string;
 }
 
 export interface UpdateCourseInfoResponse {
-  updateCourseInfo: {
+  updateCourse: {
     success: boolean;
     message: string;
   };
@@ -65,8 +70,8 @@ export const useCourseInfoUpdate = () => {
         throw new Error(errors[0]?.message || "An error occurred during course update");
       }
       
-      if (!data?.updateCourseInfo.success) {
-        throw new Error(data?.updateCourseInfo.message || "Failed to update course information");
+      if (!data?.updateCourse.success) {
+        throw new Error(data?.updateCourse.message || "Failed to update course information");
       }
       
       return data;

@@ -729,7 +729,7 @@ export interface CourseSectionData {
 }
 
 export interface UpdateCourseResult {
-  updateCourseInfo: {
+  updateCourse: {
     success: boolean;
     message: string;
   };
@@ -746,7 +746,7 @@ export interface UpdateCourseSectionsVariables {
 }
 
 export interface UpdateCourseSectionsResponse {
-  updateCourseInfo: {
+  updateCourse: {
     success: boolean;
     message: string;
   };
