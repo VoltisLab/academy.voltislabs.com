@@ -51,8 +51,8 @@ export const useCourseSectionsUpdate = () => {
         throw new Error(errors[0]?.message || "An error occurred during course section update");
       }
       
-      if (!data?.updateCourseInfo.success) {
-        throw new Error(data?.updateCourseInfo.message || "Failed to update course sections");
+      if (!data?.updateCourse.success) {
+        throw new Error(data?.updateCourse.message || "Failed to update course sections");
       }
       
       return data;
