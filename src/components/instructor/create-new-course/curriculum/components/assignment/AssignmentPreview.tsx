@@ -8,6 +8,7 @@ import { LiaFileDownloadSolid } from "react-icons/lia";
 import RichTextEditor from "./NewRichTextEditor";
 import { FaCircleCheck } from "react-icons/fa6";
 import { IoIosInformationCircleOutline } from "react-icons/io";
+import toast from "react-hot-toast";
 
 export default function AssignmentPreview({
   assignmentData,
@@ -64,8 +65,8 @@ export default function AssignmentPreview({
 
   // Handle save draft
   const handleSaveDraft = () => {
-    // In a real app, you would save to backend/local storage
     console.log("Draft saved", answers);
+    toast.success("Draft saved");
   };
 
   useEffect(() => {
@@ -236,6 +237,7 @@ export default function AssignmentPreview({
                     assignmentData={assignmentData}
                     scrollToResource={scrollToResource}
                     resourceRef={resourceRef}
+                    onDownloadResource={handleDownloadResource}
                   />
                 )}
                 {step === "submissions" && (
@@ -329,10 +331,12 @@ const Instructions = ({
   assignmentData,
   scrollToResource,
   resourceRef,
+  onDownloadResource,
 }: {
   assignmentData: ExtendedLecture;
   scrollToResource: () => void;
   resourceRef: React.RefObject<HTMLDivElement | null>;
+  onDownloadResource: (resource: any) => void;
 }) => {
   return (
     <div className="space-y-6">
@@ -414,7 +418,12 @@ const Instructions = ({
               <h3 className="text-sm font-bold mb-2">
                 Download resource files
               </h3>
-              <div className="flex items-center gap-2 text-purple-600 hover:bg-purple-100 transition rounded p-2 cursor-pointer">
+              <div
+                onClick={() => {
+                  onDownloadResource(assignmentData.instructionalResource!);
+                }}
+                className="flex items-center gap-2 text-purple-600 hover:bg-purple-100 transition rounded p-2 cursor-pointer"
+              >
                 <LiaFileDownloadSolid size={17} />
                 <span>
                   {assignmentData.instructionalResource.name ||
@@ -574,11 +583,13 @@ const InstructorExample = ({
             </div>
           </div>
 
-          <ul className="list-decimal pl-6 marker:font-bold mt-4">
+          <ul className="list-decimal pl-6 marker:font-bold mt-4 bg-red-300">
             {assignmentData.assignmentQuestions?.map((question, index) => (
               <li key={question.id} className="space-y-2 text-sm">
                 <p>{question.content}</p>
-                {question.solution && <p>{question.solution}</p>}
+                {question.solution && (
+                  <p dangerouslySetInnerHTML={{ __html: question.solution }} />
+                )}
               </li>
             ))}
           </ul>
@@ -669,7 +680,11 @@ const InstructorExample = ({
             {assignmentData.assignmentQuestions?.map((question, index) => (
               <li key={question.id} className="space-y-2 text-sm">
                 <p>{question.content}</p>
-                {answers[question.id] && <p>{answers[question.id]}</p>}
+                {answers[question.id] && (
+                  <p
+                    dangerouslySetInnerHTML={{ __html: answers[question.id] }}
+                  />
+                )}
               </li>
             ))}
           </ul>

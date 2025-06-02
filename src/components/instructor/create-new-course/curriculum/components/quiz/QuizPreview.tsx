@@ -676,7 +676,7 @@
 // export default QuizPreview;
 
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   IoIosInformationCircle,
   IoIosInformationCircleOutline,
@@ -796,6 +796,57 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({ quiz, onClose }) => {
     selectedAnswerIndex !== undefined
       ? currentQuestion?.answers?.[selectedAnswerIndex]?.explanation || ""
       : "";
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (quizStatus !== "Questions") return;
+
+      // Check if we're in a text input or textarea (to avoid interfering with typing)
+      const target = e.target as HTMLElement;
+      if (target.tagName === "INPUT" || target.tagName === "TEXTAREA") {
+        return;
+      }
+
+      if (e.key >= "1" && e.key <= "9") {
+        const answerIndex = parseInt(e.key) - 1;
+        if (answerIndex < currentQuestion.answers.length) {
+          handleAnswerSelection(answerIndex);
+        }
+        return;
+      }
+
+      if (e.key === "ArrowRight" && e.shiftKey) {
+        e.preventDefault();
+        skipQuestion();
+        return;
+      }
+
+      if (e.key === "ArrowRight") {
+        e.preventDefault();
+        console.log("Shift + Right Arrow detected!");
+        if (!isAnswerChecked || !isCorrectAnswer) {
+          if (isAnswerSelected) {
+            checkAnswer();
+          }
+        } else {
+          goToNextQuestion();
+        }
+        return;
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [
+    quizStatus,
+    currentQuestionIndex,
+    currentQuestion?.answers?.length,
+    isAnswerChecked,
+    isCorrectAnswer,
+    isAnswerSelected,
+  ]);
 
   const handleAnswerSelection = (index: number): void => {
     if (isAnswerDisabled(index)) return;
@@ -1240,119 +1291,3 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({ quiz, onClose }) => {
 };
 
 export default QuizPreview;
-
-// {
-//   /* Course Content Toggle Button for small screens - outside header for better positioning */
-// }
-// <button
-//   onClick={toggleSidebar}
-//   className="fixed bottom-4 right-4 z-20 md:hidden bg-purple-600 text-white p-3 rounded-full shadow-lg"
-//   aria-label="Toggle course content"
-// >
-//   <Menu className="w-5 h-5" />
-// </button>;
-// {
-//   /* Right sidebar - with responsive behavior */
-// }
-// <div
-//   className={`fixed top-0 right-0 w-64 h-full bg-gray-50 border-l border-gray-200 z-10 overflow-y-auto transition-transform duration-300 ease-in-out ${
-//     sidebarOpen ? "transform-none" : "translate-x-full md:translate-x-0"
-//   }`}
-// >
-//   <div className="p-4">
-//     <div className="flex justify-between items-center mb-2">
-//       <h2 className="text-sm font-semibold">Course content</h2>
-//       <button
-//         onClick={toggleSidebar}
-//         className="text-gray-500 hover:text-gray-700"
-//         aria-label="Close sidebar"
-//       >
-//         <X className="w-4 h-4" />
-//       </button>
-//     </div>
-
-//     <div className="mb-2">
-//       <div className="flex items-center justify-between py-2 cursor-pointer hover:bg-gray-100 rounded px-2">
-//         <div className="text-sm font-medium">Section 1: Introduction</div>
-//         <ChevronDown className="w-4 h-4 text-gray-500" />
-//       </div>
-//       <div className="ml-4 mt-1">
-//         <div className="flex items-center py-2 cursor-pointer bg-gray-200 rounded px-2">
-//           <div className="w-4 h-4 mr-2 flex-shrink-0">
-//             <input
-//               type="checkbox"
-//               checked
-//               className="w-4 h-4 text-indigo-600"
-//               readOnly
-//             />
-//           </div>
-//           <div className="text-sm">Quiz 1: New quiz</div>
-//         </div>
-//       </div>
-//     </div>
-//   </div>
-// </div>;
-// {
-//   /* Overlay to close sidebar when clicking outside on mobile */
-// }
-// {
-//   sidebarOpen && (
-//     <div
-//       className="fixed inset-0 bg-black bg-opacity-50 z-0 md:hidden"
-//       onClick={toggleSidebar}
-//       aria-label="Close sidebar"
-//     ></div>
-//   );
-// }
-
-/////////////////////////////////////////////////////////////////////////////////////////////????????????????
-
-{
-  /* Header */
-}
-{
-  /* <header className="flex items-center justify-between px-6 py-3 border-b border-gray-200">
-        <div className="flex items-center space-x-4">
-          <button
-            onClick={onClose}
-            className="text-gray-600 hover:text-gray-900"
-          >
-            <ChevronLeft className="w-5 h-5" />
-          </button>
-          <div>
-            <h1 className="text-lg font-semibold">
-              {quiz?.name || "New quiz"}
-            </h1>
-            <div className="text-sm text-gray-500 flex items-center space-x-2">
-              <span>Quiz {1}</span>
-              <span>|</span>
-              <span>
-                {totalQuestions}{" "}
-                {totalQuestions === 1 ? "question" : "questions"}
-              </span>
-            </div>
-          </div>
-        </div>
-        <div className="flex items-center space-x-2">
-          <button
-            onClick={toggleSidebar}
-            className="text-gray-600 hover:text-gray-900 md:hidden"
-            aria-label="Toggle course content"
-          >
-            <Menu className="w-5 h-5" />
-          </button>
-          <button className="text-gray-600 hover:text-gray-900">
-            <Settings className="w-5 h-5" />
-          </button>
-          <button className="text-gray-600 hover:text-gray-900">
-            <Maximize className="w-5 h-5" />
-          </button>
-          <button
-            className="text-gray-600 hover:text-gray-900"
-            onClick={onClose}
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-      </header> */
-}

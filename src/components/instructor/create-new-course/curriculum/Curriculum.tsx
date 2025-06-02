@@ -1,21 +1,40 @@
 import { useState } from "react";
 import FormHeader from "../../layout/FormHeader";
 import CourseSectionsBuilder from "./CourseSectionBuilder";
+import { AssignmentProvider } from "@/context/AssignmentDataContext";
+import { ExtendedLecture } from "@/lib/types";
 interface BasicInformationFormProps {
   onSaveNext: () => void;
   courseId?: number;
 }
 
-const handleCurriculm = () => {
+const handleCurriculm = () => {};
 
-}
-
-export const Curriculum = ({ onSaveNext, courseId }: BasicInformationFormProps) => {
-  const [loading, setLoading] = useState<boolean>(false)
+export const Curriculum = ({
+  onSaveNext,
+  courseId,
+}: BasicInformationFormProps) => {
+  const [loading, setLoading] = useState<boolean>(false);
+  const [currentAssignment, setCurrentAssignment] = useState<{
+    sectionId: string;
+    lectureId: string;
+    data: ExtendedLecture;
+  } | null>(null);
   return (
-    <section className="space-y-10">
-      <FormHeader title="Curriculum" loading={loading} handleCourseCreation={handleCurriculm} />
-      <CourseSectionsBuilder onSaveNext={onSaveNext} courseId={courseId}/>
-    </section>
+    <AssignmentProvider initialData={currentAssignment?.data}>
+      <section className="space-y-10">
+        <FormHeader
+          title="Curriculum"
+          loading={loading}
+          handleCourseCreation={handleCurriculm}
+        />
+        <CourseSectionsBuilder
+          onSaveNext={onSaveNext}
+          courseId={courseId}
+          currentAssignment={currentAssignment}
+          setCurrentAssignment={setCurrentAssignment}
+        />
+      </section>
+    </AssignmentProvider>
   );
-}
+};
