@@ -7,15 +7,15 @@ import {
   CREATE_LECTURE, 
   UPDATE_LECTURE,
   DELETE_LECTURE,
-  DELETE_SECTION,
   CreateLectureVariables,
   CreateLectureResponse,
   UpdateLectureVariables,
   UpdateLectureResponse,
   DeleteLectureVariables,
   DeleteLectureResponse,
-  DeleteSectionVariables,
-  DeleteSectionResponse
+  UpdateLectureDescriptionVariables,
+  UPDATE_LECTURE_DESCRIPTION,
+  UpdateLectureDescriptionResponse,
 } from '@/api/course/lecture/mutation';
 
 export const useLectureService = () => {
@@ -44,8 +44,6 @@ export const useLectureService = () => {
       if (!data?.createLecture.success) {
         throw new Error("Failed to create lecture");
       }
-
-      toast.success("Lecture created successfully!");
       return data;
     } catch (err) {
       console.error("Lecture creation error:", err);
@@ -163,13 +161,13 @@ export const useLectureService = () => {
     }
   };
 
-  const deleteSection = async (variables: DeleteSectionVariables) => {
+  const updateLectureDescription = async (variables: UpdateLectureDescriptionVariables) => {
     try {
       setLoading(true);
       setError(null);
 
-      const { data, errors } = await apolloClient.mutate<DeleteSectionResponse>({
-        mutation: DELETE_SECTION,
+      const { data, errors } = await apolloClient.mutate<UpdateLectureDescriptionResponse>({
+        mutation: UPDATE_LECTURE_DESCRIPTION,
         variables,
         context: {
           includeAuth: true
@@ -179,17 +177,17 @@ export const useLectureService = () => {
 
       if (errors) {
         console.error("GraphQL errors:", errors);
-        throw new Error(errors[0]?.message || "An error occurred during section deletion");
+        throw new Error(errors[0]?.message || "An error occurred during lecture deletion");
       }
 
-      if (!data?.deleteSection.success) {
-        throw new Error("Failed to delete section");
+      if (!data?.updateLecture.success) {
+        throw new Error("Failed to delete lecture");
       }
 
-      toast.success("Section deleted successfully!");
+      toast.success("Lecture deleted successfully!");
       return data;
     } catch (err) {
-      console.error("Section deletion error:", err);
+      console.error("Lecture deletion error:", err);
       
       if (err instanceof ApolloError) {
         const errorMessage = err.message || "Network error. Please check your connection and try again.";
@@ -210,11 +208,13 @@ export const useLectureService = () => {
     }
   };
 
+ 
+
   return {
     createLecture,
     updateLecture,
     deleteLecture,
-    deleteSection,
+    updateLectureDescription,
     loading,
     error
   };

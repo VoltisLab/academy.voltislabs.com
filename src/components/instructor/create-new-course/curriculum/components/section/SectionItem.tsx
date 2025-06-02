@@ -74,7 +74,7 @@ interface SectionItemProps {
   ) => void;
   saveDescription?: (
     sectionId: string,
-    lectureId: string,
+    lectureId: number,
     description: string
   ) => void;
   activeContentSection: { sectionId: string; lectureId: string } | null;
@@ -381,7 +381,7 @@ export default function SectionItem({
 
     saveDescription(
       activeDescriptionSection.sectionId,
-      activeDescriptionSection.lectureId,
+      Number(activeDescriptionSection.lectureId),
       currentDescription
     );
 

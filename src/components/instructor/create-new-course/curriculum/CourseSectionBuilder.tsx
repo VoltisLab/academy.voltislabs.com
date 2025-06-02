@@ -55,18 +55,6 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
     lectureId: string | null;
   }>({ sectionId: null, lectureId: null });
 
-  console.log("CourseBuilder courseId:", courseId);
-
-  // Validate courseId
-  if (!courseId) {
-    console.error("CourseBuilder: courseId is required");
-    return (
-      <div className="xl:max-w-5xl max-w-full mx-auto shadow-xl p-10">
-        <div className="text-red-500">Error: Course ID is required</div>
-      </div>
-    );
-  }
-
   // FIXED: Add global resource state management
   const [globalUploadedFiles, setGlobalUploadedFiles] = useState<
     Array<{ name: string; size: string; lectureId: string }>
@@ -91,8 +79,8 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
     useState<boolean>(false);
 
   // Services for backend operations
-  const { createSection, updateSection, loading: sectionLoading, error: sectionError } = useSectionService();
-  const { createLecture, updateLecture, deleteLecture, deleteSection, loading: lectureLoading, error: lectureError } = useLectureService();
+  const { createSection, updateSection, deleteSection, loading: sectionLoading, error: sectionError } = useSectionService();
+  const { createLecture, updateLecture, deleteLecture, loading: lectureLoading, error: lectureError } = useLectureService();
 
   const {
     sections,

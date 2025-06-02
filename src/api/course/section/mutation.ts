@@ -50,6 +50,19 @@ export const UPDATE_SECTION = gql`
 `;
 
 
+export const DELETE_SECTION = gql`
+  mutation DeleteSection(
+    $sectionId: Int!
+  ) {
+    deleteSection(
+      sectionId: $sectionId
+    ) {
+      success
+    }
+  }
+`;
+
+
 // TypeScript interfaces
 export interface CreateSectionVariables {
   courseId: number;
@@ -85,6 +98,16 @@ export interface UpdateSectionVariables {
 export interface UpdateSectionResponse {
   updateSection: {
     message: string;
+    success: boolean;
+  };
+}
+
+export interface DeleteSectionVariables {
+  sectionId: number;
+}
+
+export interface DeleteSectionResponse {
+  deleteSection: {
     success: boolean;
   };
 }

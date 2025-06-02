@@ -4,6 +4,8 @@ import { Lecture, ContentType, ContentItemType, Question } from "@/lib/types";
 import { generateId } from "@/lib/utils";
 import { toast } from "react-hot-toast";
 import { useSectionService } from "@/services/useSectionService";
+import { useLectureService } from "@/services/useLectureService";
+import { UpdateLectureDescriptionVariables } from "@/api/course/lecture/mutation";
 
 interface Section {
   isExpanded: boolean;
@@ -21,6 +23,7 @@ interface Section {
 export const useSections = (initialSections: Section[] = [], courseId?: number) => {
   const [sections, setSections] = useState<Section[]>(initialSections);
   const { createSection, updateSection, loading: sectionLoading } = useSectionService();
+  const { updateLectureDescription, loading: lectureLoading } = useLectureService();
 
   // Modified to accept name and objective parameters and integrate with backend
   const addSection = async (name: string = "New Section", objective?: string): Promise<string> => {
@@ -250,7 +253,6 @@ export const useSections = (initialSections: Section[] = [], courseId?: number) 
         toast.error("You must have at least one section");
         return prevSections;
       }
-      toast.success("Section deleted");
       return prevSections.filter((section) => section.id !== sectionId);
     });
   };
@@ -270,7 +272,6 @@ export const useSections = (initialSections: Section[] = [], courseId?: number) 
         return section;
       })
     );
-    toast.success("Curriculum item deleted");
   };
 
   // Toggle section expansion
@@ -478,28 +479,11 @@ export const useSections = (initialSections: Section[] = [], courseId?: number) 
   // Save description
   const saveDescription = (
     sectionId: string,
-    lectureId: string,
+    lectureId: number,
     description: string
   ) => {
-    setSections((prevSections) =>
-      prevSections.map((section) => {
-        if (section.id === sectionId) {
-          return {
-            ...section,
-            lectures: section.lectures.map((lecture) => {
-              if (lecture.id === lectureId) {
-                return {
-                  ...lecture,
-                  description: description,
-                };
-              }
-              return lecture;
-            }),
-          };
-        }
-        return section;
-      })
-    );
+    const variables: UpdateLectureDescriptionVariables = {lectureId, description}
+    updateLectureDescription(variables)
 
     toast.success("Description saved");
     return description;

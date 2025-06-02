@@ -44,12 +44,14 @@ export const DELETE_LECTURE = gql`
   }
 `;
 
-export const DELETE_SECTION = gql`
-  mutation DeleteSection(
-    $sectionId: Int!
+export const UPDATE_LECTURE_DESCRIPTION = gql`
+  mutation UpdateLecture(
+    $lectureId: Int!
+    $description: String
   ) {
-    deleteSection(
-      sectionId: $sectionId
+    updateLecture(
+      lectureId: $lectureId
+      description: $description
     ) {
       success
     }
@@ -86,18 +88,19 @@ export interface DeleteLectureVariables {
   lectureId: number;
 }
 
+export interface UpdateLectureDescriptionVariables {
+  lectureId: number;
+  description: string
+}
+
 export interface DeleteLectureResponse {
   deleteLecture: {
     success: boolean;
   };
 }
 
-export interface DeleteSectionVariables {
-  sectionId: number;
-}
-
-export interface DeleteSectionResponse {
-  deleteSection: {
+export interface UpdateLectureDescriptionResponse {
+  updateLecture: {
     success: boolean;
   };
 }
