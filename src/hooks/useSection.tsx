@@ -40,7 +40,7 @@ export const useSections = (initialSections: Section[] = [], courseId?: number) 
       };
 
       setSections((prevSections) => [...prevSections, newSection]);
-      toast.success("Creating section...");
+    
 
       // Call backend API if courseId is provided
       if (courseId) {
@@ -75,10 +75,7 @@ export const useSections = (initialSections: Section[] = [], courseId?: number) 
           toast.error(error instanceof Error ? error.message : "Failed to create section");
           throw error;
         }
-      } else {
-        toast.success("Section added locally");
-      }
-
+      } 
       return tempId;
     } catch (error) {
       console.error("Error in addSection:", error);
@@ -355,8 +352,6 @@ export const useSections = (initialSections: Section[] = [], courseId?: number) 
           toast.error(error instanceof Error ? error.message : "Failed to update section");
           throw error;
         }
-      } else {
-        toast.success("Section updated locally");
       }
     } catch (error) {
       console.error("Error in updateSectionName:", error);
