@@ -8,6 +8,7 @@ import {
   Trash2,
   ChevronDown,
 } from "lucide-react";
+import { VideoNote } from '@/lib/types';
 
 interface BottomTabsContainerProps {
   activeTab: "overview" | "notes" | "announcements" | "reviews" | "learning-tools";
@@ -36,17 +37,6 @@ interface BottomTabsContainerProps {
   onOpenLearningModal: () => void;
   activeItemId: string;
 }
-
-type VideoNote = {
-  id: string;
-  timestamp: number;
-  formattedTime: string;
-  content: string;
-  lectureId: string;
-  lectureName?: string;
-  sectionName: string;
-  createdAt: Date;
-};
 
 const BottomTabsContainer: React.FC<BottomTabsContainerProps> = ({
   activeTab,

@@ -1008,3 +1008,15 @@ export interface CodingExercisePreviewData {
     }[];
   } | null;
 }
+
+
+export type VideoNote = {
+  id: string;
+  timestamp: number;
+  formattedTime: string;
+  content: string;
+  lectureId: string;
+  lectureName?: string;
+  sectionName: string;
+  createdAt: Date;
+};
