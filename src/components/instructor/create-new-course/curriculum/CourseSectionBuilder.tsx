@@ -10,6 +10,7 @@ import {
 import { useSections } from "@/hooks/useSection";
 import { useFileUpload } from "@/hooks/useFileUpload";
 import { useModal } from "@/hooks/useModal";
+import { useSectionService } from "@/services/useSectionService";
 import { ContentTypeSelector } from "../../ContentTypeSelector";
 import SectionItem from "./components/section/SectionItem";
 import { useCourseSectionsUpdate } from "@/services/courseSectionsService";
@@ -17,7 +18,7 @@ import SectionForm from "./components/section/SectionForm";
 import NewFeatureAlert from "./NewFeatureAlert";
 import InfoBox from "./InfoBox";
 import CodingExerciseCreator from "./components/code/CodingExcerciseCreator";
-import AssignmentEditor from "./components/assignment/AssignmentEditor"; // Import the new component
+import AssignmentEditor from "./components/assignment/AssignmentEditor";
 
 interface CourseBuilderProps {
   onSaveNext?: () => void;
@@ -52,6 +53,18 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
     lectureId: string | null;
   }>({ sectionId: null, lectureId: null });
 
+  console.log("CourseBuilder courseId:", courseId);
+
+  // Validate courseId
+  if (!courseId) {
+    console.error("CourseBuilder: courseId is required");
+    return (
+      <div className="xl:max-w-5xl max-w-full mx-auto shadow-xl p-10">
+        <div className="text-red-500">Error: Course ID is required</div>
+      </div>
+    );
+  }
+
   // FIXED: Add global resource state management
   const [globalUploadedFiles, setGlobalUploadedFiles] = useState<
     Array<{ name: string; size: string; lectureId: string }>
@@ -74,21 +87,19 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
   // NEW: Assignment editor state
   const [showAssignmentEditor, setShowAssignmentEditor] =
     useState<boolean>(false);
-  // const [currentAssignment, setCurrentAssignment] = useState<{
-  //   sectionId: string;
-  //   lectureId: string;
-  //   data: ExtendedLecture;
-  // } | null>(null);
+
+  // Section service for backend operations
+  const { createSection, updateSection, loading: sectionLoading, error: sectionError } = useSectionService();
 
   const {
     sections,
     setSections,
-    addSection,
+    addSection: addLocalSection,
     addLecture,
     deleteSection,
     deleteLecture,
     toggleSectionExpansion,
-    updateSectionName,
+    updateSectionName: updateLocalSectionName,
     updateLectureName,
     moveSection,
     moveLecture,
@@ -134,37 +145,37 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
   };
 
   const addSourceCodeFile = (file: SourceCodeFile) => {
-  setGlobalSourceCodeFiles((prev) => {
-    // Prevent duplicates by checking both name and filename
-    const isDuplicate = prev.some(existingFile => 
-      (existingFile.name === file.name || 
-       existingFile.filename === file.filename || 
-       existingFile.name === file.filename || 
-       existingFile.filename === file.name) && 
-      existingFile.lectureId === file.lectureId
-    );
-    
-    if (isDuplicate) {
-      console.log('⚠️ Duplicate source code file detected, skipping add');
-      return prev;
-    }
-    
-    return [...prev, file];
-  });
-};
-
-const removeSourceCodeFile = (fileName: string | undefined, lectureId: string) => {
-  setGlobalSourceCodeFiles((prev) =>
-    prev.filter((file) => {
-      // Check BOTH name AND filename properties
-      const nameMatch = file.name === fileName || file.filename === fileName;
-      const lectureMatch = file.lectureId === lectureId;
+    setGlobalSourceCodeFiles((prev) => {
+      // Prevent duplicates by checking both name and filename
+      const isDuplicate = prev.some(existingFile => 
+        (existingFile.name === file.name || 
+         existingFile.filename === file.filename || 
+         existingFile.name === file.filename || 
+         existingFile.filename === file.name) && 
+        existingFile.lectureId === file.lectureId
+      );
       
-      // Return true to keep, false to remove
-      return !(nameMatch && lectureMatch);
-    })
-  );
-};
+      if (isDuplicate) {
+        console.log('⚠️ Duplicate source code file detected, skipping add');
+        return prev;
+      }
+      
+      return [...prev, file];
+    });
+  };
+
+  const removeSourceCodeFile = (fileName: string | undefined, lectureId: string) => {
+    setGlobalSourceCodeFiles((prev) =>
+      prev.filter((file) => {
+        // Check BOTH name AND filename properties
+        const nameMatch = file.name === fileName || file.filename === fileName;
+        const lectureMatch = file.lectureId === lectureId;
+        
+        // Return true to keep, false to remove
+        return !(nameMatch && lectureMatch);
+      })
+    );
+  };
 
   const addExternalResource = (resource: ExternalResourceItem) => {
     setGlobalExternalResources((prev) => [...prev, resource]);
@@ -205,6 +216,80 @@ const removeSourceCodeFile = (fileName: string | undefined, lectureId: string) =
     sectionId: string;
     lectureId: string;
   } | null>(null);
+
+  // NEW: Backend-integrated section creation
+  const handleAddSection = async (title: string, objective: string) => {
+    try {
+      if (!courseId) {
+        toast.error("Course ID is required to create a section");
+        return;
+      }
+
+      // Calculate order (position) - new section goes at the end
+      const order = sections.length;
+
+      // Create section on backend
+      const response = await createSection({
+        courseId: Number(courseId),
+        order: order,
+        title: title,
+        description: objective || ""
+      });
+
+      console.log(response)
+
+      if (response.createSection.success) {
+        // Add to local state with backend ID
+        const backendSectionId = response.createSection.section.id;
+        addLocalSection(title, objective);
+        
+        // Update the local section with the backend ID
+        setSections(prevSections => 
+          prevSections.map((section, index) => 
+            index === prevSections.length - 1 
+              ? { ...section, id: backendSectionId }
+              : section
+          )
+        );
+
+        setShowSectionForm(false);
+      }
+    } catch (error) {
+      console.error("Failed to create section:", error);
+      // Error is already handled in the service with toast
+    }
+  };
+
+  // NEW: Backend-integrated section update
+  const updateSectionName = async (
+    sectionId: string,
+    newName: string,
+    objective?: string
+  ) => {
+    try {
+      // Find the section to get its current order
+      const sectionIndex = sections.findIndex(section => section.id === sectionId);
+      if (sectionIndex === -1) {
+        toast.error("Section not found");
+        return;
+      }
+
+      // Update on backend
+      await updateSection({
+        sectionId: Number(sectionId),
+        order: sectionIndex, // Use current position as order
+        title: newName,
+        description: objective || ""
+      });
+
+      // Update local state
+      updateLocalSectionName(sectionId, newName, objective);
+      
+    } catch (error) {
+      console.error("Failed to update section:", error);
+      // Error is already handled in the service with toast
+    }
+  };
 
   // Existing coding exercise handlers
   const handleOpenCodingExerciseModal = (
@@ -318,10 +403,6 @@ const removeSourceCodeFile = (fileName: string | undefined, lectureId: string) =
         return section;
       })
     );
-
-    // Close the assignment editor
-    // setShowAssignmentEditor(false);
-    // setCurrentAssignment(null);
 
     // Show success message
     toast.success("Assignment updated successfully!");
@@ -453,11 +534,6 @@ const removeSourceCodeFile = (fileName: string | undefined, lectureId: string) =
     setDragTarget({ sectionId: null, lectureId: null });
   };
 
-  const handleAddSection = (title: string, objective: string) => {
-    addSection(title, objective);
-    setShowSectionForm(false);
-  };
-
   const getFormattedSectionsForPreview = () => {
     return sections.map((section) => {
       // Separate content by type
@@ -572,6 +648,7 @@ const removeSourceCodeFile = (fileName: string | undefined, lectureId: string) =
             onClick={() => setShowSectionForm(true)}
             className="relative w-16 h-8 border-2 border-dashed border-gray-300 flex items-center justify-center hover:border-gray-400 hover:bg-gray-50 transition-all duration-200 rounded-r-[45px]"
             aria-label="Add section"
+            disabled={sectionLoading}
           >
             <Plus className="h-6 w-6 text-gray-500" />
           </button>
@@ -653,6 +730,7 @@ const removeSourceCodeFile = (fileName: string | undefined, lectureId: string) =
             <SectionForm
               onAddSection={handleAddSection}
               onCancel={() => setShowSectionForm(false)}
+              isLoading={sectionLoading}
             />
           </div>
         )}
@@ -661,6 +739,7 @@ const removeSourceCodeFile = (fileName: string | undefined, lectureId: string) =
           <button
             onClick={() => setShowSectionForm(true)}
             className="inline-flex items-center mb-8 px-3 py-1.5 border border-[#6D28D2] text-[#6D28D2] bg-white rounded text-sm font-bold hover:bg-indigo-50"
+            disabled={sectionLoading}
           >
             <Plus className="h-4 w-4 mr-1" color="#666" />
             Section
