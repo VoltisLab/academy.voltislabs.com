@@ -30,6 +30,7 @@ import PracticeItem from "../practice/PracticeItem";
 import PracticeForm from "../practice/PracticeForm";
 import { FaHamburger } from "react-icons/fa";
 import { useSections } from "@/hooks/useSection";
+import { FileUploadFunction } from "../../CourseSectionBuilder";
 
 // Updated SectionItemProps interface with the missing property
 interface SectionItemProps {
@@ -180,6 +181,7 @@ interface SectionItemProps {
   ) => Promise<string>;
   videoUploading?: boolean;
   videoUploadProgress?: number;
+  uploadFileToBackend?: FileUploadFunction;
 }
 
 export default function SectionItem({
@@ -236,7 +238,8 @@ export default function SectionItem({
   uploadVideoToBackend,
   videoUploading,
   videoUploadProgress,
-  saveArticleToBackend
+  saveArticleToBackend,
+  uploadFileToBackend, 
 }: SectionItemProps) {
   const sectionNameInputRef = useRef<HTMLInputElement>(null);
   // State for toggling action buttons

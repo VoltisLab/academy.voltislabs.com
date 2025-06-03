@@ -37,6 +37,8 @@ import StudentVideoPreview from "./StudentVideoPeview";
 import InstructorVideoPreview from "./InstructorVideoPeview";
 import { FaCircleCheck } from "react-icons/fa6";
 import toast from "react-hot-toast";
+import { FileUploadFunction } from "../../CourseSectionBuilder";
+import { uploadFile } from "@/services/fileUploadService";
 
 interface SelectedVideoDetails {
   id: string;
@@ -88,6 +90,7 @@ interface UpdatedLectureItemProps extends Omit<LectureItemProps, 'updateLectureN
   ) => Promise<string>;
   videoUploading?: boolean;
   videoUploadProgres?: number;
+  uploadFileToBackend?: FileUploadFunction;
 }
 
 export default function LectureItem({
@@ -135,6 +138,7 @@ export default function LectureItem({
   saveArticleToBackend,
   videoUploading = false,
   videoUploadProgres = 0,
+  uploadFileToBackend,
 }: UpdatedLectureItemProps) {
   const lectureNameInputRef = useRef<HTMLInputElement>(null);
   const [showContentTypeSelector, setShowContentTypeSelector] = useState(false);
@@ -240,6 +244,21 @@ export default function LectureItem({
   const handleEditLecture = (e: React.MouseEvent) => {
     e.stopPropagation();
     setShowEditLectureForm(true);
+  };
+
+    const handleFileUpload: FileUploadFunction = async (file: File, fileType: 'VIDEO' | 'RESOURCE') => {
+    if (uploadFileToBackend) {
+      return await uploadFileToBackend(file, fileType);
+    } else {
+      // Fallback to direct file upload service
+      try {
+        const uploadedUrl = await uploadFile(file, fileType);
+        return uploadedUrl;
+      } catch (error) {
+        console.error('File upload failed:', error);
+        throw error;
+      }
+    }
   };
 
   const handleSaveArticle = async (articleContent: string) => {
@@ -1281,7 +1300,14 @@ export default function LectureItem({
           </div>
         );
       case "video-slide":
-        return <VideoSlideMashupComponent />;
+        return( 
+        <VideoSlideMashupComponent 
+          sectionId={sectionId}
+          lectureId={lecture.id}
+          uploadVideoToBackend={uploadVideoToBackend}
+          uploadFileToBackend={handleFileUpload}
+        />
+        )
       case "article":
         return (
           <Article

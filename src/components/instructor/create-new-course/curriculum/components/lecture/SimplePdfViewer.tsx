@@ -1,30 +1,57 @@
 'use client';
 
 import React, { useRef, useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, X, Maximize2, AlertTriangle } from "lucide-react";
+import { ChevronLeft, ChevronRight, X, Maximize2, AlertTriangle, Upload, CheckCircle } from "lucide-react";
 
 interface PdfViewerProps {
   onUsePresentation: () => void;
   onCancel: () => void;
   onFileSelected?: (file: File | null) => void;
   isPresentationSelected?: boolean;
+  onFileUpload?: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  uploadedFileUrl?: string | null;
+  // NEW: Additional props for upload state management
+  isUploading?: boolean;
+  uploadProgress?: number;
+  uploadError?: string | null;
 }
 
 const SimplePdfViewer: React.FC<PdfViewerProps> = ({
   onUsePresentation,
   onCancel,
   onFileSelected,
-  isPresentationSelected = false
+  isPresentationSelected = false,
+  onFileUpload,
+  uploadedFileUrl,
+  // NEW: Upload state props with defaults
+  isUploading: externalIsUploading = false,
+  uploadProgress: externalUploadProgress = 0,
+  uploadError = null
 }) => {
   const [file, setFile] = useState<File | null>(null);
   const [fileURL, setFileURL] = useState<string | null>(null);
-  const [isUploading, setIsUploading] = useState<boolean>(false);
-  const [uploadProgress, setUploadProgress] = useState<number>(0);
+  const [internalIsUploading, setInternalIsUploading] = useState<boolean>(false);
+  const [internalUploadProgress, setInternalUploadProgress] = useState<number>(0);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const [pageCount, setPageCount] = useState<number>(0);
+  const [uploadCompleted, setUploadCompleted] = useState<boolean>(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const viewerRef = useRef<HTMLDivElement>(null);
+  
+  // Determine which upload state to use (external or internal)
+  const isUploading = externalIsUploading || internalIsUploading;
+  const uploadProgress = externalIsUploading ? externalUploadProgress : internalUploadProgress;
+  
+  // Effect to handle uploadedFileUrl changes
+  useEffect(() => {
+    if (uploadedFileUrl && file) {
+      setFileURL(uploadedFileUrl);
+      setUploadCompleted(true);
+      setInternalIsUploading(false);
+      setInternalUploadProgress(0);
+    }
+  }, [uploadedFileUrl, file]);
   
   // Get page count from PDF using PDF.js
   useEffect(() => {
@@ -39,8 +66,17 @@ const SimplePdfViewer: React.FC<PdfViewerProps> = ({
         const workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfJsLib.version}/pdf.worker.min.js`;
         pdfJsLib.GlobalWorkerOptions.workerSrc = workerSrc;
         
-        // Convert file to ArrayBuffer
-        const arrayBuffer = await file.arrayBuffer();
+        // Use the uploaded file URL if available, otherwise use the local file
+        let arrayBuffer: ArrayBuffer;
+        
+        if (uploadedFileUrl) {
+          // Fetch the uploaded file
+          const response = await fetch(uploadedFileUrl);
+          arrayBuffer = await response.arrayBuffer();
+        } else {
+          // Use local file
+          arrayBuffer = await file.arrayBuffer();
+        }
         
         // Load the PDF document
         const loadingTask = pdfJsLib.getDocument(arrayBuffer);
@@ -58,39 +94,61 @@ const SimplePdfViewer: React.FC<PdfViewerProps> = ({
     };
     
     getPdfPageCount();
-  }, [file]);
+  }, [file, uploadedFileUrl]);
 
   // Handle file selection
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
       const selectedFile = event.target.files[0];
       
-      // Generate object URL for the file
-      const url = URL.createObjectURL(selectedFile);
+      // Validate file type
+      if (!selectedFile.type.includes('pdf') && 
+          !selectedFile.name.toLowerCase().endsWith('.pdf') &&
+          !selectedFile.name.toLowerCase().endsWith('.ppt') &&
+          !selectedFile.name.toLowerCase().endsWith('.pptx')) {
+        alert('Please select a PDF or PowerPoint file.');
+        return;
+      }
       
-      // Simulate upload process
-      setIsUploading(true);
-      setUploadProgress(0);
+      setFile(selectedFile);
+      setUploadCompleted(false);
       
-      const interval = setInterval(() => {
-        setUploadProgress((prevProgress) => {
-          if (prevProgress >= 100) {
-            clearInterval(interval);
-            setTimeout(() => {
-              setIsUploading(false);
-              setFile(selectedFile);
-              setFileURL(url);
-              // Report file selection to parent component
-              if (onFileSelected) {
-                onFileSelected(selectedFile);
-              }
-            }, 500);
-            return 100;
-          }
-          return prevProgress + 5;
-        });
-      }, 100);
+      // Report file selection to parent component
+      if (onFileSelected) {
+        onFileSelected(selectedFile);
+      }
+      
+      // If external upload function is provided, use it
+      if (onFileUpload) {
+        onFileUpload(event);
+      } else {
+        // Fallback to internal upload simulation
+        simulateInternalUpload(selectedFile);
+      }
     }
+  };
+
+  // Internal upload simulation (fallback)
+  const simulateInternalUpload = (selectedFile: File) => {
+    const url = URL.createObjectURL(selectedFile);
+    
+    setInternalIsUploading(true);
+    setInternalUploadProgress(0);
+    
+    const interval = setInterval(() => {
+      setInternalUploadProgress((prevProgress) => {
+        if (prevProgress >= 100) {
+          clearInterval(interval);
+          setTimeout(() => {
+            setInternalIsUploading(false);
+            setFileURL(url);
+            setUploadCompleted(true);
+          }, 500);
+          return 100;
+        }
+        return prevProgress + 5;
+      });
+    }, 100);
   };
 
   // Toggle fullscreen preview
@@ -100,21 +158,61 @@ const SimplePdfViewer: React.FC<PdfViewerProps> = ({
 
   // Reset file
   const resetFile = () => {
-    if (fileURL) {
+    if (fileURL && !uploadedFileUrl) {
       URL.revokeObjectURL(fileURL);
     }
     setFile(null);
     setFileURL(null);
+    setUploadCompleted(false);
+    setInternalIsUploading(false);
+    setInternalUploadProgress(0);
     
     // Report file removal to parent component
     if (onFileSelected) {
       onFileSelected(null);
     }
+    
+    // Clear file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  // Handle upload error
+  const renderUploadError = () => {
+    if (!uploadError) return null;
+    
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-md p-3 mb-4">
+        <div className="flex items-center">
+          <AlertTriangle className="h-5 w-5 text-red-400 mr-2" />
+          <div>
+            <h3 className="text-sm font-medium text-red-800">Upload Failed</h3>
+            <p className="text-sm text-red-700 mt-1">{uploadError}</p>
+          </div>
+        </div>
+        <div className="mt-3">
+          <button
+            onClick={() => {
+              resetFile();
+              if (fileInputRef.current) {
+                fileInputRef.current.click();
+              }
+            }}
+            className="text-sm bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
   };
 
   // Render upload progress
   const renderUploadProgress = () => (
-    <div className="space-y-2">
+    <div className="space-y-3">
+      {renderUploadError()}
+      
       <div className="overflow-x-auto">
         <div className="grid grid-cols-4 gap-2 md:gap-4 text-base font-bold text-gray-800 border-b border-gray-300 py-2 min-w-max">
           <div>Filename</div>
@@ -126,74 +224,122 @@ const SimplePdfViewer: React.FC<PdfViewerProps> = ({
           <div className="truncate">{file?.name || "presentation.pdf"}</div>
           <div>Presentation</div>
           <div className="flex items-center">
-            <div className="w-20 bg-gray-200 h-2 rounded-full overflow-hidden mr-2">
-              <div 
-                className="bg-purple-600 h-2 rounded-full" 
-                style={{ width: `${uploadProgress}%` }}
-              ></div>
-            </div>
-            <span className="text-xs">{uploadProgress}%</span>
+            {uploadError ? (
+              <span className="text-red-600 flex items-center">
+                <AlertTriangle className="w-4 h-4 mr-1" />
+                Failed
+              </span>
+            ) : uploadProgress === 100 ? (
+              <span className="text-green-600 flex items-center">
+                <CheckCircle className="w-4 h-4 mr-1" />
+                Complete
+              </span>
+            ) : (
+              <>
+                <div className="w-20 bg-gray-200 h-2 rounded-full overflow-hidden mr-2">
+                  <div 
+                    className="bg-purple-600 h-2 rounded-full transition-all duration-300" 
+                    style={{ width: `${uploadProgress}%` }}
+                  ></div>
+                </div>
+                <span className="text-xs">{Math.round(uploadProgress)}%</span>
+              </>
+            )}
           </div>
           <div>{new Date().toLocaleDateString()}</div>
         </div>
       </div>
+      
+      {uploadProgress === 100 && !uploadError && (
+        <div className="flex items-center text-green-600 text-sm font-medium">
+          <CheckCircle className="w-4 h-4 mr-2" />
+          Upload completed successfully!
+        </div>
+      )}
     </div>
   );
 
   // Render file selection
   const renderFileSelection = () => (
-    <div className="flex items-center justify-between">
-      <div className="flex-1 border border-gray-500 rounded px-4 py-3 text-sm text-gray-600 truncate">
-        {file ? <span>{file.name}</span> : <span>No file selected</span>}
+    <div className="space-y-3">
+      {renderUploadError()}
+      
+      <div className="flex items-center justify-between">
+        <div className="flex-1 border border-gray-500 rounded px-4 py-3 text-sm text-gray-600 truncate">
+          {file ? <span>{file.name}</span> : <span>No file selected</span>}
+        </div>
+        <label className="ml-4 px-2 py-3 border border-purple-700 text-sm font-bold text-purple-700 hover:bg-purple-50 cursor-pointer transition flex items-center">
+          <Upload className="w-4 h-4 mr-2" />
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".pdf,.ppt,.pptx"
+            onChange={handleFileChange}
+            className="hidden"
+            disabled={isUploading}
+          />
+          {isUploading ? 'Uploading...' : 'Select File'}
+        </label>
       </div>
-      <label className="ml-4 px-2 py-3 border border-purple-700 text-sm font-bold text-purple-700 hover:bg-purple-50 cursor-pointer transition">
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept=".pdf"
-          onChange={handleFileChange}
-          className="hidden"
-        />
-        Select PDF
-      </label>
     </div>
   );
   
   // Render selected PDF thumbnail view
   const renderSelectedPdfView = () => {
-    if (!file || !fileURL) return null;
+    if (!file) return null;
     
     return (
-      <div className="flex items-center space-x-3">
-        <div className="w-16 h-16 border border-gray-300 flex items-center justify-center overflow-hidden bg-gray-50">
-          <object
-            data={fileURL}
-            type="application/pdf"
-            className="max-w-full max-h-full object-contain"
-            style={{ width: '100%', height: '100%' }}
-          >
-            <div className="w-full h-full flex items-center justify-center bg-gray-100">
-              <span className="text-xs text-gray-500">PDF</span>
+      <div className="space-y-3">
+        {renderUploadError()}
+        
+        <div className="flex items-center space-x-3 p-3 bg-green-50 border border-green-200 rounded-md">
+          <div className="w-16 h-16 border border-gray-300 flex items-center justify-center overflow-hidden bg-white rounded">
+            {fileURL ? (
+              <object
+                data={fileURL}
+                type="application/pdf"
+                className="max-w-full max-h-full object-contain"
+                style={{ width: '100%', height: '100%' }}
+              >
+                <div className="w-full h-full flex items-center justify-center bg-gray-100">
+                  <span className="text-xs text-gray-500">PDF</span>
+                </div>
+              </object>
+            ) : (
+              <div className="w-full h-full flex items-center justify-center bg-gray-100">
+                <Upload className="w-6 h-6 text-gray-400" />
+              </div>
+            )}
+          </div>
+          <div className="flex-1">
+            <div className="flex items-center mb-1">
+              <CheckCircle className="w-4 h-4 text-green-600 mr-2" />
+              <p className="text-sm font-medium text-green-800">
+                Presentation Selected
+              </p>
             </div>
-          </object>
+            <p className="text-sm text-gray-700 truncate max-w-md">
+              {file.name}
+            </p>
+            {pageCount > 0 && (
+              <p className="text-xs text-gray-500">
+                {pageCount} {pageCount === 1 ? 'page' : 'pages'}
+              </p>
+            )}
+          </div>
+          <button 
+            className="px-3 py-1 text-purple-600 text-sm font-bold border border-purple-600 rounded hover:bg-purple-50 transition"
+            onClick={() => {
+              resetFile();
+              if (fileInputRef.current) {
+                fileInputRef.current.click();
+              }
+            }}
+            disabled={isUploading}
+          >
+            Change
+          </button>
         </div>
-        <div>
-          <p className="text-sm font-medium text-gray-800 truncate max-w-md">
-            {file.name}
-          </p>
-          <p className="text-xs text-gray-500">{pageCount} {pageCount === 1 ? 'page' : 'pages'}</p>
-        </div>
-        <button 
-          className="ml-auto px-3 py-1 text-purple-600 text-sm font-bold border border-purple-600 rounded hover:bg-purple-50"
-          onClick={() => {
-            resetFile();
-            if (fileInputRef.current) {
-              fileInputRef.current.click();
-            }
-          }}
-        >
-          Change
-        </button>
       </div>
     );
   };
@@ -242,6 +388,7 @@ const SimplePdfViewer: React.FC<PdfViewerProps> = ({
               <button
                 onClick={onUsePresentation}
                 className="bg-purple-600 text-white text-sm px-4 py-1 rounded hover:bg-purple-700"
+                disabled={!uploadCompleted}
               >
                 Use this presentation
               </button>
@@ -258,7 +405,9 @@ const SimplePdfViewer: React.FC<PdfViewerProps> = ({
     }
 
     return (
-      <>
+      <div className="space-y-3">
+        {renderUploadError()}
+        
         <div className="border border-gray-300 rounded pb-2">
           <div className="w-full h-80 bg-white relative flex justify-center items-center overflow-hidden" ref={viewerRef}>
             <object
@@ -299,25 +448,32 @@ const SimplePdfViewer: React.FC<PdfViewerProps> = ({
           
           <div className="px-4 pt-2 text-sm text-center font-medium text-gray-700">
             {file?.name}
+            {uploadCompleted && (
+              <span className="ml-2 text-green-600">
+                <CheckCircle className="w-4 h-4 inline" />
+              </span>
+            )}
           </div>
         </div>
 
         {/* Action buttons */}
-        <div className="flex justify-start space-x-2 mt-4">
+        <div className="flex justify-start space-x-2">
           <button
             onClick={onUsePresentation}
-            className="bg-purple-600 text-white text-sm py-1.5 px-3 rounded hover:bg-purple-700 transition"
+            className="bg-purple-600 text-white text-sm py-1.5 px-3 rounded hover:bg-purple-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={!uploadCompleted || uploadError !== null}
           >
             Use this presentation
           </button>
           <button
             onClick={resetFile}
             className="border border-gray-300 text-gray-700 text-sm py-1.5 px-3 rounded hover:bg-gray-50 transition"
+            disabled={isUploading}
           >
             Cancel
           </button>
         </div>
-      </>
+      </div>
     );
   };
 
