@@ -28,26 +28,25 @@ export const CREATE_COURSE_BASIC_INFO = gql`
       success
       message
       course {
-      id
-      language
-      subtitleLanguage
-      title
-      topic
-      createdAt
-      description
-      category {
         id
-        name
+        language
+        subtitleLanguage
+        title
+        topic
+        createdAt
+        description
+        category {
+          id
+          name
+        }
+        subCategory {
+          id
+          name
+        }
       }
-      subCategory {
-        id
-        name
-      }
-    }
     }
   }
 `;
-
 
 // Query to fetch course categories
 export const GET_CATEGORIES = gql`
@@ -87,12 +86,148 @@ export const UPDATE_COURSE_SECTIONS = gql`
     $courseId: Int!
     $courseSections: [CourseSectionType!]!
   ) {
-    updateCourseInfo(
-      courseId: $courseId
-      courseSections: $courseSections
-    ) {
+    updateCourseInfo(courseId: $courseId, courseSections: $courseSections) {
       success
       message
+    }
+  }
+`;
+
+export const CREATE_QUIZ = gql`
+  mutation CreateQuiz(
+    $sectionId: Int!
+    $title: String!
+    $description: String
+    $allowMultipleAttempts: Boolean
+    $maxAttempts: Int
+    $passingScorePercent: Int
+    $timeLimitMinutes: Int
+  ) {
+    createQuiz(
+      sectionId: $sectionId
+      title: $title
+      description: $description
+      allowMultipleAttempts: $allowMultipleAttempts
+      maxAttempts: $maxAttempts
+      passingScorePercent: $passingScorePercent
+      timeLimitMinutes: $timeLimitMinutes
+    ) {
+      success
+      quiz {
+        id
+        title
+        description
+        allowMultipleAttempts
+        maxAttempts
+        passingScorePercent
+        timeLimitMinutes
+        questions {
+          id
+          text
+          questionType
+          order
+          explanation
+          maxPoints
+          mediaUrl
+          allowMultipleCorrect
+        }
+      }
+    }
+  }
+`;
+
+export const UPDATE_QUIZ = gql`
+  mutation UpdateQuiz(
+    $quizId: Int!
+    $title: String
+    $description: String
+    $allowMultipleAttempts: Boolean
+    $maxAttempts: Int
+    $passingScorePercent: Int
+    $timeLimitMinutes: Int
+  ) {
+    updateQuiz(
+      quizId: $quizId
+      title: $title
+      description: $description
+      allowMultipleAttempts: $allowMultipleAttempts
+      maxAttempts: $maxAttempts
+      passingScorePercent: $passingScorePercent
+      timeLimitMinutes: $timeLimitMinutes
+    ) {
+      success
+    }
+  }
+`;
+
+export const ADD_QUESTION_TO_QUIZ = gql`
+  mutation AddQuestionToQuiz(
+    $quizId: Int!
+    $text: String!
+    $questionType: String!
+    $order: Int!
+    $explanation: String
+    $mediaUrl: String
+    $maxPoints: Int
+    $choices: [AnswerChoiceInputType!]!
+    $relatedLectureId: Int
+  ) {
+    addQuestionToQuiz(
+      input: {
+        quizId: $quizId
+        text: $text
+        questionType: $questionType
+        order: $order
+        explanation: $explanation
+        mediaUrl: $mediaUrl
+        maxPoints: $maxPoints
+        choices: $choices
+        relatedLectureId: $relatedLectureId
+      }
+    ) {
+      success
+      question {
+        id
+        text
+        questionType
+        order
+        explanation
+        maxPoints
+        mediaUrl
+        allowMultipleCorrect
+      }
+    }
+  }
+`;
+
+export const UPDATE_QUESTION = gql`
+  mutation UpdateQuestion(
+    $questionId: Int!
+    $text: String
+    $explanation: String
+    $maxPoints: Int
+    $mediaUrl: String
+    $order: Int
+    $choices: [ChoiceInputType!]
+  ) {
+    updateQuestion(
+      questionId: $questionId
+      text: $text
+      explanation: $explanation
+      maxPoints: $maxPoints
+      mediaUrl: $mediaUrl
+      order: $order
+      choices: $choices
+    ) {
+      success
+    }
+  }
+`;
+
+export const DELETE_QUESTION = gql`
+  mutation DeleteQuestion($questionId: Int!) {
+    deleteQuestion(questionId: $questionId) {
+      success
     }
   }
 `;

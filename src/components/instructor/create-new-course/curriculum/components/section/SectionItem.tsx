@@ -9,13 +9,13 @@ import {
   AlignJustify,
   FileText,
 } from "lucide-react";
-import { 
-  Lecture, 
-  ContentItemType, 
-  ExtendedLecture, 
-  EnhancedLecture, 
-  SourceCodeFile, 
-  ExternalResourceItem 
+import {
+  Lecture,
+  ContentItemType,
+  ExtendedLecture,
+  EnhancedLecture,
+  SourceCodeFile,
+  ExternalResourceItem,
 } from "@/lib/types";
 // Import the components
 import { ActionButtons } from "./ActionButtons";
@@ -103,7 +103,7 @@ interface SectionItemProps {
     quizId: string,
     questions: any[]
   ) => void;
-  
+
   // New prop for practice exercises
   savePracticeCode?: (
     sectionId: string,
@@ -134,16 +134,32 @@ interface SectionItemProps {
   }>;
   // New props for quiz functionality
   addQuiz?: (sectionId: string, title: string, description: string) => string;
-  updateQuiz?: (sectionId: string, quizId: string, title: string, description: string) => void;
-  
+  updateQuiz?: (
+    sectionId: string,
+    quizId: string,
+    title: string,
+    description: string
+  ) => void;
+
   // FIXED: Add global resource props
-  globalUploadedFiles?: Array<{ name: string; size: string; lectureId: string }>;
+  globalUploadedFiles?: Array<{
+    name: string;
+    size: string;
+    lectureId: string;
+  }>;
   globalSourceCodeFiles?: SourceCodeFile[];
   globalExternalResources?: ExternalResourceItem[];
-  addUploadedFile?: (file: { name: string; size: string; lectureId: string }) => void;
+  addUploadedFile?: (file: {
+    name: string;
+    size: string;
+    lectureId: string;
+  }) => void;
   removeUploadedFile?: (fileName: string, lectureId: string) => void;
   addSourceCodeFile?: (file: SourceCodeFile) => void;
-  removeSourceCodeFile?: (fileName: string | undefined, lectureId: string) => void;
+  removeSourceCodeFile?: (
+    fileName: string | undefined,
+    lectureId: string
+  ) => void;
   addExternalResource?: (resource: ExternalResourceItem) => void;
   removeExternalResource?: (title: string, lectureId: string) => void;
   
@@ -287,8 +303,12 @@ export default function SectionItem({
     title: string,
     description: string
   ) => {
-    console.log("SectionItem handling quiz add:", { sectionId, title, description });
-    
+    console.log("SectionItem handling quiz add:", {
+      sectionId,
+      title,
+      description,
+    });
+
     if (addQuiz) {
       // Use the addQuiz function which properly handles the quiz creation with description
       addQuiz(sectionId, title, description);
@@ -301,7 +321,7 @@ export default function SectionItem({
         // Error is already handled in the service with toast
       }
     }
-    
+
     setShowQuizForm(false);
   };
 
@@ -312,8 +332,13 @@ export default function SectionItem({
     title: string,
     description: string
   ) => {
-    console.log("SectionItem handling quiz edit:", { sectionId, quizId, title, description });
-    
+    console.log("SectionItem handling quiz edit:", {
+      sectionId,
+      quizId,
+      title,
+      description,
+    });
+
     if (updateQuiz) {
       updateQuiz(sectionId, quizId, title, description);
     }
@@ -477,39 +502,50 @@ export default function SectionItem({
   const updateCurrentDescription = (description: string) => {
     setCurrentDescription(description);
   };
-  
-  const [enhancedLectures, setEnhancedLectures] = useState<Record<string, EnhancedLecture>>({});
-  const allSectionsWithEnhanced = allSections.map(section => ({
+
+  const [enhancedLectures, setEnhancedLectures] = useState<
+    Record<string, EnhancedLecture>
+  >({});
+  const allSectionsWithEnhanced = allSections.map((section) => ({
     ...section,
-    lectures: section.lectures.map(lecture => {
+    lectures: section.lectures.map((lecture) => {
       const enhanced = enhancedLectures[lecture.id];
       return enhanced ? { ...lecture, ...enhanced } : lecture;
-    })
+    }),
   }));
-  
+
   // Handler to update lecture content
-  const updateLectureContent = (sectionId: string, lectureId: string, updatedLecture: EnhancedLecture) => {
-    console.log('📝 Updating lecture content:', {
+  const updateLectureContent = (
+    sectionId: string,
+    lectureId: string,
+    updatedLecture: EnhancedLecture
+  ) => {
+    console.log("📝 Updating lecture content:", {
       sectionId,
       lectureId,
       actualContentType: updatedLecture.actualContentType,
       hasVideoContent: updatedLecture.hasVideoContent,
-      hasArticleContent: updatedLecture.hasArticleContent
+      hasArticleContent: updatedLecture.hasArticleContent,
     });
 
     // Store the enhanced lecture data
-    setEnhancedLectures(prev => ({
+    setEnhancedLectures((prev) => ({
       ...prev,
-      [lectureId]: updatedLecture
+      [lectureId]: updatedLecture,
     }));
   };
 
   // Calculate content type specific indices
-  const getContentTypeIndex = (currentIndex: number, contentType: string): number => {
+  const getContentTypeIndex = (
+    currentIndex: number,
+    contentType: string
+  ): number => {
     let typeIndex = 0;
     for (let i = 0; i <= currentIndex; i++) {
-      if (section.lectures[i]?.contentType === contentType || 
-          (!section.lectures[i]?.contentType && contentType === "video")) {
+      if (
+        section.lectures[i]?.contentType === contentType ||
+        (!section.lectures[i]?.contentType && contentType === "video")
+      ) {
         if (i === currentIndex) {
           return typeIndex;
         }
@@ -521,11 +557,9 @@ export default function SectionItem({
 
   // Render lecture items based on their content type
   const renderLectureItem = (lecture: Lecture, lectureIndex: number) => {
-    console.log("Rendering lecture:", lecture);
-
     // Calculate the specific index for this content type
-     const contentType = lecture.contentType || "video"; // Default to video if not set
-  const typeSpecificIndex = getContentTypeIndex(lectureIndex, contentType);
+    const contentType = lecture.contentType || "video"; // Default to video if not set
+    const typeSpecificIndex = getContentTypeIndex(lectureIndex, contentType);
 
     if (lecture.contentType === "assignment") {
       return (
@@ -533,7 +567,10 @@ export default function SectionItem({
           key={lecture.id}
           lecture={lecture}
           lectureIndex={typeSpecificIndex} // Use assignment-specific index
-          totalLectures={section.lectures.filter(l => l.contentType === "assignment").length}
+          totalLectures={
+            section.lectures.filter((l) => l.contentType === "assignment")
+              .length
+          }
           sectionId={section.id}
           editingLectureId={editingLectureId}
           setEditingLectureId={setEditingLectureId}
@@ -548,8 +585,8 @@ export default function SectionItem({
           handleDragLeave={handleDragLeave}
           draggedLecture={draggedLecture}
           dragTarget={dragTarget}
-          allSections={allSections} 
-          onEditAssignment={onEditAssignment} 
+          allSections={allSections}
+          onEditAssignment={onEditAssignment}
         />
       );
     }
@@ -560,7 +597,10 @@ export default function SectionItem({
           key={lecture.id}
           lecture={lecture}
           lectureIndex={typeSpecificIndex} // Use coding-exercise-specific index
-          totalLectures={section.lectures.filter(l => l.contentType === "coding-exercise").length}
+          totalLectures={
+            section.lectures.filter((l) => l.contentType === "coding-exercise")
+              .length
+          }
           sectionId={section.id}
           editingLectureId={editingLectureId}
           setEditingLectureId={setEditingLectureId}
@@ -592,7 +632,9 @@ export default function SectionItem({
           key={lecture.id}
           lecture={lecture}
           lectureIndex={typeSpecificIndex} // Use quiz-specific index
-          totalLectures={section.lectures.filter(l => l.contentType === "quiz").length}
+          totalLectures={
+            section.lectures.filter((l) => l.contentType === "quiz").length
+          }
           sectionId={section.id}
           editingLectureId={editingLectureId}
           setEditingLectureId={setEditingLectureId}
@@ -612,7 +654,6 @@ export default function SectionItem({
           uploadedFiles={globalUploadedFiles}
           sourceCodeFiles={globalSourceCodeFiles}
           externalResources={globalExternalResources}
-          
         />
       );
     }
@@ -624,7 +665,9 @@ export default function SectionItem({
           key={lecture.id}
           lecture={lecture}
           lectureIndex={typeSpecificIndex} // Use practice-specific index
-          totalLectures={section.lectures.filter(l => l.contentType === "practice").length}
+          totalLectures={
+            section.lectures.filter((l) => l.contentType === "practice").length
+          }
           sectionId={section.id}
           editingLectureId={editingLectureId}
           setEditingLectureId={setEditingLectureId}
@@ -651,7 +694,11 @@ export default function SectionItem({
         key={lecture.id}
         lecture={lecture}
         lectureIndex={typeSpecificIndex} // Use lecture-specific index
-        totalLectures={section.lectures.filter(l => l.contentType === "video" || !l.contentType).length}
+        totalLectures={
+          section.lectures.filter(
+            (l) => l.contentType === "video" || !l.contentType
+          ).length
+        }
         sectionId={section.id}
         editingLectureId={editingLectureId}
         setEditingLectureId={setEditingLectureId}

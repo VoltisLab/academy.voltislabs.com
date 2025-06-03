@@ -3,11 +3,23 @@ import React, { useEffect, useRef, useState } from "react";
 import { BoldIcon, Italic, X } from "lucide-react";
 import ReactQuill from "react-quill-new";
 import RichTextEditor from "../../../../RichTextEditor";
+import { useQuizOperations } from "@/services/quizService";
+import toast from "react-hot-toast";
 
 interface QuizFormProps {
   sectionId: string;
-  onAddQuiz?: (sectionId: string, title: string, description: string) => void;
-  onEditQuiz?: (sectionId: string, quizId: string, title: string, description: string) => void;
+  onAddQuiz?: (
+    sectionId: string,
+    title: string,
+    description: string,
+    quizId: number
+  ) => void;
+  onEditQuiz?: (
+    sectionId: string,
+    quizId: string,
+    title: string,
+    description: string
+  ) => void;
   onCancel: () => void;
   isEdit?: boolean;
   initialTitle?: string;
@@ -30,6 +42,12 @@ const QuizForm: React.FC<QuizFormProps> = ({
   const [isBold, setIsBold] = useState(false);
   const [isItalic, setIsItalic] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
+
+  const {
+    createQuiz,
+    updateQuiz,
+    loading: quizOperationLoading,
+  } = useQuizOperations();
 
   const wrapperRef = useRef<HTMLDivElement>(null);
   const quillRef = useRef<ReactQuill | null>(null);
@@ -77,13 +95,64 @@ const QuizForm: React.FC<QuizFormProps> = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleSubmit = () => {
-    if (title.trim()) {
-      if (isEdit && onEditQuiz && quizId) {
-        onEditQuiz(sectionId, quizId, title.trim(), description.trim());
-      } else if (!isEdit && onAddQuiz) {
-        onAddQuiz(sectionId, title.trim(), description.trim());
+  // const handleSubmit = () => {
+  //   if (title.trim()) {
+  //     if (isEdit && onEditQuiz && quizId) {
+  //       onEditQuiz(sectionId, quizId, title.trim(), description.trim());
+  //     } else if (!isEdit && onAddQuiz) {
+  //       onAddQuiz(sectionId, title.trim(), description.trim());
+  //     }
+  //   }
+  // };
+
+  const handleSubmit = async () => {
+    if (!title.trim()) {
+      toast.error("Quiz title is required");
+      return;
+    }
+
+    try {
+      if (isEdit && quizId) {
+        // Update existing quiz
+        const result = await updateQuiz({
+          quizId: parseInt(quizId),
+          title: title.trim(),
+          description: description.trim(),
+          // ...settings,
+        });
+
+        if (result?.updateQuiz?.success) {
+          toast.success("Quiz updated successfully!");
+          if (onEditQuiz) {
+            onEditQuiz(sectionId, quizId, title.trim(), description.trim());
+          }
+        }
+      } else {
+        // Create new quiz
+        const result = await createQuiz({
+          sectionId: parseInt(sectionId),
+          quizId: parseInt(quizId!),
+          title: title.trim(),
+          description: description.trim(),
+          // ...settings,
+        });
+
+        console.log("Resullllt", result);
+        if (result?.createQuiz?.success) {
+          toast.success("Quiz created successfully!");
+          if (onAddQuiz) {
+            onAddQuiz(
+              sectionId,
+              title.trim(),
+              description.trim(),
+              parseInt(quizId!)
+            );
+          }
+        }
       }
+    } catch (error) {
+      console.error("Error saving quiz:", error);
+      toast.error("Failed to save quiz");
     }
   };
 
@@ -143,14 +212,20 @@ const QuizForm: React.FC<QuizFormProps> = ({
         <button
           type="button"
           onClick={handleSubmit}
-          disabled={!title.trim()}
+          disabled={!title.trim() || quizOperationLoading}
           className={`px-4 py-2 ${
             !title.trim()
               ? "bg-indigo-400 cursor-not-allowed"
               : "bg-purple-600 hover:bg-indigo-700"
-          } text-white rounded-md focus:outline-none focus:ring-2 focus:ring-purple-600`}
+          } text-white rounded-md focus:outline-none focus:ring-2 focus:ring-purple-600 disabled:cursor-not-allowed disabled:bg-purple-300`}
         >
-          {isEdit ? "Save Quiz" : "Add Quiz"}
+          {quizOperationLoading
+            ? isEdit
+              ? "Saving.."
+              : "Adding.."
+            : isEdit
+            ? "Save Quiz"
+            : "Add Quiz"}
         </button>
       </div>
     </div>
