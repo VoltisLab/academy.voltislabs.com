@@ -44,12 +44,43 @@ export const DELETE_LECTURE = gql`
   }
 `;
 
-export const DELETE_SECTION = gql`
-  mutation DeleteSection(
-    $sectionId: Int!
+// New comprehensive update mutation for content
+export const UPDATE_LECTURE_CONTENT = gql`
+  mutation UpdateLectureContent(
+    $lectureId: Int!
+    $description: String
+    $videoUrl: String
+    $notes: String
   ) {
-    deleteSection(
-      sectionId: $sectionId
+    updateLecture(
+      lectureId: $lectureId
+      description: $description
+      videoUrl: $videoUrl
+      notes: $notes
+    ) {
+      success
+      lecture {
+        id
+        title
+        description
+        videoUrl
+        notes
+        section {
+          id
+        }
+      }
+    }
+  }
+`;
+
+export const UPDATE_LECTURE_DESCRIPTION = gql`
+  mutation UpdateLecture(
+    $lectureId: Int!
+    $description: String
+  ) {
+    updateLecture(
+      lectureId: $lectureId
+      description: $description
     ) {
       success
     }
@@ -86,18 +117,43 @@ export interface DeleteLectureVariables {
   lectureId: number;
 }
 
+export interface UpdateLectureDescriptionVariables {
+  lectureId: number;
+  description: string;
+}
+
 export interface DeleteLectureResponse {
   deleteLecture: {
     success: boolean;
   };
 }
 
-export interface DeleteSectionVariables {
-  sectionId: number;
+export interface UpdateLectureDescriptionResponse {
+  updateLecture: {
+    success: boolean;
+  };
 }
 
-export interface DeleteSectionResponse {
-  deleteSection: {
+// New interfaces for content updates
+export interface UpdateLectureContentVariables {
+  lectureId: number;
+  description?: string;
+  videoUrl?: string;
+  notes?: string;
+}
+
+export interface UpdateLectureContentResponse {
+  updateLecture: {
     success: boolean;
+    lecture: {
+      id: string;
+      title: string;
+      description: string;
+      videoUrl: string;
+      notes: string;
+      section: {
+        id: string;
+      };
+    };
   };
 }

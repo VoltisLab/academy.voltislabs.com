@@ -9,7 +9,10 @@ import {
   CreateSectionVariables,
   CreateSectionResponse,
   UpdateSectionVariables,
-  UpdateSectionResponse
+  UpdateSectionResponse,
+  DeleteSectionResponse,
+  DELETE_SECTION,
+  DeleteSectionVariables
 } from '@/api/course/section/mutation';
 
 export const useSectionService = () => {
@@ -110,9 +113,57 @@ export const useSectionService = () => {
     }
   };
 
+   const deleteSection = async (variables: DeleteSectionVariables) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const { data, errors } = await apolloClient.mutate<DeleteSectionResponse>({
+        mutation: DELETE_SECTION,
+        variables,
+        context: {
+          includeAuth: true
+        },
+        fetchPolicy: 'no-cache'
+      });
+
+      if (errors) {
+        console.error("GraphQL errors:", errors);
+        throw new Error(errors[0]?.message || "An error occurred during section deletion");
+      }
+
+      if (!data?.deleteSection.success) {
+        throw new Error("Failed to delete section");
+      }
+
+      toast.success("Section deleted successfully!");
+      return data;
+    } catch (err) {
+      console.error("Section deletion error:", err);
+      
+      if (err instanceof ApolloError) {
+        const errorMessage = err.message || "Network error. Please check your connection and try again.";
+        setError(new Error(errorMessage));
+        toast.error(errorMessage);
+      } else if (err instanceof Error) {
+        setError(err);
+        toast.error(err.message);
+      } else {
+        const genericError = new Error("An unexpected error occurred");
+        setError(genericError);
+        toast.error(genericError.message);
+      }
+      
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     createSection,
     updateSection,
+    deleteSection,
     loading,
     error
   };

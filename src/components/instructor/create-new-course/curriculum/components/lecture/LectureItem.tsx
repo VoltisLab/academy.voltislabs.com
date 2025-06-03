@@ -36,6 +36,7 @@ import Article from "./Article";
 import StudentVideoPreview from "./StudentVideoPeview";
 import InstructorVideoPreview from "./InstructorVideoPeview";
 import { FaCircleCheck } from "react-icons/fa6";
+import toast from "react-hot-toast";
 
 interface SelectedVideoDetails {
   id: string;
@@ -73,6 +74,20 @@ interface UpdatedLectureItemProps extends Omit<LectureItemProps, 'updateLectureN
     newName: string
   ) => Promise<void>;
   deleteLecture: (sectionId: string, lectureId: string) => Promise<void>;
+  // NEW: Backend integration props
+  uploadVideoToBackend?: (
+    sectionId: string,
+    lectureId: string,
+    videoFile: File,
+    onProgress?: (progress: number) => void
+  ) => Promise<string | null>;
+  saveArticleToBackend?: (
+    sectionId: string,
+    lectureId: string,
+    articleContent: string
+  ) => Promise<string>;
+  videoUploading?: boolean;
+  videoUploadProgres?: number;
 }
 
 export default function LectureItem({
@@ -115,6 +130,11 @@ export default function LectureItem({
   removeSourceCodeFile,
   addExternalResource,
   removeExternalResource,
+  // NEW: Backend integration props
+  uploadVideoToBackend,
+  saveArticleToBackend,
+  videoUploading = false,
+  videoUploadProgres = 0,
 }: UpdatedLectureItemProps) {
   const lectureNameInputRef = useRef<HTMLInputElement>(null);
   const [showContentTypeSelector, setShowContentTypeSelector] = useState(false);
@@ -122,7 +142,7 @@ export default function LectureItem({
   const [content, setContent] = useState("");
   const [htmlMode, setHtmlMode] = useState(false);
   const [isVideoUploading, setIsVideoUploading] = useState(false);
-  const [videoUploadProgress, setVideoUploadProgress] = useState(0);
+  const [videoUploadProgress, setVideoUploadProgress] = useState(videoUploadProgres);
   const [videoUploadComplete, setVideoUploadComplete] = useState(false);
   const [showPreviewDropdown, setShowPreviewDropdown] = useState(false);
   const [showVideoPreview, setShowVideoPreview] = useState(false);
@@ -146,7 +166,6 @@ export default function LectureItem({
   const currentLectureSourceCodeFiles = globalSourceCodeFiles.filter(file => file.lectureId === lecture.id);
   const currentLectureExternalResources = globalExternalResources.filter(resource => resource.lectureId === lecture.id);
   const [previewContentType, setPreviewContentType] = useState<string>("video");
-   console.log("Sections from lectureitem preview", allSections)
 
   const [videoContent, setVideoContent] = useState<VideoContent>({
     uploadTab: { selectedFile: null },
@@ -223,44 +242,51 @@ export default function LectureItem({
     setShowEditLectureForm(true);
   };
 
-  const handleSaveArticle = (articleContent: string) => {
-    console.log('💾 Saving article content:', {
-      contentLength: articleContent.length,
-      hasVideoContent: !!videoContent.selectedVideoDetails
-    });
-    
-    // Save the article content
-    setArticleContent({ text: articleContent });
-    
-    // CRITICAL: Clear video content when saving article
-    if (videoContent.selectedVideoDetails) {
-      setVideoContent({
-        ...videoContent,
-        selectedVideoDetails: null
-      });
-    }
+  const handleSaveArticle = async (articleContent: string) => {
+      
+    try {
+      // Save to backend first
+      if (saveArticleToBackend) {
+        const a  = await saveArticleToBackend(sectionId, lecture.id, articleContent);
+        console.log(a)
+      }
+      
+      // Update local state after successful backend save
+      setArticleContent({ text: articleContent });
+      
+      // CRITICAL: Clear video content when saving article
+      if (videoContent.selectedVideoDetails) {
+        setVideoContent({
+          ...videoContent,
+          selectedVideoDetails: null
+        });
+      }
 
-    // CRITICAL: Update the lecture's content type to 'article'
-    if (updateLectureContent) {
-      const updatedLecture = ContentTypeDetector.updateLectureContentType(
-        createEnhancedLectureForPreview(),
-        'article',
-        { text: articleContent }
-      );
-      updateLectureContent(sectionId, lecture.id, updatedLecture);
-    }
+      // CRITICAL: Update the lecture's content type to 'article'
+      if (updateLectureContent) {
+        const updatedLecture = ContentTypeDetector.updateLectureContentType(
+          createEnhancedLectureForPreview(),
+          'article',
+          { text: articleContent }
+        );
+        updateLectureContent(sectionId, lecture.id, updatedLecture);
+      }
 
-    // Close the content section and show the article summary
-    setActiveContentType(null);
+      // Close the content section and show the article summary
+      setActiveContentType(null);
 
-    // Make sure lecture stays expanded
-    if (
-      toggleContentSection &&
-      (!activeContentSection ||
-        activeContentSection.sectionId !== sectionId ||
-        activeContentSection.lectureId !== lecture.id)
-    ) {
-      toggleContentSection(sectionId, lecture.id);
+      // Make sure lecture stays expanded
+      if (
+        toggleContentSection &&
+        (!activeContentSection ||
+          activeContentSection.sectionId !== sectionId ||
+          activeContentSection.lectureId !== lecture.id)
+      ) {
+        toggleContentSection(sectionId, lecture.id);
+      }
+    } catch (error) {
+      console.error('Failed to save article to backend:', error);
+      toast.error('Failed to save article. Please try again.');
     }
   };
 
@@ -733,7 +759,7 @@ export default function LectureItem({
   };
 
   // Add this function to handle the video file upload and progress
-  const handleVideoFileUpload = (
+  const handleVideoFileUpload = async (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
     if (event.target.files && event.target.files.length > 0) {
@@ -742,11 +768,10 @@ export default function LectureItem({
       // Create a local URL for the video file that can be used in the player
       const videoUrl = URL.createObjectURL(file);
 
-      // Update the state with the selected file and its URL
+      // Update the state with the selected file
       setVideoContent({
         ...videoContent,
         uploadTab: { selectedFile: file },
-        // Don't set selectedVideoDetails here yet
       });
 
       // Start the upload process
@@ -754,59 +779,124 @@ export default function LectureItem({
       setVideoUploadProgress(0);
       setVideoUploadComplete(false);
 
-      // Simulate file upload with progress
-      const interval = setInterval(() => {
-        setVideoUploadProgress((prev) => {
-          if (prev >= 100) {
-            clearInterval(interval);
-            setTimeout(() => {
-              setIsVideoUploading(false);
-              setVideoUploadComplete(true);
+      try {
+        // Upload to backend
+        if (uploadVideoToBackend) {
+          const backendVideoUrl = await uploadVideoToBackend(
+            sectionId,
+            lecture.id,
+            file,
+            (progress) => {
+              setVideoUploadProgress(progress);
+            }
+          );
 
-              // Generate a unique ID based on the filename and current timestamp
-              const videoId = `${file.name.replace(/\s+/g, "")}-${Date.now()}`;
+          if (backendVideoUrl) {
+            // Generate a unique ID based on the filename and current timestamp
+            const videoId = `${file.name.replace(/\s+/g, "")}-${Date.now()}`;
 
-              // Check if a video with the same filename already exists
-              const existingVideo = videoContent.libraryTab.videos.find(
-                (v) => v.filename === file.name
-              );
+            // Check if a video with the same filename already exists
+            const existingVideo = videoContent.libraryTab.videos.find(
+              (v) => v.filename === file.name
+            );
 
-              // Only add to library if it doesn't already exist
-              if (!existingVideo) {
-                const newVideo: StoredVideo = {
-                  id: videoId,
-                  filename: file.name,
-                  type: "Video",
-                  status: "Success",
-                  date: new Date().toLocaleDateString("en-US", {
-                    month: "2-digit",
-                    day: "2-digit",
-                    year: "numeric",
-                  }),
-                  url: videoUrl, // Store URL in the library as well
-                };
+            // Only add to library if it doesn't already exist
+            if (!existingVideo) {
+              const newVideo: StoredVideo = {
+                id: videoId,
+                filename: file.name,
+                type: "Video",
+                status: "Success",
+                date: new Date().toLocaleDateString("en-US", {
+                  month: "2-digit",
+                  day: "2-digit",
+                  year: "numeric",
+                }),
+                url: backendVideoUrl, // Use the backend URL
+              };
 
-                setVideoContent((prev) => ({
-                  ...prev,
-                  libraryTab: {
-                    ...prev.libraryTab,
-                    videos: [newVideo, ...prev.libraryTab.videos],
-                  },
-                  // Don't set selectedVideoDetails here - user must select from library
-                }));
-              }
-
-              // Switch to the library tab to show the uploaded video
               setVideoContent((prev) => ({
                 ...prev,
-                activeTab: "addFromLibrary",
+                libraryTab: {
+                  ...prev.libraryTab,
+                  videos: [newVideo, ...prev.libraryTab.videos],
+                },
               }));
-            }, 500);
-            return 100;
+            }
+
+            // Set upload complete
+            setVideoUploadComplete(true);
+            setIsVideoUploading(false);
+
+            // Switch to the library tab to show the uploaded video
+            setVideoContent((prev) => ({
+              ...prev,
+              activeTab: "addFromLibrary",
+            }));
+
+            toast.success("Video uploaded successfully!");
           }
-          return prev + 5; // Increase by 5% each time
-        });
-      }, 200);
+        } else {
+          // Fallback to original simulation if backend function not available
+          const interval = setInterval(() => {
+            setVideoUploadProgress((prev) => {
+              if (prev >= 100) {
+                clearInterval(interval);
+                setTimeout(() => {
+                  setIsVideoUploading(false);
+                  setVideoUploadComplete(true);
+
+                  // Generate a unique ID based on the filename and current timestamp
+                  const videoId = `${file.name.replace(/\s+/g, "")}-${Date.now()}`;
+
+                  // Check if a video with the same filename already exists
+                  const existingVideo = videoContent.libraryTab.videos.find(
+                    (v) => v.filename === file.name
+                  );
+
+                  // Only add to library if it doesn't already exist
+                  if (!existingVideo) {
+                    const newVideo: StoredVideo = {
+                      id: videoId,
+                      filename: file.name,
+                      type: "Video",
+                      status: "Success",
+                      date: new Date().toLocaleDateString("en-US", {
+                        month: "2-digit",
+                        day: "2-digit",
+                        year: "numeric",
+                      }),
+                      url: videoUrl, // Store URL in the library as well
+                    };
+
+                    setVideoContent((prev) => ({
+                      ...prev,
+                      libraryTab: {
+                        ...prev.libraryTab,
+                        videos: [newVideo, ...prev.libraryTab.videos],
+                      },
+                    }));
+                  }
+
+                  // Switch to the library tab to show the uploaded video
+                  setVideoContent((prev) => ({
+                    ...prev,
+                    activeTab: "addFromLibrary",
+                  }));
+                }, 500);
+                return 100;
+              }
+              return prev + 5; // Increase by 5% each time
+            });
+          }, 200);
+        }
+      } catch (error) {
+        console.error('Video upload failed:', error);
+        setIsVideoUploading(false);
+        setVideoUploadProgress(0);
+        setVideoUploadComplete(false);
+        toast.error('Failed to upload video. Please try again.');
+      }
     }
   };
 
@@ -946,6 +1036,121 @@ export default function LectureItem({
     }
   }, [isExpanded]);
 
+
+  const renderUploadTab = () => {
+    return (
+      <div className="py-4">
+        {videoUploadComplete ? (
+          <div className="space-y-4">
+            {/* File display with replace button */}
+            <div className="border-b border-gray-300 py-2 overflow-x-auto">
+              <div className="grid grid-cols-4 gap-2 md:gap-4 text-[17px] font-bold text-gray-800 border-b border-gray-300 min-w-max">
+                <div>Filename</div>
+                <div>Type</div>
+                <div>Status</div>
+                <div>Date</div>
+              </div>
+              <div className="grid grid-cols-4 gap-2 md:gap-4 text-sm mt-2 items-center text-gray-700 font-semibold min-w-max">
+                <div className="truncate">
+                  {videoContent.uploadTab.selectedFile?.name ||
+                    "2025-05-01-025523.webm"}
+                </div>
+                <div>Video</div>
+                <div>Success</div>
+                <div className="flex justify-between items-center">
+                  {new Date().toLocaleDateString("en-US", {
+                    month: "2-digit",
+                    day: "2-digit",
+                    year: "numeric",
+                  })}
+                  <button
+                    className="text-[#D28D2] hover:text-[#7D28D2] text-xs font-bold"
+                    onClick={() => {
+                      setVideoUploadComplete(false);
+                      setVideoContent({
+                        ...videoContent,
+                        uploadTab: { selectedFile: null },
+                      });
+                    }}
+                  >
+                    Replace
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (isVideoUploading || videoUploading) ? (
+          <div className="space-y-4">
+            {/* File being uploaded with progress bar */}
+            <div className="border-b border-gray-300 py-2">
+              <div className="grid grid-cols-4 gap-2 md:gap-4 text-[17px] font-bold text-gray-800 border-b border-gray-300">
+                <div>Filename</div>
+                <div>Type</div>
+                <div>Status</div>
+                <div>Date</div>
+              </div>
+              <div className="grid grid-cols-4 gap-2 md:gap-4 text-sm mt-2 items-center">
+                <div className="truncate">
+                  {videoContent.uploadTab.selectedFile?.name ||
+                    "2025-05-01-025523.webm"}
+                </div>
+                <div>Video</div>
+                <div className="flex items-center">
+                  <div className="w-full flex items-center">
+                    <div className="w-20 bg-gray-200 h-2 overflow-hidden rounded">
+                      <div
+                        className="bg-[#6D28D9] h-2"
+                        style={{ width: `${videoUploading ? videoUploadProgress : videoUploadProgress}%` }}
+                      ></div>
+                    </div>
+                    <span className="ml-2 text-xs">
+                      {Math.round(videoUploading ? videoUploadProgress : videoUploadProgress)}%
+                    </span>
+                  </div>
+                </div>
+                <div>
+                  {new Date().toLocaleDateString("en-US", {
+                    month: "2-digit",
+                    day: "2-digit",
+                    year: "numeric",
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* File selection box */}
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-800 font-semibold truncate py-3 border border-gray-400 w-[85%] px-4">
+                {videoContent.uploadTab.selectedFile
+                  ? videoContent.uploadTab.selectedFile.name
+                  : "No file selected"}
+              </span>
+              <label className="ml-4 px-2 py-3 border border-[#6D28D2] text-sm font-bold text-[#6D28D2] rounded hover:bg-[#6D28D2]/10 cursor-pointer transition">
+                <input
+                  type="file"
+                  accept="video/*"
+                  onChange={handleVideoFileUpload}
+                  className="hidden"
+                  disabled={videoUploading || isVideoUploading}
+                />
+                {videoUploading || isVideoUploading ? 'Uploading...' : 'Select Video'}
+              </label>
+            </div>
+            <p className="mt-2 text-xs text-gray-500 ">
+              <strong className="font-bold">Note:</strong>{" "}
+              <span className="font-semibold">
+                All files should be at least 720p and less than 4.0 GB.
+              </span>
+            </p>
+          </>
+        )}
+      </div>
+    );
+  };
+
+
   const renderLibraryTab = () => {
     const filteredVideos = videoContent.libraryTab.videos.filter((video) =>
       video.filename
@@ -1059,6 +1264,7 @@ export default function LectureItem({
                     onClick={() =>
                       setVideoContent({ ...videoContent, activeTab: tab.key })
                     }
+                    disabled={videoUploading || isVideoUploading}
                   >
                     {tab.label}
                   </button>
@@ -1066,132 +1272,7 @@ export default function LectureItem({
               </div>
 
               {videoContent.activeTab === "uploadVideo" ? (
-                /* Upload tab content - keep existing implementation */
-                <div className="py-4">
-                  {videoUploadComplete ? (
-                    <div className="space-y-4">
-                      {/* File display with replace button */}
-                      <div className="border-b border-gray-300 py-2 overflow-x-auto">
-                        <div className="grid grid-cols-4 gap-2 md:gap-4 text-[17px] font-bold text-gray-800 border-b border-gray-300 min-w-max">
-                          <div>Filename</div>
-                          <div>Type</div>
-                          <div>Status</div>
-                          <div>Date</div>
-                        </div>
-                        <div className="grid grid-cols-4 gap-2 md:gap-4 text-sm mt-2 items-center text-gray-700 font-semibold min-w-max">
-                          <div className="truncate">
-                            {videoContent.uploadTab.selectedFile?.name ||
-                              "2025-05-01-025523.webm"}
-                          </div>
-                          <div>Video</div>
-                          <div>Processing</div>
-                          <div className="flex justify-between items-center">
-                            {new Date().toLocaleDateString("en-US", {
-                              month: "2-digit",
-                              day: "2-digit",
-                              year: "numeric",
-                            })}
-                            <button
-                              className="text-[#D28D2] hover:text-[#7D28D2] text-xs font-bold"
-                              onClick={() => {
-                                setVideoUploadComplete(false);
-                                setVideoContent({
-                                  ...videoContent,
-                                  uploadTab: { selectedFile: null },
-                                });
-                              }}
-                            >
-                              Replace
-                            </button>
-                          </div>
-                        </div>
-                        <div className="mt-4">
-                          <div className="flex items-center justify-between">
-                            <div className="w-full bg-gray-200 rounded h-2">
-                              <div
-                                className="bg-gray-500 h-2 rounded"
-                                style={{ width: "100%" }}
-                              ></div>
-                            </div>
-                          </div>
-                          <p className="mt-2 text-xs text-gray-700">
-                            <strong className="font-bold">Note:</strong>{" "}
-                            <span className="font-semibold">
-                              This video is still being processed. We will send
-                              you an email when it is ready.
-                            </span>
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  ) : isVideoUploading ? (
-                    <div className="space-y-4">
-                      {/* File being uploaded with progress bar */}
-                      <div className="border-b border-gray-300 py-2">
-                        <div className="grid grid-cols-4 gap-2 md:gap-4 text-[17px] font-bold text-gray-800 border-b border-gray-300">
-                          <div>Filename</div>
-                          <div>Type</div>
-                          <div>Status</div>
-                          <div>Date</div>
-                        </div>
-                        <div className="grid grid-cols-4 gap-2 md:gap-4 text-sm mt-2 items-center">
-                          <div className="truncate">
-                            {videoContent.uploadTab.selectedFile?.name ||
-                              "2025-05-01-025523.webm"}
-                          </div>
-                          <div>Video</div>
-                          <div className="flex items-center">
-                            <div className="w-full flex items-center">
-                              <div className="w-20 bg-gray-200 h-2 overflow-hidden rounded">
-                                <div
-                                  className="bg-[#6D28D9] h-2"
-                                  style={{ width: `${videoUploadProgress}%` }}
-                                ></div>
-                              </div>
-                              <span className="ml-2 text-xs">
-                                {videoUploadProgress}%
-                              </span>
-                            </div>
-                          </div>
-                          <div>
-                            {new Date().toLocaleDateString("en-US", {
-                              month: "2-digit",
-                              day: "2-digit",
-                              year: "numeric",
-                            })}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <>
-                      {/* File selection box */}
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-800 font-semibold truncate py-3 border border-gray-400 w-[85%] px-4">
-                          {videoContent.uploadTab.selectedFile
-                            ? videoContent.uploadTab.selectedFile.name
-                            : "No file selected"}
-                        </span>
-                        <label className="ml-4 px-2 py-3 border border-[#6D28D2] text-sm font-bold text-[#6D28D2] rounded hover:bg-[#6D28D2]/10 cursor-pointer transition">
-                          <input
-                            type="file"
-                            accept="video/*"
-                            onChange={handleVideoFileUpload}
-                            className="hidden"
-                          />
-                          Select Video
-                        </label>
-                      </div>
-                      <p className="mt-2 text-xs text-gray-500 ">
-                        <strong className="font-bold">Note:</strong>{" "}
-                        <span className="font-semibold">
-                          All files should be at least 720p and less than 4.0
-                          GB.
-                        </span>
-                      </p>
-                    </>
-                  )}
-                </div>
+                renderUploadTab()
               ) : (
                 // Render the library tab with stored videos
                 renderLibraryTab()

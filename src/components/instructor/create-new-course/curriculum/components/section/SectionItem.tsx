@@ -74,7 +74,7 @@ interface SectionItemProps {
   ) => void;
   saveDescription?: (
     sectionId: string,
-    lectureId: string,
+    lectureId: number,
     description: string
   ) => void;
   activeContentSection: { sectionId: string; lectureId: string } | null;
@@ -165,6 +165,21 @@ interface SectionItemProps {
   
   // NEW: Loading state prop
   isLoading?: boolean;
+  
+  // NEW: Backend integration props
+  uploadVideoToBackend?: (
+    sectionId: string,
+    lectureId: string,
+    videoFile: File,
+    onProgress?: (progress: number) => void
+  ) => Promise<string | null>;
+  saveArticleToBackend?: (
+    sectionId: string,
+    lectureId: string,
+    articleContent: string
+  ) => Promise<string>;
+  videoUploading?: boolean;
+  videoUploadProgress?: number;
 }
 
 export default function SectionItem({
@@ -218,6 +233,10 @@ export default function SectionItem({
   removeExternalResource,
   // NEW: Receive loading state
   isLoading = false,
+  uploadVideoToBackend,
+  videoUploading,
+  videoUploadProgress,
+  saveArticleToBackend
 }: SectionItemProps) {
   const sectionNameInputRef = useRef<HTMLInputElement>(null);
   // State for toggling action buttons
@@ -406,7 +425,7 @@ export default function SectionItem({
 
     saveDescription(
       activeDescriptionSection.sectionId,
-      activeDescriptionSection.lectureId,
+      Number(activeDescriptionSection.lectureId),
       currentDescription
     );
 
@@ -515,18 +534,7 @@ export default function SectionItem({
   }));
 
   // Handler to update lecture content
-  const updateLectureContent = (
-    sectionId: string,
-    lectureId: string,
-    updatedLecture: EnhancedLecture
-  ) => {
-    console.log("📝 Updating lecture content:", {
-      sectionId,
-      lectureId,
-      actualContentType: updatedLecture.actualContentType,
-      hasVideoContent: updatedLecture.hasVideoContent,
-      hasArticleContent: updatedLecture.hasArticleContent,
-    });
+  const updateLectureContent = (sectionId: string, lectureId: string, updatedLecture: EnhancedLecture) => {
 
     // Store the enhanced lecture data
     setEnhancedLectures((prev) => ({
@@ -690,52 +698,52 @@ export default function SectionItem({
 
     // Default to LectureItem (for video lectures and other types)
     return (
-      <LectureItem
-        key={lecture.id}
-        lecture={lecture}
-        lectureIndex={typeSpecificIndex} // Use lecture-specific index
-        totalLectures={
-          section.lectures.filter(
-            (l) => l.contentType === "video" || !l.contentType
-          ).length
-        }
-        sectionId={section.id}
-        editingLectureId={editingLectureId}
-        setEditingLectureId={setEditingLectureId}
-        updateLectureName={updateLectureName}
-        deleteLecture={deleteLecture}
-        moveLecture={moveLecture}
-        toggleContentSection={toggleContentSection}
-        toggleAddResourceModal={handleToggleAddResourceModal}
-        toggleDescriptionEditor={handleToggleDescriptionEditor}
-        activeContentSection={activeContentSection}
-        activeResourceSection={activeResourceSection}
-        activeDescriptionSection={activeDescriptionSection}
-        isDragging={isDragging}
-        handleDragStart={handleDragStart}
-        handleDragOver={handleDragOver}
-        handleDrop={handleDrop}
-        handleDragEnd={handleDragEnd}
-        handleDragLeave={handleDragLeave}
-        draggedLecture={draggedLecture}
-        dragTarget={dragTarget}
-        sections={allSections} // Pass the current section if needed
-        updateCurrentDescription={updateCurrentDescription}
-        saveDescription={handleSaveDescription} // Use the local wrapper function
-        currentDescription={currentDescription}
-        allSections={allSectionsWithEnhanced}
-        updateLectureContent={updateLectureContent}
-        // FIXED: Pass global resource arrays and management functions to LectureItem
-        globalUploadedFiles={globalUploadedFiles}
-        globalSourceCodeFiles={globalSourceCodeFiles}
-        globalExternalResources={globalExternalResources}
-        addUploadedFile={addUploadedFile}
-        removeUploadedFile={removeUploadedFile}
-        addSourceCodeFile={addSourceCodeFile}
-        removeSourceCodeFile={removeSourceCodeFile}
-        addExternalResource={addExternalResource}
-        removeExternalResource={removeExternalResource}
-      />
+       <LectureItem
+      key={lecture.id}
+      lecture={lecture}
+      lectureIndex={typeSpecificIndex}
+      totalLectures={section.lectures.filter(l => l.contentType === "video" || !l.contentType).length}
+      sectionId={section.id}
+      editingLectureId={editingLectureId}
+      setEditingLectureId={setEditingLectureId}
+      updateLectureName={updateLectureName}
+      deleteLecture={deleteLecture}
+      moveLecture={moveLecture}
+      toggleContentSection={toggleContentSection}
+      toggleAddResourceModal={handleToggleAddResourceModal}
+      toggleDescriptionEditor={handleToggleDescriptionEditor}
+      activeContentSection={activeContentSection}
+      activeResourceSection={activeResourceSection}
+      activeDescriptionSection={activeDescriptionSection}
+      isDragging={isDragging}
+      handleDragStart={handleDragStart}
+      handleDragOver={handleDragOver}
+      handleDrop={handleDrop}
+      handleDragEnd={handleDragEnd}
+      handleDragLeave={handleDragLeave}
+      draggedLecture={draggedLecture}
+      dragTarget={dragTarget}
+      sections={allSections}
+      updateCurrentDescription={updateCurrentDescription}
+      saveDescription={handleSaveDescription}
+      currentDescription={currentDescription}
+      allSections={allSectionsWithEnhanced}
+      updateLectureContent={updateLectureContent}
+      globalUploadedFiles={globalUploadedFiles}
+      globalSourceCodeFiles={globalSourceCodeFiles}
+      globalExternalResources={globalExternalResources}
+      addUploadedFile={addUploadedFile}
+      removeUploadedFile={removeUploadedFile}
+      addSourceCodeFile={addSourceCodeFile}
+      removeSourceCodeFile={removeSourceCodeFile}
+      addExternalResource={addExternalResource}
+      removeExternalResource={removeExternalResource}
+      // NEW: Pass the backend functions
+      uploadVideoToBackend={uploadVideoToBackend}
+      saveArticleToBackend={saveArticleToBackend}
+      videoUploading={videoUploading}
+      videoUploadProgres={videoUploadProgress}
+    />
     );
   };
 
