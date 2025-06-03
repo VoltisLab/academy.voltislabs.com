@@ -44,6 +44,35 @@ export const DELETE_LECTURE = gql`
   }
 `;
 
+// New comprehensive update mutation for content
+export const UPDATE_LECTURE_CONTENT = gql`
+  mutation UpdateLectureContent(
+    $lectureId: Int!
+    $description: String
+    $videoUrl: String
+    $notes: String
+  ) {
+    updateLecture(
+      lectureId: $lectureId
+      description: $description
+      videoUrl: $videoUrl
+      notes: $notes
+    ) {
+      success
+      lecture {
+        id
+        title
+        description
+        videoUrl
+        notes
+        section {
+          id
+        }
+      }
+    }
+  }
+`;
+
 export const UPDATE_LECTURE_DESCRIPTION = gql`
   mutation UpdateLecture(
     $lectureId: Int!
@@ -90,7 +119,7 @@ export interface DeleteLectureVariables {
 
 export interface UpdateLectureDescriptionVariables {
   lectureId: number;
-  description: string
+  description: string;
 }
 
 export interface DeleteLectureResponse {
@@ -102,5 +131,29 @@ export interface DeleteLectureResponse {
 export interface UpdateLectureDescriptionResponse {
   updateLecture: {
     success: boolean;
+  };
+}
+
+// New interfaces for content updates
+export interface UpdateLectureContentVariables {
+  lectureId: number;
+  description?: string;
+  videoUrl?: string;
+  notes?: string;
+}
+
+export interface UpdateLectureContentResponse {
+  updateLecture: {
+    success: boolean;
+    lecture: {
+      id: string;
+      title: string;
+      description: string;
+      videoUrl: string;
+      notes: string;
+      section: {
+        id: string;
+      };
+    };
   };
 }
