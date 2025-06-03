@@ -14,13 +14,13 @@ const setCookie = (name: string, value: string, days = 7) => {
 };
 
 export const signUp = async (userData: SignUpData): Promise<SignUpResponse> => {
-  // Split full name into first and last name
+  // Split full name into first and last name for backend requirements
   const nameParts = userData.fullName.trim().split(' ');
   const firstName = nameParts[0] || '';
   const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
   
-  // Generate username from fullName
-  const username = userData.fullName;
+  // Generate username by joining firstName and lastName with underscore
+  const username = lastName ? `${firstName}_${lastName}` : firstName;
 
   try {
     const { data, errors } = await apolloClient.mutate({
@@ -40,6 +40,7 @@ export const signUp = async (userData: SignUpData): Promise<SignUpResponse> => {
     if (errors) {
       console.log(errors);
     }
+    console.log(data)
 
     // Store tokens on successful registration
     if (data.register.success && typeof window !== 'undefined') {
