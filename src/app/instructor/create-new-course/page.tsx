@@ -47,23 +47,69 @@ const tabs: Tab[] = [
 export default function CourseFormTabs() {
   const [activeTab, setActiveTab] = useState("basic");
   const [courseId, setCourseId] = useState<number | null>(null);
+  
+  // Track completion status of each tab
+  const [completedTabs, setCompletedTabs] = useState<Set<string>>(new Set());
 
   // Get active tab data
   const currentTab = tabs.find(tab => tab.key === activeTab) || tabs[0];
   
-  // Function to handle moving to next tab
+  // Check if a tab is accessible based on previous tabs completion
+  const isTabAccessible = (tabKey: string) => {
+    const tabIndex = tabs.findIndex(tab => tab.key === tabKey);
+    
+    // First tab is always accessible
+    if (tabIndex === 0) return true;
+    
+    // Check if all previous tabs are completed
+    for (let i = 0; i < tabIndex; i++) {
+      if (!completedTabs.has(tabs[i].key)) {
+        return false;
+      }
+    }
+    
+    return true;
+  };
+
+  // Check if a tab is completed
+  const isTabCompleted = (tabKey: string) => {
+    return completedTabs.has(tabKey);
+  };
+
+  // Function to handle tab click with accessibility check
+  const handleTabClick = (tabKey: string) => {
+    if (isTabAccessible(tabKey)) {
+      setActiveTab(tabKey);
+    }
+  };
+  
+  // Function to mark current tab as completed and move to next tab
   const handleNextTab = () => {
+    // Mark current tab as completed
+    setCompletedTabs(prev => new Set([...prev, activeTab]));
+    
+    // Move to next tab if available
     const currentIndex = tabs.findIndex(tab => tab.key === activeTab);
     if (currentIndex < tabs.length - 1) {
       setActiveTab(tabs[currentIndex + 1].key);
     }
   };
 
-  // Function to handle saving courseId and moving to next tab
+  // Function to handle saving courseId, mark basic tab as completed, and move to next tab
   const handleBasicInfoSave = (id: number) => {
     console.log("Course ID received in parent:", id);
     setCourseId(id);
-    handleNextTab();
+    handleNextTab(); // This will mark basic as completed and move to advanced
+  };
+
+  // Function to handle advanced info completion
+  const handleAdvancedInfoSave = () => {
+    handleNextTab(); // Mark advanced as completed and move to curriculum
+  };
+
+  // Function to handle curriculum completion
+  const handleCurriculumSave = () => {
+    handleNextTab(); // Mark curriculum as completed and move to publish
   };
 
   return (
@@ -71,83 +117,131 @@ export default function CourseFormTabs() {
       {/* Mobile Tabs - Horizontally Scrollable */}
       <div className="md:hidden border-b border-gray-200 pb-2">
         <div className="flex items-center overflow-x-auto scrollbar-hide gap-8 px-1">
-          {tabs.map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className={cn(
-                "py-3 flex-shrink-0 flex items-center gap-1 whitespace-nowrap text-gray-500 transition-all",
-                activeTab === tab.key 
-                  ? "text-[#313273] font-bold border-b-2 border-pink-600" 
-                  : "font-normal text-sm"
-              )}
-            >
-              <Image
-                src={tab.icon}
-                alt={tab.name}
-                width={18}
-                height={18}
-                className="object-contain"
-              />
-              <span>{tab.shortName || tab.name}</span>
-              {tab.progress && activeTab === tab.key && (
-                <span className="text-green-600 text-xs bg-green-50 px-1.5 py-0.5 rounded-full">
-                  {tab.progress}
-                </span>
-              )}
-            </button>
-          ))}
+          {tabs.map((tab) => {
+            const isAccessible = isTabAccessible(tab.key);
+            const isCompleted = isTabCompleted(tab.key);
+            const isActive = activeTab === tab.key;
+            
+            return (
+              <button
+                key={tab.key}
+                onClick={() => handleTabClick(tab.key)}
+                disabled={!isAccessible}
+                className={cn(
+                  "py-3 flex-shrink-0 flex items-center gap-1 whitespace-nowrap transition-all relative",
+                  isActive && isAccessible
+                    ? "text-[#313273] font-bold border-b-2 border-pink-600" 
+                    : isAccessible
+                    ? "text-gray-500 font-normal text-sm hover:text-[#313273]"
+                    : "text-gray-300 font-normal text-sm cursor-not-allowed"
+                )}
+              >
+                <div className="relative">
+                  <Image
+                    src={tab.icon}
+                    alt={tab.name}
+                    width={18}
+                    height={18}
+                    className={cn(
+                      "object-contain",
+                      !isAccessible && "opacity-50"
+                    )}
+                  />
+                  {isCompleted && (
+                    <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full flex items-center justify-center">
+                      <span className="text-white text-xs">✓</span>
+                    </div>
+                  )}
+                </div>
+                <span>{tab.shortName || tab.name}</span>
+                {tab.progress && isActive && isAccessible && (
+                  <span className="text-green-600 text-xs bg-green-50 px-1.5 py-0.5 rounded-full">
+                    {tab.progress}
+                  </span>
+                )}
+                {!isAccessible && (
+                  <span className="text-xs text-gray-400 ml-1">🔒</span>
+                )}
+              </button>
+            );
+          })}
         </div>
       </div>
 
       {/* Desktop Tabs - Full width */}
       <div className="hidden md:flex items-center border-b border-gray-200 px-2">
-        {tabs.map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            className={cn(
-              "relative py-4 px-2 lg:px-4 text-sm font-medium  border-b-2 border-transparent hover:text-[#313273] transition flex items-center gap-1 lg:gap-2",
-              activeTab === tab.key?  "text-[#313273] font-bold border-b-pink-600" : "text-gray-500"
-            )}
-          >
-            <Image
-              src={tab.icon}
-              alt={tab.name}
-              width={20}
-              height={20}
-              className="object-contain flex-shrink-0"
-            />
-            <div className="flex items-center gap-1 whitespace-nowrap">
-              <span className="hidden lg:inline">{tab.name}</span>
-              <span className="lg:hidden">{tab.shortName || tab.name}</span>
-              {tab.progress && (
-                <span className="text-green-600 text-xs">{tab.progress}</span>
+        {tabs.map((tab) => {
+          const isAccessible = isTabAccessible(tab.key);
+          const isCompleted = isTabCompleted(tab.key);
+          const isActive = activeTab === tab.key;
+          
+          return (
+            <button
+              key={tab.key}
+              onClick={() => handleTabClick(tab.key)}
+              disabled={!isAccessible}
+              className={cn(
+                "relative py-4 px-2 lg:px-4 text-sm font-medium border-b-2 border-transparent transition flex items-center gap-1 lg:gap-2",
+                isActive && isAccessible
+                  ? "text-[#313273] font-bold border-b-pink-600"
+                  : isAccessible
+                  ? "text-gray-500 hover:text-[#313273]"
+                  : "text-gray-300 cursor-not-allowed"
               )}
-            </div>
-          </button>
-        ))}
+            >
+              <div className="relative">
+                <Image
+                  src={tab.icon}
+                  alt={tab.name}
+                  width={20}
+                  height={20}
+                  className={cn(
+                    "object-contain flex-shrink-0",
+                    !isAccessible && "opacity-50"
+                  )}
+                />
+                {isCompleted && (
+                  <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
+                    <span className="text-white text-xs">✓</span>
+                  </div>
+                )}
+              </div>
+              <div className="flex items-center gap-1 whitespace-nowrap">
+                <span className="hidden lg:inline">{tab.name}</span>
+                <span className="lg:hidden">{tab.shortName || tab.name}</span>
+                {tab.progress && isActive && isAccessible && (
+                  <span className="text-green-600 text-xs">{tab.progress}</span>
+                )}
+                {!isAccessible && (
+                  <span className="text-xs text-gray-400 ml-1">🔒</span>
+                )}
+              </div>
+            </button>
+          );
+        })}
       </div>
 
       {/* Tab Content */}
       <div className="p-2">
-        {activeTab === "basic" && <BasicInformationForm onSaveNext={handleBasicInfoSave} />}
-        {activeTab === "advanced" && (
+        {activeTab === "basic" && (
+          <BasicInformationForm onSaveNext={handleBasicInfoSave} />
+        )}
+        {activeTab === "advanced" && courseId && (
           <AdvanceInformationForm 
-            onSaveNext={handleNextTab} 
-            courseId={courseId || 0} 
+            onSaveNext={handleAdvancedInfoSave} 
+            courseId={courseId} 
           />
         )}
-        {activeTab === "curriculum" && (
+        {activeTab === "curriculum" && courseId && (
           <Curriculum 
-            onSaveNext={handleNextTab} 
-            courseId={courseId || 0} 
+            onSaveNext={handleCurriculumSave} 
+            courseId={courseId} 
           />
         )}
-        {activeTab === "publish" && (
+        {activeTab === "publish" && courseId && (
           <div>
             <p>Publish Step</p>
-            {courseId && <p className="text-sm text-gray-500">Course ID: {courseId}</p>}
+            <p className="text-sm text-gray-500">Course ID: {courseId}</p>
           </div>
         )}
       </div>
@@ -162,7 +256,7 @@ export default function CourseFormTabs() {
           <div 
             className="bg-pink-600 h-full rounded-full" 
             style={{
-              width: `${((tabs.findIndex(tab => tab.key === activeTab) + 1) / tabs.length) * 100}%`
+              width: `${((completedTabs.size + (activeTab === tabs[tabs.length - 1].key ? 1 : 0)) / tabs.length) * 100}%`
             }}
           />
         </div>
