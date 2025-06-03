@@ -4,12 +4,15 @@ import React, { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import "react-quill-new/dist/quill.snow.css";
 import RichTextEditor from "../../../../RichTextEditor";
+import { useQuizOperations } from "@/services/quizService";
 
 interface QuestionFormProps {
   onSubmit: (question: any) => void;
   onCancel: () => void;
   initialQuestion?: any;
   isEditedForm?: boolean;
+  onLoad?: boolean;
+  quizId: string;
 }
 
 const QuestionForm: React.FC<QuestionFormProps> = ({
@@ -17,6 +20,8 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
   onCancel,
   initialQuestion,
   isEditedForm,
+  onLoad,
+  quizId,
 }) => {
   const [questionText, setQuestionText] = useState("");
   const [answers, setAnswers] = useState<
@@ -38,6 +43,15 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
   const [focusedAnswerIndex, setFocusedAnswerIndex] = useState<number | null>(
     null
   );
+
+  // const {
+  //   createQuiz,
+  //   updateQuiz,
+  //   addQuestionToQuiz,
+  //   updateQuestion,
+  //   deleteQuestion,
+  //   loading: quizOperationLoading,
+  // } = useQuizOperations;
 
   useEffect(() => {
     // Reset all form state when initialQuestion changes
@@ -112,34 +126,86 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
     setAnswers(newAnswers);
   };
 
+  // const handleSubmit = () => {
+  //   // Validate question text
+  //   if (!questionText.trim()) {
+  //     setError("Question text is required");
+  //     toast.error("Question text is required");
+  //     return;
+  //   }
+
+  //   // Filter out empty answers but keep original indices
+  //   const validAnswers = answers
+  //     .map((answer, index) => ({ ...answer, originalIndex: index }))
+  //     .filter((answer) => answer.text.trim() !== "");
+
+  //   // Validate at least 2 answers
+  //   if (validAnswers.length < 2) {
+  //     setError("At least 2 answers are required");
+  //     toast.error("At least 2 answers are required");
+  //     return;
+  //   }
+
+  //   // Validate correct answer is selected
+  //   if (correctAnswerIndex === null) {
+  //     setError("You must select a correct answer");
+  //     toast.error("You must select a correct answer");
+  //     return;
+  //   }
+
+  //   // Validate selected answer isn't empty
+  //   const selectedAnswer = answers[correctAnswerIndex];
+  //   if (!selectedAnswer || selectedAnswer.text.trim() === "") {
+  //     setError("The correct answer cannot be empty");
+  //     toast.error("The correct answer cannot be empty");
+  //     return;
+  //   }
+
+  //   // Find the new index of the correct answer after filtering
+  //   const newCorrectIndex = validAnswers.findIndex(
+  //     (answer) => answer.originalIndex === correctAnswerIndex
+  //   );
+
+  //   // Create the question object
+  //   const question = {
+  //     ...(isEditedForm && initialQuestion?.id && { id: initialQuestion.id }),
+  //     text: questionText,
+  //     answers: validAnswers.map(({ text, explanation }) => ({
+  //       text,
+  //       explanation,
+  //     })),
+  //     correctAnswerIndex: newCorrectIndex,
+  //     relatedLecture,
+  //     type: "multiple-choice",
+  //   };
+
+  //   onSubmit(question);
+  // };
+
   const handleSubmit = () => {
-    // Validate question text
+    // Validate inputs
     if (!questionText.trim()) {
       setError("Question text is required");
       toast.error("Question text is required");
       return;
     }
 
-    // Filter out empty answers but keep original indices
     const validAnswers = answers
       .map((answer, index) => ({ ...answer, originalIndex: index }))
       .filter((answer) => answer.text.trim() !== "");
 
-    // Validate at least 2 answers
     if (validAnswers.length < 2) {
       setError("At least 2 answers are required");
       toast.error("At least 2 answers are required");
       return;
     }
 
-    // Validate correct answer is selected
     if (correctAnswerIndex === null) {
       setError("You must select a correct answer");
       toast.error("You must select a correct answer");
       return;
     }
 
-    // Validate selected answer isn't empty
     const selectedAnswer = answers[correctAnswerIndex];
     if (!selectedAnswer || selectedAnswer.text.trim() === "") {
       setError("The correct answer cannot be empty");
@@ -147,10 +213,13 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
       return;
     }
 
-    // Find the new index of the correct answer after filtering
-    const newCorrectIndex = validAnswers.findIndex(
-      (answer) => answer.originalIndex === correctAnswerIndex
-    );
+    // Prepare choices for API
+    const choices = answers.map((answer, index) => ({
+      text: answer.text,
+      isCorrect: index === correctAnswerIndex,
+      order: index + 1,
+      id: initialQuestion?.choices?.[index]?.id, // Preserve existing IDs for updates
+    }));
 
     // Create the question object
     const question = {
@@ -160,9 +229,14 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
         text,
         explanation,
       })),
-      correctAnswerIndex: newCorrectIndex,
+      quizId: parseInt(quizId),
+      choices, // Add choices for API
+      correctAnswerIndex,
       relatedLecture,
       type: "multiple-choice",
+      maxPoints: 1, // Default points
+      questionType: "multiple-choice",
+      order: initialQuestion?.order || 1,
     };
 
     onSubmit(question);
@@ -274,9 +348,10 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
         <button
           type="button"
           onClick={handleSubmit}
-          className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+          disabled={onLoad}
+          className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 cursor-pointer disabled:cursor-not-allowed disabled:bg-purple-300"
         >
-          Save
+          {onLoad ? "Saving.." : "Save"}
         </button>
       </div>
     </div>

@@ -13,6 +13,8 @@ import { GoQuestion } from "react-icons/go";
 import { RxHamburgerMenu } from "react-icons/rx";
 import StudentVideoPreview from "../lecture/StudentVideoPeview";
 import QuizForm from "./QuizForm";
+import { useQuizOperations } from "@/services/quizService";
+import toast from "react-hot-toast";
 
 interface QuizItemProps {
   lecture: Lecture;
@@ -120,6 +122,17 @@ const QuizItem: React.FC<QuizItemProps> = ({
   >(null);
   const [showQuestionTypeSelector, setShowQuestionTypeSelector] =
     useState(false);
+
+  const {
+    createQuiz,
+    updateQuiz,
+    addQuestionToQuiz,
+    updateQuestion,
+    deleteQuestion,
+    loading: quizOperationLoading,
+  } = useQuizOperations();
+
+  const [result, setResult] = useState(null);
 
   // FIXED: Enhanced section creation with proper resource handling
   const createEnhancedSections = () => {
@@ -286,14 +299,54 @@ const QuizItem: React.FC<QuizItemProps> = ({
   };
 
   // Quiz edit handler
-  const handleQuizEditSubmit = (
+  // const handleQuizEditSubmit = (
+  //   sectionId: string,
+  //   quizId: string,
+  //   title: string,
+  //   description: string
+  // ) => {
+  //   if (onEditQuiz) {
+  //     onEditQuiz(sectionId, quizId, title, description);
+  //   }
+  //   setShowEditQuizForm(false);
+  // };
+
+  const handleQuizEditSubmit = async (
     sectionId: string,
     quizId: string,
     title: string,
     description: string
   ) => {
-    if (onEditQuiz) {
-      onEditQuiz(sectionId, quizId, title, description);
+    try {
+      if (onEditQuiz) {
+        // If it's an existing quiz, update it
+        const result = await updateQuiz({
+          quizId: parseInt(quizId),
+          title,
+          description,
+        });
+
+        if (result?.updateQuiz?.success) {
+          toast.success("Quiz updated successfully!");
+          onEditQuiz(sectionId, quizId, title, description);
+        }
+      } else {
+        // If it's a new quiz, create it
+        const result = await createQuiz({
+          sectionId: parseInt(sectionId),
+          quizId: parseInt(quizId),
+          title,
+          description,
+        });
+
+        if (result?.createQuiz?.success) {
+          toast.success("Quiz created successfully!");
+          // You'll need to update your state with the new quiz
+        }
+      }
+    } catch (error) {
+      console.error("Error saving quiz:", error);
+      toast.error("Failed to save quiz");
     }
     setShowEditQuizForm(false);
   };
@@ -327,15 +380,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
   }, [showEditQuizForm]);
 
   // Debug effect to track enhanced lectures
-  useEffect(() => {
-    console.log("QuizItem enhanced lectures updated:", {
-      quizId: lecture.id,
-      enhancedLecturesCount: Object.keys(enhancedLectures).length,
-      uploadedFilesCount: uploadedFiles.length,
-      sourceCodeFilesCount: sourceCodeFiles.length,
-      externalResourcesCount: externalResources.length,
-    });
-  }, [
+  useEffect(() => {}, [
     enhancedLectures,
     lecture.id,
     uploadedFiles,
@@ -381,19 +426,91 @@ const QuizItem: React.FC<QuizItemProps> = ({
     }
   };
 
-  const handleAddQuestion = (question: Question) => {
-    let newQuestions;
+  // const handleAddQuestion = (question: Question) => {
+  //   let newQuestions;
 
-    if (editingQuestionIndex !== null) {
-      newQuestions = [...questions];
-      newQuestions[editingQuestionIndex] = question;
-    } else {
-      newQuestions = [...questions, { ...question, id: `q-${Date.now()}` }];
-    }
+  //   if (editingQuestionIndex !== null) {
+  //     newQuestions = [...questions];
+  //     newQuestions[editingQuestionIndex] = question;
+  //   } else {
+  //     newQuestions = [...questions, { ...question, id: `q-${Date.now()}` }];
+  //   }
 
-    setQuestions(newQuestions);
-    if (updateQuizQuestions) {
-      updateQuizQuestions(sectionId, lecture.id, newQuestions);
+  //   setQuestions(newQuestions);
+  //   if (updateQuizQuestions) {
+  //     updateQuizQuestions(sectionId, lecture.id, newQuestions);
+  //   }
+
+  //   setShowQuestionForm(false);
+  //   setShowQuestionTypeSelector(false);
+  //   setExpanded(true);
+  //   setShowEditForm(false);
+  //   setEditingQuestionIndex(null);
+  // };
+
+  const handleAddQuestion = async (question: Question) => {
+    try {
+      // Convert answers to choices format expected by API
+      // console.log("lecture.id:", lecture.id, "type:", typeof lecture.id);
+      const choices = question.answers
+        .filter((answer: any) => answer.text.trim() !== "") // Filter out empty answers
+        .map((answer: any, index: number) => ({
+          text: answer.text,
+          isCorrect: index === question.correctAnswerIndex,
+          order: index + 1,
+          // explanation: answer.explanation || "",
+        }));
+
+      // console.log(lecture.id), question.text;
+      if (!lecture.id) {
+        throw new Error("Quiz ID is required");
+      }
+      // const quizId = parseInt(lecture.id);
+      // if (isNaN(quizId)) {
+      //   throw new Error("Invalid Quiz ID");
+      // }
+
+      const quizId = Number(lecture.id);
+      // if (!lecture?.id || isNaN(parseInt(lecture.id))) {
+      //   toast.error("Lecture ID is invalid or missing");
+      //   return;
+      // }
+
+      if (isNaN(quizId)) {
+        console.error(quizId);
+        console.log(lecture.id);
+        toast.error("Invalid ID. Please check the lecture data.");
+        return;
+      }
+      console.log("hiiiiii", parseInt(lecture.id), lecture.id);
+      const result = await addQuestionToQuiz({
+        quizId,
+        text: question.text,
+        questionType: "multiple-choice",
+        order: questions.length + 1,
+        explanation: "",
+        maxPoints: 1, // Default points
+        choices,
+        relatedLectureId: question.relatedLecture
+          ? parseInt(question.relatedLecture)
+          : undefined,
+      });
+
+      console.log("hhhhhhhh", result);
+      if (result?.addQuestionToQuiz?.success) {
+        const newQuestion = result.addQuestionToQuiz.question;
+        const newQuestions = [...questions, newQuestion];
+
+        setQuestions(newQuestions);
+        if (updateQuizQuestions) {
+          updateQuizQuestions(sectionId, lecture.id, newQuestions);
+        }
+
+        toast.success("Question added successfully!");
+      }
+    } catch (error) {
+      console.error("Error adding question:", error);
+      toast.error("Failed to add question");
     }
 
     setShowQuestionForm(false);
@@ -403,12 +520,75 @@ const QuizItem: React.FC<QuizItemProps> = ({
     setEditingQuestionIndex(null);
   };
 
-  const handleDeleteQuestion = (index: number) => {
-    const newQuestions = questions.filter((_, idx) => idx !== index);
-    setQuestions(newQuestions);
-    if (updateQuizQuestions) {
-      updateQuizQuestions(sectionId, lecture.id, newQuestions);
+  // const handleDeleteQuestion = (index: number) => {
+  //   const newQuestions = questions.filter((_, idx) => idx !== index);
+  //   setQuestions(newQuestions);
+  //   if (updateQuizQuestions) {
+  //     updateQuizQuestions(sectionId, lecture.id, newQuestions);
+  //   }
+  // };
+
+  const handleDeleteQuestion = async (index: number) => {
+    const questionId = questions[index]?.id;
+    if (!questionId) return;
+
+    try {
+      const result = await deleteQuestion({
+        questionId: parseInt(questionId),
+      });
+
+      if (result?.deleteQuestion?.success) {
+        const newQuestions = questions.filter((_, idx) => idx !== index);
+        setQuestions(newQuestions);
+        if (updateQuizQuestions) {
+          updateQuizQuestions(sectionId, lecture.id, newQuestions);
+        }
+
+        toast.success("Question deleted successfully!");
+      }
+    } catch (error) {
+      console.error("Error deleting question:", error);
+      toast.error("Failed to delete question");
     }
+  };
+
+  const handleUpdateQuestion = async (question: any, index: number) => {
+    try {
+      // Convert answers to choices format
+      const choices = question.answers.map((answer: any, idx: number) => ({
+        text: answer.text,
+        isCorrect: idx === question.correctAnswerIndex,
+        order: idx + 1,
+        id: question.id ? parseInt(question.id) : undefined,
+      }));
+
+      const result = await updateQuestion({
+        questionId: parseInt(question.id),
+        text: question.text,
+        explanation: question.explanation || "",
+        maxPoints: 1, // Default points
+        choices,
+        order: index + 1,
+      });
+
+      if (result?.updateQuestion?.success) {
+        const newQuestions = [...questions];
+        newQuestions[index] = question;
+
+        setQuestions(newQuestions);
+        if (updateQuizQuestions) {
+          updateQuizQuestions(sectionId, lecture.id, newQuestions);
+        }
+
+        toast.success("Question updated successfully!");
+      }
+    } catch (error) {
+      console.error("Error updating question:", error);
+      toast.error("Failed to update question");
+    }
+
+    setShowQuestionForm(false);
+    setEditingQuestionIndex(null);
   };
 
   const handleEditQuestion = (index: number) => {
@@ -416,6 +596,14 @@ const QuizItem: React.FC<QuizItemProps> = ({
     setShowQuestionForm(true);
     setShowQuestionTypeSelector(false);
     setExpanded(true);
+  };
+
+  const handleQuestionSubmit = (question: any) => {
+    if (editingQuestionIndex !== null) {
+      handleUpdateQuestion(question, editingQuestionIndex);
+    } else {
+      handleAddQuestion(question);
+    }
   };
 
   // Preview functionality - UPDATED
@@ -649,7 +837,9 @@ const QuizItem: React.FC<QuizItemProps> = ({
             ) : (
               <div className="border-t border-zinc-400">
                 <QuestionForm
-                  onSubmit={handleAddQuestion}
+                  quizId={lecture.id}
+                  onSubmit={handleQuestionSubmit}
+                  onLoad={quizOperationLoading}
                   onCancel={() => {
                     setShowQuestionForm(false);
                     setShowQuestionTypeSelector(false);
@@ -835,12 +1025,14 @@ const QuizItem: React.FC<QuizItemProps> = ({
                   <div className="border-t border-zinc-400">
                     <QuestionForm
                       key={editingQuestionIndex ?? "new"}
-                      onSubmit={handleAddQuestion}
+                      onSubmit={handleQuestionSubmit}
                       onCancel={() => {
                         setShowQuestionForm(false);
                         setShowQuestionTypeSelector(false);
                         setEditingQuestionIndex(null);
                       }}
+                      quizId={lecture.id}
+                      onLoad={quizOperationLoading}
                       isEditedForm={editingQuestionIndex !== null}
                       initialQuestion={
                         editingQuestionIndex !== null
