@@ -160,31 +160,17 @@ export const UPDATE_QUIZ = gql`
   }
 `;
 
+export const DELETE_QUIZ = gql`
+  mutation DeleteQuiz($quizId: Int!) {
+    deleteQuiz(quizId: $quizId) {
+      success
+    }
+  }
+`;
+
 export const ADD_QUESTION_TO_QUIZ = gql`
-  mutation AddQuestionToQuiz(
-    $quizId: Int!
-    $text: String!
-    $questionType: String!
-    $order: Int!
-    $explanation: String
-    $mediaUrl: String
-    $maxPoints: Int
-    $choices: [AnswerChoiceInputType!]!
-    $relatedLectureId: Int
-  ) {
-    addQuestionToQuiz(
-      input: {
-        quizId: $quizId
-        text: $text
-        questionType: $questionType
-        order: $order
-        explanation: $explanation
-        mediaUrl: $mediaUrl
-        maxPoints: $maxPoints
-        choices: $choices
-        relatedLectureId: $relatedLectureId
-      }
-    ) {
+  mutation AddQuestionToQuiz($input: QuestionInputType!) {
+    addQuestionToQuiz(input: $input) {
       success
       question {
         id
