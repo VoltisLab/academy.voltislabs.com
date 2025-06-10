@@ -194,7 +194,7 @@ export const UPDATE_QUESTION = gql`
     $maxPoints: Int
     $mediaUrl: String
     $order: Int
-    $choices: [ChoiceInputType!]
+    $choices: [AnswerChoiceInputType]!
   ) {
     updateQuestion(
       questionId: $questionId
