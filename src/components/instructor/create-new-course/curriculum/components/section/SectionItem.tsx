@@ -95,14 +95,15 @@ interface SectionItemProps {
   addLecture: (
     sectionId: string,
     contentType: ContentItemType,
-    title?: string
-  ) => string;
+    title?: string,
+    description?: string
+  ) => any;
   addCurriculumItem: (sectionId: string) => void;
   updateQuizQuestions?: (
     sectionId: string,
     quizId: string,
     questions: any[]
-  ) => void;
+  ) => Promise<void>;
 
   // New prop for practice exercises
   savePracticeCode?: (
@@ -139,7 +140,7 @@ interface SectionItemProps {
     quizId: string,
     title: string,
     description: string
-  ) => void;
+  ) => Promise<void>;
 
   // FIXED: Add global resource props
   globalUploadedFiles?: Array<{
@@ -227,6 +228,8 @@ export default function SectionItem({
   const [editTitle, setEditTitle] = useState<string>("");
   const [editObjective, setEditObjective] = useState<string>("");
 
+  const [quizOperationLoading, setQuizOperationLoading] = useState(false);
+
   // Added states to track active sections for resources and descriptions
   const [activeResourceSection, setActiveResourceSection] = useState<{
     sectionId: string;
@@ -287,30 +290,44 @@ export default function SectionItem({
   };
 
   // Enhanced handler for adding a quiz - uses addQuiz instead of addLecture
-  const handleAddQuiz = (
+  const handleAddQuiz = async (
     sectionId: string,
     title: string,
     description: string
+    // loading: boolean
   ) => {
-    console.log("SectionItem handling quiz add:", {
+    console.log("SectionItem handling quiz addddd:", {
       sectionId,
       title,
       description,
     });
 
-    if (addQuiz) {
-      // Use the addQuiz function which properly handles the quiz creation with description
-      addQuiz(sectionId, title, description);
-    } else {
-      // Fallback to the old method if addQuiz is not available
-      const newLectureId = addLecture(sectionId, "quiz", title);
-    }
+    setQuizOperationLoading(true);
+
+    // if (addQuiz) {
+    // Use the addQuiz function which properly handles the quiz creation with description
+    // await addQuiz?.(sectionId, title, description);
+    // console.log(
+    //   "kkkkkkkkkkkkkk",
+    //   await addQuiz?.(sectionId, title, description)
+    // );
+    // } else {
+    // Fallback to the old method if addQuiz is not available
+    const newLectureId = await addLecture(
+      sectionId,
+      "quiz",
+      title,
+      description
+    );
+
+    setQuizOperationLoading(false);
+    // }
 
     setShowQuizForm(false);
   };
 
   // Handler for editing a quiz
-  const handleEditQuiz = (
+  const handleEditQuiz = async (
     sectionId: string,
     quizId: string,
     title: string,
@@ -324,7 +341,7 @@ export default function SectionItem({
     });
 
     if (updateQuiz) {
-      updateQuiz(sectionId, quizId, title, description);
+      await updateQuiz(sectionId, quizId, title, description);
     }
   };
 
@@ -624,6 +641,7 @@ export default function SectionItem({
           uploadedFiles={globalUploadedFiles}
           sourceCodeFiles={globalSourceCodeFiles}
           externalResources={globalExternalResources}
+          // loading={}
         />
       );
     }
@@ -871,6 +889,7 @@ export default function SectionItem({
                 onAddQuiz={handleAddQuiz}
                 onCancel={() => setShowQuizForm(false)}
                 isEdit={false}
+                loading={quizOperationLoading}
               />
             )}
 

@@ -89,7 +89,12 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
     useState<boolean>(false);
 
   // Section service for backend operations
-  const { createSection, updateSection, loading: sectionLoading, error: sectionError } = useSectionService();
+  const {
+    createSection,
+    updateSection,
+    loading: sectionLoading,
+    error: sectionError,
+  } = useSectionService();
 
   const {
     sections,
@@ -104,6 +109,7 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
     moveSection,
     moveLecture,
     updateLectureContent,
+    updateQuizQuestions,
     saveDescription: saveSectionDescription,
     updateLectureWithUploadedContent,
     handleLectureDrop,
@@ -147,30 +153,34 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
   const addSourceCodeFile = (file: SourceCodeFile) => {
     setGlobalSourceCodeFiles((prev) => {
       // Prevent duplicates by checking both name and filename
-      const isDuplicate = prev.some(existingFile => 
-        (existingFile.name === file.name || 
-         existingFile.filename === file.filename || 
-         existingFile.name === file.filename || 
-         existingFile.filename === file.name) && 
-        existingFile.lectureId === file.lectureId
+      const isDuplicate = prev.some(
+        (existingFile) =>
+          (existingFile.name === file.name ||
+            existingFile.filename === file.filename ||
+            existingFile.name === file.filename ||
+            existingFile.filename === file.name) &&
+          existingFile.lectureId === file.lectureId
       );
-      
+
       if (isDuplicate) {
-        console.log('⚠️ Duplicate source code file detected, skipping add');
+        console.log("⚠️ Duplicate source code file detected, skipping add");
         return prev;
       }
-      
+
       return [...prev, file];
     });
   };
 
-  const removeSourceCodeFile = (fileName: string | undefined, lectureId: string) => {
+  const removeSourceCodeFile = (
+    fileName: string | undefined,
+    lectureId: string
+  ) => {
     setGlobalSourceCodeFiles((prev) =>
       prev.filter((file) => {
         // Check BOTH name AND filename properties
         const nameMatch = file.name === fileName || file.filename === fileName;
         const lectureMatch = file.lectureId === lectureId;
-        
+
         // Return true to keep, false to remove
         return !(nameMatch && lectureMatch);
       })
@@ -233,20 +243,20 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
         courseId: Number(courseId),
         order: order,
         title: title,
-        description: objective || ""
+        description: objective || "",
       });
 
-      console.log(response)
+      console.log(response);
 
       if (response.createSection.success) {
         // Add to local state with backend ID
         const backendSectionId = response.createSection.section.id;
         addLocalSection(title, objective);
-        
+
         // Update the local section with the backend ID
-        setSections(prevSections => 
-          prevSections.map((section, index) => 
-            index === prevSections.length - 1 
+        setSections((prevSections) =>
+          prevSections.map((section, index) =>
+            index === prevSections.length - 1
               ? { ...section, id: backendSectionId }
               : section
           )
@@ -268,7 +278,9 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
   ) => {
     try {
       // Find the section to get its current order
-      const sectionIndex = sections.findIndex(section => section.id === sectionId);
+      const sectionIndex = sections.findIndex(
+        (section) => section.id === sectionId
+      );
       if (sectionIndex === -1) {
         toast.error("Section not found");
         return;
@@ -279,12 +291,11 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
         sectionId: Number(sectionId),
         order: sectionIndex, // Use current position as order
         title: newName,
-        description: objective || ""
+        description: objective || "",
       });
 
       // Update local state
       updateLocalSectionName(sectionId, newName, objective);
-      
     } catch (error) {
       console.error("Failed to update section:", error);
       // Error is already handled in the service with toast
@@ -694,6 +705,7 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
                 onEditAssignment={handleOpenAssignmentEditor}
                 allSections={getFormattedSectionsForPreview()}
                 updateQuiz={updateQuiz}
+                updateQuizQuestions={updateQuizQuestions}
                 // FIXED: Pass global resource management functions
                 globalUploadedFiles={globalUploadedFiles}
                 globalSourceCodeFiles={globalSourceCodeFiles}
