@@ -5,6 +5,8 @@ import { generateId } from "@/lib/utils";
 import { toast } from "react-hot-toast";
 import { useSectionService } from "@/services/useSectionService";
 import { useQuizOperations } from "@/services/quizService";
+import { useLectureService } from "@/services/useLectureService";
+import { UpdateLectureDescriptionVariables } from "@/api/course/lecture/mutation";
 
 interface Section {
   isExpanded: boolean;
@@ -30,20 +32,202 @@ export const useSections = (
   courseId?: number
 ) => {
   const [sections, setSections] = useState<Section[]>(initialSections);
+
+  const { createQuiz: createQuizBackend, updateQuiz: updateQuizBackend } =
+    useQuizOperations();
   const {
     createSection,
     updateSection,
     loading: sectionLoading,
   } = useSectionService();
-
   const {
-    createQuiz: createQuizBackend,
-    updateQuiz: updateQuizBackend,
-    deleteQuiz: deleteQuizBackend,
-    addQuestionToQuiz: addQuestionToQuizBackend,
-    updateQuestion: updateQuestionBackend,
-    deleteQuestion: deleteQuestionBackend,
-  } = useQuizOperations();
+    updateLectureDescription,
+    uploadVideoToLecture,
+    saveArticleToLecture,
+    saveDescriptionToLecture,
+    loading: lectureLoading,
+    videoUploading,
+    videoUploadProgress,
+  } = useLectureService();
+
+  const saveDescription = async (
+    sectionId: string,
+    lectureId: number,
+    description: string
+  ) => {
+    try {
+      const a = await saveDescriptionToLecture(lectureId, description);
+      console.log(a);
+
+      // Update local state after successful backend save
+      setSections((prevSections) =>
+        prevSections.map((section) => {
+          if (section.id === sectionId) {
+            return {
+              ...section,
+              lectures: section.lectures.map((lecture) => {
+                if (lecture.id === lectureId.toString()) {
+                  return {
+                    ...lecture,
+                    description: description,
+                  };
+                }
+                return lecture;
+              }),
+            };
+          }
+          return section;
+        })
+      );
+
+      return description;
+    } catch (error) {
+      console.error("Error saving description:", error);
+      throw error;
+    }
+  };
+
+  // NEW: Upload video to lecture function
+  const uploadVideoToBackend = async (
+    sectionId: string,
+    lectureId: string,
+    videoFile: File,
+    onProgress?: (progress: number) => void
+  ): Promise<string | null> => {
+    try {
+      const numericLectureId = parseInt(lectureId);
+      if (isNaN(numericLectureId)) {
+        throw new Error("Invalid lecture ID");
+      }
+
+      const videoUrl = await uploadVideoToLecture(
+        numericLectureId,
+        videoFile,
+        onProgress
+      );
+
+      if (videoUrl) {
+        // Update local state with video URL
+        setSections((prevSections) =>
+          prevSections.map((section) => {
+            if (section.id === sectionId) {
+              return {
+                ...section,
+                lectures: section.lectures.map((lecture) => {
+                  if (lecture.id === lectureId) {
+                    return {
+                      ...lecture,
+                      videos: [
+                        ...lecture.videos,
+                        { url: videoUrl, name: videoFile.name },
+                      ],
+                      // Store video URL for easy access
+                      videoUrl: videoUrl,
+                    };
+                  }
+                  return lecture;
+                }),
+              };
+            }
+            return section;
+          })
+        );
+      }
+
+      return videoUrl;
+    } catch (error) {
+      console.error("Error uploading video:", error);
+      throw error;
+    }
+  };
+
+  // NEW: Save article content to backend
+  const saveArticleToBackend = async (
+    sectionId: string,
+    lectureId: string,
+    articleContent: string
+  ) => {
+    try {
+      const numericLectureId = parseInt(lectureId);
+      if (isNaN(numericLectureId)) {
+        throw new Error("Invalid lecture ID");
+      }
+
+      const a = await saveArticleToLecture(numericLectureId, articleContent);
+      console.log("article", a);
+
+      // Update local state after successful backend save
+      setSections((prevSections) =>
+        prevSections.map((section) => {
+          if (section.id === sectionId) {
+            return {
+              ...section,
+              lectures: section.lectures.map((lecture) => {
+                if (lecture.id === lectureId) {
+                  return {
+                    ...lecture,
+                    lectureNotes: articleContent,
+                    // Also update description if it's an article-type lecture
+                    contentType: "article",
+                  };
+                }
+                return lecture;
+              }),
+            };
+          }
+          return section;
+        })
+      );
+
+      return articleContent;
+    } catch (error) {
+      console.error("Error saving article:", error);
+      throw error;
+    }
+  };
+
+  // Enhanced updateLectureWithUploadedContent to handle video uploads to backend
+  const updateLectureWithUploadedContent = (
+    sectionId: string,
+    lectureId: string,
+    contentType: ContentType,
+    fileUrl: string,
+    fileName: string
+  ) => {
+    setSections((prevSections) =>
+      prevSections.map((section) => {
+        if (section.id === sectionId) {
+          return {
+            ...section,
+            lectures: section.lectures.map((lecture) => {
+              if (lecture.id === lectureId) {
+                if (contentType === ContentType.VIDEO) {
+                  return {
+                    ...lecture,
+                    videos: [
+                      ...lecture.videos,
+                      { url: fileUrl, name: fileName },
+                    ],
+                    videoUrl: fileUrl, // Store the video URL
+                  };
+                } else if (contentType === ContentType.FILE) {
+                  return {
+                    ...lecture,
+                    attachedFiles: [
+                      ...lecture.attachedFiles,
+                      { url: fileUrl, name: fileName },
+                    ],
+                  };
+                }
+              }
+              return lecture;
+            }),
+          };
+        }
+        return section;
+      })
+    );
+  };
 
   // Modified to accept name and objective parameters and integrate with backend
   const addSection = async (
@@ -339,7 +523,6 @@ export const useSections = (
         toast.error("You must have at least one section");
         return prevSections;
       }
-      toast.success("Section deleted");
       return prevSections.filter((section) => section.id !== sectionId);
     });
   };
@@ -359,7 +542,6 @@ export const useSections = (
         return section;
       })
     );
-    toast.success("Curriculum item deleted");
   };
 
   // Toggle section expansion
@@ -561,78 +743,6 @@ export const useSections = (
                   contentType === ContentType.VIDEO
                 ) {
                   return lecture;
-                }
-              }
-              return lecture;
-            }),
-          };
-        }
-        return section;
-      })
-    );
-  };
-
-  // Save description
-  const saveDescription = (
-    sectionId: string,
-    lectureId: string,
-    description: string
-  ) => {
-    setSections((prevSections) =>
-      prevSections.map((section) => {
-        if (section.id === sectionId) {
-          return {
-            ...section,
-            lectures: section.lectures.map((lecture) => {
-              if (lecture.id === lectureId) {
-                return {
-                  ...lecture,
-                  description: description,
-                };
-              }
-              return lecture;
-            }),
-          };
-        }
-        return section;
-      })
-    );
-
-    toast.success("Description saved");
-    return description;
-  };
-
-  // Update lecture with uploaded content
-  const updateLectureWithUploadedContent = (
-    sectionId: string,
-    lectureId: string,
-    contentType: ContentType,
-    fileUrl: string,
-    fileName: string
-  ) => {
-    setSections((prevSections) =>
-      prevSections.map((section) => {
-        if (section.id === sectionId) {
-          return {
-            ...section,
-            lectures: section.lectures.map((lecture) => {
-              if (lecture.id === lectureId) {
-                if (contentType === ContentType.VIDEO) {
-                  return {
-                    ...lecture,
-                    videos: [
-                      ...lecture.videos,
-                      { url: fileUrl, name: fileName },
-                    ],
-                  };
-                } else if (contentType === ContentType.FILE) {
-                  return {
-                    ...lecture,
-                    attachedFiles: [
-                      ...lecture.attachedFiles,
-                      { url: fileUrl, name: fileName },
-                    ],
-                  };
                 }
               }
               return lecture;
@@ -963,5 +1073,10 @@ export const useSections = (
     getDefaultCodeTemplate,
     updateQuiz,
     sectionLoading, // Expose loading state
+    uploadVideoToBackend,
+    saveArticleToBackend,
+    // NEW: Expose video upload states
+    videoUploading,
+    videoUploadProgress,
   };
 };

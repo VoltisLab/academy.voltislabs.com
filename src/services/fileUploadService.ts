@@ -53,7 +53,6 @@ export const uploadFile = async (file: File, filetype: FileTypeEnum): Promise<st
     console.log(data)
 
     if (data?.upload?.success) {
-      toast.success("File uploaded successfully!");
       return data.upload.baseUrl;
     } else {
       toast.error("File upload failed");

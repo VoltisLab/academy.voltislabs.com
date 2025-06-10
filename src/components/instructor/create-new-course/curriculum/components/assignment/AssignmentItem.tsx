@@ -113,7 +113,6 @@ const AssignmentItem: React.FC<AssignmentItemProps> = ({
       onEditAssignment(extendedLecture);
     }
   };
-
   return (
     <div
       className={`mb-3 bg-white border border-gray-300 ${

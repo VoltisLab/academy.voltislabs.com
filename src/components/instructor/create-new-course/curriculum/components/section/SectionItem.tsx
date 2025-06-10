@@ -16,12 +16,14 @@ import {
   EnhancedLecture,
   SourceCodeFile,
   ExternalResourceItem,
+  ContentType,
 } from "@/lib/types";
 // Import the components
 import { ActionButtons } from "./ActionButtons";
 import LectureItem from "../lecture/LectureItem";
 import AssignmentItem from "../assignment/AssignmentItem";
 import AssignmentForm from "../assignment/AssignmentForm";
+import { apolloClient } from "@/lib/apollo-client";
 import QuizForm from "../quiz/QuizForm";
 import QuizItem from "../quiz/QuizItem";
 import CodingExerciseForm from "../code/CodingExcerciseForm";
@@ -30,9 +32,12 @@ import PracticeItem from "../practice/PracticeItem";
 import PracticeForm from "../practice/PracticeForm";
 import { FaHamburger } from "react-icons/fa";
 import { useSections } from "@/hooks/useSection";
+import { CREATE_ASSIGNMENT } from "@/api/assignment/mutation";
+import { useAssignmentService } from "@/services/useAssignmentService";
 
 // Updated SectionItemProps interface with the missing property
 interface SectionItemProps {
+  setNewassignment?: React.Dispatch<React.SetStateAction<number | undefined>>;
   section: {
     id: string;
     name: string;
@@ -50,14 +55,14 @@ interface SectionItemProps {
     sectionId: string,
     newName: string,
     objective?: string
-  ) => void;
+  ) => Promise<void>;
   updateLectureName: (
     sectionId: string,
     lectureId: string,
     newName: string
-  ) => void;
-  deleteSection: (sectionId: string) => void;
-  deleteLecture: (sectionId: string, lectureId: string) => void;
+  ) => Promise<void>;
+  deleteSection: (sectionId: string) => Promise<void>;
+  deleteLecture: (sectionId: string, lectureId: string) => Promise<void>;
   moveSection: (sectionId: string, direction: "up" | "down") => void;
   moveLecture: (
     sectionId: string,
@@ -74,7 +79,7 @@ interface SectionItemProps {
   ) => void;
   saveDescription?: (
     sectionId: string,
-    lectureId: string,
+    lectureId: number,
     description: string
   ) => void;
   activeContentSection: { sectionId: string; lectureId: string } | null;
@@ -95,9 +100,8 @@ interface SectionItemProps {
   addLecture: (
     sectionId: string,
     contentType: ContentItemType,
-    title?: string,
-    description?: string
-  ) => any;
+    title?: string
+  ) => Promise<string>;
   addCurriculumItem: (sectionId: string) => void;
   updateQuizQuestions?: (
     sectionId: string,
@@ -163,10 +167,29 @@ interface SectionItemProps {
   ) => void;
   addExternalResource?: (resource: ExternalResourceItem) => void;
   removeExternalResource?: (title: string, lectureId: string) => void;
+
+  // NEW: Loading state prop
+  isLoading?: boolean;
+
+  // NEW: Backend integration props
+  uploadVideoToBackend?: (
+    sectionId: string,
+    lectureId: string,
+    videoFile: File,
+    onProgress?: (progress: number) => void
+  ) => Promise<string | null>;
+  saveArticleToBackend?: (
+    sectionId: string,
+    lectureId: string,
+    articleContent: string
+  ) => Promise<string>;
+  videoUploading?: boolean;
+  videoUploadProgress?: number;
 }
 
 export default function SectionItem({
   section,
+  setNewassignment,
   index,
   totalSections,
   editingSectionId,
@@ -214,6 +237,12 @@ export default function SectionItem({
   removeSourceCodeFile,
   addExternalResource,
   removeExternalResource,
+  // NEW: Receive loading state
+  isLoading = false,
+  uploadVideoToBackend,
+  videoUploading,
+  videoUploadProgress,
+  saveArticleToBackend,
 }: SectionItemProps) {
   const sectionNameInputRef = useRef<HTMLInputElement>(null);
   // State for toggling action buttons
@@ -257,20 +286,22 @@ export default function SectionItem({
   const startEditingSection = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     // Set initial values when opening the form
+    console.log("section===", section);
     setEditTitle(section.name);
     setEditObjective(section.objective || "");
     setShowEditForm(true);
   };
 
-  const handleSaveEdit = () => {
+  const handleSaveEdit = async () => {
     if (editTitle.trim()) {
-      // Call the update function with current values
-      updateSectionName(section.id, editTitle, editObjective);
-
-      // Use setTimeout to ensure state updates before hiding the form
-      setTimeout(() => {
+      try {
+        // Call the async update function with current values
+        await updateSectionName(section.id, editTitle, editObjective);
         setShowEditForm(false);
-      }, 0);
+      } catch (error) {
+        console.error("Failed to save section edit:", error);
+        // Error is already handled in the service with toast
+      }
     }
   };
 
@@ -283,10 +314,58 @@ export default function SectionItem({
   };
 
   // Handler for adding an assignment
-  const handleAddAssignment = (sectionId: string, title: string) => {
-    // First add the lecture with assignment content type
-    const newLectureId = addLecture(sectionId, "assignment", title);
-    setShowAssignmentForm(false);
+  const { createAssignment } = useAssignmentService();
+  const { setSections, addLecture: addLocalLecture } = useSections([]);
+
+  const handleAddAssignment = async (sectionId: string, title: string) => {
+    try {
+      // Use the service method instead of apolloClient directly
+      const response = await createAssignment({
+        sectionId: Number(sectionId),
+        title,
+      });
+
+      if (response.createAssignment) {
+        setNewassignment?.(Number(response.createAssignment.assignment.id));
+      }
+
+      if (response.createAssignment.success) {
+        await addLecture(sectionId, "assignment", title);
+        setShowAssignmentForm(false);
+        // Add to local state with backend ID
+        const backendLectureId = response.createAssignment.assignment.id;
+        const localLectureId = await addLocalLecture(
+          sectionId,
+          "assignment",
+          title
+        );
+
+        // Update the local lecture with the backend ID
+        setSections((prevSections) =>
+          prevSections.map((section) => {
+            if (section.id === sectionId) {
+              return {
+                ...section,
+                assignments: section.lectures.map((lecture) =>
+                  lecture.id === localLectureId
+                    ? { ...lecture, id: backendLectureId }
+                    : lecture
+                ),
+              };
+            }
+            return section;
+          })
+        );
+
+        return backendLectureId;
+      }
+
+      return "";
+      // Then add the lecture
+    } catch (error) {
+      console.error("Failed to create assignment:", error);
+      // Error and toast already handled in the service
+    }
   };
 
   // Enhanced handler for adding a quiz - uses addQuiz instead of addLecture
@@ -302,26 +381,18 @@ export default function SectionItem({
       description,
     });
 
-    setQuizOperationLoading(true);
-
-    // if (addQuiz) {
-    // Use the addQuiz function which properly handles the quiz creation with description
-    // await addQuiz?.(sectionId, title, description);
-    // console.log(
-    //   "kkkkkkkkkkkkkk",
-    //   await addQuiz?.(sectionId, title, description)
-    // );
-    // } else {
-    // Fallback to the old method if addQuiz is not available
-    const newLectureId = await addLecture(
-      sectionId,
-      "quiz",
-      title,
-      description
-    );
-
-    setQuizOperationLoading(false);
-    // }
+    if (addQuiz) {
+      // Use the addQuiz function which properly handles the quiz creation with description
+      addQuiz(sectionId, title, description);
+    } else {
+      try {
+        // Fallback to the new async addLecture method
+        await addLecture(sectionId, "quiz", title);
+      } catch (error) {
+        console.error("Failed to add quiz:", error);
+        // Error is already handled in the service with toast
+      }
+    }
 
     setShowQuizForm(false);
   };
@@ -346,14 +417,18 @@ export default function SectionItem({
   };
 
   // Add handler for adding a coding exercise
-  const handleAddCodingExercise = (sectionId: string, title: string) => {
-    // Add the lecture with coding-exercise content type
-    const newLectureId = addLecture(sectionId, "coding-exercise", title);
-    setShowCodingExerciseForm(false);
+  const handleAddCodingExercise = async (sectionId: string, title: string) => {
+    try {
+      // Add the lecture with coding-exercise content type
+      await addLecture(sectionId, "coding-exercise", title);
+      setShowCodingExerciseForm(false);
+    } catch (error) {
+      console.error("Failed to add coding exercise:", error);
+      // Error is already handled in the service with toast
+    }
   };
-
   // Enhanced lecture adding handler that properly handles title
-  const handleAddLecture = (
+  const handleAddLecture = async (
     sectionId: string,
     contentType: ContentItemType,
     title?: string
@@ -385,9 +460,13 @@ export default function SectionItem({
       setShowQuizForm(false);
       setShowCodingExerciseForm(false);
     } else {
-      // Make sure to always pass the title parameter to addLecture
-      const lectureId = addLecture(sectionId, contentType, title);
-      console.log("New lecture created with ID:", lectureId);
+      try {
+        // Make sure to always pass the title parameter to addLecture
+        await addLecture(sectionId, contentType, title);
+      } catch (error) {
+        console.error("Failed to add lecture:", error);
+        // Error is already handled in the service with toast
+      }
     }
 
     setShowActionButtons(false);
@@ -398,7 +477,7 @@ export default function SectionItem({
 
     saveDescription(
       activeDescriptionSection.sectionId,
-      activeDescriptionSection.lectureId,
+      Number(activeDescriptionSection.lectureId),
       currentDescription
     );
 
@@ -406,26 +485,31 @@ export default function SectionItem({
     setActiveDescriptionSection(null);
   };
 
-  const handleAddPractice = (
+  const handleAddPractice = async (
     sectionId: string,
     title: string,
     description: string
   ) => {
-    // Add the lecture with practice content type
-    const newLectureId = addLecture(sectionId, "practice", title);
+    try {
+      // Add the lecture with practice content type
+      await addLecture(sectionId, "practice", title);
 
-    // If description is provided, update it
-    if (description) {
-      const sections = [...section.lectures];
-      const lectureIndex = sections.findIndex(
-        (lecture) => lecture.id === newLectureId
-      );
-      if (lectureIndex !== -1) {
-        sections[lectureIndex].description = description;
+      // If description is provided, update it
+      if (description) {
+        const sections = [...section.lectures];
+        const lectureIndex = sections.findIndex(
+          (lecture) => lecture.name === title
+        );
+        if (lectureIndex !== -1) {
+          sections[lectureIndex].description = description;
+        }
       }
-    }
 
-    setShowPracticeForm(false);
+      setShowPracticeForm(false);
+    } catch (error) {
+      console.error("Failed to add practice:", error);
+      // Error is already handled in the service with toast
+    }
   };
 
   // Custom toggleAddResourceModal that updates local state
@@ -507,14 +591,6 @@ export default function SectionItem({
     lectureId: string,
     updatedLecture: EnhancedLecture
   ) => {
-    console.log("📝 Updating lecture content:", {
-      sectionId,
-      lectureId,
-      actualContentType: updatedLecture.actualContentType,
-      hasVideoContent: updatedLecture.hasVideoContent,
-      hasArticleContent: updatedLecture.hasArticleContent,
-    });
-
     // Store the enhanced lecture data
     setEnhancedLectures((prev) => ({
       ...prev,
@@ -681,7 +757,7 @@ export default function SectionItem({
       <LectureItem
         key={lecture.id}
         lecture={lecture}
-        lectureIndex={typeSpecificIndex} // Use lecture-specific index
+        lectureIndex={typeSpecificIndex}
         totalLectures={
           section.lectures.filter(
             (l) => l.contentType === "video" || !l.contentType
@@ -707,13 +783,12 @@ export default function SectionItem({
         handleDragLeave={handleDragLeave}
         draggedLecture={draggedLecture}
         dragTarget={dragTarget}
-        sections={allSections} // Pass the current section if needed
+        sections={allSections}
         updateCurrentDescription={updateCurrentDescription}
-        saveDescription={handleSaveDescription} // Use the local wrapper function
+        saveDescription={handleSaveDescription}
         currentDescription={currentDescription}
         allSections={allSectionsWithEnhanced}
         updateLectureContent={updateLectureContent}
-        // FIXED: Pass global resource arrays and management functions to LectureItem
         globalUploadedFiles={globalUploadedFiles}
         globalSourceCodeFiles={globalSourceCodeFiles}
         globalExternalResources={globalExternalResources}
@@ -723,6 +798,11 @@ export default function SectionItem({
         removeSourceCodeFile={removeSourceCodeFile}
         addExternalResource={addExternalResource}
         removeExternalResource={removeExternalResource}
+        // NEW: Pass the backend functions
+        uploadVideoToBackend={uploadVideoToBackend}
+        saveArticleToBackend={saveArticleToBackend}
+        videoUploading={videoUploading}
+        videoUploadProgres={videoUploadProgress}
       />
     );
   };
@@ -768,6 +848,7 @@ export default function SectionItem({
                     className="w-full border border-gray-400 rounded px-3 py-1 focus:outline-none focus:border-2 focus:border-[#6D28D2]"
                     maxLength={80}
                     ref={sectionNameInputRef}
+                    disabled={isLoading}
                   />
                   <div className="text-right text-xs text-gray-500 mt-1">
                     {editTitle.length}/80
@@ -788,6 +869,7 @@ export default function SectionItem({
                   placeholder="Demo Section description"
                   className="w-full border border-gray-400 rounded px-3 py-1 focus:outline-none focus:border-2 focus:border-[#6D28D2]"
                   maxLength={200}
+                  disabled={isLoading}
                 />
                 <div className="text-right text-xs text-gray-500 mt-1">
                   {editObjective.length}/200
@@ -799,15 +881,17 @@ export default function SectionItem({
                   type="button"
                   onClick={() => setShowEditForm(false)}
                   className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded"
+                  disabled={isLoading}
                 >
                   Cancel
                 </button>
                 <button
                   type="button"
                   onClick={handleSaveEdit}
-                  className="px-4 py-2 text-sm font-medium bg-[#6D28D2] text-white rounded hover:bg-[#7B3FE4]"
+                  className="px-4 py-2 text-sm font-medium bg-[#6D28D2] text-white rounded hover:bg-[#7B3FE4] disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={!editTitle.trim() || isLoading}
                 >
-                  Save Section
+                  {isLoading ? "Saving..." : "Save Section"}
                 </button>
               </div>
             </div>
@@ -820,7 +904,7 @@ export default function SectionItem({
                 </h3>
 
                 {/* Edit and Delete buttons only visible on hover */}
-                {isHovering && (
+                {isHovering && !isLoading && (
                   <>
                     <button
                       onClick={(e) => startEditingSection(e)}
@@ -829,9 +913,9 @@ export default function SectionItem({
                       <Edit3 className="w-3 h-3" />
                     </button>
                     <button
-                      onClick={(e) => {
+                      onClick={async (e) => {
                         e.stopPropagation();
-                        deleteSection(section.id);
+                        await deleteSection(section.id);
                       }}
                       className="text-gray-500 hover:text-red-600"
                     >
@@ -841,7 +925,7 @@ export default function SectionItem({
                 )}
               </div>
 
-              {isHovering && (
+              {isHovering && !isLoading && (
                 <div className="flex items-center space-x-2">
                   <AlignJustify className="w-5 h-5 text-gray-500 cursor-move" />
                 </div>
@@ -903,6 +987,7 @@ export default function SectionItem({
                 <button
                   onClick={handleCurriculumButtonClick}
                   className="-mx-1.5 w-36 flex items-center text-[#6D28D2] border border-[#6D28D2] bg-white hover:bg-indigo-50 hover:border-[#6D28D2] px-1 py-2 rounded-sm text-sm font-bold"
+                  disabled={isLoading}
                 >
                   <Plus className="w-4 h-4 mr-1 text-xs" color="#666" />{" "}
                   Curriculum item
@@ -937,9 +1022,10 @@ export default function SectionItem({
                       onAddLecture={handleAddLecture}
                       onShowTypeSelector={() => {
                         // For the lecture button - directly add a video lecture
-                        addLecture(section.id, "video");
+                        handleAddLecture(section.id, "video");
                         setShowActionButtons(false);
                       }}
+                      isLoading={isLoading}
                     />
                   </div>
                 </div>
