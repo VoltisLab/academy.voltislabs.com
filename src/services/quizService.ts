@@ -52,7 +52,7 @@ export const useQuizOperations = () => {
   const addQuestionToQuiz = async (variables: {
     quizId: number;
     text: string;
-    questionType: "MULTIPLE_CHOICE"; // Updated enum value
+    questionType: "MC"; // Updated enum value
     order: number;
     explanation?: string;
     mediaUrl?: string;
@@ -64,7 +64,7 @@ export const useQuizOperations = () => {
       input: {
         // Wrap in 'input' object if your mutation expects it
         ...variables,
-        questionType: "MULTIPLE_CHOICE", // Ensure consistent enum value
+        questionType: "MC", // Ensure consistent enum value
       },
     });
   };
