@@ -8,6 +8,8 @@ import toast from "react-hot-toast";
 import { ExtendedLecture } from "@/lib/types";
 import AssignmentPreview from "./AssignmentPreview";
 import { useAssignment } from "@/context/AssignmentDataContext";
+import { UpdateAssignmentVariables } from "@/api/assignment/mutation";
+import { useAssignmentService } from "@/services/useAssignmentService";
 
 // Types
 interface AssignmentQuestion {
@@ -21,11 +23,13 @@ interface AssignmentEditorProps {
   initialData?: ExtendedLecture;
   onClose: () => void;
   onSave: (data: ExtendedLecture) => void;
+  newAssinment?: number
 }
 
 // Main Assignment Editor Component
 const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
   initialData,
+  newAssinment,
   onClose,
   onSave,
 }) => {
@@ -113,14 +117,27 @@ const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
     setShowPublishModal(true);
     // }
   };
+  const {updateAssignment} = useAssignmentService()
 
-  const handleConfirmPublish = () => {
+  const handleConfirmPublish = async() => {
     if (!validateAssignment()) {
+      
       setShowPublishModal(false);
       return;
     }
 
     const publishedData = { ...assignmentData, isPublished: true };
+    const variables: UpdateAssignmentVariables = {
+        assignmentId: Number(newAssinment),
+        title: publishedData.assignmentTitle,
+        description: publishedData.assignmentDescription,
+        estimatedDurationMinutes: publishedData.estimatedDuration,
+        instructions: publishedData.assignmentInstructions,
+        resourceUrl: publishedData.instructionalResource?.url,
+        videoUrl: publishedData.instructionalVideo?.url
+      };
+
+    await updateAssignment(variables);
     onSave(publishedData);
     setShowPublishModal(false);
     setPublishSuccess(true);

@@ -463,7 +463,7 @@ export default function LectureItem({
       console.log("Section was collapsed, expanding it");
     }
   };
-
+console.log("lectureid ===", lecture.id)
   // FIXED: Updated createEnhancedSections function with proper type conversion
   const createEnhancedSections = () => {
     if (!allSections || allSections.length === 0) {
@@ -546,7 +546,6 @@ export default function LectureItem({
       }) || []
     }));
   };
-
   // FIXED: Updated handleExternalResourceAdd function with proper typing
   const handleExternalResourceAdd = (title: string, url: string, name: string) => {
     if (addExternalResource) {
