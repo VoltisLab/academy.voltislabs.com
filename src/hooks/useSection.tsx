@@ -323,7 +323,7 @@ export const useSections = (
         })
       );
 
-      // toast.success("Quiz created successfully");
+      toast.success("Quiz created successfully");
       return backendQuizId;
     } catch (error) {
       toast.error("Failed to create quiz");
@@ -359,7 +359,6 @@ export const useSections = (
         return section;
       })
     );
-
     toast.success("Curriculum item deleted");
   };
 
@@ -714,123 +713,123 @@ export const useSections = (
     });
   };
 
-  // const updateQuizQuestions = (
-  //   sectionId: string,
-  //   quizId: string,
-  //   questions: Question[]
-  // ) => {
-  //   setSections((prevSections) =>
-  //     prevSections.map((section) => {
-  //       if (section.id === sectionId) {
-  //         return {
-  //           ...section,
-  //           lectures: section.lectures.map((lecture) => {
-  //             if (lecture.id === quizId && lecture.contentType === "quiz") {
-  //               return {
-  //                 ...lecture,
-  //                 questions: questions,
-  //               };
-  //             }
-  //             return lecture;
-  //           }),
-  //         };
-  //       }
-  //       return section;
-  //     })
-  //   );
-
-  //   toast.success("Quiz questions updated");
-  // };
-
-  const updateQuizQuestions = async (
+  const updateQuizQuestions = (
     sectionId: string,
     quizId: string,
     questions: Question[]
   ) => {
-    try {
-      console.log("From Updattttttte");
-
-      // Then sync with backend
-      const numericQuizId = parseInt(quizId);
-      const currentQuestions =
-        sections
-          .find((s) => s.id === sectionId)
-          ?.lectures.find((l) => l.id === quizId)?.questions || [];
-
-      // For simplicity, we'll just add new questions here
-      // You might want to implement more sophisticated diffing
-      for (const question of questions) {
-        if (!question.id) {
-          // New question - add to backend
-          const choices: ChoiceInputType[] = question.answers.map(
-            (answer, index) => ({
-              text: answer.text,
-              isCorrect: index === question.correctAnswerIndex,
-              order: index,
-            })
-          );
-
-          await addQuestionToQuizBackend({
-            quizId: numericQuizId,
-            text: question.text,
-            questionType: "MC",
-            order: questions.indexOf(question),
-            explanation: "",
-            choices,
-          });
-        } else {
-          // Existing question - update in backend
-          const choices: ChoiceInputType[] = question.answers.map(
-            (answer, index) => ({
-              text: answer.text,
-              isCorrect: index === question.correctAnswerIndex,
-              order: index,
-            })
-          );
-
-          await updateQuestionBackend({
-            questionId: parseInt(question.id),
-            text: question.text,
-            explanation: "",
-            choices,
-          });
+    setSections((prevSections) =>
+      prevSections.map((section) => {
+        if (section.id === sectionId) {
+          return {
+            ...section,
+            lectures: section.lectures.map((lecture) => {
+              if (lecture.id === quizId && lecture.contentType === "quiz") {
+                return {
+                  ...lecture,
+                  questions: questions,
+                };
+              }
+              return lecture;
+            }),
+          };
         }
+        return section;
+      })
+    );
 
-        // Handle deleted questions
-        const previousQuestions = currentQuestions;
-        const currentQuestionIds = questions.map((q) => q.id);
-        for (const question of previousQuestions) {
-          if (question.id && !currentQuestionIds.includes(question.id)) {
-            await deleteQuestionBackend({ questionId: parseInt(question.id) });
-          }
-        }
-
-        // Then update local state
-        setSections((prevSections) =>
-          prevSections.map((section) => {
-            if (section.id === sectionId) {
-              return {
-                ...section,
-                lectures: section.lectures.map((lecture) => {
-                  if (lecture.id === quizId) {
-                    return {
-                      ...lecture,
-                      questions: questions,
-                    };
-                  }
-                  return lecture;
-                }),
-              };
-            }
-            return section;
-          })
-        );
-      }
-    } catch (error) {
-      toast.error("Failed to update questions");
-      console.error(error);
-    }
+    toast.success("Quiz questions updated");
   };
+
+  // const updateQuizQuestions = async (
+  //   sectionId: string,
+  //   quizId: string,
+  //   questions: Question[]
+  // ) => {
+  //   try {
+  //     console.log("From Updattttttte");
+
+  //     // Then sync with backend
+  //     const numericQuizId = parseInt(quizId);
+  //     const currentQuestions =
+  //       sections
+  //         .find((s) => s.id === sectionId)
+  //         ?.lectures.find((l) => l.id === quizId)?.questions || [];
+
+  //     // For simplicity, we'll just add new questions here
+  //     // You might want to implement more sophisticated diffing
+  //     for (const question of questions) {
+  //       if (!question.id) {
+  //         // New question - add to backend
+  //         const choices: ChoiceInputType[] = question.answers.map(
+  //           (answer, index) => ({
+  //             text: answer.text,
+  //             isCorrect: index === question.correctAnswerIndex,
+  //             order: index,
+  //           })
+  //         );
+
+  //         await addQuestionToQuizBackend({
+  //           quizId: numericQuizId,
+  //           text: question.text,
+  //           questionType: "MC",
+  //           order: questions.indexOf(question),
+  //           explanation: "",
+  //           choices,
+  //         });
+  //       } else {
+  //         // Existing question - update in backend
+  //         const choices: ChoiceInputType[] = question.answers.map(
+  //           (answer, index) => ({
+  //             text: answer.text,
+  //             isCorrect: index === question.correctAnswerIndex,
+  //             order: index,
+  //           })
+  //         );
+
+  //         await updateQuestionBackend({
+  //           questionId: parseInt(question.id),
+  //           text: question.text,
+  //           explanation: "",
+  //           choices,
+  //         });
+  //       }
+
+  //       // Handle deleted questions
+  //       const previousQuestions = currentQuestions;
+  //       const currentQuestionIds = questions.map((q) => q.id);
+  //       for (const question of previousQuestions) {
+  //         if (question.id && !currentQuestionIds.includes(question.id)) {
+  //           await deleteQuestionBackend({ questionId: parseInt(question.id) });
+  //         }
+  //       }
+
+  //       // Then update local state
+  //       setSections((prevSections) =>
+  //         prevSections.map((section) => {
+  //           if (section.id === sectionId) {
+  //             return {
+  //               ...section,
+  //               lectures: section.lectures.map((lecture) => {
+  //                 if (lecture.id === quizId) {
+  //                   return {
+  //                     ...lecture,
+  //                     questions: questions,
+  //                   };
+  //                 }
+  //                 return lecture;
+  //               }),
+  //             };
+  //           }
+  //           return section;
+  //         })
+  //       );
+  //     }
+  //   } catch (error) {
+  //     toast.error("Failed to update questions");
+  //     console.error(error);
+  //   }
+  // };
 
   const addQuestionToQuiz = (
     sectionId: string,

@@ -148,7 +148,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
       });
 
       if (result?.deleteQuiz?.success) {
-        // toast.success("Quiz deleted successfully!");
+        toast.success("Quiz deleted successfully!");
         deleteLecture(sectionId, lecture.id); // This updates the local state
       }
     } catch (error) {
@@ -490,36 +490,48 @@ const QuizItem: React.FC<QuizItemProps> = ({
 
   const handleAddQuestion = async (question: Question) => {
     try {
-      let newQuestions;
       setLoadingQuestion(true);
 
-      if (editingQuestionIndex !== null) {
-        // Editing existing question
-        newQuestions = [...questions];
-        newQuestions[editingQuestionIndex] = {
-          ...question,
-          // Ensure ID is preserved for edits
-          id:
-            questions[editingQuestionIndex].id ||
-            generateNumericId().toString(),
-        };
-      } else {
-        // Adding new question
-        newQuestions = [
-          ...questions,
-          {
-            ...question,
-            id: generateNumericId().toString(), // Ensure ID is string
-          },
-        ];
-      }
+      // Convert answers to backend-compatible format
+      const choices = question.answers.map((answer, idx) => ({
+        text: answer.text,
+        isCorrect: idx === question.correctAnswerIndex,
+        order: idx + 1,
+      }));
 
-      // Update both local state and backend
-      if (updateQuizQuestions) {
-        await updateQuizQuestions(sectionId, lecture.id, newQuestions);
-      }
+      // Call the backend to add the question
+      const result = await addQuestionToQuiz({
+        quizId: parseInt(lecture.id), // Make sure `quiz` is defined
+        text: question.text,
+        explanation: "",
+        maxPoints: 1, // Default points
+        order: questions.length + 1,
+        choices,
+        questionType: "MC",
+      });
+
+      const newQuestionId = result?.addQuestionToQuiz?.question?.id;
+      if (!newQuestionId)
+        throw new Error("No question ID returned from backend");
+
+      // Add the new question to the local state with the real ID
+      const newQuestions = [
+        ...questions,
+        {
+          ...question,
+          id: newQuestionId.toString(),
+        },
+      ];
+
+      console.log("New question added:", newQuestions);
 
       setQuestions(newQuestions);
+
+      if (updateQuizQuestions) {
+        updateQuizQuestions(sectionId, lecture.id, newQuestions);
+      }
+
+      toast.success("Question added successfully!");
       setShowQuestionForm(false);
       setShowQuestionTypeSelector(false);
       setExpanded(true);
@@ -527,7 +539,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
       setEditingQuestionIndex(null);
     } catch (error) {
       toast.error("Failed to save question");
-      console.error(error);
+      console.error("Error adding question:", error);
     } finally {
       setLoadingQuestion(false);
     }
@@ -585,13 +597,24 @@ const QuizItem: React.FC<QuizItemProps> = ({
 
   const handleUpdateQuestion = async (question: any, index: number) => {
     try {
+      console.log("Updating questionnnnn:", question.id);
+
+      if (!question.id || isNaN(parseInt(question.id))) {
+        throw new Error("Question ID is missing or invalid");
+      }
+
+      console.log("Updating questionnnnn:", question.id);
+
       // Convert answers to choices format
       const choices = question.answers.map((answer: any, idx: number) => ({
         text: answer.text,
         isCorrect: idx === question.correctAnswerIndex,
         order: idx + 1,
-        id: question.id ? parseInt(question.id) : undefined,
+        ...(question.id ? { id: parseInt(question.id) } : {}), // ✅ only include `id` if it's defined
       }));
+
+      console.log("Updating questionnnnn:", question.id);
+      console.log("Typeof question", typeof parseInt(question.id));
 
       const result = await updateQuestion({
         questionId: parseInt(question.id),
@@ -601,6 +624,8 @@ const QuizItem: React.FC<QuizItemProps> = ({
         choices,
         order: index + 1,
       });
+
+      console.log("Update result:", result);
 
       if (result?.updateQuestion?.success) {
         const newQuestions = [...questions];
@@ -632,8 +657,8 @@ const QuizItem: React.FC<QuizItemProps> = ({
   const handleQuestionSubmit = (question: any) => {
     if (editingQuestionIndex !== null) {
       console.log(question.id);
-      // handleUpdateQuestion(question, editingQuestionIndex);
-      handleAddQuestion(question);
+      handleUpdateQuestion(question, editingQuestionIndex);
+      // handleAddQuestion(question);
     } else {
       handleAddQuestion(question);
     }

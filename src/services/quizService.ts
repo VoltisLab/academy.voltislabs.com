@@ -82,6 +82,7 @@ export const useQuizOperations = () => {
     order?: number;
     choices?: ChoiceInputType[];
   }) => {
+    console.log("🚨 updateQuestion payload:", variables.questionId);
     return executeMutation(UPDATE_QUESTION, variables);
   };
 
@@ -105,11 +106,11 @@ export const useQuizOperations = () => {
       const { data, errors } = await apolloClient.mutate({
         mutation,
         variables,
-        context: { includeAuth: true },
         fetchPolicy: "no-cache",
       });
 
       if (errors) {
+        console.log("GraphQL errorssss:", errors);
         handleGraphQLErrors(errors);
       }
 
