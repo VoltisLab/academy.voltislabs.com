@@ -38,7 +38,6 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
   courseId,
   currentAssignment,
   setCurrentAssignment,
-
 }) => {
   const [editingSectionId, setEditingSectionId] = useState<string | null>(null);
   const [editingLectureId, setEditingLectureId] = useState<string | null>(null);
@@ -83,10 +82,17 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
   const {
     createSection,
     updateSection,
-    deleteSection, loading: sectionLoading,
+    deleteSection,
+    loading: sectionLoading,
     error: sectionError,
   } = useSectionService();
-  const { createLecture, updateLecture, deleteLecture, loading: lectureLoading, error: lectureError } = useLectureService();
+  const {
+    createLecture,
+    updateLecture,
+    deleteLecture,
+    loading: lectureLoading,
+    error: lectureError,
+  } = useLectureService();
 
   const {
     sections,
@@ -301,12 +307,11 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
     try {
       // Delete on backend
       await deleteSection({
-        sectionId: Number(sectionId)
+        sectionId: Number(sectionId),
       });
 
       // Delete from local state
       deleteLocalSection(sectionId);
-      
     } catch (error) {
       console.error("Failed to delete section:", error);
       // Error is already handled in the service with toast
@@ -323,25 +328,29 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
       // Create lecture on backend
       const response = await createLecture({
         sectionId: Number(sectionId),
-        title: title || "New Lecture"
+        title: title || "New Lecture",
       });
 
       if (response.createLecture.success) {
         // Add to local state with backend ID
         const backendLectureId = response.createLecture.lecture.id;
-        const localLectureId = addLocalLecture(sectionId, contentType, title);
-        
+        const localLectureId = await addLocalLecture(
+          sectionId,
+          contentType,
+          title
+        );
+
         // Update the local lecture with the backend ID
-        setSections(prevSections => 
-          prevSections.map(section => {
+        setSections((prevSections) =>
+          prevSections.map((section) => {
             if (section.id === sectionId) {
               return {
                 ...section,
-                lectures: section.lectures.map(lecture => 
-                  lecture.id === localLectureId 
+                lectures: section.lectures.map((lecture) =>
+                  lecture.id === localLectureId
                     ? { ...lecture, id: backendLectureId }
                     : lecture
-                )
+                ),
               };
             }
             return section;
@@ -350,7 +359,7 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
 
         return backendLectureId;
       }
-      
+
       return "";
     } catch (error) {
       console.error("Failed to create lecture:", error);
@@ -369,12 +378,11 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
       // Update on backend
       await updateLecture({
         lectureId: Number(lectureId),
-        title: newName
+        title: newName,
       });
 
       // Update local state
       updateLocalLectureName(sectionId, lectureId, newName);
-      
     } catch (error) {
       console.error("Failed to update lecture:", error);
       // Error is already handled in the service with toast
@@ -386,12 +394,11 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
     try {
       // Delete on backend
       await deleteLecture({
-        lectureId: Number(lectureId)
+        lectureId: Number(lectureId),
       });
 
       // Delete from local state
       deleteLocalLecture(sectionId, lectureId);
-      
     } catch (error) {
       console.error("Failed to delete lecture:", error);
       // Error is already handled in the service with toast
@@ -637,11 +644,10 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
     }
   };
 
-
-//new assignment 
-const [newAssinment, setNewassignment] = useState<number | undefined>(undefined)
-
-
+  //new assignment
+  const [newAssinment, setNewassignment] = useState<number | undefined>(
+    undefined
+  );
 
   const handleDragLeave = () => {
     setDragTarget({ sectionId: null, lectureId: null });
@@ -770,65 +776,65 @@ const [newAssinment, setNewassignment] = useState<number | undefined>(undefined)
           </button>
         </div>
         <div className="bg-white border border-gray-200 mb-6 mt-20">
-             {sections.length > 0 ? (
-          sections.map((section, index) => (
-            <SectionItem
-              setNewassignment={setNewassignment}
-              key={section.id}
-              section={section}
-              index={index}
-              totalSections={sections.length}
-              editingSectionId={editingSectionId}
-              setEditingSectionId={setEditingSectionId}
-              updateSectionName={updateSectionName}
-              deleteSection={handleDeleteSection}
-              moveSection={moveSection}
-              toggleSectionExpansion={toggleSectionExpansion}
-              isDragging={isDragging}
-              handleDragStart={handleDragStart}
-              handleDragEnd={handleDragEnd}
-              handleDragOver={(e) => handleDragOver(e, section.id)}
-              handleDragLeave={handleDragLeave}
-              handleDrop={(e) => handleDrop(e, section.id)}
-              addLecture={handleAddLecture}
-              editingLectureId={editingLectureId}
-              setEditingLectureId={setEditingLectureId}
-              updateLectureName={updateLectureName}
-              deleteLecture={handleDeleteLecture}
-              moveLecture={moveLecture}
-              toggleContentSection={contentSectionModal.toggle}
-              toggleAddResourceModal={toggleAddResourceModal}
-              toggleDescriptionEditor={toggleDescriptionEditor}
-              activeContentSection={contentSectionModal.activeSection}
-              addCurriculumItem={() => setShowContentTypeSelector(true)}
-              savePracticeCode={savePracticeCode}
-              draggedSection={draggedSection}
-              draggedLecture={draggedLecture}
-              dragTarget={dragTarget}
-              saveDescription={saveSectionDescription}
-              openCodingExerciseModal={handleOpenCodingExerciseModal}
-              onEditAssignment={handleOpenAssignmentEditor}
-              allSections={getFormattedSectionsForPreview()}
-              updateQuiz={updateQuiz}
+          {sections.length > 0 ? (
+            sections.map((section, index) => (
+              <SectionItem
+                setNewassignment={setNewassignment}
+                key={section.id}
+                section={section}
+                index={index}
+                totalSections={sections.length}
+                editingSectionId={editingSectionId}
+                setEditingSectionId={setEditingSectionId}
+                updateSectionName={updateSectionName}
+                deleteSection={handleDeleteSection}
+                moveSection={moveSection}
+                toggleSectionExpansion={toggleSectionExpansion}
+                isDragging={isDragging}
+                handleDragStart={handleDragStart}
+                handleDragEnd={handleDragEnd}
+                handleDragOver={(e) => handleDragOver(e, section.id)}
+                handleDragLeave={handleDragLeave}
+                handleDrop={(e) => handleDrop(e, section.id)}
+                addLecture={handleAddLecture}
+                editingLectureId={editingLectureId}
+                setEditingLectureId={setEditingLectureId}
+                updateLectureName={updateLectureName}
+                deleteLecture={handleDeleteLecture}
+                moveLecture={moveLecture}
+                toggleContentSection={contentSectionModal.toggle}
+                toggleAddResourceModal={toggleAddResourceModal}
+                toggleDescriptionEditor={toggleDescriptionEditor}
+                activeContentSection={contentSectionModal.activeSection}
+                addCurriculumItem={() => setShowContentTypeSelector(true)}
+                savePracticeCode={savePracticeCode}
+                draggedSection={draggedSection}
+                draggedLecture={draggedLecture}
+                dragTarget={dragTarget}
+                saveDescription={saveSectionDescription}
+                openCodingExerciseModal={handleOpenCodingExerciseModal}
+                onEditAssignment={handleOpenAssignmentEditor}
+                allSections={getFormattedSectionsForPreview()}
+                updateQuiz={updateQuiz}
                 updateQuizQuestions={updateQuizQuestions}
-              globalUploadedFiles={globalUploadedFiles}
-              globalSourceCodeFiles={globalSourceCodeFiles}
-              globalExternalResources={globalExternalResources}
-              addUploadedFile={addUploadedFile}
-              removeUploadedFile={removeUploadedFile}
-              addSourceCodeFile={addSourceCodeFile}
-              removeSourceCodeFile={removeSourceCodeFile}
-              addExternalResource={addExternalResource}
-              removeExternalResource={removeExternalResource}
-              isLoading={isLoading}
-              // NEW: Pass the new backend functions
-              uploadVideoToBackend={uploadVideoToBackend}
-              saveArticleToBackend={saveArticleToBackend}
-              videoUploading={videoUploading}
-              videoUploadProgress={videoUploadProgress}
-            />
-          ))
-        ) : (
+                globalUploadedFiles={globalUploadedFiles}
+                globalSourceCodeFiles={globalSourceCodeFiles}
+                globalExternalResources={globalExternalResources}
+                addUploadedFile={addUploadedFile}
+                removeUploadedFile={removeUploadedFile}
+                addSourceCodeFile={addSourceCodeFile}
+                removeSourceCodeFile={removeSourceCodeFile}
+                addExternalResource={addExternalResource}
+                removeExternalResource={removeExternalResource}
+                isLoading={isLoading}
+                // NEW: Pass the new backend functions
+                uploadVideoToBackend={uploadVideoToBackend}
+                saveArticleToBackend={saveArticleToBackend}
+                videoUploading={videoUploading}
+                videoUploadProgress={videoUploadProgress}
+              />
+            ))
+          ) : (
             <div className="flex justify-center border border-gray-400 bg-gray-100 items-center min-h-10 ">
               {/* This is an empty state for when there are no sections */}
             </div>

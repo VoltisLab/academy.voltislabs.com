@@ -107,7 +107,7 @@ interface SectionItemProps {
     sectionId: string,
     quizId: string,
     questions: any[]
-  ) => Promise<void>;
+  ) => void;
 
   // New prop for practice exercises
   savePracticeCode?: (

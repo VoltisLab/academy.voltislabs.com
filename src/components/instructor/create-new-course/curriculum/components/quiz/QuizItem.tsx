@@ -50,7 +50,7 @@ interface QuizItemProps {
     sectionId: string,
     quizId: string,
     questions: any[]
-  ) => Promise<void>;
+  ) => void;
   sections: any[]; // All sections for preview
   allSections: any[];
   onEditQuiz?: (
