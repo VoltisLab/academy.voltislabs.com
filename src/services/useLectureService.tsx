@@ -28,12 +28,14 @@ export const useLectureService = () => {
   var [videoUploadProgress, setVideoUploadProgress] = useState(0);
   const [error, setError] = useState<Error | null>(null);
 
+
   const createLecture = async (variables: CreateLectureVariables) => {
     try {
       setLoading(true);
       setError(null);
 
       const { data, errors } = await apolloClient.mutate<CreateLectureResponse>({
+        
         mutation: CREATE_LECTURE,
         variables,
         context: {

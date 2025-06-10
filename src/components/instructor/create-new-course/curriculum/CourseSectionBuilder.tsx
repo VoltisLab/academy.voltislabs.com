@@ -38,6 +38,7 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
   courseId,
   currentAssignment,
   setCurrentAssignment,
+
 }) => {
   const [editingSectionId, setEditingSectionId] = useState<string | null>(null);
   const [editingLectureId, setEditingLectureId] = useState<string | null>(null);
@@ -625,6 +626,12 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
     }
   };
 
+
+//new assignment 
+const [newAssinment, setNewassignment] = useState<number | undefined>(undefined)
+
+
+
   const handleDragLeave = () => {
     setDragTarget({ sectionId: null, lectureId: null });
   };
@@ -695,6 +702,7 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
   if (showAssignmentEditor && currentAssignment) {
     return (
       <AssignmentEditor
+        newAssinment={newAssinment}
         initialData={currentAssignment.data}
         onClose={handleCloseAssignmentEditor}
         onSave={handleSaveAssignment}
@@ -754,6 +762,7 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
              {sections.length > 0 ? (
           sections.map((section, index) => (
             <SectionItem
+              setNewassignment={setNewassignment}
               key={section.id}
               section={section}
               index={index}

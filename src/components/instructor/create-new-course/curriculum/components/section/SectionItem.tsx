@@ -16,12 +16,14 @@ import {
   EnhancedLecture,
   SourceCodeFile,
   ExternalResourceItem,
+  ContentType,
 } from "@/lib/types";
 // Import the components
 import { ActionButtons } from "./ActionButtons";
 import LectureItem from "../lecture/LectureItem";
 import AssignmentItem from "../assignment/AssignmentItem";
 import AssignmentForm from "../assignment/AssignmentForm";
+import { apolloClient } from '@/lib/apollo-client';
 import QuizForm from "../quiz/QuizForm";
 import QuizItem from "../quiz/QuizItem";
 import CodingExerciseForm from "../code/CodingExcerciseForm";
@@ -30,9 +32,12 @@ import PracticeItem from "../practice/PracticeItem";
 import PracticeForm from "../practice/PracticeForm";
 import { FaHamburger } from "react-icons/fa";
 import { useSections } from "@/hooks/useSection";
+import { CREATE_ASSIGNMENT } from "@/api/assignment/mutation";
+import { useAssignmentService } from "@/services/useAssignmentService";
 
 // Updated SectionItemProps interface with the missing property
 interface SectionItemProps {
+  setNewassignment?: React.Dispatch<React.SetStateAction<number | undefined>>
   section: {
     id: string;
     name: string;
@@ -184,6 +189,7 @@ interface SectionItemProps {
 
 export default function SectionItem({
   section,
+  setNewassignment,
   index,
   totalSections,
   editingSectionId,
@@ -278,6 +284,7 @@ export default function SectionItem({
   const startEditingSection = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     // Set initial values when opening the form
+    console.log("section===", section)
     setEditTitle(section.name);
     setEditObjective(section.objective || "");
     setShowEditForm(true);
@@ -305,16 +312,53 @@ export default function SectionItem({
   };
 
   // Handler for adding an assignment
+  const { createAssignment } = useAssignmentService();
+  const{setSections, addLecture: addLocalLecture} = useSections([])
+
   const handleAddAssignment = async (sectionId: string, title: string) => {
-    try {
-      // First add the lecture with assignment content type
+  try {
+    // Use the service method instead of apolloClient directly
+   const response = await createAssignment({ sectionId: Number(sectionId), title });
+  
+    if(response.createAssignment){
+     setNewassignment?.(Number(response.createAssignment.assignment.id));
+
+    }
+
+    if (response.createAssignment.success) {
       await addLecture(sectionId, "assignment", title);
       setShowAssignmentForm(false);
-    } catch (error) {
-      console.error("Failed to add assignment:", error);
-      // Error is already handled in the service with toast
-    }
-  };
+        // Add to local state with backend ID
+        const backendLectureId = response.createAssignment.assignment.id;
+        const localLectureId = addLocalLecture(sectionId, "assignment", title);
+        
+        // Update the local lecture with the backend ID
+        setSections(prevSections => 
+          prevSections.map(section => {
+            if (section.id === sectionId) {
+              return {
+                ...section,
+                assignments: section.lectures.map(lecture => 
+                  lecture.id === localLectureId 
+                    ? { ...lecture, id: backendLectureId }
+                    : lecture
+                )
+              };
+            }
+            return section;
+          })
+        );
+
+        return backendLectureId;
+      }
+      
+      return "";
+    // Then add the lecture
+  } catch (error) {
+    console.error("Failed to create assignment:", error);
+    // Error and toast already handled in the service
+  }
+};
 
   // Enhanced handler for adding a quiz - uses addQuiz instead of addLecture
   const handleAddQuiz = async (
@@ -374,7 +418,6 @@ export default function SectionItem({
       // Error is already handled in the service with toast
     }
   };
-
   // Enhanced lecture adding handler that properly handles title
   const handleAddLecture = async (
     sectionId: string,
