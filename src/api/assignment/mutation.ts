@@ -53,6 +53,14 @@ export const UPDATE_ASSIGNMENT_MUTATION = gql`
   }
 `;
 
+export const DELETE_ASSIGNMENT = gql`
+  mutation DeleteAssignment($assignmentId: Int!) {
+    deleteAssignment(assignmentId: $assignmentId) {
+      success
+    }
+  }
+`;
+
 export interface CreateAssignmentVariables {
   sectionId: number;
   title: string;
@@ -103,5 +111,15 @@ export interface UpdateAssignmentResponse {
      
       
     };
+  };
+}
+
+export interface DeleteAssignmentVariables {
+  assignmentId: number;
+}
+
+export interface DeleteAssignmentResponse {
+  deleteAssignment: {
+    success: boolean;
   };
 }

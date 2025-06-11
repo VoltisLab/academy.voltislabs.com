@@ -9,7 +9,10 @@ import {
   CreateAssignmentVariables,
   CreateAssignmentResponse, 
   UpdateAssignmentVariables,
-  UpdateAssignmentResponse
+  UpdateAssignmentResponse,
+  DELETE_ASSIGNMENT,
+  DeleteAssignmentResponse,
+  DeleteAssignmentVariables
 } from '@/api/assignment/mutation';
 
 export const useAssignmentService = () => {
@@ -112,11 +115,59 @@ export const useAssignmentService = () => {
     }
   };
 
+  const deleteAssignment = async (variables: DeleteAssignmentVariables) => {
+  try {
+    setLoading(true);
+    setError(null);
+
+    const { data, errors } = await apolloClient.mutate<DeleteAssignmentResponse>({
+      mutation: DELETE_ASSIGNMENT,
+      variables,
+      context: {
+        includeAuth: true
+      },
+      fetchPolicy: 'no-cache'
+    });
+
+    if (errors) {
+      console.error("GraphQL errors:", errors);
+      throw new Error(errors[0]?.message || "An error occurred during assignment deletion");
+    }
+
+    if (!data?.deleteAssignment.success) {
+      throw new Error("Failed to delete assignment");
+    }
+
+    toast.success("Assignment deleted successfully!");
+    return data;
+  } catch (err) {
+    console.error("Assignment deletion error:", err);
+
+    if (err instanceof ApolloError) {
+      const errorMessage = err.message || "Network error. Please check your connection and try again.";
+      setError(new Error(errorMessage));
+      toast.error(errorMessage);
+    } else if (err instanceof Error) {
+      setError(err);
+      toast.error(err.message);
+    } else {
+      const genericError = new Error("An unexpected error occurred");
+      setError(genericError);
+      toast.error(genericError.message);
+    }
+
+    throw err;
+  } finally {
+    setLoading(false);
+  }
+};
+
   
 
   return {
     createAssignment,
     updateAssignment,
+    deleteAssignment,
     loading,
     error
   };
