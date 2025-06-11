@@ -21,6 +21,7 @@ import NewFeatureAlert from "./NewFeatureAlert";
 import InfoBox from "./InfoBox";
 import CodingExerciseCreator from "./components/code/CodingExcerciseCreator";
 import AssignmentEditor from "./components/assignment/AssignmentEditor";
+import { useAssignmentService } from "@/services/useAssignmentService";
 
 interface CourseBuilderProps {
   onSaveNext?: () => void;
@@ -50,6 +51,10 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
   const [draggedLecture, setDraggedLecture] = useState<string | null>(null);
   const [showInfoBox, setShowInfoBox] = useState<boolean>(true);
   const [showNewFeatureAlert, setShowNewFeatureAlert] = useState<boolean>(true);
+  const [newAssinment, setNewassignment] = useState<number | undefined>(
+    undefined
+  );
+
   const [dragTarget, setDragTarget] = useState<{
     sectionId: string | null;
     lectureId: string | null;
@@ -406,6 +411,20 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
       // Error is already handled in the service with toast
     }
   };
+  // function to delete assignment
+  const { deleteAssignment } = useAssignmentService();
+  const handleDeleteAssignment = async (
+    sectionId: string,
+    lectureId: string
+  ) => {
+    try {
+      await deleteAssignment({
+        assignmentId: Number(newAssinment),
+      });
+    } catch (error) {
+      console.log("failed to delete Assignment", error);
+    }
+  };
 
   // Existing coding exercise handlers
   const handleOpenCodingExerciseModal = (
@@ -651,6 +670,8 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
     undefined
   );
 
+  //new assignment
+
   const handleDragLeave = () => {
     setDragTarget({ sectionId: null, lectureId: null });
   };
@@ -818,7 +839,6 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
                 onEditAssignment={handleOpenAssignmentEditor}
                 allSections={getFormattedSectionsForPreview()}
                 updateQuiz={updateQuiz}
-                updateQuizQuestions={updateQuizQuestions}
                 globalUploadedFiles={globalUploadedFiles}
                 globalSourceCodeFiles={globalSourceCodeFiles}
                 globalExternalResources={globalExternalResources}
