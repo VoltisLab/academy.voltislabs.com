@@ -21,7 +21,13 @@ import {
   UPDATE_ASSIGNMENT_QUESTION,
   DELETE_ASSIGNMENT_QUESTION,
   DeleteAssignmentQuestionVariables,
-  DeleteAssignmentQuestionResponse
+  DeleteAssignmentQuestionResponse,
+  CreateAssignmentQuestionSolutionVariables,
+  CreateAssignmentQuestionSolutionResponse,
+  CREATE_ASSIGNMENT_QUESTION_SOLUTION,
+  UpdateAssignmentQuestionSolutionVariables,
+  UpdateAssignmentQuestionSolutionResponse,
+  UPDATE_ASSIGNMENT_QUESTION_SOLUTION
 } from '@/api/assignment/mutation';
 
 export const useAssignmentService = () => {
@@ -222,7 +228,7 @@ const createAssignmentQuestion = async (variables: CreateAssignmentQuestionVaria
     setLoading(false);
   }
 };
-
+//updating assignment questions
   const updateAssignmentQuestion = async (variables: UpdateAssignmentQuestionVariables) => {
   try {
     setLoading(true);
@@ -269,7 +275,7 @@ const createAssignmentQuestion = async (variables: CreateAssignmentQuestionVaria
     setLoading(false);
   }
 };
-
+//deleting assignment question
 const deleteAssignmentQuestion = async (variables: DeleteAssignmentQuestionVariables) => {
   try {
     setLoading(true);
@@ -316,6 +322,105 @@ const deleteAssignmentQuestion = async (variables: DeleteAssignmentQuestionVaria
     setLoading(false);
   }
 };
+//creating assignmentquestion solution
+const createAssignmentQuestionSolution = async (
+  variables: CreateAssignmentQuestionSolutionVariables
+) => {
+  try {
+    setLoading(true);
+    setError(null);
+
+    const { data, errors } = await apolloClient.mutate<CreateAssignmentQuestionSolutionResponse>({
+      mutation: CREATE_ASSIGNMENT_QUESTION_SOLUTION,
+      variables,
+      context: {
+        includeAuth: true,
+      },
+      fetchPolicy: 'no-cache',
+    });
+
+    if (errors) {
+      console.error('GraphQL errors:', errors);
+      throw new Error(errors[0]?.message || 'An error occurred while creating the solution');
+    }
+
+    if (!data?.createAssignmentQuestionSolution.success) {
+      throw new Error('Failed to create assignment question solution');
+    }
+
+    toast.success('Solution created successfully!');
+    return data;
+  } catch (err) {
+    console.error('Solution creation error:', err);
+
+    if (err instanceof ApolloError) {
+      const errorMessage = err.message || 'Network error. Please check your connection and try again.';
+      setError(new Error(errorMessage));
+      toast.error(errorMessage);
+    } else if (err instanceof Error) {
+      setError(err);
+      toast.error(err.message);
+    } else {
+      const genericError = new Error('An unexpected error occurred');
+      setError(genericError);
+      toast.error(genericError.message);
+    }
+
+    throw err;
+  } finally {
+    setLoading(false);
+  }
+};
+//updating assignment question solution
+const updateAssignmentQuestionSolution = async (
+  variables: UpdateAssignmentQuestionSolutionVariables
+) => {
+  try {
+    setLoading(true);
+    setError(null);
+
+    const { data, errors } = await apolloClient.mutate<UpdateAssignmentQuestionSolutionResponse>({
+      mutation: UPDATE_ASSIGNMENT_QUESTION_SOLUTION,
+      variables,
+      context: {
+        includeAuth: true,
+      },
+      fetchPolicy: 'no-cache',
+    });
+
+    if (errors) {
+      console.error('GraphQL errors:', errors);
+      throw new Error(errors[0]?.message || 'An error occurred while updating the solution');
+    }
+
+    if (!data?.updateAssignmentQuestionSolution.success) {
+      throw new Error('Failed to update assignment question solution');
+    }
+
+    toast.success('Solution updated successfully!');
+    return data;
+  } catch (err) {
+    console.error('Solution update error:', err);
+
+    if (err instanceof ApolloError) {
+      const errorMessage = err.message || 'Network error. Please check your connection and try again.';
+      setError(new Error(errorMessage));
+      toast.error(errorMessage);
+    } else if (err instanceof Error) {
+      setError(err);
+      toast.error(err.message);
+    } else {
+      const genericError = new Error('An unexpected error occurred');
+      setError(genericError);
+      toast.error(genericError.message);
+    }
+
+    throw err;
+  } finally {
+    setLoading(false);
+  }
+};
+
   return {
     createAssignment,
     updateAssignment,
@@ -323,6 +428,8 @@ const deleteAssignmentQuestion = async (variables: DeleteAssignmentQuestionVaria
     createAssignmentQuestion,
     updateAssignmentQuestion,
     deleteAssignmentQuestion,
+    createAssignmentQuestionSolution,
+    updateAssignmentQuestionSolution,
     loading,
     error
   };

@@ -95,7 +95,7 @@ const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
     } else {
       // Check all questions have answers
       const unansweredQuestions = assignmentData.assignmentQuestions.filter(
-        (q) => !q.solution?.trim()
+        (q) => !q.solution?.text?.trim()
       );
       if (unansweredQuestions.length > 0) {
         errors.push("answers");

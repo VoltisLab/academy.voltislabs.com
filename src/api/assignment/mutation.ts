@@ -129,6 +129,54 @@ export const DELETE_ASSIGNMENT_QUESTION = gql`
   }
 `
 
+export const CREATE_ASSIGNMENT_QUESTION_SOLUTION = gql`
+  mutation CreateAssignmentQuestionSolution(
+    $assignmentQuestionId: Int!
+    $downloadableResourceUrl: String
+    $text: String
+    $videoUrl: String
+  ) {
+    createAssignmentQuestionSolution(
+      assignmentQuestionId: $assignmentQuestionId
+      downloadableResourceUrl: $downloadableResourceUrl
+      text: $text
+      videoUrl: $videoUrl
+    ) {
+      success
+      assignmentQuestionSolution {
+        id
+        downloadableResourceUrl
+        text
+        videoUrl
+      }
+    }
+  }
+`;
+
+export const UPDATE_ASSIGNMENT_QUESTION_SOLUTION = gql`
+  mutation UpdateAssignmentQuestionSolution(
+    $questionSolutionId: Int!
+    $downloadableResourceUrl: String
+    $text: String
+    $videoUrl: String
+  ) {
+    updateAssignmentQuestionSolution(
+      questionSolutionId: $questionSolutionId
+      downloadableResourceUrl: $downloadableResourceUrl
+      text: $text
+      videoUrl: $videoUrl
+    ) {
+      success
+      assignmentQuestionSolution {
+        id
+        text
+        videoUrl
+        downloadableResourceUrl
+      }
+    }
+  }
+`;
+
 export interface CreateAssignmentVariables {
   sectionId: number;
   title: string;
@@ -242,4 +290,39 @@ export interface DeleteAssignmentQuestionResponse{
   deleteAssignmentQuestion:{
     success: boolean
   }
+}
+
+export interface CreateAssignmentQuestionSolutionVariables {
+  assignmentQuestionId: number;
+  downloadableResourceUrl?: string;
+  text?: string;
+  videoUrl?: string;
+}
+
+export interface CreateAssignmentQuestionSolutionResponse {
+  createAssignmentQuestionSolution: {
+    success: true;
+    assignmentQuestionSolution: CreateAssignmentQuestionVariables
+  }
+}
+
+export interface UpdateAssignmentQuestionSolutionVariables {
+  questionSolutionId: number;
+  downloadableResourceUrl?: string;
+  text?: string;
+  videoUrl?: string;
+}
+
+export interface AssignmentQuestionSolution {
+  id: number;
+  text: string;
+  videoUrl: string;
+  downloadableResourceUrl: string;
+}
+
+export interface UpdateAssignmentQuestionSolutionResponse {
+  updateAssignmentQuestionSolution: {
+    success: boolean;
+    assignmentQuestionSolution: AssignmentQuestionSolution;
+  };
 }
