@@ -11,20 +11,21 @@ interface QuizFormProps {
   onAddQuiz?: (
     sectionId: string,
     title: string,
-    description: string,
-    quizId: number
-  ) => void;
+    description: string
+  ) => Promise<void>;
   onEditQuiz?: (
     sectionId: string,
     quizId: string,
     title: string,
     description: string
-  ) => void;
+  ) => Promise<void>;
   onCancel: () => void;
   isEdit?: boolean;
   initialTitle?: string;
   initialDescription?: string;
   quizId?: string;
+  loading?: boolean;
+  setShowEditQuizForm?: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 const QuizForm: React.FC<QuizFormProps> = ({
@@ -36,6 +37,8 @@ const QuizForm: React.FC<QuizFormProps> = ({
   initialTitle = "",
   initialDescription = "",
   quizId,
+  loading,
+  setShowEditQuizForm,
 }) => {
   const [title, setTitle] = useState<string>(initialTitle);
   const [description, setDescription] = useState<string>(initialDescription);
@@ -105,54 +108,74 @@ const QuizForm: React.FC<QuizFormProps> = ({
   //   }
   // };
 
+  // const handleSubmit = async () => {
+  //   if (!title.trim()) {
+  //     toast.error("Quiz title is required");
+  //     return;
+  //   }
+
+  //   try {
+  //     if (isEdit && quizId) {
+  //       // Update existing quiz
+  //       const result = await updateQuiz({
+  //         quizId: parseInt(quizId),
+  //         title: title.trim(),
+  //         description: description.trim(),
+  //         // ...settings,
+  //       });
+
+  //       if (result?.updateQuiz?.success) {
+  //         toast.success("Quiz updated successfully!");
+  //         if (onEditQuiz) {
+  //           onEditQuiz(sectionId, quizId, title.trim(), description.trim());
+  //         }
+  //       }
+  //     } else {
+  //       // Create new quiz
+  //       const result = await createQuiz({
+  //         sectionId: parseInt(sectionId),
+  //         title: title.trim(),
+  //         description: description.trim(),
+  //         // ...settings,
+  //       });
+
+  //       console.log("Resullllt", result);
+  //       if (result?.createQuiz?.success) {
+  //         toast.success("Quiz created successfully!");
+  //         if (onAddQuiz) {
+  //           onAddQuiz(
+  //             sectionId,
+  //             title.trim(),
+  //             description.trim(),
+  //             parseInt(quizId!)
+  //           );
+  //         }
+  //       }
+  //     }
+  //   } catch (error) {
+  //     console.error("Error saving quiz:", error);
+  //     toast.error("Failed to save quiz");
+  //   }
+  // };
+
+  const [quizEditLoading, setQuizEditLoading] = useState(false);
+
   const handleSubmit = async () => {
-    if (!title.trim()) {
-      toast.error("Quiz title is required");
-      return;
-    }
-
-    try {
-      if (isEdit && quizId) {
-        // Update existing quiz
-        const result = await updateQuiz({
-          quizId: parseInt(quizId),
-          title: title.trim(),
-          description: description.trim(),
-          // ...settings,
-        });
-
-        if (result?.updateQuiz?.success) {
-          toast.success("Quiz updated successfully!");
-          if (onEditQuiz) {
-            onEditQuiz(sectionId, quizId, title.trim(), description.trim());
-          }
+    setQuizEditLoading(true);
+    if (title.trim()) {
+      try {
+        if (isEdit && onEditQuiz && quizId) {
+          await onEditQuiz(sectionId, quizId, title.trim(), description.trim());
+        } else if (!isEdit && onAddQuiz) {
+          await onAddQuiz(sectionId, title.trim(), description.trim());
         }
-      } else {
-        // Create new quiz
-        const result = await createQuiz({
-          sectionId: parseInt(sectionId),
-          quizId: parseInt(quizId!),
-          title: title.trim(),
-          description: description.trim(),
-          // ...settings,
-        });
-
-        console.log("Resullllt", result);
-        if (result?.createQuiz?.success) {
-          toast.success("Quiz created successfully!");
-          if (onAddQuiz) {
-            onAddQuiz(
-              sectionId,
-              title.trim(),
-              description.trim(),
-              parseInt(quizId!)
-            );
-          }
-        }
+        setQuizEditLoading(false);
+        toast.success(isEdit ? "Quiz updated" : "Quiz created");
+        if (setShowEditQuizForm) setShowEditQuizForm(false);
+      } catch (error) {
+        toast.error("Operation failed");
+        console.error(error);
       }
-    } catch (error) {
-      console.error("Error saving quiz:", error);
-      toast.error("Failed to save quiz");
     }
   };
 
@@ -212,14 +235,16 @@ const QuizForm: React.FC<QuizFormProps> = ({
         <button
           type="button"
           onClick={handleSubmit}
-          disabled={!title.trim() || quizOperationLoading}
+          disabled={
+            !title.trim() || quizOperationLoading || loading || quizEditLoading
+          }
           className={`px-4 py-2 ${
             !title.trim()
               ? "bg-indigo-400 cursor-not-allowed"
               : "bg-purple-600 hover:bg-indigo-700"
           } text-white rounded-md focus:outline-none focus:ring-2 focus:ring-purple-600 disabled:cursor-not-allowed disabled:bg-purple-300`}
         >
-          {quizOperationLoading
+          {loading || quizEditLoading
             ? isEdit
               ? "Saving.."
               : "Adding.."

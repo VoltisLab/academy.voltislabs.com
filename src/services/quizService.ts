@@ -8,6 +8,7 @@ import {
   ADD_QUESTION_TO_QUIZ,
   UPDATE_QUESTION,
   DELETE_QUESTION,
+  DELETE_QUIZ,
 } from "@/api/course/mutation";
 import Cookies from "js-cookie";
 import { toast } from "react-hot-toast";
@@ -27,7 +28,6 @@ export const useQuizOperations = () => {
   const createQuiz = async (variables: {
     sectionId: number;
     title: string;
-    quizId: number;
     description?: string;
     allowMultipleAttempts?: boolean;
     maxAttempts?: number;
@@ -52,7 +52,7 @@ export const useQuizOperations = () => {
   const addQuestionToQuiz = async (variables: {
     quizId: number;
     text: string;
-    questionType: string;
+    questionType: "MC"; // Updated enum value
     order: number;
     explanation?: string;
     mediaUrl?: string;
@@ -60,7 +60,17 @@ export const useQuizOperations = () => {
     choices: ChoiceInputType[];
     relatedLectureId?: number;
   }) => {
-    return executeMutation(ADD_QUESTION_TO_QUIZ, variables);
+    return executeMutation(ADD_QUESTION_TO_QUIZ, {
+      input: {
+        // Wrap in 'input' object if your mutation expects it
+        ...variables,
+        questionType: "MC", // Ensure consistent enum value
+      },
+    });
+  };
+
+  const deleteQuiz = async (variables: { quizId: number }) => {
+    return executeMutation(DELETE_QUIZ, variables);
   };
 
   const updateQuestion = async (variables: {
@@ -72,6 +82,7 @@ export const useQuizOperations = () => {
     order?: number;
     choices?: ChoiceInputType[];
   }) => {
+    console.log("🚨 updateQuestion payload:", variables.questionId);
     return executeMutation(UPDATE_QUESTION, variables);
   };
 
@@ -95,11 +106,11 @@ export const useQuizOperations = () => {
       const { data, errors } = await apolloClient.mutate({
         mutation,
         variables,
-        context: { includeAuth: true },
         fetchPolicy: "no-cache",
       });
 
       if (errors) {
+        console.log("GraphQL errorssss:", errors);
         handleGraphQLErrors(errors);
       }
 
@@ -156,6 +167,7 @@ export const useQuizOperations = () => {
     addQuestionToQuiz,
     updateQuestion,
     deleteQuestion,
+    deleteQuiz,
     loading,
     error,
   };
