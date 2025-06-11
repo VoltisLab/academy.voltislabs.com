@@ -681,7 +681,6 @@ export default function LectureItem(props: UpdatedLectureItemProps) {
       console.log("Section already expanded, just updating content type and tab");
     } else if (toggleContentSection) {
       toggleContentSection(sectionId, lecture.id);
-      console.log("Section was collapsed, expanding it");
     }
   };
 
