@@ -100,7 +100,8 @@ interface SectionItemProps {
   addLecture: (
     sectionId: string,
     contentType: ContentItemType,
-    title?: string
+    title?: string,
+    description?: string
   ) => Promise<string>;
   addCurriculumItem: (sectionId: string) => void;
   updateQuizQuestions?: (
@@ -138,7 +139,11 @@ interface SectionItemProps {
     isExpanded: boolean;
   }>;
   // New props for quiz functionality
-  addQuiz?: (sectionId: string, title: string, description: string) => string;
+  addQuiz?: (
+    sectionId: string,
+    title: string,
+    description: string
+  ) => Promise<void>;
   updateQuiz?: (
     sectionId: string,
     quizId: string,
@@ -381,18 +386,12 @@ export default function SectionItem({
       description,
     });
 
-    if (addQuiz) {
-      // Use the addQuiz function which properly handles the quiz creation with description
-      addQuiz(sectionId, title, description);
-    } else {
-      try {
-        // Fallback to the new async addLecture method
-        await addLecture(sectionId, "quiz", title);
-      } catch (error) {
-        console.error("Failed to add quiz:", error);
-        // Error is already handled in the service with toast
-      }
-    }
+    // if (addQuiz) {
+    //   // Use the addQuiz function which properly handles the quiz creation with description
+    //   await addQuiz(sectionId, title, description);
+    // }
+
+    await addLecture(sectionId, "quiz", title, description);
 
     setShowQuizForm(false);
   };

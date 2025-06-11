@@ -322,7 +322,8 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
   const handleAddLecture = async (
     sectionId: string,
     contentType: ContentItemType,
-    title?: string
+    title?: string,
+    description?: string
   ): Promise<string> => {
     try {
       // Create lecture on backend
@@ -337,7 +338,8 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
         const localLectureId = await addLocalLecture(
           sectionId,
           contentType,
-          title
+          title,
+          description
         );
 
         // Update the local lecture with the backend ID

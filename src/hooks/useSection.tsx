@@ -463,7 +463,7 @@ export const useSections = (
     sectionId: string,
     title: string,
     description: string
-  ): Promise<string> => {
+  ): Promise<void> => {
     console.log("hahahahah");
     try {
       // Convert sectionId to number for backend
@@ -476,8 +476,9 @@ export const useSections = (
         description,
       });
 
+      console.log("Response from backend:", description);
+
       const backendQuizId = response.createQuiz.quiz.id.toString();
-      console.log("hahahahah", backendQuizId);
 
       // Create local quiz with backend ID
       const newLecture: Lecture = {
@@ -506,13 +507,10 @@ export const useSections = (
           return section;
         })
       );
-
-      toast.success("Quiz created successfully");
       return backendQuizId;
     } catch (error) {
       toast.error("Failed to create quiz");
       console.error(error);
-      return "";
     }
   };
 
@@ -848,7 +846,7 @@ export const useSections = (
       })
     );
 
-    toast.success("Quiz questions updated");
+    // toast.success("Quiz questions updated");
   };
 
   // const updateQuizQuestions = async (

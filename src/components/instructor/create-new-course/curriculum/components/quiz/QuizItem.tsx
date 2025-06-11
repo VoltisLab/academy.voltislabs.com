@@ -14,7 +14,7 @@ import { RxHamburgerMenu } from "react-icons/rx";
 import StudentVideoPreview from "../lecture/StudentVideoPeview";
 import QuizForm from "./QuizForm";
 import { useQuizOperations } from "@/services/quizService";
-import toast from "react-hot-toast";
+import toast, { LoaderIcon } from "react-hot-toast";
 
 interface QuizItemProps {
   lecture: Lecture;
@@ -128,14 +128,16 @@ const QuizItem: React.FC<QuizItemProps> = ({
     useState(false);
 
   const {
-    createQuiz,
-    updateQuiz,
     addQuestionToQuiz,
     updateQuestion,
     deleteQuestion,
     deleteQuiz,
     loading: quizOperationLoading,
   } = useQuizOperations();
+
+  const [loadingQuestionIndex, setLoadingQuestionIndex] = useState<
+    number | null
+  >(null);
 
   const [loadingQuestion, setLoadingQuestion] = useState(false);
 
@@ -148,7 +150,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
       });
 
       if (result?.deleteQuiz?.success) {
-        toast.success("Quiz deleted successfully!");
+        // toast.success("Quiz deleted successfully!");
         deleteLecture(sectionId, lecture.id); // This updates the local state
       }
     } catch (error) {
@@ -556,7 +558,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
   const handleDeleteQuestion = async (index: number) => {
     const questionId = questions[index]?.id;
     if (!questionId) return;
-
+    setLoadingQuestionIndex(index);
     try {
       const result = await deleteQuestion({
         questionId: parseInt(questionId),
@@ -574,6 +576,8 @@ const QuizItem: React.FC<QuizItemProps> = ({
     } catch (error) {
       console.error("Error deleting question:", error);
       toast.error("Failed to delete question");
+    } finally {
+      setLoadingQuestionIndex(null);
     }
   };
 
@@ -658,7 +662,6 @@ const QuizItem: React.FC<QuizItemProps> = ({
     if (editingQuestionIndex !== null) {
       console.log(question.id);
       handleUpdateQuestion(question, editingQuestionIndex);
-      // handleAddQuestion(question);
     } else {
       handleAddQuestion(question);
     }
@@ -809,7 +812,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
             onMouseEnter={() => setIsHovering(true)}
             onMouseLeave={() => setIsHovering(false)}
           >
-            {isHovering && (
+            {(isHovering || quizOperationLoading) && (
               <>
                 <button
                   onClick={handleEditQuiz}
@@ -819,11 +822,16 @@ const QuizItem: React.FC<QuizItemProps> = ({
                 </button>
                 <button
                   onClick={handleDeleteQuiz}
-                  className={`text-gray-500 hover:text-red-600 p-1 transition-opacity cursor-pointer ${
+                  disabled={quizOperationLoading}
+                  className={`text-gray-500 hover:text-red-600 p-1 transition-opacity cursor-pointer disabled:cursor-not-allowed ${
                     quizOperationLoading ? "animate-pulse" : ""
                   }`}
                 >
-                  <Trash2 className="w-4 h-4" />
+                  {quizOperationLoading ? (
+                    <LoaderIcon className="w-4 h-4" />
+                  ) : (
+                    <Trash2 className="w-4 h-4" />
+                  )}
                 </button>
               </>
             )}
@@ -896,7 +904,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
                 <QuestionForm
                   quizId={lecture.id}
                   onSubmit={handleQuestionSubmit}
-                  onLoad={loadingQuestion}
+                  onLoad={quizOperationLoading}
                   onCancel={() => {
                     setShowQuestionForm(false);
                     setShowQuestionTypeSelector(false);
@@ -1089,7 +1097,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
                         setEditingQuestionIndex(null);
                       }}
                       quizId={lecture.id}
-                      onLoad={loadingQuestion}
+                      onLoad={quizOperationLoading}
                       isEditedForm={editingQuestionIndex !== null}
                       initialQuestion={
                         editingQuestionIndex !== null
@@ -1186,18 +1194,30 @@ const QuizItem: React.FC<QuizItemProps> = ({
                         </span>
                         <span className="ml-2 text-sm">(Multiple Choice)</span>
                       </div>
-                      <div className="flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div
+                        className={`flex space-x-1 group-hover:opacity-100 transition-opacity ${
+                          loadingQuestionIndex === index
+                            ? "opacity-100"
+                            : "opacity-0"
+                        }`}
+                      >
                         <button
                           onClick={() => handleEditQuestion(index)}
-                          className="p-1 text-gray-500 hover:bg-gray-200 rounded"
+                          disabled={loadingQuestionIndex === index}
+                          className="p-1 text-gray-500 hover:bg-gray-200 rounded cursor-pointer disabled:cursor-not-allowed"
                         >
                           <Edit3 className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handleDeleteQuestion(index)}
-                          className="p-1 text-gray-500 hover:bg-gray-200 rounded"
+                          disabled={loadingQuestionIndex === index}
+                          className="p-1 text-gray-500 hover:bg-gray-200 rounded cursor-pointer disabled:cursor-not-allowed"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          {loadingQuestionIndex === index ? (
+                            <LoaderIcon />
+                          ) : (
+                            <Trash2 className="w-4 h-4" />
+                          )}
                         </button>
                         <button className="p-1 hover:bg-gray-200 rounded transition cursor-move">
                           <RxHamburgerMenu className="w-4 h-4  text-gray-500" />

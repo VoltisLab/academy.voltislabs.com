@@ -8,7 +8,11 @@ import toast from "react-hot-toast";
 
 interface QuizFormProps {
   sectionId: string;
-  onAddQuiz?: (sectionId: string, title: string, description: string) => void;
+  onAddQuiz?: (
+    sectionId: string,
+    title: string,
+    description: string
+  ) => Promise<void>;
   onEditQuiz?: (
     sectionId: string,
     quizId: string,
@@ -41,8 +45,6 @@ const QuizForm: React.FC<QuizFormProps> = ({
   const [isBold, setIsBold] = useState(false);
   const [isItalic, setIsItalic] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
-
-  console.log("is edit herrrr", isEdit);
 
   const {
     createQuiz,
@@ -159,10 +161,10 @@ const QuizForm: React.FC<QuizFormProps> = ({
   const [quizEditLoading, setQuizEditLoading] = useState(false);
 
   const handleSubmit = async () => {
+    setQuizEditLoading(true);
     if (title.trim()) {
       try {
         if (isEdit && onEditQuiz && quizId) {
-          setQuizEditLoading(true);
           await onEditQuiz(sectionId, quizId, title.trim(), description.trim());
         } else if (!isEdit && onAddQuiz) {
           await onAddQuiz(sectionId, title.trim(), description.trim());
