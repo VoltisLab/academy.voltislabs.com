@@ -26,6 +26,7 @@ import { uploadFile } from "@/services/fileUploadService";
 export interface FileUploadFunction {
   (file: File, fileType: 'VIDEO' | 'RESOURCE'): Promise<string | null>;
 }
+import { useAssignmentService } from "@/services/useAssignmentService";
 
 interface CourseBuilderProps {
   onSaveNext?: () => void;
@@ -55,6 +56,10 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
   const [draggedLecture, setDraggedLecture] = useState<string | null>(null);
   const [showInfoBox, setShowInfoBox] = useState<boolean>(true);
   const [showNewFeatureAlert, setShowNewFeatureAlert] = useState<boolean>(true);
+  const [newAssinment, setNewassignment] = useState<number | undefined>(
+    undefined
+  );
+
   const [dragTarget, setDragTarget] = useState<{
     sectionId: string | null;
     lectureId: string | null;
@@ -84,8 +89,20 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
     useState<boolean>(false);
 
   // Services for backend operations
-  const { createSection, updateSection, deleteSection, loading: sectionLoading, error: sectionError } = useSectionService();
-  const { createLecture, updateLecture, deleteLecture, loading: lectureLoading, error: lectureError } = useLectureService();
+  const {
+    createSection,
+    updateSection,
+    deleteSection,
+    loading: sectionLoading,
+    error: sectionError,
+  } = useSectionService();
+  const {
+    createLecture,
+    updateLecture,
+    deleteLecture,
+    loading: lectureLoading,
+    error: lectureError,
+  } = useLectureService();
 
   const {
     sections,
@@ -100,6 +117,7 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
     moveSection,
     moveLecture,
     updateLectureContent,
+    updateQuizQuestions,
     saveDescription: saveSectionDescription,
     updateLectureWithUploadedContent,
     handleLectureDrop,
@@ -147,30 +165,34 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
   const addSourceCodeFile = (file: SourceCodeFile) => {
     setGlobalSourceCodeFiles((prev) => {
       // Prevent duplicates by checking both name and filename
-      const isDuplicate = prev.some(existingFile => 
-        (existingFile.name === file.name || 
-         existingFile.filename === file.filename || 
-         existingFile.name === file.filename || 
-         existingFile.filename === file.name) && 
-        existingFile.lectureId === file.lectureId
+      const isDuplicate = prev.some(
+        (existingFile) =>
+          (existingFile.name === file.name ||
+            existingFile.filename === file.filename ||
+            existingFile.name === file.filename ||
+            existingFile.filename === file.name) &&
+          existingFile.lectureId === file.lectureId
       );
-      
+
       if (isDuplicate) {
-        console.log('⚠️ Duplicate source code file detected, skipping add');
+        console.log("⚠️ Duplicate source code file detected, skipping add");
         return prev;
       }
-      
+
       return [...prev, file];
     });
   };
 
-  const removeSourceCodeFile = (fileName: string | undefined, lectureId: string) => {
+  const removeSourceCodeFile = (
+    fileName: string | undefined,
+    lectureId: string
+  ) => {
     setGlobalSourceCodeFiles((prev) =>
       prev.filter((file) => {
         // Check BOTH name AND filename properties
         const nameMatch = file.name === fileName || file.filename === fileName;
         const lectureMatch = file.lectureId === lectureId;
-        
+
         // Return true to keep, false to remove
         return !(nameMatch && lectureMatch);
       })
@@ -245,18 +267,18 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
         courseId: Number(courseId),
         order: order,
         title: title,
-        description: objective || ""
+        description: objective || "",
       });
 
       if (response.createSection.success) {
         // Add to local state with backend ID
         const backendSectionId = response.createSection.section.id;
         addLocalSection(title, objective);
-        
+
         // Update the local section with the backend ID
-        setSections(prevSections => 
-          prevSections.map((section, index) => 
-            index === prevSections.length - 1 
+        setSections((prevSections) =>
+          prevSections.map((section, index) =>
+            index === prevSections.length - 1
               ? { ...section, id: backendSectionId }
               : section
           )
@@ -278,7 +300,9 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
   ) => {
     try {
       // Find the section to get its current order
-      const sectionIndex = sections.findIndex(section => section.id === sectionId);
+      const sectionIndex = sections.findIndex(
+        (section) => section.id === sectionId
+      );
       if (sectionIndex === -1) {
         toast.error("Section not found");
         return;
@@ -289,12 +313,11 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
         sectionId: Number(sectionId),
         order: sectionIndex, // Use current position as order
         title: newName,
-        description: objective || ""
+        description: objective || "",
       });
 
       // Update local state
       updateLocalSectionName(sectionId, newName, objective);
-      
     } catch (error) {
       console.error("Failed to update section:", error);
       // Error is already handled in the service with toast
@@ -306,12 +329,11 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
     try {
       // Delete on backend
       await deleteSection({
-        sectionId: Number(sectionId)
+        sectionId: Number(sectionId),
       });
 
       // Delete from local state
       deleteLocalSection(sectionId);
-      
     } catch (error) {
       console.error("Failed to delete section:", error);
       // Error is already handled in the service with toast
@@ -322,31 +344,37 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
   const handleAddLecture = async (
     sectionId: string,
     contentType: ContentItemType,
-    title?: string
+    title?: string,
+    description?: string
   ): Promise<string> => {
     try {
       // Create lecture on backend
       const response = await createLecture({
         sectionId: Number(sectionId),
-        title: title || "New Lecture"
+        title: title || "New Lecture",
       });
 
       if (response.createLecture.success) {
         // Add to local state with backend ID
         const backendLectureId = response.createLecture.lecture.id;
-        const localLectureId = addLocalLecture(sectionId, contentType, title);
-        
+        const localLectureId = await addLocalLecture(
+          sectionId,
+          contentType,
+          title,
+          description
+        );
+
         // Update the local lecture with the backend ID
-        setSections(prevSections => 
-          prevSections.map(section => {
+        setSections((prevSections) =>
+          prevSections.map((section) => {
             if (section.id === sectionId) {
               return {
                 ...section,
-                lectures: section.lectures.map(lecture => 
-                  lecture.id === localLectureId 
+                lectures: section.lectures.map((lecture) =>
+                  lecture.id === localLectureId
                     ? { ...lecture, id: backendLectureId }
                     : lecture
-                )
+                ),
               };
             }
             return section;
@@ -355,7 +383,7 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
 
         return backendLectureId;
       }
-      
+
       return "";
     } catch (error) {
       console.error("Failed to create lecture:", error);
@@ -374,12 +402,11 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
       // Update on backend
       await updateLecture({
         lectureId: Number(lectureId),
-        title: newName
+        title: newName,
       });
 
       // Update local state
       updateLocalLectureName(sectionId, lectureId, newName);
-      
     } catch (error) {
       console.error("Failed to update lecture:", error);
       // Error is already handled in the service with toast
@@ -391,15 +418,28 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
     try {
       // Delete on backend
       await deleteLecture({
-        lectureId: Number(lectureId)
+        lectureId: Number(lectureId),
       });
 
       // Delete from local state
       deleteLocalLecture(sectionId, lectureId);
-      
     } catch (error) {
       console.error("Failed to delete lecture:", error);
       // Error is already handled in the service with toast
+    }
+  };
+  // function to delete assignment
+  const { deleteAssignment } = useAssignmentService();
+  const handleDeleteAssignment = async (
+    sectionId: string,
+    lectureId: string
+  ) => {
+    try {
+      await deleteAssignment({
+        assignmentId: Number(newAssinment),
+      });
+    } catch (error) {
+      console.log("failed to delete Assignment", error);
     }
   };
 
@@ -642,6 +682,8 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
     }
   };
 
+  //new assignment
+
   const handleDragLeave = () => {
     setDragTarget({ sectionId: null, lectureId: null });
   };
@@ -712,6 +754,7 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
   if (showAssignmentEditor && currentAssignment) {
     return (
       <AssignmentEditor
+        newAssinment={newAssinment}
         initialData={currentAssignment.data}
         onClose={handleCloseAssignmentEditor}
         onSave={handleSaveAssignment}
@@ -768,9 +811,11 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
           </button>
         </div>
         <div className="bg-white border border-gray-200 mb-6 mt-20">
-              {sections.length > 0 ? (
+          {sections.length > 0 ? (
             sections.map((section, index) => (
               <SectionItem
+                setNewassignment={setNewassignment}
+                deleteAssignment={handleDeleteAssignment}
                 key={section.id}
                 section={section}
                 index={index}
@@ -818,6 +863,7 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
                 removeExternalResource={removeExternalResource}
                 isLoading={isLoading}
                 // Backend integration props
+                // NEW: Pass the new backend functions
                 uploadVideoToBackend={uploadVideoToBackend}
                 saveArticleToBackend={saveArticleToBackend}
                 videoUploading={videoUploading}

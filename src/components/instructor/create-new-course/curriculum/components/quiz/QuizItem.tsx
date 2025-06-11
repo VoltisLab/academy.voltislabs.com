@@ -14,7 +14,7 @@ import { RxHamburgerMenu } from "react-icons/rx";
 import StudentVideoPreview from "../lecture/components/StudentVideoPeview";
 import QuizForm from "./QuizForm";
 import { useQuizOperations } from "@/services/quizService";
-import toast from "react-hot-toast";
+import toast, { LoaderIcon } from "react-hot-toast";
 
 interface QuizItemProps {
   lecture: Lecture;
@@ -58,7 +58,7 @@ interface QuizItemProps {
     quizId: string,
     title: string,
     description: string
-  ) => void;
+  ) => Promise<void>;
   enhancedLectures?: Record<string, EnhancedLecture>; // Enhanced lectures prop
   // Resource arrays to properly pass to quiz preview
   uploadedFiles?: Array<{ name: string; size: string; lectureId: string }>;
@@ -67,7 +67,7 @@ interface QuizItemProps {
 }
 
 interface Question {
-  id?: string;
+  id?: any;
   text: string;
   answers: Array<{
     text: string;
@@ -77,6 +77,10 @@ interface Question {
   relatedLecture?: string;
   type: string;
 }
+
+export const generateNumericId = (): string => {
+  return Math.floor(Math.random() * 1000000).toString();
+};
 
 const QuizItem: React.FC<QuizItemProps> = ({
   lecture,
@@ -124,13 +128,36 @@ const QuizItem: React.FC<QuizItemProps> = ({
     useState(false);
 
   const {
-    createQuiz,
-    updateQuiz,
     addQuestionToQuiz,
     updateQuestion,
     deleteQuestion,
+    deleteQuiz,
     loading: quizOperationLoading,
   } = useQuizOperations();
+
+  const [loadingQuestionIndex, setLoadingQuestionIndex] = useState<
+    number | null
+  >(null);
+
+  const [loadingQuestion, setLoadingQuestion] = useState(false);
+
+  const handleDeleteQuiz = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+
+    try {
+      const result = await deleteQuiz({
+        quizId: parseInt(lecture.id),
+      });
+
+      if (result?.deleteQuiz?.success) {
+        // toast.success("Quiz deleted successfully!");
+        deleteLecture(sectionId, lecture.id); // This updates the local state
+      }
+    } catch (error) {
+      console.error("Error deleting quiz:", error);
+      toast.error("Failed to delete quiz");
+    }
+  };
 
   const [result, setResult] = useState(null);
 
@@ -311,6 +338,45 @@ const QuizItem: React.FC<QuizItemProps> = ({
   //   setShowEditQuizForm(false);
   // };
 
+  // const handleQuizEditSubmit = async (
+  //   sectionId: string,
+  //   quizId: string,
+  //   title: string,
+  //   description: string
+  // ) => {
+  //   try {
+  //     if (onEditQuiz) {
+  //       // If it's an existing quiz, update it
+  //       const result = await updateQuiz({
+  //         quizId: parseInt(quizId),
+  //         title,
+  //         description,
+  //       });
+
+  //       if (result?.updateQuiz?.success) {
+  //         toast.success("Quiz updated successfully!");
+  //         onEditQuiz(sectionId, quizId, title, description);
+  //       }
+  //     } else {
+  //       // If it's a new quiz, create it
+  //       const result = await createQuiz({
+  //         sectionId: parseInt(sectionId),
+  //         title,
+  //         description,
+  //       });
+
+  //       if (result?.createQuiz?.success) {
+  //         toast.success("Quiz created successfully!");
+  //         // You'll need to update your state with the new quiz
+  //       }
+  //     }
+  //   } catch (error) {
+  //     console.error("Error saving quiz:", error);
+  //     toast.error("Failed to save quiz");
+  //   }
+  //   setShowEditQuizForm(false);
+  // };
+
   const handleQuizEditSubmit = async (
     sectionId: string,
     quizId: string,
@@ -319,36 +385,12 @@ const QuizItem: React.FC<QuizItemProps> = ({
   ) => {
     try {
       if (onEditQuiz) {
-        // If it's an existing quiz, update it
-        const result = await updateQuiz({
-          quizId: parseInt(quizId),
-          title,
-          description,
-        });
-
-        if (result?.updateQuiz?.success) {
-          toast.success("Quiz updated successfully!");
-          onEditQuiz(sectionId, quizId, title, description);
-        }
-      } else {
-        // If it's a new quiz, create it
-        const result = await createQuiz({
-          sectionId: parseInt(sectionId),
-          quizId: parseInt(quizId),
-          title,
-          description,
-        });
-
-        if (result?.createQuiz?.success) {
-          toast.success("Quiz created successfully!");
-          // You'll need to update your state with the new quiz
-        }
+        await onEditQuiz(sectionId, quizId, title, description);
       }
     } catch (error) {
-      console.error("Error saving quiz:", error);
-      toast.error("Failed to save quiz");
+      throw error;
+      console.error(error);
     }
-    setShowEditQuizForm(false);
   };
 
   // Edit button click handler - Now properly expands the quiz item
@@ -450,74 +492,59 @@ const QuizItem: React.FC<QuizItemProps> = ({
 
   const handleAddQuestion = async (question: Question) => {
     try {
-      // Convert answers to choices format expected by API
-      // console.log("lecture.id:", lecture.id, "type:", typeof lecture.id);
-      const choices = question.answers
-        .filter((answer: any) => answer.text.trim() !== "") // Filter out empty answers
-        .map((answer: any, index: number) => ({
-          text: answer.text,
-          isCorrect: index === question.correctAnswerIndex,
-          order: index + 1,
-          // explanation: answer.explanation || "",
-        }));
+      setLoadingQuestion(true);
 
-      // console.log(lecture.id), question.text;
-      if (!lecture.id) {
-        throw new Error("Quiz ID is required");
-      }
-      // const quizId = parseInt(lecture.id);
-      // if (isNaN(quizId)) {
-      //   throw new Error("Invalid Quiz ID");
-      // }
+      // Convert answers to backend-compatible format
+      const choices = question.answers.map((answer, idx) => ({
+        text: answer.text,
+        isCorrect: idx === question.correctAnswerIndex,
+        order: idx + 1,
+      }));
 
-      const quizId = Number(lecture.id);
-      // if (!lecture?.id || isNaN(parseInt(lecture.id))) {
-      //   toast.error("Lecture ID is invalid or missing");
-      //   return;
-      // }
-
-      if (isNaN(quizId)) {
-        console.error(quizId);
-        console.log(lecture.id);
-        toast.error("Invalid ID. Please check the lecture data.");
-        return;
-      }
-      console.log("hiiiiii", parseInt(lecture.id), lecture.id);
+      // Call the backend to add the question
       const result = await addQuestionToQuiz({
-        quizId,
+        quizId: parseInt(lecture.id), // Make sure `quiz` is defined
         text: question.text,
-        questionType: "multiple-choice",
-        order: questions.length + 1,
         explanation: "",
         maxPoints: 1, // Default points
+        order: questions.length + 1,
         choices,
-        relatedLectureId: question.relatedLecture
-          ? parseInt(question.relatedLecture)
-          : undefined,
+        questionType: "MC",
       });
 
-      console.log("hhhhhhhh", result);
-      if (result?.addQuestionToQuiz?.success) {
-        const newQuestion = result.addQuestionToQuiz.question;
-        const newQuestions = [...questions, newQuestion];
+      const newQuestionId = result?.addQuestionToQuiz?.question?.id;
+      if (!newQuestionId)
+        throw new Error("No question ID returned from backend");
 
-        setQuestions(newQuestions);
-        if (updateQuizQuestions) {
-          updateQuizQuestions(sectionId, lecture.id, newQuestions);
-        }
+      // Add the new question to the local state with the real ID
+      const newQuestions = [
+        ...questions,
+        {
+          ...question,
+          id: newQuestionId.toString(),
+        },
+      ];
 
-        toast.success("Question added successfully!");
+      console.log("New question added:", newQuestions);
+
+      setQuestions(newQuestions);
+
+      if (updateQuizQuestions) {
+        updateQuizQuestions(sectionId, lecture.id, newQuestions);
       }
-    } catch (error) {
-      console.error("Error adding question:", error);
-      toast.error("Failed to add question");
-    }
 
-    setShowQuestionForm(false);
-    setShowQuestionTypeSelector(false);
-    setExpanded(true);
-    setShowEditForm(false);
-    setEditingQuestionIndex(null);
+      toast.success("Question added successfully!");
+      setShowQuestionForm(false);
+      setShowQuestionTypeSelector(false);
+      setExpanded(true);
+      setShowEditForm(false);
+      setEditingQuestionIndex(null);
+    } catch (error) {
+      toast.error("Failed to save question");
+      console.error("Error adding question:", error);
+    } finally {
+      setLoadingQuestion(false);
+    }
   };
 
   // const handleDeleteQuestion = (index: number) => {
@@ -531,7 +558,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
   const handleDeleteQuestion = async (index: number) => {
     const questionId = questions[index]?.id;
     if (!questionId) return;
-
+    setLoadingQuestionIndex(index);
     try {
       const result = await deleteQuestion({
         questionId: parseInt(questionId),
@@ -549,18 +576,49 @@ const QuizItem: React.FC<QuizItemProps> = ({
     } catch (error) {
       console.error("Error deleting question:", error);
       toast.error("Failed to delete question");
+    } finally {
+      setLoadingQuestionIndex(null);
     }
   };
 
+  // const handleDeleteQuestion = async (index: number) => {
+  //   try {
+  //     const questionToDelete = questions[index];
+  //     const newQuestions = questions.filter((_, idx) => idx !== index);
+
+  //     // Update both local state and backend
+  //     if (updateQuizQuestions) {
+  //       await updateQuizQuestions(sectionId, lecture.id, newQuestions);
+  //     }
+
+  //     setQuestions(newQuestions);
+  //     toast.success("Question deleted successfully");
+  //   } catch (error) {
+  //     toast.error("Failed to delete question");
+  //     console.error(error);
+  //   }
+  // };
+
   const handleUpdateQuestion = async (question: any, index: number) => {
     try {
+      console.log("Updating questionnnnn:", question.id);
+
+      if (!question.id || isNaN(parseInt(question.id))) {
+        throw new Error("Question ID is missing or invalid");
+      }
+
+      console.log("Updating questionnnnn:", question.id);
+
       // Convert answers to choices format
       const choices = question.answers.map((answer: any, idx: number) => ({
         text: answer.text,
         isCorrect: idx === question.correctAnswerIndex,
         order: idx + 1,
-        id: question.id ? parseInt(question.id) : undefined,
+        ...(question.id ? { id: parseInt(question.id) } : {}), // ✅ only include `id` if it's defined
       }));
+
+      console.log("Updating questionnnnn:", question.id);
+      console.log("Typeof question", typeof parseInt(question.id));
 
       const result = await updateQuestion({
         questionId: parseInt(question.id),
@@ -570,6 +628,8 @@ const QuizItem: React.FC<QuizItemProps> = ({
         choices,
         order: index + 1,
       });
+
+      console.log("Update result:", result);
 
       if (result?.updateQuestion?.success) {
         const newQuestions = [...questions];
@@ -600,6 +660,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
 
   const handleQuestionSubmit = (question: any) => {
     if (editingQuestionIndex !== null) {
+      console.log(question.id);
       handleUpdateQuestion(question, editingQuestionIndex);
     } else {
       handleAddQuestion(question);
@@ -751,7 +812,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
             onMouseEnter={() => setIsHovering(true)}
             onMouseLeave={() => setIsHovering(false)}
           >
-            {isHovering && (
+            {(isHovering || quizOperationLoading) && (
               <>
                 <button
                   onClick={handleEditQuiz}
@@ -760,13 +821,17 @@ const QuizItem: React.FC<QuizItemProps> = ({
                   <Edit3 className="w-4 h-4" />
                 </button>
                 <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    deleteLecture(sectionId, lecture.id);
-                  }}
-                  className="text-gray-500 hover:text-red-600 p-1 transition-opacity cursor-pointer"
+                  onClick={handleDeleteQuiz}
+                  disabled={quizOperationLoading}
+                  className={`text-gray-500 hover:text-red-600 p-1 transition-opacity cursor-pointer disabled:cursor-not-allowed ${
+                    quizOperationLoading ? "animate-pulse" : ""
+                  }`}
                 >
-                  <Trash2 className="w-4 h-4" />
+                  {quizOperationLoading ? (
+                    <LoaderIcon className="w-4 h-4" />
+                  ) : (
+                    <Trash2 className="w-4 h-4" />
+                  )}
                 </button>
               </>
             )}
@@ -909,11 +974,10 @@ const QuizItem: React.FC<QuizItemProps> = ({
                 <Edit3 className="w-4 h-4" />
               </button>
               <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  deleteLecture(sectionId, lecture.id);
-                }}
-                className="text-gray-500 hover:text-red-600 p-1 transition-opacity cursor-pointer"
+                onClick={handleDeleteQuiz}
+                className={`text-gray-500 hover:text-red-600 p-1 transition-opacity cursor-pointer ${
+                  quizOperationLoading ? "animate-pulse" : ""
+                }`}
               >
                 <Trash2 className="w-4 h-4" />
               </button>
@@ -960,6 +1024,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
               initialTitle={lecture.name || ""}
               initialDescription={lecture.description || ""}
               quizId={lecture.id}
+              setShowEditQuizForm={setShowEditQuizForm}
             />
           ) : showQuestionForm || showQuestionTypeSelector ? (
             <div className="relative">
@@ -1129,18 +1194,30 @@ const QuizItem: React.FC<QuizItemProps> = ({
                         </span>
                         <span className="ml-2 text-sm">(Multiple Choice)</span>
                       </div>
-                      <div className="flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div
+                        className={`flex space-x-1 group-hover:opacity-100 transition-opacity ${
+                          loadingQuestionIndex === index
+                            ? "opacity-100"
+                            : "opacity-0"
+                        }`}
+                      >
                         <button
                           onClick={() => handleEditQuestion(index)}
-                          className="p-1 text-gray-500 hover:bg-gray-200 rounded"
+                          disabled={loadingQuestionIndex === index}
+                          className="p-1 text-gray-500 hover:bg-gray-200 rounded cursor-pointer disabled:cursor-not-allowed"
                         >
                           <Edit3 className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handleDeleteQuestion(index)}
-                          className="p-1 text-gray-500 hover:bg-gray-200 rounded"
+                          disabled={loadingQuestionIndex === index}
+                          className="p-1 text-gray-500 hover:bg-gray-200 rounded cursor-pointer disabled:cursor-not-allowed"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          {loadingQuestionIndex === index ? (
+                            <LoaderIcon />
+                          ) : (
+                            <Trash2 className="w-4 h-4" />
+                          )}
                         </button>
                         <button className="p-1 hover:bg-gray-200 rounded transition cursor-move">
                           <RxHamburgerMenu className="w-4 h-4  text-gray-500" />

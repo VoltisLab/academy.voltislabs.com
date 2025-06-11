@@ -4,6 +4,7 @@ import { Lecture, ContentType, ContentItemType, Question } from "@/lib/types";
 import { generateId } from "@/lib/utils";
 import { toast } from "react-hot-toast";
 import { useSectionService } from "@/services/useSectionService";
+import { useQuizOperations } from "@/services/quizService";
 import { useLectureService } from "@/services/useLectureService";
 import { UpdateLectureDescriptionVariables } from "@/api/course/lecture/mutation";
 
@@ -20,19 +21,34 @@ interface Section {
   backendId?: number; // To track the backend section ID
 }
 
-export const useSections = (initialSections: Section[] = [], courseId?: number) => {
+interface ChoiceInputType {
+  text: string;
+  isCorrect: boolean;
+  order: number;
+}
+
+export const useSections = (
+  initialSections: Section[] = [],
+  courseId?: number
+) => {
   const [sections, setSections] = useState<Section[]>(initialSections);
-  const { createSection, updateSection, loading: sectionLoading } = useSectionService();
-    const { 
-    updateLectureDescription, 
+
+  const { createQuiz: createQuizBackend, updateQuiz: updateQuizBackend } =
+    useQuizOperations();
+  const {
+    createSection,
+    updateSection,
+    loading: sectionLoading,
+  } = useSectionService();
+  const {
+    updateLectureDescription,
     uploadVideoToLecture,
     saveArticleToLecture,
     saveDescriptionToLecture,
     loading: lectureLoading,
     videoUploading,
-    videoUploadProgress
+    videoUploadProgress,
   } = useLectureService();
-
 
   const saveDescription = async (
     sectionId: string,
@@ -40,9 +56,9 @@ export const useSections = (initialSections: Section[] = [], courseId?: number) 
     description: string
   ) => {
     try {
-      const a  = await saveDescriptionToLecture(lectureId, description);
-      console.log(a)
-      
+      const a = await saveDescriptionToLecture(lectureId, description);
+      console.log(a);
+
       // Update local state after successful backend save
       setSections((prevSections) =>
         prevSections.map((section) => {
@@ -84,8 +100,12 @@ export const useSections = (initialSections: Section[] = [], courseId?: number) 
         throw new Error("Invalid lecture ID");
       }
 
-      const videoUrl = await uploadVideoToLecture(numericLectureId, videoFile, onProgress);
-      
+      const videoUrl = await uploadVideoToLecture(
+        numericLectureId,
+        videoFile,
+        onProgress
+      );
+
       if (videoUrl) {
         // Update local state with video URL
         setSections((prevSections) =>
@@ -133,9 +153,9 @@ export const useSections = (initialSections: Section[] = [], courseId?: number) 
         throw new Error("Invalid lecture ID");
       }
 
-      const a  = await saveArticleToLecture(numericLectureId, articleContent);
-      console.log("article" , a)
-      
+      const a = await saveArticleToLecture(numericLectureId, articleContent);
+      console.log("article", a);
+
       // Update local state after successful backend save
       setSections((prevSections) =>
         prevSections.map((section) => {
@@ -210,7 +230,10 @@ export const useSections = (initialSections: Section[] = [], courseId?: number) 
   };
 
   // Modified to accept name and objective parameters and integrate with backend
-  const addSection = async (name: string = "New Section", objective?: string): Promise<string> => {
+  const addSection = async (
+    name: string = "New Section",
+    objective?: string
+  ): Promise<string> => {
     try {
       // Optimistically add section to UI first
       const tempId = generateId();
@@ -227,7 +250,6 @@ export const useSections = (initialSections: Section[] = [], courseId?: number) 
       };
 
       setSections((prevSections) => [...prevSections, newSection]);
-    
 
       // Call backend API if courseId is provided
       if (courseId) {
@@ -236,7 +258,7 @@ export const useSections = (initialSections: Section[] = [], courseId?: number) 
             courseId: courseId,
             order: sections.length + 1,
             title: name,
-            description: objective
+            description: objective,
           });
 
           if (result.createSection.success) {
@@ -256,13 +278,15 @@ export const useSections = (initialSections: Section[] = [], courseId?: number) 
         } catch (error) {
           console.error("Failed to create section on backend:", error);
           // Remove the optimistically added section on error
-          setSections((prevSections) => 
+          setSections((prevSections) =>
             prevSections.filter((section) => section.id !== tempId)
           );
-          toast.error(error instanceof Error ? error.message : "Failed to create section");
+          toast.error(
+            error instanceof Error ? error.message : "Failed to create section"
+          );
           throw error;
         }
-      } 
+      }
       return tempId;
     } catch (error) {
       console.error("Error in addSection:", error);
@@ -271,12 +295,17 @@ export const useSections = (initialSections: Section[] = [], courseId?: number) 
   };
 
   // Add a new lecture to a section with custom title
-  const addLecture = (
+  const addLecture = async (
     sectionId: string,
     contentType: ContentItemType,
-    title?: string
-  ): string => {
+    title?: string,
+    description?: string
+  ) => {
     console.log("Adding lecture with title:", title);
+
+    if (contentType === "quiz") {
+      return await addQuiz(sectionId, title ?? "", description ?? "");
+    }
 
     const newLecture: Lecture = {
       id: generateId(),
@@ -398,36 +427,91 @@ export const useSections = (initialSections: Section[] = [], courseId?: number) 
     toast.success("Resource added");
   };
 
-  const addQuiz = (
+  // const addQuiz = (
+  //   sectionId: string,
+  //   title: string,
+  //   description: string
+  // ): string => {
+  //   const quizId = addLecture(sectionId, "quiz", title);
+
+  //   // Update the description for the newly created quiz
+  //   setSections((prevSections) =>
+  //     prevSections.map((section) => {
+  //       if (section.id === sectionId) {
+  //         return {
+  //           ...section,
+  //           lectures: section.lectures.map((lecture) => {
+  //             if (lecture.id === quizId) {
+  //               return {
+  //                 ...lecture,
+  //                 description: description,
+  //                 questions: [],
+  //               };
+  //             }
+  //             return lecture;
+  //           }),
+  //         };
+  //       }
+  //       return section;
+  //     })
+  //   );
+
+  //   return quizId;
+  // };
+
+  const addQuiz = async (
     sectionId: string,
     title: string,
     description: string
-  ): string => {
-    const quizId = addLecture(sectionId, "quiz", title);
+  ): Promise<void> => {
+    console.log("hahahahah");
+    try {
+      // Convert sectionId to number for backend
+      const numericSectionId = parseInt(sectionId);
 
-    // Update the description for the newly created quiz
-    setSections((prevSections) =>
-      prevSections.map((section) => {
-        if (section.id === sectionId) {
-          return {
-            ...section,
-            lectures: section.lectures.map((lecture) => {
-              if (lecture.id === quizId) {
-                return {
-                  ...lecture,
-                  description: description,
-                  questions: [],
-                };
-              }
-              return lecture;
-            }),
-          };
-        }
-        return section;
-      })
-    );
+      // Call backend
+      const response = await createQuizBackend({
+        sectionId: numericSectionId,
+        title,
+        description,
+      });
 
-    return quizId;
+      console.log("Response from backend:", description);
+
+      const backendQuizId = response.createQuiz.quiz.id.toString();
+
+      // Create local quiz with backend ID
+      const newLecture: Lecture = {
+        id: backendQuizId, // Use the backend ID
+        name: title,
+        title: title,
+        description: description,
+        captions: "",
+        lectureNotes: "",
+        attachedFiles: [],
+        videos: [],
+        contentType: "quiz",
+        isExpanded: true,
+        isPublished: false,
+        questions: [],
+      };
+
+      setSections((prevSections) =>
+        prevSections.map((section) => {
+          if (section.id === sectionId) {
+            return {
+              ...section,
+              lectures: [...section.lectures, newLecture],
+            };
+          }
+          return section;
+        })
+      );
+      return backendQuizId;
+    } catch (error) {
+      toast.error("Failed to create quiz");
+      console.error(error);
+    }
   };
 
   // Delete a section
@@ -483,7 +567,7 @@ export const useSections = (initialSections: Section[] = [], courseId?: number) 
       console.log("Updating section name:", { sectionId, newName, objective });
 
       // Find the section to get backend ID and current order
-      const section = sections.find(s => s.id === sectionId);
+      const section = sections.find((s) => s.id === sectionId);
       if (!section) {
         throw new Error("Section not found");
       }
@@ -492,11 +576,17 @@ export const useSections = (initialSections: Section[] = [], courseId?: number) 
       setSections((prevSections) => {
         const updatedSections = prevSections.map((section) => {
           if (section.id === sectionId) {
-            console.log("Found section to update:", section.name, "->", newName);
+            console.log(
+              "Found section to update:",
+              section.name,
+              "->",
+              newName
+            );
             return {
               ...section,
               name: newName,
-              objective: objective !== undefined ? objective : section.objective,
+              objective:
+                objective !== undefined ? objective : section.objective,
             };
           }
           return section;
@@ -513,7 +603,7 @@ export const useSections = (initialSections: Section[] = [], courseId?: number) 
             sectionId: section.backendId,
             title: newName,
             description: objective,
-            order: section.order
+            order: section.order,
           });
 
           if (result.updateSection.success) {
@@ -534,7 +624,9 @@ export const useSections = (initialSections: Section[] = [], courseId?: number) 
               return section;
             })
           );
-          toast.error(error instanceof Error ? error.message : "Failed to update section");
+          toast.error(
+            error instanceof Error ? error.message : "Failed to update section"
+          );
           throw error;
         }
       }
@@ -754,8 +846,98 @@ export const useSections = (initialSections: Section[] = [], courseId?: number) 
       })
     );
 
-    toast.success("Quiz questions updated");
+    // toast.success("Quiz questions updated");
   };
+
+  // const updateQuizQuestions = async (
+  //   sectionId: string,
+  //   quizId: string,
+  //   questions: Question[]
+  // ) => {
+  //   try {
+  //     console.log("From Updattttttte");
+
+  //     // Then sync with backend
+  //     const numericQuizId = parseInt(quizId);
+  //     const currentQuestions =
+  //       sections
+  //         .find((s) => s.id === sectionId)
+  //         ?.lectures.find((l) => l.id === quizId)?.questions || [];
+
+  //     // For simplicity, we'll just add new questions here
+  //     // You might want to implement more sophisticated diffing
+  //     for (const question of questions) {
+  //       if (!question.id) {
+  //         // New question - add to backend
+  //         const choices: ChoiceInputType[] = question.answers.map(
+  //           (answer, index) => ({
+  //             text: answer.text,
+  //             isCorrect: index === question.correctAnswerIndex,
+  //             order: index,
+  //           })
+  //         );
+
+  //         await addQuestionToQuizBackend({
+  //           quizId: numericQuizId,
+  //           text: question.text,
+  //           questionType: "MC",
+  //           order: questions.indexOf(question),
+  //           explanation: "",
+  //           choices,
+  //         });
+  //       } else {
+  //         // Existing question - update in backend
+  //         const choices: ChoiceInputType[] = question.answers.map(
+  //           (answer, index) => ({
+  //             text: answer.text,
+  //             isCorrect: index === question.correctAnswerIndex,
+  //             order: index,
+  //           })
+  //         );
+
+  //         await updateQuestionBackend({
+  //           questionId: parseInt(question.id),
+  //           text: question.text,
+  //           explanation: "",
+  //           choices,
+  //         });
+  //       }
+
+  //       // Handle deleted questions
+  //       const previousQuestions = currentQuestions;
+  //       const currentQuestionIds = questions.map((q) => q.id);
+  //       for (const question of previousQuestions) {
+  //         if (question.id && !currentQuestionIds.includes(question.id)) {
+  //           await deleteQuestionBackend({ questionId: parseInt(question.id) });
+  //         }
+  //       }
+
+  //       // Then update local state
+  //       setSections((prevSections) =>
+  //         prevSections.map((section) => {
+  //           if (section.id === sectionId) {
+  //             return {
+  //               ...section,
+  //               lectures: section.lectures.map((lecture) => {
+  //                 if (lecture.id === quizId) {
+  //                   return {
+  //                     ...lecture,
+  //                     questions: questions,
+  //                   };
+  //                 }
+  //                 return lecture;
+  //               }),
+  //             };
+  //           }
+  //           return section;
+  //         })
+  //       );
+  //     }
+  //   } catch (error) {
+  //     toast.error("Failed to update questions");
+  //     console.error(error);
+  //   }
+  // };
 
   const addQuestionToQuiz = (
     sectionId: string,
@@ -790,30 +972,80 @@ export const useSections = (initialSections: Section[] = [], courseId?: number) 
     toast.success("Section moved successfully");
   };
 
-  const updateQuiz = (sectionId: string, quizId: string, title: string, description: string) => {
-    setSections(prevSections => prevSections.map(section => {
-      if (section.id === sectionId) {
-        return {
-          ...section,
-          lectures: section.lectures.map(lecture => {
-            if (lecture.id === quizId && lecture.contentType === 'quiz') {
-              return {
-                ...lecture,
-                name: title,
-                title: title,
-                description: description
-              };
-            }
-            return lecture;
-          })
-        };
-      }
-      return section;
-    }));
-    
-    toast.success("Quiz updated successfully");
+  // const updateQuiz = (
+  //   sectionId: string,
+  //   quizId: string,
+  //   title: string,
+  //   description: string
+  // ) => {
+  //   setSections((prevSections) =>
+  //     prevSections.map((section) => {
+  //       if (section.id === sectionId) {
+  //         return {
+  //           ...section,
+  //           lectures: section.lectures.map((lecture) => {
+  //             if (lecture.id === quizId && lecture.contentType === "quiz") {
+  //               return {
+  //                 ...lecture,
+  //                 name: title,
+  //                 title: title,
+  //                 description: description,
+  //               };
+  //             }
+  //             return lecture;
+  //           }),
+  //         };
+  //       }
+  //       return section;
+  //     })
+  //   );
+
+  //   toast.success("Quiz updated successfully");
+  // };
+
+  // Add new function for updating quiz in backend
+  const updateQuiz = async (
+    sectionId: string,
+    quizId: string,
+    title: string,
+    description: string
+  ) => {
+    try {
+      const numericQuizId = parseInt(quizId);
+
+      await updateQuizBackend({
+        quizId: numericQuizId,
+        title,
+        description,
+      });
+
+      setSections((prevSections) =>
+        prevSections.map((section) => {
+          if (section.id === sectionId) {
+            return {
+              ...section,
+              lectures: section.lectures.map((lecture) => {
+                if (lecture.id === quizId) {
+                  return {
+                    ...lecture,
+                    name: title,
+                    title: title,
+                    description: description,
+                  };
+                }
+                return lecture;
+              }),
+            };
+          }
+          return section;
+        })
+      );
+    } catch (error) {
+      throw error;
+      // console.error(error);
+    }
   };
-  
+
   return {
     sections,
     updateQuizQuestions,

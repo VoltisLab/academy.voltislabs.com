@@ -6,17 +6,20 @@ interface AssignmentFormProps {
   sectionId: string;
   onAddAssignment: (sectionId: string, title: string) => void;
   onCancel: () => void;
+  setNewassignment?: React.Dispatch<React.SetStateAction<number>>
 }
 
 export default function AssignmentForm({
   sectionId,
   onAddAssignment,
-  onCancel
+  onCancel,
+  setNewassignment
 }: AssignmentFormProps) {
   const [title, setTitle] = useState('');
   const maxChars = 80;
   const [charCount, setCharCount] = useState(maxChars);
   const inputRef = useRef<HTMLInputElement>(null);
+  
   
   useEffect(() => {
     // Focus the input when component mounts
