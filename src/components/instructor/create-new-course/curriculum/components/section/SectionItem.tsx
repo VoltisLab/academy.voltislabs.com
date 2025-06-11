@@ -63,6 +63,7 @@ interface SectionItemProps {
   ) => Promise<void>;
   deleteSection: (sectionId: string) => Promise<void>;
   deleteLecture: (sectionId: string, lectureId: string) => Promise<void>;
+  deleteAssignment: (sectionId: string, lectureId: string) => Promise<void>;
   moveSection: (sectionId: string, direction: "up" | "down") => void;
   moveLecture: (
     sectionId: string,
@@ -222,6 +223,7 @@ export default function SectionItem({
   setEditingLectureId,
   updateLectureName,
   deleteLecture,
+  deleteAssignment,
   moveLecture,
   toggleContentSection,
   toggleAddResourceModal,
@@ -626,7 +628,7 @@ export default function SectionItem({
           editingLectureId={editingLectureId}
           setEditingLectureId={setEditingLectureId}
           updateLectureName={updateLectureName}
-          deleteLecture={deleteLecture}
+          deleteLecture={deleteAssignment}
           moveLecture={moveLecture}
           handleDragStart={handleDragStart}
           handleDragOver={handleDragOver}
