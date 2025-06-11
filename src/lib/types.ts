@@ -314,6 +314,8 @@ export interface AssignmentQuestion {
   content: string;
   order: number;
   solution?: string;
+
+  
 }
 
 // UPDATED: Base Lecture interface

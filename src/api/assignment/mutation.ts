@@ -61,6 +61,74 @@ export const DELETE_ASSIGNMENT = gql`
   }
 `;
 
+export const CREATE_ASSIGNMENT_QUESTION = gql`
+  mutation CreateAssignmentQuestion(
+    $assignmentId: Int!
+    $maxPoints: Int
+    $order: Int
+    $required: Boolean
+    $text: String!
+  ) {
+    createAssignmentQuestion(
+      assignmentId: $assignmentId
+      maxPoints: $maxPoints
+      order: $order
+      required: $required
+      text: $text
+    ) {
+      success
+      assignmentQuestion {
+        id
+        text
+        maxPoints
+        order
+        required
+      }
+    }
+  }
+`;
+
+export const UPDATE_ASSIGNMENT_QUESTION = gql`
+  mutation UpdateAssignmentQuestion(
+    $assignmentQuestionId: Int!
+    $maxPoints: Int
+    $order: Int
+    $required: Boolean
+    $text: String!
+  ) {
+    updateAssignmentQuestion(
+      assignmentQuestionId: $assignmentQuestionId
+      maxPoints: $maxPoints
+      order: $order
+      required: $required
+      text: $text
+    ) {
+      success
+      assignmentQuestion {
+        id
+        text
+        maxPoints
+        order
+        required
+      }
+    }
+  }
+`;
+
+export const DELETE_ASSIGNMENT_QUESTION = gql`
+  mutation DeleteAssignmentQuestion(
+    $assignmentQuestionId: Int!
+  ){
+    deleteAssignmentQuestion(
+    assignmentQuestionId: $assignmentQuestionId
+      
+    ) {
+      success
+     
+    }
+  }
+`
+
 export interface CreateAssignmentVariables {
   sectionId: number;
   title: string;
@@ -122,4 +190,56 @@ export interface DeleteAssignmentResponse {
   deleteAssignment: {
     success: boolean;
   };
+}
+
+// Shared structure for assignment question input
+interface BaseAssignmentQuestionInput {
+  maxPoints?: number;
+  order?: number;
+  required?: boolean;
+  text: string;
+}
+
+// Create input extends base + assignmentId
+export interface CreateAssignmentQuestionVariables extends BaseAssignmentQuestionInput {
+  assignmentId: number;
+}
+
+// Update input extends base + assignmentQuestionId
+export interface UpdateAssignmentQuestionVariables extends BaseAssignmentQuestionInput {
+  assignmentQuestionId: number;
+}
+
+// Response assignment question shape
+interface AssignmentQuestion {
+  id: string;
+  text: string;
+  maxPoints?: number;
+  order: number;
+  required?: boolean;
+}
+
+// Shared mutation response structure
+export interface CreateAssignmentQuestionResponse {
+  createAssignmentQuestion: {
+    success: boolean;
+    assignmentQuestion: AssignmentQuestion;
+  };
+}
+
+export interface UpdateAssignmentQuestionResponse {
+  updateAssignmentQuestion: {
+    success: boolean;
+    assignmentQuestion: AssignmentQuestion;
+  };
+}
+
+export interface DeleteAssignmentQuestionVariables {
+  assignmentQuestionId: number;
+}
+export interface DeleteAssignmentQuestionResponse{
+  
+  deleteAssignmentQuestion:{
+    success: boolean
+  }
 }

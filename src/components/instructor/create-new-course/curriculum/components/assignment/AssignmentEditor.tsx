@@ -348,7 +348,7 @@ const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
         );
       case "questions":
         return (
-          <QuestionsTab data={assignmentData} onChange={handleDataChange} />
+          <QuestionsTab data={assignmentData} onChange={handleDataChange} assignmentId={newAssinment}  />
         );
       case "solutions":
         return (
