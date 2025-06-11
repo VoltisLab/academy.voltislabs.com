@@ -92,8 +92,6 @@ const VideoSlideMashupComponent: React.FC<VideoSlideMashupProps> = ({
           }
         );
 
-        console.log(uploadedVideoUrl)
-
         if (uploadedVideoUrl) {
           setVideoUrl(uploadedVideoUrl);
           setVideoUploaded(true);
