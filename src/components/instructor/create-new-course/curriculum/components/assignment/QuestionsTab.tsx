@@ -1,4 +1,4 @@
-import RichTextEditor from "@/components/instructor/RichTextEditor";
+import RichTextEditor from "../../RichTextEditor";
 import { AssignmentQuestion, ExtendedLecture } from "@/lib/types";
 import { X, Edit2, Plus } from "lucide-react";
 import { useState, useEffect } from "react";

@@ -378,7 +378,7 @@ export default function LectureItem(props: UpdatedLectureItemProps) {
       const selectedDetails: SelectedVideoDetails = {
         id: selectedVideo.id,
         filename: selectedVideo.filename,
-        duration: "01:45",
+        duration: selectedVideo.duration,
         thumbnailUrl: "https://via.placeholder.com/160x120/000000/FFFFFF/?text=Netflix",
         isDownloadable: false,
         url: selectedVideo.url || "https://www.youtube.com/watch?v=dQw4w9WgXcQ",

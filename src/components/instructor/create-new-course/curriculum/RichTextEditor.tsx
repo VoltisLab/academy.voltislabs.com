@@ -12,7 +12,7 @@ import {
   X,
 } from "lucide-react";
 import { useDropzone } from "react-dropzone";
-import ImageUploadModal from "../modals/ImageUploadModal";
+import ImageUploadModal from "@/components/modals/ImageUploadModal";
 // import "react-quill/dist/quill.snow.css";
 
 interface RichTextEditorProps {

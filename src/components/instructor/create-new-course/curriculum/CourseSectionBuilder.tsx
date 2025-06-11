@@ -13,7 +13,7 @@ import { useFileUpload } from "@/hooks/useFileUpload";
 import { useModal } from "@/hooks/useModal";
 import { useSectionService } from "@/services/useSectionService";
 import { useLectureService } from "@/services/useLectureService";
-import { ContentTypeSelector } from "../../ContentTypeSelector";
+import { ContentTypeSelector } from "./ContentTypeSelector";
 import SectionItem from "./components/section/SectionItem";
 import { useCourseSectionsUpdate } from "@/services/courseSectionsService";
 import SectionForm from "./components/section/SectionForm";
