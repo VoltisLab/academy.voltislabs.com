@@ -1,67 +1,106 @@
 import RichTextEditor from "@/components/instructor/RichTextEditor";
 import { AssignmentQuestion, ExtendedLecture } from "@/lib/types";
-import { X, Edit2, Plus } from "lucide-react";
+import { useAssignmentService } from "@/services/useAssignmentService";
 import { useState, useEffect } from "react";
 import { toast } from "react-hot-toast";
 
 const QuestionsTab: React.FC<{
   data: ExtendedLecture;
   onChange: (field: string, value: any) => void;
-}> = ({ data, onChange }) => {
+  assignmentId?: number;
+}> = ({ data, onChange, assignmentId }) => {
   const [showInfo, setShowInfo] = useState(true);
   const [questions, setQuestions] = useState<AssignmentQuestion[]>([]);
-  const [editingQuestionId, setEditingQuestionId] = useState<string | null>(
-    null
-  );
+  const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null);
   const [currentQuestionContent, setCurrentQuestionContent] = useState("");
   const [questionToDelete, setQuestionToDelete] = useState<string | null>(null);
   const [isAddingNewQuestion, setIsAddingNewQuestion] = useState(false);
 
-  // Initialize with existing questions
   useEffect(() => {
     const existingQuestions = data.assignmentQuestions || [];
     setQuestions(existingQuestions);
 
-    // Show editor if there are no questions
     if (existingQuestions.length === 0) {
       setIsAddingNewQuestion(true);
     }
   }, [data.assignmentQuestions]);
 
-  const handleSubmitQuestion = () => {
+  const { createAssignmentQuestion, updateAssignmentQuestion, deleteAssignmentQuestion } = useAssignmentService();
+
+  const handleSubmitQuestion = async () => {
     const cleanContent = currentQuestionContent.replace(/<[^>]*>/g, "");
     if (!cleanContent.trim()) {
       toast.error("Question content cannot be empty");
       return;
     }
 
-    if (editingQuestionId) {
-      // Update existing question
-      const updatedQuestions = questions.map((q) =>
-        q.id === editingQuestionId ? { ...q, content: cleanContent } : q
-      );
-      setQuestions(updatedQuestions);
-      onChange("assignmentQuestions", updatedQuestions);
-      setEditingQuestionId(null);
-    } else {
-      // Add new question
-      const newQuestion: AssignmentQuestion = {
-        id: Date.now().toString(),
-        content: cleanContent,
-        order: questions.length + 1,
-      };
-      const updatedQuestions = [...questions, newQuestion];
-      setQuestions(updatedQuestions);
-      onChange("assignmentQuestions", updatedQuestions);
-    }
+    try {
+      if (editingQuestionId) {
+        const existing = questions.find((q) => q.id === editingQuestionId);
+        if (!existing) {
+          toast.error("Question not found.");
+          return;
+        }
 
-    setCurrentQuestionContent("");
-    setIsAddingNewQuestion(false);
+        const response = await updateAssignmentQuestion({
+          // assignmentId: Number(assignmentId),
+          assignmentQuestionId: Number(editingQuestionId),
+          text: cleanContent,
+          order: existing.order ?? 1,
+          // required: existing.required ?? false,
+          // maxPoints: existing.maxPoints ?? 0,
+        });
+
+        const updated = response.updateAssignmentQuestion.assignmentQuestion;
+
+        const updatedQuestions = questions.map((q) =>
+          q.id === editingQuestionId
+            ? {
+                ...q,
+                content: updated.text,
+                order: updated.order,
+                maxPoints: updated.maxPoints,
+                required: updated.required,
+              }
+            : q
+        );
+
+        setQuestions(updatedQuestions);
+        onChange("assignmentQuestions", updatedQuestions);
+        setEditingQuestionId(null);
+      } else {
+        const response = await createAssignmentQuestion({
+          assignmentId: Number(assignmentId),
+          text: cleanContent,
+          order: questions.length + 1,
+          required: false,
+          maxPoints: 0,
+        });
+
+        const newQuestion: AssignmentQuestion = {
+          id: response.createAssignmentQuestion.assignmentQuestion.id,
+          content: cleanContent,
+          order: questions.length + 1,
+        };
+
+        const updatedQuestions = [...questions, newQuestion];
+        setQuestions(updatedQuestions);
+        onChange("assignmentQuestions", updatedQuestions);
+      }
+    } catch (error) {
+      console.error("Failed to save question:", error);
+      toast.error("Something went wrong while saving the question.");
+    } finally {
+      setCurrentQuestionContent("");
+      setEditingQuestionId(null);
+      setIsAddingNewQuestion(false);
+    }
   };
 
   const startEditing = (question: AssignmentQuestion) => {
     setEditingQuestionId(question.id);
     setCurrentQuestionContent(question.content);
+    setIsAddingNewQuestion(false); // hide new question editor
   };
 
   const cancelEditing = () => {
@@ -70,9 +109,15 @@ const QuestionsTab: React.FC<{
     setIsAddingNewQuestion(false);
   };
 
-  const confirmDeleteQuestion = (questionId: string) => {
+  const confirmDeleteQuestion = async (questionId: string) => {
+  try {
+    // Call the delete mutation first
+    await deleteAssignmentQuestion({
+      assignmentQuestionId: parseInt(questionId, 10),
+    });
+
+    // Update local state only after successful deletion
     const updatedQuestions = questions.filter((q) => q.id !== questionId);
-    // Reorder the remaining questions
     const reorderedQuestions = updatedQuestions.map((q, index) => ({
       ...q,
       order: index + 1,
@@ -82,11 +127,14 @@ const QuestionsTab: React.FC<{
     onChange("assignmentQuestions", reorderedQuestions);
     setQuestionToDelete(null);
 
-    // If we deleted the last question, show the editor again
     if (reorderedQuestions.length === 0) {
       setIsAddingNewQuestion(true);
     }
-  };
+  } catch (error) {
+    console.error("Failed to delete assignment question:", error);
+    // Error toast already handled inside deleteAssignmentQuestion service
+  }
+};
 
   const startAddingNewQuestion = () => {
     setIsAddingNewQuestion(true);
@@ -98,6 +146,7 @@ const QuestionsTab: React.FC<{
     <>
       <div className="border border-gray-300 rounded-md mt-2">
         <RichTextEditor
+          key={editingQuestionId || "new"} // 🔑 force re-render when switching
           value={currentQuestionContent}
           onChange={setCurrentQuestionContent}
           type="assignmentQuestion"
@@ -146,16 +195,14 @@ const QuestionsTab: React.FC<{
 
   return (
     <div className="p-6 space-y-6">
+      {/* info section */}
       {showInfo && (
         <div className="border border-purple-200 bg-purple-50 rounded-md p-4">
           <div className="flex items-start gap-3">
-            <div className="w-6 h-6 bg-purple-600 rounded-full flex items-center justify-center text-white text-sm flex-shrink-0 mt-1">
-              i
-            </div>
+            <div className="w-6 h-6 bg-purple-600 rounded-full flex items-center justify-center text-white text-sm flex-shrink-0 mt-1">i</div>
             <div className="flex-1">
               <p className="text-gray-700 mb-3">
-                Each assignment must include at least one question. You can add
-                a maximum of 12 questions.
+                Each assignment must include at least one question. You can add a maximum of 12 questions.
               </p>
               <div className="flex gap-2">
                 <button className="px-4 py-2 border border-purple-600 text-purple-600 rounded-md hover:bg-purple-100">
@@ -173,45 +220,39 @@ const QuestionsTab: React.FC<{
         </div>
       )}
 
-      {/* Render existing questions */}
+      {/* render questions */}
       {questions.map((question) => (
         <div key={question.id} className="pb-6">
-          <h3 className="text-lg font-medium text-gray-900">
-            Question {question.order}
-          </h3>
+          <h3 className="text-lg font-medium text-gray-900">Question {question.order}</h3>
           {editingQuestionId === question.id
             ? renderQuestionEditor(question.order)
             : renderQuestionDisplay(question)}
         </div>
       ))}
 
-      {/* Render editor for new question */}
+      {/* new question editor */}
       {isAddingNewQuestion && (
         <div className="pb-6">
-          <h3 className="text-lg font-medium text-gray-900">
-            Question {questions.length + 1}
-          </h3>
+          <h3 className="text-lg font-medium text-gray-900">Question {questions.length + 1}</h3>
           {renderQuestionEditor(questions.length + 1)}
         </div>
       )}
 
-      {/* Add new question button (shown when not currently adding) */}
+      {/* Add button */}
       {!isAddingNewQuestion && questions.length < 12 && (
         <button
           onClick={startAddingNewQuestion}
-          className="flex items-center gap-2 px-4 py-2  border border-purple-600 text-purple-600 rounded-md hover:bg-purple-50 transition text-sm cursor-pointer"
+          className="flex items-center gap-2 px-4 py-2 border border-purple-600 text-purple-600 rounded-md hover:bg-purple-50 transition text-sm cursor-pointer"
         >
           Add More
         </button>
       )}
 
-      {/* Delete confirmation modal */}
+      {/* delete modal */}
       {questionToDelete && (
         <div className="fixed inset-0 bg-black/30 bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">
-              Confirm Deletion
-            </h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Confirm Deletion</h3>
             <p className="text-gray-600 mb-6">
               Are you sure you want to delete this question?
             </p>
@@ -224,7 +265,7 @@ const QuestionsTab: React.FC<{
               </button>
               <button
                 onClick={() => confirmDeleteQuestion(questionToDelete)}
-                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
               >
                 Delete
               </button>

@@ -2,6 +2,7 @@ import { ExtendedLecture } from "@/lib/types";
 import { useRef, useState } from "react";
 import RichTextEditor from "./NewRichTextEditor";
 import toast from "react-hot-toast";
+import { useAssignmentService } from "@/services/useAssignmentService";
 
 const SolutionsTab: React.FC<{
   data: ExtendedLecture;
@@ -89,7 +90,7 @@ const SolutionsTab: React.FC<{
     setAnswerContents((prev) => ({
       ...prev,
       [questionId]:
-        data.assignmentQuestions?.find((q) => q.id === questionId)?.solution ||
+        data.assignmentQuestions?.find((q) => q.id === questionId)?.solution?.text ||
         "",
     }));
   };
@@ -97,25 +98,52 @@ const SolutionsTab: React.FC<{
   const cancelEditingAnswer = (questionId: string) => {
     setEditingAnswers((prev) => ({ ...prev, [questionId]: false }));
   };
+//handle submitting of answers to question
+const {createAssignmentQuestionSolution, updateAssignmentQuestionSolution} = useAssignmentService()
 
-  const handleSubmitAnswer = (questionId: string) => {
-    const answerContent = answerContents[questionId] || "";
+  const handleSubmitAnswer = async (questionId: string) => {
+  const answerContent = answerContents[questionId] || "";
 
-    if (!answerContent.trim()) {
-      toast.error("Answer content cannot be empty");
-      return;
+  if (!answerContent.trim()) {
+    toast.error("Answer content cannot be empty");
+    return;
+  }
+
+const question = data.assignmentQuestions?.find((q) => q.id === questionId);
+const existingSolution = question?.solution;
+
+console.log(question)
+  try {
+   if (existingSolution && typeof existingSolution === "object" && "id" in existingSolution) {
+      await updateAssignmentQuestionSolution({
+        questionSolutionId: Number(existingSolution?.id),
+        text: answerContent,
+        videoUrl: "",
+        downloadableResourceUrl: "",
+      });
+    } else {
+      await createAssignmentQuestionSolution({
+        assignmentQuestionId: Number(questionId),
+        text: answerContent,
+        videoUrl: "",
+        downloadableResourceUrl: "",
+      });
     }
 
-    // Update the question with the solution
+    // Update the local state
     const updatedQuestions =
       data.assignmentQuestions?.map((q) =>
-        q.id === questionId ? { ...q, solution: answerContent } : q
+        q.id === questionId ? { ...q, solution: { ...existingSolution, text: answerContent } } : q
       ) || [];
 
     onChange("assignmentQuestions", updatedQuestions);
     setEditingAnswers((prev) => ({ ...prev, [questionId]: false }));
     toast.success("Answer saved successfully!");
-  };
+  } catch (err) {
+    toast.error("Failed to save answer");
+    console.error(err);
+  }
+};
 
   const handleDeleteAnswer = (questionId: string) => {
     // Remove the solution from the question
@@ -134,6 +162,8 @@ const SolutionsTab: React.FC<{
   const hasQuestions =
     data.assignmentQuestions && data.assignmentQuestions.length > 0;
 
+
+    console.log("quesion===", data)
   return (
     <div className="p-6 space-y-6">
       {/* Video Section */}
@@ -409,7 +439,7 @@ const SolutionsTab: React.FC<{
                         <div
                           className="prose max-w-none"
                           dangerouslySetInnerHTML={{
-                            __html: question.solution,
+                            __html: question.solution?.text ?? "",
                           }}
                         />
                         <div className="flex gap-2 mt-2">

@@ -313,7 +313,12 @@ export interface AssignmentQuestion {
   id: string;
   content: string;
   order: number;
-  solution?: string;
+  solution?: {
+    id?: string,
+    text?: string
+  };
+
+  
 }
 
 // UPDATED: Base Lecture interface
