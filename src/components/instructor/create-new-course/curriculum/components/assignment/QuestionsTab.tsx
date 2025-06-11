@@ -1,4 +1,4 @@
-import RichTextEditor from "@/components/instructor/RichTextEditor";
+import RichTextEditor from "../../RichTextEditor";
 import { AssignmentQuestion, ExtendedLecture } from "@/lib/types";
 import { useAssignmentService } from "@/services/useAssignmentService";
 import { useState, useEffect } from "react";

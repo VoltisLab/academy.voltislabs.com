@@ -11,7 +11,7 @@ import QuestionForm from "./QuestionForm";
 import { FaCircleCheck } from "react-icons/fa6";
 import { GoQuestion } from "react-icons/go";
 import { RxHamburgerMenu } from "react-icons/rx";
-import StudentVideoPreview from "../lecture/StudentVideoPeview";
+import StudentVideoPreview from "../lecture/components/StudentVideoPeview";
 import QuizForm from "./QuizForm";
 import { useQuizOperations } from "@/services/quizService";
 import toast, { LoaderIcon } from "react-hot-toast";

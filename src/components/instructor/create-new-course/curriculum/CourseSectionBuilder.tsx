@@ -13,7 +13,7 @@ import { useFileUpload } from "@/hooks/useFileUpload";
 import { useModal } from "@/hooks/useModal";
 import { useSectionService } from "@/services/useSectionService";
 import { useLectureService } from "@/services/useLectureService";
-import { ContentTypeSelector } from "../../ContentTypeSelector";
+import { ContentTypeSelector } from "./ContentTypeSelector";
 import SectionItem from "./components/section/SectionItem";
 import { useCourseSectionsUpdate } from "@/services/courseSectionsService";
 import SectionForm from "./components/section/SectionForm";
@@ -21,6 +21,11 @@ import NewFeatureAlert from "./NewFeatureAlert";
 import InfoBox from "./InfoBox";
 import CodingExerciseCreator from "./components/code/CodingExcerciseCreator";
 import AssignmentEditor from "./components/assignment/AssignmentEditor";
+import { uploadFile } from "@/services/fileUploadService";
+
+export interface FileUploadFunction {
+  (file: File, fileType: 'VIDEO' | 'RESOURCE'): Promise<string | null>;
+}
 import { useAssignmentService } from "@/services/useAssignmentService";
 
 interface CourseBuilderProps {
@@ -193,6 +198,18 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
       })
     );
   };
+
+    const uploadFileToBackend: FileUploadFunction = async (file: File, fileType: 'VIDEO' | 'RESOURCE') => {
+    try {
+      const uploadedUrl = await uploadFile(file, fileType);
+      return uploadedUrl;
+    } catch (error) {
+      console.error(`Failed to upload ${fileType} file:`, error);
+      toast.error(`Failed to upload ${fileType.toLowerCase()} file. Please try again.`);
+      throw error;
+    }
+  };
+
 
   const addExternalResource = (resource: ExternalResourceItem) => {
     setGlobalExternalResources((prev) => [...prev, resource]);
@@ -845,11 +862,14 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
                 addExternalResource={addExternalResource}
                 removeExternalResource={removeExternalResource}
                 isLoading={isLoading}
+                // Backend integration props
                 // NEW: Pass the new backend functions
                 uploadVideoToBackend={uploadVideoToBackend}
                 saveArticleToBackend={saveArticleToBackend}
                 videoUploading={videoUploading}
                 videoUploadProgress={videoUploadProgress}
+                // NEW: Pass file upload function
+                uploadFileToBackend={uploadFileToBackend}
               />
             ))
           ) : (

@@ -243,7 +243,7 @@ export interface ExternalResource {
 export interface SelectedVideoDetails {
   id: string;
   filename: string;
-  duration: string;
+  duration?: string;
   thumbnailUrl: string;
   isDownloadable: boolean;
   url?: string;
@@ -282,6 +282,7 @@ export interface StoredVideo {
   status: string;
   date: string;
   url?: string;
+  duration?: string;
 }
 
 export interface LibraryFileWithSize extends StoredVideo {

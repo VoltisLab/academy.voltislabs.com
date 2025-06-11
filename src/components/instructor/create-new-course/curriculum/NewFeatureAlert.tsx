@@ -1,6 +1,6 @@
 const NewFeatureAlert: React.FC<{ onDismiss: () => void }> = ({ onDismiss }) => {
   return (
-    <div className="bg-gray-100 border border-gray-300  mb-6 overflow-hidden">
+    <div className="bg-gray-100 border border-gray-300 mb-6 overflow-hidden">
       <div className="flex items-start px-4 py-3">
         <div className="flex-shrink-0 mr-3">
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs bg-green-300 text-green-900 font-bold">
