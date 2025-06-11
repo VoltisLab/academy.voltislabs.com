@@ -155,14 +155,14 @@ const handleSendCode = async () => {
       // Handle error
       setErrors(prev => ({
         ...prev,
-        emailVerification: result.error || "Failed to send verification code. Please try again."
+        emailVerification: result.errors
       }));
     }
   } catch (error: any) {
     console.error("Error sending verification code:", error);
     setErrors(prev => ({
       ...prev,
-      emailVerification: error.message || "Failed to send verification code. You may have reached the rate limit (3 requests per hour)."
+      emailVerification: error.message
     }));
   } finally {
     setSendingCode(false);
@@ -364,23 +364,22 @@ const handleSendCode = async () => {
         }
         // If auto-login succeeds, performLogin will handle the redirect
       } else {
+        console.log(result.register.errors)
         // Handle specific API errors
         if (result.register?.errors?.length > 0) {
           // Map API errors to specific fields if possible
-          result.register.errors.forEach(errorMsg => {
-            if (errorMsg.toLowerCase().includes("email")) {
-              setErrors(prev => ({ ...prev, email: errorMsg }));
-            } else if (errorMsg.toLowerCase().includes("password")) {
-              setErrors(prev => ({ ...prev, password: errorMsg }));
-            } else if (errorMsg.toLowerCase().includes("name")) {
-              setErrors(prev => ({ ...prev, fullName: errorMsg }));
-            } else if (errorMsg.toLowerCase().includes("code") || errorMsg.toLowerCase().includes("otp")) {
-              setErrors(prev => ({ ...prev, otpCode: errorMsg }));
+            if (result.register?.errors[0].toLowerCase().includes("email")) {
+              setErrors(prev => ({ ...prev, email: result.register?.errors[0] }));
+            } else if (result.register?.errors[0].toLowerCase().includes("password")) {
+              setErrors(prev => ({ ...prev, password: result.register?.errors[0] }));
+            } else if (result.register?.errors[0].toLowerCase().includes("name")) {
+              setErrors(prev => ({ ...prev, fullName: result.register?.errors[0] }));
+            } else if (result.register?.errors[0].toLowerCase().includes("code") || result.register?.errors[0].toLowerCase().includes("otp")) {
+              setErrors(prev => ({ ...prev, otpCode: result.register?.errors[0] }));
             } else {
-              setErrors(prev => ({ ...prev, general: errorMsg }));
-            }
-          });
-        } else {
+              setErrors(prev => ({ ...prev, general: result.register?.errors[0]}));
+        }
+      }else {
           setErrors({ general: "Registration failed. Please try again." });
         }
       }
