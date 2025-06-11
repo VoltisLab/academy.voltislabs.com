@@ -666,11 +666,6 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
   };
 
   //new assignment
-  const [newAssinment, setNewassignment] = useState<number | undefined>(
-    undefined
-  );
-
-  //new assignment
 
   const handleDragLeave = () => {
     setDragTarget({ sectionId: null, lectureId: null });
@@ -803,6 +798,7 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
             sections.map((section, index) => (
               <SectionItem
                 setNewassignment={setNewassignment}
+                deleteAssignment={handleDeleteAssignment}
                 key={section.id}
                 section={section}
                 index={index}
