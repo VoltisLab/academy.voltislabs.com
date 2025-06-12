@@ -190,21 +190,9 @@ export const UPDATE_QUESTION = gql`
   mutation UpdateQuestion(
     $questionId: Int!
     $text: String
-    $explanation: String
-    $maxPoints: Int
-    $mediaUrl: String
-    $order: Int
     $choices: [AnswerChoiceInputType]!
   ) {
-    updateQuestion(
-      questionId: $questionId
-      text: $text
-      explanation: $explanation
-      maxPoints: $maxPoints
-      mediaUrl: $mediaUrl
-      order: $order
-      choices: $choices
-    ) {
+    updateQuestion(questionId: $questionId, text: $text, choices: $choices) {
       success
     }
   }

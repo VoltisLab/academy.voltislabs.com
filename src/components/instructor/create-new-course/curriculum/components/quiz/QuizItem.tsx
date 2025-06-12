@@ -499,6 +499,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
         text: answer.text,
         isCorrect: idx === question.correctAnswerIndex,
         order: idx + 1,
+        id: idx + 1,
       }));
 
       // Call the backend to add the question
@@ -610,23 +611,30 @@ const QuizItem: React.FC<QuizItemProps> = ({
       console.log("Updating questionnnnn:", question.id);
 
       // Convert answers to choices format
-      const choices = question.answers.map((answer: any, idx: number) => ({
-        text: answer.text,
-        isCorrect: idx === question.correctAnswerIndex,
-        order: idx + 1,
-        ...(question.id ? { id: parseInt(question.id) } : {}), // ✅ only include `id` if it's defined
-      }));
+      const choices = question.answers.map((answer: any, idx: number) => {
+        const parsedId = parseInt(answer.id);
+        const isValidId = !isNaN(parsedId) && parsedId > 0;
 
-      console.log("Updating questionnnnn:", question.id);
-      console.log("Typeof question", typeof parseInt(question.id));
+        return {
+          text: answer.text,
+          isCorrect: idx === question.correctAnswerIndex,
+          order: answer.order || idx + 1,
+          id: idx + 1,
+        };
+      });
+
+      // console.log("Sending choices:", an);
 
       const result = await updateQuestion({
         questionId: parseInt(question.id),
         text: question.text,
-        explanation: question.explanation || "",
-        maxPoints: 1, // Default points
         choices,
-        order: index + 1,
+      });
+
+      console.log("🚨 Final payload for updateQuestion:", {
+        questionId: parseInt(question.id),
+        text: question.text,
+        choices,
       });
 
       console.log("Update result:", result);

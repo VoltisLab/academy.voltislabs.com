@@ -76,10 +76,6 @@ export const useQuizOperations = () => {
   const updateQuestion = async (variables: {
     questionId: number;
     text?: string;
-    explanation?: string;
-    maxPoints?: number;
-    mediaUrl?: string;
-    order?: number;
     choices?: ChoiceInputType[];
   }) => {
     console.log("🚨 updateQuestion payload:", variables.questionId);
