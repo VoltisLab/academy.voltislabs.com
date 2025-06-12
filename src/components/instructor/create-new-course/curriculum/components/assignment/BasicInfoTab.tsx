@@ -1,18 +1,24 @@
 import { useState, useEffect } from "react";
 import { ExtendedLecture } from "@/lib/types";
 import toast from "react-hot-toast";
+import { useAssignment } from "@/context/AssignmentDataContext";
+import { UpdateAssignmentVariables } from "@/api/assignment/mutation";
+import { useParams } from "next/navigation";
+import { useAssignmentService } from "@/services/useAssignmentService";
 
 const BasicInfoTab: React.FC<{
   data: ExtendedLecture;
   onChange: (field: string, value: any) => void;
   onSave?: () => void; // Made optional to prevent errors
+  
 }> = ({ data, onChange, onSave }) => {
   const [validation, setValidation] = useState({
     title: true,
     description: true,
     duration: true,
   });
-
+  const params = useParams();
+  const id = params?.id; 
   // Validate form whenever data changes
   useEffect(() => {
     setValidation({
@@ -58,10 +64,24 @@ const BasicInfoTab: React.FC<{
   const handleUnitChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     onChange("durationUnit", e.target.value as "minutes" | "hours" | "days");
   };
+    const { assignmentData, setAssignmentData } = useAssignment();
+  
+  const {updateAssignment} = useAssignmentService()
 
-  const handleSaveClick = () => {
-    if (isFormValid && onSave) {
-      onSave();
+  const handleSaveClick = async() => {
+    if (isFormValid) {
+      const publishedData = { ...assignmentData, isPublished: true };
+          const variables: UpdateAssignmentVariables = {
+              assignmentId: Number(id),
+              title: publishedData.assignmentTitle,
+              description: publishedData.assignmentDescription,
+              estimatedDurationMinutes: publishedData.estimatedDuration,
+              instructions: publishedData.assignmentInstructions,
+              resourceUrl: publishedData.instructionalResource?.url,
+              videoUrl: publishedData.instructionalVideo?.url
+            };
+
+    await updateAssignment(variables);
       toast.success("Basic info saved successfully!");
     }
   };
@@ -81,8 +101,8 @@ const BasicInfoTab: React.FC<{
             type="text"
             value={data.assignmentTitle || ""}
             onChange={handleTitleChange}
-            className={`w-full p-3 border rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent ${
-              validation.title ? "border-gray-300" : "border-red-500"
+            className={`w-full p-3 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500 ${
+              validation.title ? "border border-gray-300" : "border border-red-500"
             }`}
             placeholder="Enter assignment title"
             maxLength={20}
@@ -105,8 +125,8 @@ const BasicInfoTab: React.FC<{
           <textarea
             value={data.assignmentDescription || ""}
             onChange={handleDescriptionChange}
-            className={`w-full p-3 border rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent ${
-              validation.description ? "border-gray-300" : "border-red-500"
+            className={`w-full p-3 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500 ${
+              validation.description ? "border border-gray-300" : "border border-red-500"
             }`}
             rows={6}
             placeholder="Enter assignment description"
@@ -131,14 +151,14 @@ const BasicInfoTab: React.FC<{
             type="number"
             value={data.estimatedDuration || ""}
             onChange={handleDurationChange}
-            className={`w-32 p-3 border rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent ${
-              validation.duration ? "border-gray-300" : "border-red-500"
+            className={`w-32 p-3 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500 ${
+              validation.duration ? "border border-gray-300" : "border border-red-500"
             }`}
           />
           <select
             value={data.durationUnit || "minutes"}
             onChange={handleUnitChange}
-            className="p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            className="p-3 border border-gray-300 rounded-md focus:ring-1 focus:ring-purple-500 focus:outline-none"
           >
             <option value="minutes">Minutes</option>
             <option value="hours">Hours</option>
@@ -155,9 +175,9 @@ const BasicInfoTab: React.FC<{
       <button
         onClick={handleSaveClick}
         disabled={!isFormValid}
-        className={`px-6 py-2 rounded-md ${
+        className={`px-6 py-2 rounded-md  ${
           isFormValid
-            ? "bg-purple-600 text-white hover:bg-purple-700"
+            ? "bg-[#6d28d2] text-white hover:bg-purple-700"
             : "bg-gray-200 text-gray-500 cursor-not-allowed"
         }`}
       >
