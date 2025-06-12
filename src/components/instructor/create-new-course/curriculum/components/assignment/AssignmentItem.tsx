@@ -10,6 +10,7 @@ import {
   Edit,
 } from "lucide-react";
 import { FaCircleCheck } from "react-icons/fa6";
+import { useRouter } from "next/navigation";
 
 interface AssignmentItemProps {
   lecture: ExtendedLecture;
@@ -73,6 +74,7 @@ const AssignmentItem: React.FC<AssignmentItemProps> = ({
   dragTarget,
   onEditAssignment, // Now properly typed
 }) => {
+    const router = useRouter();
   const nameInputRef = useRef<HTMLInputElement>(null);
   const [isHovering, setIsHovering] = useState(false);
 
@@ -87,32 +89,39 @@ const AssignmentItem: React.FC<AssignmentItemProps> = ({
     setEditingLectureId(lecture.id);
   };
 
+
   const handleEditClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (onEditAssignment) {
-      // Convert Lecture to ExtendedLecture for the assignment editor
-      const extendedLecture: ExtendedLecture = {
-        ...lecture,
-        assignmentTitle:
-          lecture.assignmentTitle || lecture.name || lecture.title || "",
-        assignmentDescription:
-          lecture.assignmentDescription || lecture.description || "",
-        estimatedDuration: lecture.estimatedDuration || 0,
-        durationUnit: lecture.durationUnit || "minutes",
-        assignmentInstructions: lecture.assignmentInstructions || "",
-        instructionalVideo: lecture.instructionalVideo || { file: null },
-        downloadableResource: lecture.downloadableResource || {
-          file: null,
-          name: "",
-        },
-        assignmentQuestions: lecture.assignmentQuestions || [],
-        solutionVideo: lecture.solutionVideo || { file: null },
-        isPublished:
-          lecture.isPublished !== undefined ? lecture.isPublished : false,
-      };
-      onEditAssignment(extendedLecture);
-    }
+    router.push(`/assignment/edit-assignment/${lecture.id}`); // adjust the URL path as needed
   };
+
+
+  // const handleEditClick = (e: React.MouseEvent) => {
+  //   e.stopPropagation();
+  //   if (onEditAssignment) {
+  //     // Convert Lecture to ExtendedLecture for the assignment editor
+  //     const extendedLecture: ExtendedLecture = {
+  //       ...lecture,
+  //       assignmentTitle:
+  //         lecture.assignmentTitle || lecture.name || lecture.title || "",
+  //       assignmentDescription:
+  //         lecture.assignmentDescription || lecture.description || "",
+  //       estimatedDuration: lecture.estimatedDuration || 0,
+  //       durationUnit: lecture.durationUnit || "minutes",
+  //       assignmentInstructions: lecture.assignmentInstructions || "",
+  //       instructionalVideo: lecture.instructionalVideo || { file: null },
+  //       downloadableResource: lecture.downloadableResource || {
+  //         file: null,
+  //         name: "",
+  //       },
+  //       assignmentQuestions: lecture.assignmentQuestions || [],
+  //       solutionVideo: lecture.solutionVideo || { file: null },
+  //       isPublished:
+  //         lecture.isPublished !== undefined ? lecture.isPublished : false,
+  //     };
+  //     onEditAssignment(extendedLecture);
+  //   }
+  // };
   return (
     <div
       className={`mb-3 bg-white border border-gray-300 ${

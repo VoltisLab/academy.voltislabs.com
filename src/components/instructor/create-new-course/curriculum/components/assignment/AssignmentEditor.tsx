@@ -1,3 +1,4 @@
+"use client"
 import React, { useState, useRef, JSX } from "react";
 import { ArrowLeft } from "lucide-react";
 import SolutionsTab from "./SolutionsTab";
@@ -10,18 +11,21 @@ import AssignmentPreview from "./AssignmentPreview";
 import { useAssignment } from "@/context/AssignmentDataContext";
 import { UpdateAssignmentVariables } from "@/api/assignment/mutation";
 import { useAssignmentService } from "@/services/useAssignmentService";
+import { useRouter } from "next/navigation";
 
 // Types
 interface AssignmentQuestion {
   id: string;
   content: string;
   order: number;
-  solution?: string; // Optional solution field for answers
+  solution?: {
+    text?:string;
+  } // Optional solution field for answers
 }
 
 interface AssignmentEditorProps {
   initialData?: ExtendedLecture;
-  onClose: () => void;
+  onClose?: () => void;
   onSave: (data: ExtendedLecture) => void;
   newAssinment?: number
 }
@@ -34,6 +38,7 @@ const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
   onSave,
 }) => {
   const [activeTab, setActiveTab] = useState("basic-info");
+  const router = useRouter()
 
   // const [assignmentData, setAssignmentData] = useState<ExtendedLecture>({
   //   ...(initialData || {
@@ -333,7 +338,7 @@ const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
           <BasicInfoTab
             data={assignmentData}
             onChange={handleDataChange}
-            onSave={() => console.log("Basic info saved")}
+            onSave={() => console.log("Basic info saved", assignmentData)}
           />
         );
       case "instructions":
@@ -375,8 +380,8 @@ const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
       <div className="border-b border-gray-200 px-6 py-4 flex items-center justify-between">
         <div className=" gap-4 w-full">
           <button
-            onClick={onClose}
-            className="flex items-center gap-2 py-1.5 px-2 hover:bg-purple-100 rounded-md text-purple-600 hover:text-purple-800 cursor-pointer transition"
+            onClick={() => router.back()}
+            className="flex items-center gap-2 py-1.5 px-2 hover:bg-purple-100 font-bold rounded-md text-[#6d28d2] hover:text-purple-800 cursor-pointer transition"
           >
             <ArrowLeft className="w-4 h-4" />
             Back to curriculum
@@ -389,7 +394,7 @@ const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
             <button
               onClick={handlePublishClick}
               disabled={assignmentData.isPublished}
-              className="px-6 py-2 bg-purple-600 text-white cursor-pointer rounded-md hover:bg-purple-700 disabled:bg-purple-300 disabled:cursor-not-allowed transition"
+              className="px-6 py-2 bg-[#6d28d2] text-white cursor-pointer rounded-md hover:bg-purple-600 disabled:bg-purple-300 disabled:cursor-not-allowed transition"
             >
               Publish
             </button>
@@ -451,7 +456,7 @@ const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
               </button>
               <button
                 onClick={handleConfirmPublish}
-                className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
+                className="px-4 py-2 bg-[#6d28d2] text-white rounded-md hover:bg-purple-700"
               >
                 Publish
               </button>
