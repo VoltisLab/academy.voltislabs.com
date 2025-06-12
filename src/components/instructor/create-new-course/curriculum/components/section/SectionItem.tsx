@@ -32,6 +32,7 @@ import PracticeItem from "../practice/PracticeItem";
 import PracticeForm from "../practice/PracticeForm";
 import { FaHamburger } from "react-icons/fa";
 import { useSections } from "@/hooks/useSection";
+import { FileUploadFunction } from "../../CourseSectionBuilder";
 import { CREATE_ASSIGNMENT } from "@/api/assignment/mutation";
 import { useAssignmentService } from "@/services/useAssignmentService";
 
@@ -191,6 +192,7 @@ interface SectionItemProps {
   ) => Promise<string>;
   videoUploading?: boolean;
   videoUploadProgress?: number;
+  uploadFileToBackend?: FileUploadFunction;
 }
 
 export default function SectionItem({
@@ -250,6 +252,7 @@ export default function SectionItem({
   videoUploading,
   videoUploadProgress,
   saveArticleToBackend,
+  uploadFileToBackend, 
 }: SectionItemProps) {
   const sectionNameInputRef = useRef<HTMLInputElement>(null);
   // State for toggling action buttons
