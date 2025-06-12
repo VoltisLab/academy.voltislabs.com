@@ -24,7 +24,7 @@ import AssignmentEditor from "./components/assignment/AssignmentEditor";
 import { uploadFile } from "@/services/fileUploadService";
 
 export interface FileUploadFunction {
-  (file: File, fileType: 'VIDEO' | 'RESOURCE'): Promise<string | null>;
+  (file: File, fileType: "VIDEO" | "RESOURCE"): Promise<string | null>;
 }
 import { useAssignmentService } from "@/services/useAssignmentService";
 
@@ -59,6 +59,7 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
   const [newAssinment, setNewassignment] = useState<number | undefined>(
     undefined
   );
+  const [newQuizId, setNewQuizId] = useState<number | undefined>(undefined);
 
   const [dragTarget, setDragTarget] = useState<{
     sectionId: string | null;
@@ -199,17 +200,21 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
     );
   };
 
-    const uploadFileToBackend: FileUploadFunction = async (file: File, fileType: 'VIDEO' | 'RESOURCE') => {
+  const uploadFileToBackend: FileUploadFunction = async (
+    file: File,
+    fileType: "VIDEO" | "RESOURCE"
+  ) => {
     try {
       const uploadedUrl = await uploadFile(file, fileType);
       return uploadedUrl;
     } catch (error) {
       console.error(`Failed to upload ${fileType} file:`, error);
-      toast.error(`Failed to upload ${fileType.toLowerCase()} file. Please try again.`);
+      toast.error(
+        `Failed to upload ${fileType.toLowerCase()} file. Please try again.`
+      );
       throw error;
     }
   };
-
 
   const addExternalResource = (resource: ExternalResourceItem) => {
     setGlobalExternalResources((prev) => [...prev, resource]);
@@ -364,6 +369,12 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
           description
         );
 
+        console.log("localLecture", localLectureId);
+        console.log("backendLectureId", backendLectureId);
+
+        // const finalId =
+        //   contentType === "quiz" ? localLectureId : backendLectureId;
+
         // Update the local lecture with the backend ID
         setSections((prevSections) =>
           prevSections.map((section) => {
@@ -380,6 +391,8 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
             return section;
           })
         );
+
+        console.log("Heerrrrrsaarrrrrrrrrrr", backendLectureId);
 
         return backendLectureId;
       }
@@ -415,6 +428,7 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
 
   // NEW: Backend-integrated lecture deletion
   const handleDeleteLecture = async (sectionId: string, lectureId: string) => {
+    console.log("Deleting lectureeeeeeeeee", sectionId, lectureId);
     try {
       // Delete on backend
       await deleteLecture({
@@ -815,6 +829,8 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
             sections.map((section, index) => (
               <SectionItem
                 setNewassignment={setNewassignment}
+                setNewQuizId={setNewQuizId}
+                newQuizId={newQuizId}
                 deleteAssignment={handleDeleteAssignment}
                 key={section.id}
                 section={section}

@@ -19,6 +19,7 @@ import toast, { LoaderIcon } from "react-hot-toast";
 interface QuizItemProps {
   lecture: Lecture;
   lectureIndex: number;
+  newQuizId?: number; // For new quizzes
   totalLectures: number;
   sectionId: string;
   editingLectureId: string | null;
@@ -48,14 +49,14 @@ interface QuizItemProps {
   toggleContentSection: (sectionId: string, lectureId: string) => void;
   updateQuizQuestions?: (
     sectionId: string,
-    quizId: string,
+    quizId: number,
     questions: any[]
   ) => void;
   sections: any[]; // All sections for preview
   allSections: any[];
   onEditQuiz?: (
     sectionId: string,
-    quizId: string,
+    quizId: number,
     title: string,
     description: string
   ) => Promise<void>;
@@ -85,6 +86,7 @@ export const generateNumericId = (): string => {
 const QuizItem: React.FC<QuizItemProps> = ({
   lecture,
   lectureIndex,
+  newQuizId,
   sectionId,
   editingLectureId,
   setEditingLectureId,
@@ -146,7 +148,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
 
     try {
       const result = await deleteQuiz({
-        quizId: parseInt(lecture.id),
+        quizId: newQuizId as number,
       });
 
       if (result?.deleteQuiz?.success) {
@@ -379,7 +381,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
 
   const handleQuizEditSubmit = async (
     sectionId: string,
-    quizId: string,
+    quizId: number,
     title: string,
     description: string
   ) => {
@@ -389,7 +391,6 @@ const QuizItem: React.FC<QuizItemProps> = ({
       }
     } catch (error) {
       throw error;
-      console.error(error);
     }
   };
 
@@ -497,6 +498,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
       // Convert answers to backend-compatible format
       const choices = question.answers.map((answer, idx) => ({
         text: answer.text,
+        explanation: answer.explanation || "",
         isCorrect: idx === question.correctAnswerIndex,
         order: idx + 1,
         id: idx + 1,
@@ -504,7 +506,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
 
       // Call the backend to add the question
       const result = await addQuestionToQuiz({
-        quizId: parseInt(lecture.id), // Make sure `quiz` is defined
+        quizId: newQuizId as number, // Make sure `quiz` is defined
         text: question.text,
         explanation: "",
         maxPoints: 1, // Default points
@@ -531,7 +533,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
       setQuestions(newQuestions);
 
       if (updateQuizQuestions) {
-        updateQuizQuestions(sectionId, lecture.id, newQuestions);
+        updateQuizQuestions(sectionId, newQuizId as number, newQuestions);
       }
 
       toast.success("Question added successfully!");
@@ -569,7 +571,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
         const newQuestions = questions.filter((_, idx) => idx !== index);
         setQuestions(newQuestions);
         if (updateQuizQuestions) {
-          updateQuizQuestions(sectionId, lecture.id, newQuestions);
+          updateQuizQuestions(sectionId, newQuizId as number, newQuestions);
         }
 
         toast.success("Question deleted successfully!");
@@ -617,13 +619,12 @@ const QuizItem: React.FC<QuizItemProps> = ({
 
         return {
           text: answer.text,
+          explanation: answer.explanation || "",
           isCorrect: idx === question.correctAnswerIndex,
           order: answer.order || idx + 1,
           id: idx + 1,
         };
       });
-
-      // console.log("Sending choices:", an);
 
       const result = await updateQuestion({
         questionId: parseInt(question.id),
@@ -645,7 +646,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
 
         setQuestions(newQuestions);
         if (updateQuizQuestions) {
-          updateQuizQuestions(sectionId, lecture.id, newQuestions);
+          updateQuizQuestions(sectionId, newQuizId as number, newQuestions);
         }
 
         toast.success("Question updated successfully!");
@@ -831,7 +832,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
                 <button
                   onClick={handleDeleteQuiz}
                   disabled={quizOperationLoading}
-                  className={`text-gray-500 hover:text-red-600 p-1 transition-opacity cursor-pointer disabled:cursor-not-allowed ${
+                  className={`text-gray-500 hover:text-blue-600 p-1 transition-opacity cursor-pointer disabled:cursor-not-allowed ${
                     quizOperationLoading ? "animate-pulse" : ""
                   }`}
                 >
@@ -910,7 +911,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
             ) : (
               <div className="border-t border-zinc-400">
                 <QuestionForm
-                  quizId={lecture.id}
+                  quizId={newQuizId as number}
                   onSubmit={handleQuestionSubmit}
                   onLoad={quizOperationLoading}
                   onCancel={() => {
@@ -1031,7 +1032,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
               isEdit={true}
               initialTitle={lecture.name || ""}
               initialDescription={lecture.description || ""}
-              quizId={lecture.id}
+              quizId={newQuizId}
               setShowEditQuizForm={setShowEditQuizForm}
             />
           ) : showQuestionForm || showQuestionTypeSelector ? (
@@ -1104,7 +1105,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
                         setShowQuestionTypeSelector(false);
                         setEditingQuestionIndex(null);
                       }}
-                      quizId={lecture.id}
+                      quizId={newQuizId as number}
                       onLoad={quizOperationLoading}
                       isEditedForm={editingQuestionIndex !== null}
                       initialQuestion={

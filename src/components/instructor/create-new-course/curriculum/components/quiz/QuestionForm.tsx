@@ -12,7 +12,7 @@ interface QuestionFormProps {
   initialQuestion?: any;
   isEditedForm?: boolean;
   onLoad?: boolean;
-  quizId: string;
+  quizId: number;
 }
 
 const QuestionForm: React.FC<QuestionFormProps> = ({
@@ -229,7 +229,7 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
         text,
         explanation,
       })),
-      quizId: parseInt(quizId),
+      quizId: Number(quizId),
       choices, // Add choices for API
       correctAnswerIndex,
       relatedLecture,

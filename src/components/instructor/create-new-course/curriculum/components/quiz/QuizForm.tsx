@@ -15,7 +15,7 @@ interface QuizFormProps {
   ) => Promise<void>;
   onEditQuiz?: (
     sectionId: string,
-    quizId: string,
+    quizId: number,
     title: string,
     description: string
   ) => Promise<void>;
@@ -23,7 +23,7 @@ interface QuizFormProps {
   isEdit?: boolean;
   initialTitle?: string;
   initialDescription?: string;
-  quizId?: string;
+  quizId?: number;
   loading?: boolean;
   setShowEditQuizForm?: React.Dispatch<React.SetStateAction<boolean>>;
 }
@@ -167,6 +167,12 @@ const QuizForm: React.FC<QuizFormProps> = ({
         if (isEdit && onEditQuiz && quizId) {
           await onEditQuiz(sectionId, quizId, title.trim(), description.trim());
         } else if (!isEdit && onAddQuiz) {
+          console.log(
+            "Adding quiz",
+            sectionId,
+            title.trim(),
+            description.trim()
+          );
           await onAddQuiz(sectionId, title.trim(), description.trim());
         }
         setQuizEditLoading(false);
