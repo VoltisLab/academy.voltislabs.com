@@ -1182,25 +1182,30 @@ export default function LectureItem(props: UpdatedLectureItemProps) {
             isDescriptionSectionActive) && (
             <div>
               {/* Resource Component */}
-              {isResourceSectionActive && (
-                <AddResourceComponent
-                  activeContentSection={activeResourceSection}
-                  onClose={() => {
-                    if (toggleAddResourceModal) {
-                      toggleAddResourceModal(sectionId, lecture.id);
-                    }
-                  }}
-                  activeResourceTab={activeResourceTab}
-                  setActiveResourceTab={setActiveResourceTab}
-                  sections={sections}
-                  isUploading={isUploading}
-                  uploadProgress={uploadProgress}
-                  triggerFileUpload={triggerFileUpload}
-                  onLibraryItemSelect={handleLibraryItemSelect}
-                  onSourceCodeSelect={handleSourceCodeSelect}
-                  onExternalResourceAdd={handleExternalResourceAdd}
-                />
-              )}
+
+{/* Resource Component */}
+{isResourceSectionActive && (
+  <AddResourceComponent
+    activeContentSection={activeResourceSection}
+    onClose={() => {
+      if (toggleAddResourceModal) {
+        toggleAddResourceModal(sectionId, lecture.id);
+      }
+    }}
+    activeResourceTab={activeResourceTab}
+    setActiveResourceTab={setActiveResourceTab}
+    sections={sections}
+    isUploading={isUploading}
+    uploadProgress={uploadProgress}
+    triggerFileUpload={triggerFileUpload}
+    onLibraryItemSelect={handleLibraryItemSelect}
+    onSourceCodeSelect={handleSourceCodeSelect}
+    onExternalResourceAdd={handleExternalResourceAdd}
+    // NEW: Add these required props
+    lectureId={lecture.id}
+    sectionId={sectionId}
+  />
+)}
 
               {/* Description Component */}
               {isDescriptionSectionActive &&

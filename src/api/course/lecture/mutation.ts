@@ -157,3 +157,47 @@ export interface UpdateLectureContentResponse {
     };
   };
 }
+
+export const UPDATE_LECTURE_RESOURCE = gql`
+  mutation UpdateLectureResource(
+    $lectureId: Int!
+    $type: LectureResourceTypeEnum!
+    $url: String!
+    $title: String!
+  ) {
+    updateLecture(
+      lectureId: $lectureId
+      resource: {
+        type: $type
+        url: $url
+        title: $title
+      }
+    ) {
+      success
+      lecture {
+        id
+        title
+      }
+    }
+  }
+`;
+
+// Updated TypeScript interfaces with correct enum types
+export type LectureResourceTypeEnum = 'DOWNLOADABLE_FILES' | 'EXTERNAL_RESOURCES' | 'SOURCE_CODE';
+
+export interface UpdateLectureResourceVariables {
+  lectureId: number;
+  type: LectureResourceTypeEnum;
+  url: string;
+  title: string;
+}
+
+export interface UpdateLectureResourceResponse {
+  updateLecture: {
+    success: boolean;
+    lecture: {
+      id: string;
+      title: string;
+    };
+  };
+}
