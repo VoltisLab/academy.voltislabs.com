@@ -42,7 +42,6 @@ export function middleware(request: NextRequest) {
       if (pathname.startsWith('/instructor')) {
         // If user is a student (not an instructor), deny access and redirect to student dashboard
         if (!tokenData.isInstructor) {
-          console.log('Student user attempting to access instructor route, redirecting to dashboard');
           return NextResponse.redirect(new URL('/dashboard', request.url));
         }
       }

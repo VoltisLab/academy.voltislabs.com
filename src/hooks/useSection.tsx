@@ -1,4 +1,3 @@
-// hooks/useSections.tsx
 import { useState } from "react";
 import { Lecture, ContentType, ContentItemType, Question } from "@/lib/types";
 import { generateId } from "@/lib/utils";
@@ -6,7 +5,6 @@ import { toast } from "react-hot-toast";
 import { useSectionService } from "@/services/useSectionService";
 import { useQuizOperations } from "@/services/quizService";
 import { useLectureService } from "@/services/useLectureService";
-import { UpdateLectureDescriptionVariables } from "@/api/course/lecture/mutation";
 
 interface Section {
   isExpanded: boolean;
@@ -855,7 +853,6 @@ export const useSections = (
   //   questions: Question[]
   // ) => {
   //   try {
-  //     console.log("From Updattttttte");
 
   //     // Then sync with backend
   //     const numericQuizId = parseInt(quizId);

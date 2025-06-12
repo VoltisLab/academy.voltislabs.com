@@ -40,7 +40,6 @@ export const signUp = async (userData: SignUpData): Promise<SignUpResponse> => {
     if (errors) {
       console.log(errors);
     }
-    console.log(data)
 
     // Store tokens on successful registration
     if (data.register.success && typeof window !== 'undefined') {

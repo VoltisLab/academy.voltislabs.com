@@ -2,9 +2,17 @@
 import React, { useState, useRef, ChangeEvent, Dispatch, SetStateAction } from 'react';
 import { ContentType, ResourceTabType, StoredVideo } from '@/lib/types';
 import { Search, ChevronDown, Trash2 } from 'lucide-react';
+import { inputClasses, searchInputClasses } from '@/lib/utils';
+import { uploadFile } from '@/services/fileUploadService';
+import { useLectureService } from '@/services/useLectureService';
+import { toast } from 'react-hot-toast';
+import { apolloClient } from '@/lib/apollo-client';
+import { UPDATE_LECTURE_CONTENT, UpdateLectureContentResponse } from '@/api/course/lecture/mutation';
+
 interface LibraryFileWithSize extends StoredVideo {
   size?: string;
 }
+
 // Define types for the component
 interface ResourceComponentProps {
   // Original props
@@ -23,8 +31,10 @@ interface ResourceComponentProps {
   isUploading?: boolean;
   uploadProgress?: number;
   triggerFileUpload?: (contentType: ContentType) => void;
+  // NEW: Backend integration props
+  lectureId?: string;
+  sectionId?: string;
 }
-
 
 // Define the types for the form state
 interface ExternalResourceForm {
@@ -48,7 +58,10 @@ export default function ResourceComponent({
   sections = [],
   isUploading = false,
   uploadProgress = 0,
-  triggerFileUpload
+  triggerFileUpload,
+  // NEW: Backend props
+  lectureId,
+  sectionId
 }: ResourceComponentProps) {
   // Use the provided activeTab or initialize with a default
   const [currentTab, setCurrentTab] = useState<ResourceTabType>(
@@ -63,21 +76,48 @@ export default function ResourceComponent({
   const [showUploadComplete, setShowUploadComplete] = useState<boolean>(false);
   const [selectedLibraryItems, setSelectedLibraryItems] = useState<StoredVideo[]>([]);
   const [sourceFile, setSourceFile] = useState<File | null>(null);
-const [isSourceUploading, setIsSourceUploading] = useState<boolean>(false);
-const [sourceUploadProgress, setSourceUploadProgress] = useState<number>(0);
-const [sourceUploadComplete, setSourceUploadComplete] = useState<boolean>(false);
+  const [isSourceUploading, setIsSourceUploading] = useState<boolean>(false);
+  const [sourceUploadProgress, setSourceUploadProgress] = useState<number>(0);
+  const [sourceUploadComplete, setSourceUploadComplete] = useState<boolean>(false);
+  const [isFileUploading, setIsFileUploading] = useState<boolean>(false);
+  const [fileUploadProgress, setFileUploadProgress] = useState<number>(0);
 
-// Update the handleSourceFileChange function
-const handleSourceFileChange = (e: ChangeEvent<HTMLInputElement>) => {
-  if (e.target.files && e.target.files.length > 0) {
-    const file = e.target.files[0];
-    setSourceFile(file);
-    if (onSourceFileSelect) {
-      onSourceFileSelect(file);
+  // Backend service
+  const { saveDescriptionToLecture, loading } = useLectureService();
+
+  // Custom resource update functions using the working pattern
+  const updateLectureWithResource = async (lectureId: number, resourceUrl: string, resourceType: string) => {
+    try {
+      // Use the same working pattern as uploadVideoToLecture
+      const { data, errors } = await apolloClient.mutate<UpdateLectureContentResponse>({
+        mutation: UPDATE_LECTURE_CONTENT,
+        variables: {
+          lectureId,
+          // Store resource info in notes field as a workaround
+          notes: `Resource added: ${resourceType} - ${resourceUrl}`
+        },
+        context: {
+          includeAuth: true
+        },
+        fetchPolicy: 'no-cache'
+      });
+
+      if (errors) {
+        console.error("GraphQL errors:", errors);
+        throw new Error(errors[0]?.message || "An error occurred during resource update");
+      }
+
+      if (!data?.updateLecture.success) {
+        throw new Error("Failed to update lecture with resource");
+      }
+
+      return data;
+    } catch (error) {
+      console.error("Resource update error:", error);
+      throw error;
     }
-  }
-};
-  
+  };
+
   // Fixed ref types - the issue is resolved by making sure they're correctly typed
   const fileInputRef = useRef<HTMLInputElement>(null);
   const sourceFileInputRef = useRef<HTMLInputElement>(null);
@@ -129,7 +169,7 @@ const handleSourceFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     }
   };
   
-  // Handle file selection
+  // Handle file selection for downloadable files
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const file = e.target.files[0];
@@ -137,7 +177,17 @@ const handleSourceFileChange = (e: ChangeEvent<HTMLInputElement>) => {
       if (onFileSelect) {
         onFileSelect(file);
       }
+    }
+  };
 
+  // Handle source file selection
+  const handleSourceFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0];
+      setSourceFile(file);
+      if (onSourceFileSelect) {
+        onSourceFileSelect(file);
+      }
     }
   };
   
@@ -150,34 +200,173 @@ const handleSourceFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     }));
   };
 
-  const handleExternalResourceSubmit = (e: React.FormEvent) => {
-  e.preventDefault();
-  
-  // Call the handler if provided
-  if (onExternalResourceAdd) {
-    onExternalResourceAdd(externalForm.title, externalForm.url, externalForm.title);
-  }
-  
-  // Reset form after submission
-  setExternalForm({ title: '', url: '' });
-};
-  
+  // NEW: Handle external resource submission with backend integration
+  const handleExternalResourceSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!lectureId || !externalForm.title.trim() || !externalForm.url.trim()) {
+      toast.error('Please provide both title and URL');
+      return;
+    }
 
-  // Handle file upload simulation
-  const handleUpload = () => {
-    if (selectedFile && triggerFileUpload) {
-      triggerFileUpload(ContentType.FILE);
+    try {
+      await updateLectureWithResource(
+        parseInt(lectureId),
+        externalForm.url,
+        `EXTERNAL_RESOURCE: ${externalForm.title}`
+      );
+
+      // Call the handler if provided (for local state updates)
+      if (onExternalResourceAdd) {
+        onExternalResourceAdd(externalForm.title, externalForm.url, externalForm.title);
+      }
       
-      // After the upload is "complete" (handled by the parent), show the success status
-      setTimeout(() => {
-        setShowUploadComplete(true);
-      }, 3000);
+      // Reset form after submission
+      setExternalForm({ title: '', url: '' });
+      toast.success('External resource added successfully!');
+
+      // Close modal after successful submission
+      if (onClose) {
+        onClose();
+      }
+    } catch (error) {
+      console.error('Error adding external resource:', error);
+      // Error toast is already handled in the service
     }
   };
-  
-  // Custom input styles with focus state
-  const inputClasses = "w-full px-3 py-2 border border-gray-500 rounded text-gray-700 focus:outline-none focus:1 focus:ring-[#6D28D2] focus:border-[#6D28D2]";
-  const searchInputClasses = "w-full px-3 py-1 border border-gray-400 rounded text-gray-800 focus:outline-none focus:ring-1 focus:ring-[#6D28D2] focus:border-[#6D28D2]";
+
+  // NEW: Handle downloadable file upload with backend integration
+  const handleUpload = async () => {
+    if (!selectedFile || !lectureId) {
+      toast.error('Please select a file and ensure lecture ID is available');
+      return;
+    }
+
+    // Additional safety check to ensure we have a numeric backend ID
+    const numericLectureId = parseInt(lectureId);
+    if (isNaN(numericLectureId) || numericLectureId <= 0) {
+      toast.error('Invalid lecture ID. Please refresh and try again.');
+      return;
+    }
+
+    try {
+      setIsFileUploading(true);
+      setFileUploadProgress(0);
+
+      // Simulate progress for better UX
+      const progressInterval = setInterval(() => {
+        setFileUploadProgress(prev => Math.min(prev + 10, 90));
+      }, 200);
+
+      // Upload file to backend (always use RESOURCE for downloadable files)
+      const uploadedUrl = await uploadFile(selectedFile, 'RESOURCE');
+      
+      clearInterval(progressInterval);
+      setFileUploadProgress(95);
+
+      if (!uploadedUrl) {
+        throw new Error('File upload failed - no URL returned');
+      }
+
+      // Update lecture with resource using working pattern
+      await updateLectureWithResource(
+        numericLectureId,
+        uploadedUrl,
+        `DOWNLOADABLE_FILE: ${selectedFile.name}`
+      );
+
+      setFileUploadProgress(100);
+      setShowUploadComplete(true);
+      toast.success('File uploaded successfully!');
+
+      // After the upload is "complete", show the success status
+      setTimeout(() => {
+        if (onClose) {
+          onClose();
+        }
+      }, 1000);
+
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      setSelectedFile(null);
+      setFileUploadProgress(0);
+      // Error toast is already handled in the service
+    } finally {
+      setIsFileUploading(false);
+    }
+  };
+
+  // NEW: Handle source code upload with backend integration
+  const handleSourceCodeUpload = async () => {
+    if (!sourceFile || !lectureId) {
+      toast.error('Please select a source code file');
+      return;
+    }
+
+    // Additional safety check to ensure we have a numeric backend ID
+    const numericLectureId = parseInt(lectureId);
+    if (isNaN(numericLectureId) || numericLectureId <= 0) {
+      toast.error('Invalid lecture ID. Please refresh and try again.');
+      return;
+    }
+
+    try {
+      setIsSourceUploading(true);
+      setSourceUploadProgress(0);
+
+      // Simulate progress for better UX
+      const progressInterval = setInterval(() => {
+        setSourceUploadProgress(prev => Math.min(prev + 10, 90));
+      }, 200);
+
+      // Upload source code file (always use RESOURCE)
+      const uploadedUrl = await uploadFile(sourceFile, 'RESOURCE');
+      
+      clearInterval(progressInterval);
+      setSourceUploadProgress(95);
+
+      if (!uploadedUrl) {
+        throw new Error('Source code upload failed - no URL returned');
+      }
+
+      // Update lecture with source code resource using working pattern
+      await updateLectureWithResource(
+        numericLectureId,
+        uploadedUrl,
+        `SOURCE_CODE: ${sourceFile.name}`
+      );
+
+      setSourceUploadProgress(100);
+      setSourceUploadComplete(true);
+      toast.success('Source code uploaded successfully!');
+
+      // Call the handler if provided (for local state updates)
+      if (onSourceCodeSelect) {
+        const fileItem: LibraryFileWithSize = {
+          id: Date.now().toString(),
+          filename: sourceFile.name,
+          type: 'SourceCode',
+          status: 'Success',
+          date: new Date().toLocaleDateString('en-US', {month: '2-digit', day: '2-digit', year: 'numeric'})
+        };
+        onSourceCodeSelect(fileItem);
+      }
+
+      setTimeout(() => {
+        if (onClose) {
+          onClose();
+        }
+      }, 1000);
+
+    } catch (error) {
+      console.error('Error uploading source code:', error);
+      setSourceFile(null);
+      setSourceUploadProgress(0);
+      // Error toast is already handled in the service
+    } finally {
+      setIsSourceUploading(false);
+    }
+  };
   
   return (
     <div className="w-full bg-white py-3 border-t border-t-gray-400">
@@ -273,7 +462,7 @@ const handleSourceFileChange = (e: ChangeEvent<HTMLInputElement>) => {
                   </button>
                 </div>
               </div>
-            ) : isUploading ? (
+            ) : isFileUploading ? (
               <div className="space-y-4">
                 <div className="border-b border-gray-300 py-2">
                   <div className="grid grid-cols-4 gap-2 md:gap-4 text-[17px] font-bold text-gray-800 border-b border-gray-300">
@@ -288,9 +477,9 @@ const handleSourceFileChange = (e: ChangeEvent<HTMLInputElement>) => {
                     <div className="flex items-center">
                       <div className="w-full flex items-center">
                         <div className="w-20 bg-gray-200 h-2 overflow-hidden rounded">
-                          <div className="bg-[#6D28D2] h-2" style={{ width: `${uploadProgress}%` }}></div>
+                          <div className="bg-[#6D28D2] h-2" style={{ width: `${fileUploadProgress}%` }}></div>
                         </div>
-                        <span className="ml-2 text-xs">{uploadProgress}%</span>
+                        <span className="ml-2 text-xs">{fileUploadProgress}%</span>
                       </div>
                     </div>
                     <div>{new Date().toLocaleDateString('en-US', {month: '2-digit', day: '2-digit', year: 'numeric'})}</div>
@@ -332,9 +521,10 @@ const handleSourceFileChange = (e: ChangeEvent<HTMLInputElement>) => {
                   <div className="flex justify-end mt-4">
                     <button
                       onClick={handleUpload}
-                      className="px-4 py-2 bg-[#6D28D2] text-white rounded text-sm font-medium hover:bg-[#5D18C9]"
+                      disabled={isFileUploading}
+                      className="px-4 py-2 bg-[#6D28D2] text-white rounded text-sm font-medium hover:bg-[#5D18C9] disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Upload
+                      {isFileUploading ? 'Uploading...' : 'Upload'}
                     </button>
                   </div>
                 )}
@@ -435,28 +625,28 @@ const handleSourceFileChange = (e: ChangeEvent<HTMLInputElement>) => {
                     <div className="flex items-center justify-between">
                       <div>{file.date}</div>
                       <div className="text-indigo-600">
-                      <button 
-  onClick={() => {
-    // Create enhanced item with size information
-    const enhancedItem: LibraryFileWithSize = {
-      ...file,
-      size: file.type === 'Video' ? '01:45' : '1.2 MB'
-    };
-    
-    // Call the onLibraryItemSelect handler if provided
-    if (onLibraryItemSelect) {
-      onLibraryItemSelect(enhancedItem);
-      
-      // Optionally close the modal after selecting
-      if (onClose) {
-        onClose();
-      }
-    }
-  }}
-  className="text-indigo-600 hover:text-indigo-800 text-xs font-medium"
->
-  Select
-</button>
+                        <button 
+                          onClick={() => {
+                            // Create enhanced item with size information
+                            const enhancedItem: LibraryFileWithSize = {
+                              ...file,
+                              size: file.type === 'Video' ? '01:45' : '1.2 MB'
+                            };
+                            
+                            // Call the onLibraryItemSelect handler if provided
+                            if (onLibraryItemSelect) {
+                              onLibraryItemSelect(enhancedItem);
+                              
+                              // Optionally close the modal after selecting
+                              if (onClose) {
+                                onClose();
+                              }
+                            }
+                          }}
+                          className="text-indigo-600 hover:text-indigo-800 text-xs font-medium"
+                        >
+                          Select
+                        </button>
                         <button 
                           className="ml-2 text-indigo-600 hover:text-red-600"
                         >
@@ -511,158 +701,121 @@ const handleSourceFileChange = (e: ChangeEvent<HTMLInputElement>) => {
         )}
         
         {/* Source Code Tab */}
-       {currentTab === ResourceTabType.SOURCE_CODE && (
-  <div>
-    {sourceUploadComplete ? (
-      <div className="space-y-4">
-        <div className="border-b border-gray-300 py-2">
-          <div className="grid grid-cols-4 gap-2 md:gap-4 text-[17px] font-bold text-gray-800 border-b border-gray-300">
-            <div>Filename</div>
-            <div>Type</div>
-            <div>Status</div>
-            <div>Date</div>
-          </div>
-          <div className="grid grid-cols-4 gap-2 md:gap-4 text-sm mt-2 items-center text-gray-700 font-semibold">
-            <div className="truncate">{sourceFile?.name || "find_max.py"}</div>
-            <div>SourceCode</div>
-            <div className="text-green-600">Success</div>
-            <div className="flex justify-between items-center">
-              {new Date().toLocaleDateString('en-US', {month: '2-digit', day: '2-digit', year: 'numeric'})}
-            </div>
-          </div>
-          <div className="mt-4">
-            <div className="flex items-center justify-between">
-              <div className="w-full bg-gray-200 rounded h-2">
-                <div className="bg-[#6D28D2] h-2 rounded" style={{ width: '100%' }}></div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className="flex justify-end">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 bg-[#6D28D2] text-white rounded text-sm font-medium hover:bg-[#5D18C9]"
-          >
-            Done
-          </button>
-        </div>
-      </div>
-    ) : isSourceUploading ? (
-      <div className="space-y-4">
-        <div className="border-b border-gray-300 py-2">
-          <div className="grid grid-cols-4 gap-2 md:gap-4 text-[17px] font-bold text-gray-800 border-b border-gray-300">
-            <div>Filename</div>
-            <div>Type</div>
-            <div>Status</div>
-            <div>Date</div>
-          </div>
-          <div className="grid grid-cols-4 gap-2 md:gap-4 text-sm mt-2 items-center">
-            <div className="truncate">{sourceFile?.name || "find_max.py"}</div>
-            <div>SourceCode</div>
-            <div className="flex items-center">
-              <div className="w-full flex items-center">
-                <div className="w-20 bg-gray-200 h-2 overflow-hidden rounded">
-                  <div className="bg-[#6D28D2] h-2" style={{ width: `${sourceUploadProgress}%` }}></div>
+        {currentTab === ResourceTabType.SOURCE_CODE && (
+          <div>
+            {sourceUploadComplete ? (
+              <div className="space-y-4">
+                <div className="border-b border-gray-300 py-2">
+                  <div className="grid grid-cols-4 gap-2 md:gap-4 text-[17px] font-bold text-gray-800 border-b border-gray-300">
+                    <div>Filename</div>
+                    <div>Type</div>
+                    <div>Status</div>
+                    <div>Date</div>
+                  </div>
+                  <div className="grid grid-cols-4 gap-2 md:gap-4 text-sm mt-2 items-center text-gray-700 font-semibold">
+                    <div className="truncate">{sourceFile?.name || "find_max.py"}</div>
+                    <div>SourceCode</div>
+                    <div className="text-green-600">Success</div>
+                    <div className="flex justify-between items-center">
+                      {new Date().toLocaleDateString('en-US', {month: '2-digit', day: '2-digit', year: 'numeric'})}
+                    </div>
+                  </div>
+                  <div className="mt-4">
+                    <div className="flex items-center justify-between">
+                      <div className="w-full bg-gray-200 rounded h-2">
+                        <div className="bg-[#6D28D2] h-2 rounded" style={{ width: '100%' }}></div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <span className="ml-2 text-xs">{sourceUploadProgress}%</span>
+                <div className="flex justify-end">
+                  <button
+                    onClick={onClose}
+                    className="px-4 py-2 bg-[#6D28D2] text-white rounded text-sm font-medium hover:bg-[#5D18C9]"
+                  >
+                    Done
+                  </button>
+                </div>
               </div>
-            </div>
-            <div>{new Date().toLocaleDateString('en-US', {month: '2-digit', day: '2-digit', year: 'numeric'})}</div>
-          </div>
-        </div>
-      </div>
-    ) : (
-      <div>
-        <div className="flex items-center mb-4">
-          {/* Hidden file input for source code files */}
-          <input
-            type="file"
-            ref={sourceFileInputRef}
-            className="hidden"
-            accept=".py,.rb"
-            onChange={handleSourceFileChange}
-          />
-          
-          {/* Clickable area for source file selection */}
-          <div 
-            className="border border-gray-400 rounded p-2 flex-grow mr-2 cursor-pointer hover:bg-gray-50"
-            onClick={() => handleFileSelection(sourceFileInputRef)}
-          >
-            <p className="text-gray-700">
-              {sourceFile ? sourceFile.name : 'No file selected'}
-            </p>
-          </div>
-          
-          {/* Button also triggers the same file input */}
-          <button
-            type="button"
-            className="px-4 py-2 text-[#6D28D2] text-sm font-medium border border-[#6D28D2] rounded hover:bg-purple-50 whitespace-nowrap"
-            onClick={() => handleFileSelection(sourceFileInputRef)}
-          >
-            Select File
-          </button>
-        </div>
-        
-        {sourceFile && (
-          <div className="flex justify-end mt-4">
-            <button
-              onClick={() => {
-  // Simulate upload progress
-  setIsSourceUploading(true);
-  const interval = setInterval(() => {
-    setSourceUploadProgress(prev => {
-      if (prev >= 100) {
-        clearInterval(interval);
-        setTimeout(() => {
-          setIsSourceUploading(false);
-          setSourceUploadProgress(0);
-          setSourceUploadComplete(true);
-          
-          if (sourceFile) {
-            // Create a LibraryFileWithSize object
-            const fileItem: LibraryFileWithSize = {
-              id: Date.now().toString(),
-              filename: sourceFile.name,
-              type: 'SourceCode',
-              status: 'Success',
-              date: new Date().toLocaleDateString('en-US', {month: '2-digit', day: '2-digit', year: 'numeric'})
-            };
-            
-            // Call the handler if provided
-            if (onSourceCodeSelect) {
-              onSourceCodeSelect(fileItem);
-              onClose?.(); // Close the modal after selection
-            }
-          }
-        }, 500);
-        return 100;
-      }
-      return prev + 10;
-    });
-  }, 300);
-}}
-              className="px-4 py-2 bg-[#6D28D2] text-white rounded text-sm font-medium hover:bg-[#5D18C9]"
-            >
-              Upload
-            </button>
+            ) : isSourceUploading ? (
+              <div className="space-y-4">
+                <div className="border-b border-gray-300 py-2">
+                  <div className="grid grid-cols-4 gap-2 md:gap-4 text-[17px] font-bold text-gray-800 border-b border-gray-300">
+                    <div>Filename</div>
+                    <div>Type</div>
+                    <div>Status</div>
+                    <div>Date</div>
+                  </div>
+                  <div className="grid grid-cols-4 gap-2 md:gap-4 text-sm mt-2 items-center">
+                    <div className="truncate">{sourceFile?.name || "find_max.py"}</div>
+                    <div>SourceCode</div>
+                    <div className="flex items-center">
+                      <div className="w-full flex items-center">
+                        <div className="w-20 bg-gray-200 h-2 overflow-hidden rounded">
+                          <div className="bg-[#6D28D2] h-2" style={{ width: `${sourceUploadProgress}%` }}></div>
+                        </div>
+                        <span className="ml-2 text-xs">{sourceUploadProgress}%</span>
+                      </div>
+                    </div>
+                    <div>{new Date().toLocaleDateString('en-US', {month: '2-digit', day: '2-digit', year: 'numeric'})}</div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <div className="flex items-center mb-4">
+                  {/* Hidden file input for source code files */}
+                  <input
+                    type="file"
+                    ref={sourceFileInputRef}
+                    className="hidden"
+                    accept=".py,.rb"
+                    onChange={handleSourceFileChange}
+                  />
+                  
+                  {/* Clickable area for source file selection */}
+                  <div 
+                    className="border border-gray-400 rounded p-2 flex-grow mr-2 cursor-pointer hover:bg-gray-50"
+                    onClick={() => handleFileSelection(sourceFileInputRef)}
+                  >
+                    <p className="text-gray-700">
+                      {sourceFile ? sourceFile.name : 'No file selected'}
+                    </p>
+                  </div>
+                  
+                  {/* Button also triggers the same file input */}
+                  <button
+                    type="button"
+                    className="px-4 py-2 text-[#6D28D2] text-sm font-medium border border-[#6D28D2] rounded hover:bg-purple-50 whitespace-nowrap"
+                    onClick={() => handleFileSelection(sourceFileInputRef)}
+                  >
+                    Select File
+                  </button>
+                </div>
+                
+                {sourceFile && (
+                  <div className="flex justify-end mt-4">
+                    <button
+                      onClick={handleSourceCodeUpload}
+                      disabled={isSourceUploading}
+                      className="px-4 py-2 bg-[#6D28D2] text-white rounded text-sm font-medium hover:bg-[#5D18C9] disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isSourceUploading ? 'Uploading...' : 'Upload'}
+                    </button>
+                  </div>
+                )}
+
+                <div className="mt-4">
+                  <p className="text-sm text-gray-600">
+                    <span className="font-bold">Note:</span> Only available for Python and Ruby for now. You can upload .py and .rb files.
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         )}
-        
-        <div className="mt-4">
-          <p className="text-sm text-gray-600">
-            <span className="font-bold">Note:</span> Only available for Python and Ruby for now. You can upload .py and .rb files.
-          </p>
-        </div>
       </div>
-    )}
-  </div>
-)}
-
-        
-      </div>
-
       
-
       {/* Display selected library items (if any) */}
       {selectedLibraryItems.length > 0 && (
         <div className="px-4 mt-4 border-t border-gray-200 pt-4">

@@ -20,6 +20,9 @@ import {
   UpdateLectureDescriptionResponse,
   UpdateLectureContentVariables,
   UpdateLectureContentResponse,
+  UpdateLectureResourceResponse,
+  UPDATE_LECTURE_RESOURCE,
+  UpdateLectureResourceVariables,
 } from '@/api/course/lecture/mutation';
 
 export const useLectureService = () => {
@@ -400,6 +403,52 @@ export const useLectureService = () => {
     }
   };
 
+const updateLectureResource = async (variables: UpdateLectureResourceVariables) => {
+  try {
+    setLoading(true);
+    setError(null);
+
+    const { data, errors } = await apolloClient.mutate<UpdateLectureResourceResponse>({
+      mutation: UPDATE_LECTURE_RESOURCE,
+      variables,
+      context: {
+        includeAuth: true
+      },
+      fetchPolicy: 'no-cache'
+    });
+
+    if (errors) {
+      console.error("GraphQL errors:", errors);
+      throw new Error(errors[0]?.message || "An error occurred during resource update");
+    }
+
+    if (!data?.updateLecture.success) {
+      throw new Error("Failed to update lecture resource");
+    }
+
+    toast.success("Resource added successfully!");
+    return data;
+  } catch (err) {
+    console.error("Resource update error:", err);
+    
+    if (err instanceof ApolloError) {
+      const errorMessage = err.message || "Network error. Please check your connection and try again.";
+      setError(new Error(errorMessage));
+      toast.error(errorMessage);
+    } else if (err instanceof Error) {
+      setError(err);
+      toast.error(err.message);
+    } else {
+      const genericError = new Error("An unexpected error occurred");
+      setError(genericError);
+      toast.error(genericError.message);
+    }
+    
+    throw err;
+  } finally {
+    setLoading(false);
+  }
+};
   return {
     createLecture,
     updateLecture,
@@ -408,6 +457,7 @@ export const useLectureService = () => {
     uploadVideoToLecture,
     saveArticleToLecture,
     saveDescriptionToLecture,
+    updateLectureResource,
     loading,
     videoUploading,
     videoUploadProgress,
