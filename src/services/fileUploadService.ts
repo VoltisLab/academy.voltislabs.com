@@ -26,7 +26,6 @@ const UPLOAD_FILE = gql`
 
 export const uploadFile = async (file: File, filetype: FileTypeEnum): Promise<string | null> => {
   try {
-    console.log("Starting file upload:", file.name, "Type:", filetype);
 
     if (!(file instanceof File)) {
       throw new Error("Invalid file object");

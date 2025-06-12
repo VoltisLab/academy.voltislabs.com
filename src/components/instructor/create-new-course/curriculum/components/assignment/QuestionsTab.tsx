@@ -1,6 +1,7 @@
 import RichTextEditor from "../../RichTextEditor";
 import { AssignmentQuestion, ExtendedLecture } from "@/lib/types";
 import { useAssignmentService } from "@/services/useAssignmentService";
+import { useParams } from "next/navigation";
 import { useState, useEffect } from "react";
 import { toast } from "react-hot-toast";
 
@@ -15,7 +16,8 @@ const QuestionsTab: React.FC<{
   const [currentQuestionContent, setCurrentQuestionContent] = useState("");
   const [questionToDelete, setQuestionToDelete] = useState<string | null>(null);
   const [isAddingNewQuestion, setIsAddingNewQuestion] = useState(false);
-
+const params = useParams();
+  const id = params?.id; 
   useEffect(() => {
     const existingQuestions = data.assignmentQuestions || [];
     setQuestions(existingQuestions);
@@ -70,7 +72,7 @@ const QuestionsTab: React.FC<{
         setEditingQuestionId(null);
       } else {
         const response = await createAssignmentQuestion({
-          assignmentId: Number(assignmentId),
+          assignmentId: Number(id),
           text: cleanContent,
           order: questions.length + 1,
           required: false,
@@ -155,7 +157,7 @@ const QuestionsTab: React.FC<{
       <div className="flex gap-2 pt-4">
         <button
           onClick={handleSubmitQuestion}
-          className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition cursor-pointer"
+          className="px-4 py-2 bg-[#6d28d2] text-white rounded-md hover:bg-purple-600 transition cursor-pointer"
         >
           Submit
         </button>
@@ -179,13 +181,13 @@ const QuestionsTab: React.FC<{
       <div className="flex gap-2 mt-2">
         <button
           onClick={() => startEditing(question)}
-          className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition cursor-pointer"
+          className="px-4 py-2 bg-[#6d28d2] text-white rounded-md hover:bg-purple-600 transition cursor-pointer"
         >
           Edit
         </button>
         <button
           onClick={() => setQuestionToDelete(question.id)}
-          className="px-3 py-1 text-sm border border-purple-600 text-purple-600 rounded-md hover:bg-purple-50 cursor-pointer transition"
+          className="px-3 py-1 text-sm border border-[#6d28d2] text-[#6d28d2] rounded-md hover:bg-purple-50 cursor-pointer transition"
         >
           Delete
         </button>
@@ -199,18 +201,18 @@ const QuestionsTab: React.FC<{
       {showInfo && (
         <div className="border border-purple-200 bg-purple-50 rounded-md p-4">
           <div className="flex items-start gap-3">
-            <div className="w-6 h-6 bg-purple-600 rounded-full flex items-center justify-center text-white text-sm flex-shrink-0 mt-1">i</div>
+            <div className="w-6 h-6 bg-[#6d28d2] rounded-full flex items-center justify-center text-white text-sm flex-shrink-0 mt-1">i</div>
             <div className="flex-1">
               <p className="text-gray-700 mb-3">
                 Each assignment must include at least one question. You can add a maximum of 12 questions.
               </p>
               <div className="flex gap-2">
-                <button className="px-4 py-2 border border-purple-600 text-purple-600 rounded-md hover:bg-purple-100">
+                <button className="px-4 py-2 border border-[#6d28d2] text-[#6d28d2] rounded-md hover:bg-purple-100">
                   Learn more
                 </button>
                 <button
                   onClick={() => setShowInfo(false)}
-                  className="px-4 py-2 text-purple-600 hover:text-purple-800"
+                  className="px-4 py-2 text-[#6d28d2] hover:text-purple-800"
                 >
                   Dismiss
                 </button>
@@ -242,7 +244,7 @@ const QuestionsTab: React.FC<{
       {!isAddingNewQuestion && questions.length < 12 && (
         <button
           onClick={startAddingNewQuestion}
-          className="flex items-center gap-2 px-4 py-2 border border-purple-600 text-purple-600 rounded-md hover:bg-purple-50 transition text-sm cursor-pointer"
+          className="flex items-center gap-2 px-4 py-2 border border-[#6d28d2] text-[#6d28d2] rounded-md hover:bg-purple-50 transition text-sm cursor-pointer"
         >
           Add More
         </button>

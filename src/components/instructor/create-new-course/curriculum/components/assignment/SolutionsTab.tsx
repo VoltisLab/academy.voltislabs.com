@@ -179,7 +179,7 @@ console.log(question)
                   onClick={() => setActiveVideoTab("upload")}
                   className={`px-4 py-2 font-medium text-sm border-b-2 ${
                     activeVideoTab === "upload"
-                      ? "border-purple-600 text-purple-600"
+                      ? "border-[#6d28d2] text-[#6d28d2]"
                       : "border-transparent text-gray-500 hover:text-gray-700"
                   }`}
                 >
@@ -189,7 +189,7 @@ console.log(question)
                   onClick={() => setActiveVideoTab("library")}
                   className={`px-4 py-2 font-medium text-sm border-b-2 ml-8 ${
                     activeVideoTab === "library"
-                      ? "border-purple-600 text-purple-600"
+                      ? "border-[#6d28d2] text-[#6d28d2]"
                       : "border-transparent text-gray-500 hover:text-gray-700"
                   }`}
                 >
@@ -209,7 +209,7 @@ console.log(question)
                   </span>
                   <button
                     onClick={() => fileInputRef.current?.click()}
-                    className="px-4 py-3 border border-purple-600 text-purple-600 rounded-md hover:bg-purple-50 cursor-pointer"
+                    className="px-4 py-3 border border-[#6d28d2] text-[#6d28d2] rounded-md hover:bg-purple-50 cursor-pointer"
                   >
                     Select Video
                   </button>
@@ -217,7 +217,7 @@ console.log(question)
                 {showChangeCancel && (
                   <button
                     onClick={handleCancelChange}
-                    className="mt-2 px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
+                    className="mt-2 px-4 py-2 bg-[#6d28d2] text-white rounded-md hover:bg-purple-600"
                   >
                     Cancel
                   </button>
@@ -241,7 +241,7 @@ console.log(question)
                       onChange={(e) => setSearchQuery(e.target.value)}
                       className="w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                     />
-                    <button className="absolute right-2 top-2 p-1 bg-purple-600 text-white rounded">
+                    <button className="absolute right-2 top-2 p-1 bg-[#6d28d2] text-white rounded">
                       <svg
                         className="w-4 h-4"
                         fill="none"
@@ -299,7 +299,7 @@ console.log(question)
                           <div>
                             <button
                               onClick={() => handleVideoSelect(video)}
-                              className="text-purple-600 hover:text-purple-800 font-medium"
+                              className="text-[#6d28d2] hover:text-purple-800 font-medium"
                             >
                               Select ↗
                             </button>
@@ -323,21 +323,37 @@ console.log(question)
                 </span>
               </div>
             </div>
-
-            <div className="h-80 flex items-center justify-center text-center text-gray-500">
+            <div className="h-80">
+              {data.instructionalVideo?.url ? (
+                <video
+                  controls
+                  src={
+                    data.instructionalVideo.file
+                      ? URL.createObjectURL(data.instructionalVideo.file)
+                      : data.instructionalVideo.url
+                  }
+                  className="w-full h-full rounded-md object-contain"
+                />
+              ) : (
+                <div className="flex items-center justify-center h-full text-center text-gray-500">
+                  <p>No video preview available.</p>
+                </div>
+              )}
+            </div>
+            {/* <div className="h-80 flex items-center justify-center text-center text-gray-500">
               <p>
                 We've uploaded your file, and are processing it to ensure it
                 works smoothly on Udemy.
                 <br />
                 As soon as it's ready, we'll send you an email.
               </p>
-            </div>
+            </div> */}
 
             {/* Files change and delete buttons */}
             <div className="flex space-x-2 mb-20">
               <button
                 onClick={handleChangeVideo}
-                className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 cursor-pointer"
+                className="px-4 py-2 bg-[#6d28d2] text-white rounded-md hover:bg-purple-600 cursor-pointer"
               >
                 Change
               </button>
@@ -356,7 +372,7 @@ console.log(question)
                   setShowChangeCancel(false);
                   setActiveVideoTab("upload");
                 }}
-                className="px-4 py-2 text-purple-600 hover:text-purple-800 border border-purple-600 rounded-md hover:bg-purple-50 cursor-pointer"
+                className="px-4 py-2 text-[#6d28d2] hover:text-purple-800 border border-[#6d28d2] rounded-md hover:bg-purple-50 cursor-pointer"
               >
                 Delete
               </button>
@@ -376,7 +392,7 @@ console.log(question)
               You have no questions yet.{" "}
               <button
                 onClick={() => setActiveTab("questions")}
-                className="text-purple-600 hover:text-purple-800 font-medium cursor-pointer transition"
+                className="text-[#6d28d2] hover:text-purple-800 font-medium cursor-pointer transition"
               >
                 Click here to add questions
               </button>
@@ -420,7 +436,7 @@ console.log(question)
                     <div className="flex gap-2 mt-4">
                       <button
                         onClick={() => handleSubmitAnswer(question.id)}
-                        className="px-4 py-2 bg-purple-600 text-white rounded-md cursor-pointer transition hover:bg-purple-700"
+                        className="px-4 py-2 bg-[#6d28d2] text-white rounded-md cursor-pointer transition hover:bg-purple-600"
                       >
                         Submit
                       </button>
@@ -445,13 +461,13 @@ console.log(question)
                         <div className="flex gap-2 mt-2">
                           <button
                             onClick={() => startEditingAnswer(question.id)}
-                            className="px-4 py-1 text-sm bg-purple-600 text-white rounded-md cursor-pointer transition hover:bg-purple-700"
+                            className="px-4 py-1 text-sm bg-[#6d28d2] text-white rounded-md cursor-pointer transition hover:bg-purple-600"
                           >
                             Edit
                           </button>
                           <button
                             onClick={() => setAnswerToDelete(question.id)}
-                            className="px-4 py-1 text-sm border border-purple-600 text-purple-600 rounded-md hover:bg-purple-50 transition cursor-pointer"
+                            className="px-4 py-1 text-sm border border-[#6d28d2] text-[#6d28d2] rounded-md hover:bg-purple-50 transition cursor-pointer"
                           >
                             Delete
                           </button>
@@ -460,7 +476,7 @@ console.log(question)
                     ) : (
                       <button
                         onClick={() => startEditingAnswer(question.id)}
-                        className="mt-2 px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
+                        className="mt-2 px-4 py-2 bg-[#6d28d2] text-white rounded-md hover:bg-purple-600"
                       >
                         Add Answer
                       </button>
@@ -494,12 +510,12 @@ console.log(question)
               };
               input.click();
             }}
-            className="px-4 py-3 border border-purple-600 text-purple-600 rounded-md hover:bg-purple-50 cursor-pointer transition"
+            className="px-4 py-3 border border-[#6d28d2] text-[#6d28d2] rounded-md hover:bg-purple-50 cursor-pointer transition"
           >
             Select File
           </button>
         </div>
-        <p className="text-sm text-blue-600 mt-2">
+        <p className="text-sm text-gray-600 mt-2 max-w-xl w-full">
           Note: A resource is for any type of document that can be used to help
           students in the lecture. This file is going to be such as a lecture
           extra. Make sure everything is legible and the file size is less than

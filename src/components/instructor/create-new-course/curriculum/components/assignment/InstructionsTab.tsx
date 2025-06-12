@@ -2,6 +2,9 @@ import { ExtendedLecture } from "@/lib/types";
 import { useRef, useState } from "react";
 import RichTextEditor from "./NewRichTextEditor";
 import toast from "react-hot-toast";
+import { UpdateAssignmentVariables } from "@/api/assignment/mutation";
+import { useParams } from "next/navigation";
+import { useAssignmentService } from "@/services/useAssignmentService";
 
 const InstructionsTab: React.FC<{
   data: ExtendedLecture;
@@ -18,6 +21,8 @@ const InstructionsTab: React.FC<{
   const [isEditingInstructions, setIsEditingInstructions] = useState(true);
   const [showVideoUploaded, setShowVideoUploaded] = useState(false);
   const [showChangeCancel, setShowChangeCancel] = useState(false);
+  const params = useParams();
+  const id = params?.id; 
 
   const showEditor = isEditing || !hasSubmitted;
 
@@ -82,8 +87,10 @@ const InstructionsTab: React.FC<{
     setShowVideoUploaded(true);
     setActiveVideoTab(null);
   };
+  
+  const {updateAssignment} = useAssignmentService()
 
-  const handleSubmitInstructions = () => {
+  const handleSubmitInstructions = async() => {
     if (
       !data.assignmentInstructions ||
       data.assignmentInstructions.trim() === ""
@@ -101,6 +108,15 @@ const InstructionsTab: React.FC<{
       toast.error("Please enter assignment instructions.");
       return;
     }
+    // const publishedData = { ...assignmentData, isPublished: true };
+          const variables: UpdateAssignmentVariables = {
+              assignmentId: Number(id),
+              instructions: cleanedInstructions,
+              
+            };
+
+    await updateAssignment(variables);
+      toast.success("instructions saved successfully!");
 
     setIsEditingInstructions(false);
     onEditToggle(false);
@@ -276,21 +292,39 @@ const InstructionsTab: React.FC<{
                 </span>
               </div>
             </div>
+            
 
-            <div className="h-80 flex items-center justify-center text-center text-gray-500">
+            <div className="h-80">
+              {data.instructionalVideo?.url ? (
+                <video
+                  controls
+                  src={
+                    data.instructionalVideo.file
+                      ? URL.createObjectURL(data.instructionalVideo.file)
+                      : data.instructionalVideo.url
+                  }
+                  className="w-full h-full rounded-md object-contain"
+                />
+              ) : (
+                <div className="flex items-center justify-center h-full text-center text-gray-500">
+                  <p>No video preview available.</p>
+                </div>
+              )}
+            </div>
+            {/* <div className="h-80 flex items-center justify-center text-center text-gray-500">
               <p>
                 We've uploaded your file, and are processing it to ensure it
                 works smoothly on Udemy.
                 <br />
                 As soon as it's ready, we'll send you an email.
               </p>
-            </div>
+            </div> */}
 
             {/* Files change and delete buttons */}
             <div className="flex space-x-2 mb-20">
               <button
                 onClick={handleChangeVideo}
-                className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 cursor-pointer"
+                className="px-4 py-2 bg-[#6d28d2] text-white rounded-md hover:bg-purple-600 cursor-pointer"
               >
                 Change
               </button>
@@ -333,7 +367,7 @@ const InstructionsTab: React.FC<{
             <div className="flex gap-2 mt-4">
               <button
                 onClick={handleSubmitInstructions}
-                className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 cursor-pointer"
+                className="px-4 py-2 bg-[#6d28d2] text-white rounded-md hover:bg-purple-600 cursor-pointer"
               >
                 Submit
               </button>
@@ -342,7 +376,7 @@ const InstructionsTab: React.FC<{
                   setIsEditingInstructions(false);
                   onEditToggle(false);
                 }}
-                className="px-4 py-2 border border-purple-600 text-purple-600 rounded-md hover:bg-purple-50 cursor-pointer"
+                className="px-4 py-2 border border-[#6d28d2] text-[#6d28d2] rounded-md hover:bg-purple-50 cursor-pointer"
               >
                 Cancel
               </button>
@@ -358,7 +392,7 @@ const InstructionsTab: React.FC<{
             />
             <button
               onClick={handleEditInstructions}
-              className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 cursor-pointer"
+              className="px-4 py-2 bg-[#6d28d2] text-white rounded-md hover:bg-purple-600 cursor-pointer"
             >
               Edit
             </button>
@@ -387,12 +421,12 @@ const InstructionsTab: React.FC<{
               };
               input.click();
             }}
-            className="px-4 py-3 border border-purple-600 text-purple-600 rounded-md hover:bg-purple-50 cursor-pointer"
+            className="px-4 py-3 border border-[#6d28d2] text-[#6d28d2] rounded-md hover:bg-purple-50 cursor-pointer"
           >
             Select File
           </button>
         </div>
-        <p className="text-sm text-blue-600 mt-2">
+        <p className="text-sm text-gray-600 mt-2 max-w-xl w-full">
           Note: A resource is for any type of document that can be used to help
           students in the lecture. This file is going to be such as a lecture
           extra. Make sure everything is legible and the file size is less than

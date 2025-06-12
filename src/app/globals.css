@@ -10,6 +10,12 @@ body {
   font-family: var(--font-sans);
 }
 
+@layer base {
+  button {
+    @apply cursor-pointer;
+  }
+}
+
 .jakarta {
   font-family: var(--font-jakarta);
 }

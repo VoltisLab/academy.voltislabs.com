@@ -196,7 +196,6 @@ const InstructorVideoPreview = ({
   const handleMute = (): void => {
     const newMuted = !muted;
     setMuted(newMuted);
-    console.log('Mute toggled:', newMuted, 'Current volume:', volume);
     
     // Force update ReactPlayer mute state
     if (playerRef.current) {
@@ -221,15 +220,12 @@ const InstructorVideoPreview = ({
     }
     setVolume(prevVolume => {
       const newVolume = Math.min(1, prevVolume + 0.1);
-      console.log('Volume up - Previous:', prevVolume, 'New:', newVolume, 'Muted:', muted);
-      
       // Multiple approaches to ensure volume change works
       if (playerRef.current) {
         // Approach 1: ReactPlayer internal player
         setTimeout(() => {
           const player = playerRef.current?.getInternalPlayer();
           if (player) {
-            console.log('Setting volume via internal player:', newVolume);
             if (player.setVolume) {
               // Try different volume scales
               player.setVolume(newVolume * 100); // YouTube scale
@@ -241,7 +237,6 @@ const InstructorVideoPreview = ({
           // Approach 2: Direct HTML5 video element access
           const videoElement = playerRef.current?.getInternalPlayer('video') as HTMLVideoElement;
           if (videoElement && videoElement.tagName === 'VIDEO') {
-            console.log('Setting volume via HTML5 video element:', newVolume);
             videoElement.volume = newVolume;
             videoElement.muted = false;
           }
@@ -251,7 +246,6 @@ const InstructorVideoPreview = ({
           if (container) {
             const videos = container.querySelectorAll('video');
             videos.forEach(video => {
-              console.log('Setting volume via queried video element:', newVolume);
               video.volume = newVolume;
               video.muted = false;
             });
