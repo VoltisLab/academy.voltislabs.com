@@ -6,6 +6,7 @@ import { BasicInformationForm } from "@/components/instructor/create-new-course/
 import { AdvanceInformationForm } from "@/components/instructor/create-new-course/advance-information/AdvancedInformation";
 import { Curriculum } from "@/components/instructor/create-new-course/curriculum/Curriculum";
 import Image from "next/image";
+import { LockKeyhole } from "lucide-react";
 
 // Define tab interface
 interface Tab {
@@ -160,7 +161,7 @@ export default function CourseFormTabs() {
                   </span>
                 )}
                 {!isAccessible && (
-                  <span className="text-xs text-gray-400 ml-1">🔒</span>
+                  <span className="text-xs text-gray-400 ml-1"><LockKeyhole size={15} color="#666"/></span>
                 )}
               </button>
             );
@@ -213,7 +214,7 @@ export default function CourseFormTabs() {
                   <span className="text-green-600 text-xs">{tab.progress}</span>
                 )}
                 {!isAccessible && (
-                  <span className="text-xs text-gray-400 ml-1">🔒</span>
+                  <span className="text-xs text-gray-400 ml-1"><LockKeyhole size={15} color="#666"/></span>
                 )}
               </div>
             </button>

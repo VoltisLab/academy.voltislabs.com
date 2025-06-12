@@ -3,6 +3,7 @@
 import React, { useRef, useState } from 'react';
 import { X, Play } from "lucide-react";
 import dynamic from 'next/dynamic';
+import { toast } from 'react-hot-toast';
 
 // Import PDF viewer with no SSR to avoid "document is not defined" errors
 const SimplePdfViewer = dynamic(() => import('./SimplePdfViewer'), {
@@ -17,45 +18,179 @@ const SimplePdfViewer = dynamic(() => import('./SimplePdfViewer'), {
   )
 });
 
-const VideoSlideMashupComponent: React.FC = () => {
+// Types for upload functions
+interface VideoSlideMashupProps {
+  sectionId?: string;
+  lectureId?: string;
+  uploadVideoToBackend?: (
+    sectionId: string,
+    lectureId: string,
+    videoFile: File,
+    onProgress?: (progress: number) => void
+  ) => Promise<string | null>;
+  uploadFileToBackend?: (
+    file: File,
+    fileType: 'VIDEO' | 'RESOURCE'
+  ) => Promise<string | null>;
+}
+
+const VideoSlideMashupComponent: React.FC<VideoSlideMashupProps> = ({
+  sectionId = '',
+  lectureId = '',
+  uploadVideoToBackend,
+  uploadFileToBackend
+}) => {
   // State for video and presentation files
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [presentationFile, setPresentationFile] = useState<File | null>(null);
   
-  // Upload states
+  // Upload states for video
   const [videoUploading, setVideoUploading] = useState<boolean>(false);
   const [videoUploadProgress, setVideoUploadProgress] = useState<number>(0);
   const [videoUploaded, setVideoUploaded] = useState<boolean>(false);
   const [videoProcessing, setVideoProcessing] = useState<boolean>(false);
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  
+  // Upload states for presentation
+  const [presentationUploading, setPresentationUploading] = useState<boolean>(false);
+  const [presentationUploadProgress, setPresentationUploadProgress] = useState<number>(0);
   const [presentationUploaded, setPresentationUploaded] = useState<boolean>(false);
+  const [presentationUrl, setPresentationUrl] = useState<string | null>(null);
+  const [presentationUploadError, setPresentationUploadError] = useState<string | null>(null);
   
   // References
   const videoInputRef = useRef<HTMLInputElement>(null);
+  const presentationInputRef = useRef<HTMLInputElement>(null);
   
-  // Handle video upload
-  const handleVideoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  // Handle video upload with backend integration
+  const handleVideoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files.length > 0) {
       const file = event.target.files[0];
+      setVideoFile(file);
       
-      // Start upload simulation
-      setVideoUploading(true);
-      setVideoUploadProgress(0);
-      
-      const interval = setInterval(() => {
-        setVideoUploadProgress(prev => {
-          if (prev >= 100) {
-            clearInterval(interval);
-            setTimeout(() => {
-              setVideoUploading(false);
-              setVideoUploaded(true);
-              setVideoFile(file);
-              setVideoProcessing(true); // Set video to processing state
-            }, 500);
-            return 100;
+      // Check if we have the required props for backend upload
+      if (!uploadVideoToBackend || !sectionId || !lectureId) {
+        // Fallback to simulation if backend functions not available
+        handleVideoUploadSimulation(file);
+        return;
+      }
+
+      try {
+        // Start upload
+        setVideoUploading(true);
+        setVideoUploadProgress(0);
+        setVideoUploaded(false);
+        setVideoProcessing(false);
+
+        // Upload to backend
+        const uploadedVideoUrl = await uploadVideoToBackend(
+          sectionId,
+          lectureId,
+          file,
+          (progress) => {
+            setVideoUploadProgress(progress);
           }
-          return prev + 5;
-        });
-      }, 150);
+        );
+
+        if (uploadedVideoUrl) {
+          setVideoUrl(uploadedVideoUrl);
+          setVideoUploaded(true);
+          setVideoProcessing(true); // Set to processing after upload
+          toast.success('Video uploaded successfully!');
+        } else {
+          throw new Error('Failed to get video URL from upload');
+        }
+      } catch (error) {
+        console.error('Video upload failed:', error);
+        toast.error('Failed to upload video. Please try again.');
+        // Reset states on error
+        setVideoFile(null);
+        setVideoUploaded(false);
+        setVideoProcessing(false);
+        setVideoUrl(null);
+      } finally {
+        setVideoUploading(false);
+      }
+    }
+  };
+
+  // Fallback simulation function
+  const handleVideoUploadSimulation = (file: File) => {
+    setVideoUploading(true);
+    setVideoUploadProgress(0);
+    
+    const interval = setInterval(() => {
+      setVideoUploadProgress(prev => {
+        if (prev >= 100) {
+          clearInterval(interval);
+          setTimeout(() => {
+            setVideoUploading(false);
+            setVideoUploaded(true);
+            setVideoProcessing(true);
+          }, 500);
+          return 100;
+        }
+        return prev + 5;
+      });
+    }, 150);
+  };
+
+  // Handle presentation file upload
+  const handlePresentationUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files.length > 0) {
+      const file = event.target.files[0];
+      setPresentationFile(file);
+      setPresentationUploadError(null); // Clear any previous errors
+      
+      // Check if we have the upload function
+      if (!uploadFileToBackend) {
+        // Fallback to just setting the file without upload
+        setPresentationUploaded(true);
+        toast.success('Presentation file selected!');
+        return;
+      }
+
+      try {
+        // Start upload
+        setPresentationUploading(true);
+        setPresentationUploadProgress(0);
+        setPresentationUploaded(false);
+
+        // Simulate progress for presentation upload
+        const progressInterval = setInterval(() => {
+          setPresentationUploadProgress(prev => {
+            const newProgress = prev + Math.random() * 10;
+            return Math.min(newProgress, 90); // Stop at 90% until upload completes
+          });
+        }, 200);
+
+        // Upload to backend as RESOURCE type
+        const uploadedFileUrl = await uploadFileToBackend(file, 'RESOURCE');
+
+        // Clear progress simulation
+        clearInterval(progressInterval);
+        setPresentationUploadProgress(100);
+
+        if (uploadedFileUrl) {
+          setPresentationUrl(uploadedFileUrl);
+          setPresentationUploaded(true);
+          toast.success('Presentation uploaded successfully!');
+        } else {
+          throw new Error('Failed to get file URL from upload');
+        }
+      } catch (error) {
+        console.error('Presentation upload failed:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Failed to upload presentation. Please try again.';
+        setPresentationUploadError(errorMessage);
+        toast.error(errorMessage);
+        // Reset states on error
+        setPresentationFile(null);
+        setPresentationUploaded(false);
+        setPresentationUrl(null);
+      } finally {
+        setPresentationUploading(false);
+        setPresentationUploadProgress(0);
+      }
     }
   };
   
@@ -63,9 +198,16 @@ const VideoSlideMashupComponent: React.FC = () => {
   const resetPresentation = (): void => {
     setPresentationUploaded(false);
     setPresentationFile(null);
+    setPresentationUrl(null);
+    setPresentationUploading(false);
+    setPresentationUploadProgress(0);
+    setPresentationUploadError(null); // Clear error state
+    if (presentationInputRef.current) {
+      presentationInputRef.current.value = '';
+    }
   };
   
-  // Handle presentation file selection
+  // Handle presentation file selection (for the PDF viewer component)
   const handlePresentationFileSelected = (file: File | null): void => {
     setPresentationFile(file);
   };
@@ -75,6 +217,12 @@ const VideoSlideMashupComponent: React.FC = () => {
     setVideoFile(null);
     setVideoUploaded(false);
     setVideoProcessing(false);
+    setVideoUrl(null);
+    setVideoUploading(false);
+    setVideoUploadProgress(0);
+    if (videoInputRef.current) {
+      videoInputRef.current.value = '';
+    }
   };
   
   // Replace video
@@ -140,7 +288,7 @@ const VideoSlideMashupComponent: React.FC = () => {
                     </thead>
                     <tbody>
                       <tr className="text-sm text-gray-700 font-bold">
-                        <td className="py-2">{videoFile?.name || "2025-05-01-025523.webm"}</td>
+                        <td className="py-2">{videoFile?.name || "video-file.mp4"}</td>
                         <td className="py-2">Video</td>
                         <td className="py-2">{videoProcessing ? "Processing" : "Ready"}</td>
                         <td className="py-2">{new Date().toLocaleDateString('en-US', {month: '2-digit', day: '2-digit', year: 'numeric'})}</td>
@@ -188,14 +336,14 @@ const VideoSlideMashupComponent: React.FC = () => {
                 </div>
                 <div className="grid grid-cols-4 gap-2 md:gap-4 text-sm items-center text-gray-700 font-semibold min-w-max py-2">
                   <div className="truncate">
-                    {videoFile?.name || "2025-05-01-025523.webm"}
+                    {videoFile?.name || "uploading-video.mp4"}
                   </div>
                   <div>Video</div>
                   <div className="flex items-center">
                     <div className="w-20 bg-gray-200 h-2 rounded-full overflow-hidden mr-2">
                       <div className="bg-purple-600 h-2 rounded-full" style={{ width: `${videoUploadProgress}%` }}></div>
                     </div>
-                    <span className="text-xs">{videoUploadProgress}%</span>
+                    <span className="text-xs">{Math.round(videoUploadProgress)}%</span>
                   </div>
                   <div>{new Date().toLocaleDateString()}</div>
                 </div>
@@ -217,8 +365,9 @@ const VideoSlideMashupComponent: React.FC = () => {
                   accept="video/*"
                   onChange={handleVideoUpload}
                   className="hidden"
+                  disabled={videoUploading}
                 />
-                Select Video
+                {videoUploading ? 'Uploading...' : 'Select Video'}
               </label>
             </div>
           )}
@@ -247,18 +396,39 @@ const VideoSlideMashupComponent: React.FC = () => {
             </span>
           </div>
 
-          <SimplePdfViewer 
-            onUsePresentation={handleUsePresentation}
-            onCancel={resetPresentation}
-            onFileSelected={handlePresentationFileSelected}
-            isPresentationSelected={presentationUploaded}
-          />
+          {/* Enhanced SimplePdfViewer with upload functionality */}
+          <div>
+            <SimplePdfViewer 
+              onUsePresentation={handleUsePresentation}
+              onCancel={resetPresentation}
+              onFileSelected={handlePresentationFileSelected}
+              isPresentationSelected={presentationUploaded}
+              onFileUpload={handlePresentationUpload}
+              uploadedFileUrl={presentationUrl}
+              isUploading={presentationUploading}
+              uploadProgress={presentationUploadProgress}
+              uploadError={presentationUploadError}
+            />
+            
+            {/* Hidden file input for presentation */}
+            <input
+              ref={presentationInputRef}
+              type="file"
+              accept=".pdf,.ppt,.pptx"
+              onChange={handlePresentationUpload}
+              className="hidden"
+            />
+          </div>
         </div>
 
-        {/* Step 3 - Sync - Static implementation */}
+        {/* Step 3 - Sync - Enhanced to check for both uploads */}
         <div>
           <div className="flex items-center mb-2 border-b pb-3 border-b-gray-300">
-            <div className={`w-8 h-8 flex items-center justify-center text-sm font-bold bg-gray-100 text-gray-700`}>
+            <div className={`w-8 h-8 flex items-center justify-center text-sm font-bold ${
+              videoUploaded && presentationUploaded 
+                ? 'bg-green-500 text-white' 
+                : 'bg-gray-100 text-gray-700'
+            }`}>
               3
             </div>
             <span className="ml-2 text-sm font-semibold text-gray-800">
@@ -266,9 +436,31 @@ const VideoSlideMashupComponent: React.FC = () => {
             </span>
           </div>
           
-          <div className="border-2 border-dashed border-gray-600 px-4 py-4 text-left font-medium text-sm text-gray-600">
-            Please pick a video & presentation first
-          </div>
+          {videoUploaded && presentationUploaded ? (
+            <div className="border-2 border-green-500 bg-green-50 px-4 py-4 text-left font-medium text-sm text-green-700 rounded">
+              <div className="flex items-center">
+                <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+                Ready to synchronize! Video and presentation are both uploaded.
+              </div>
+              <button 
+                className="mt-3 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 font-bold"
+                onClick={() => toast.success('Synchronization started!')}
+              >
+                Start Synchronization
+              </button>
+            </div>
+          ) : (
+            <div className="border-2 border-dashed border-gray-600 px-4 py-4 text-left font-medium text-sm text-gray-600">
+              {!videoUploaded && !presentationUploaded 
+                ? "Please pick a video & presentation first"
+                : !videoUploaded 
+                  ? "Please upload a video to continue" 
+                  : "Please upload a presentation to continue"
+              }
+            </div>
+          )}
         </div>
       </div>
     </div>

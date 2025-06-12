@@ -37,11 +37,11 @@ import {
 } from "lucide-react";
 import ReactPlayer from "react-player";
 import StudentPreviewSidebar from "./StudentPreviewSidebar";
-import ReportAbuseModal from "./modals/ReportAbuseModal";
-import QuizPreview from "../quiz/QuizPreview";
-import AssignmentPreview from "../assignment/AssignmentPreview";
+import ReportAbuseModal from "../modals/ReportAbuseModal";
+import QuizPreview from "../../quiz/QuizPreview";
+import AssignmentPreview from "../../assignment/AssignmentPreview";
 import VideoControls from "./VideoControls";
-import LearningReminderModal from "./modals/LearningReminderModal";
+import LearningReminderModal from "../modals/LearningReminderModal";
 import BottomTabsContainer from "./BottomTabsContainer";
 import { useRouter } from 'next/navigation'; 
 import ContentInformationDisplay from './ContentInformationDisplay';
@@ -121,7 +121,7 @@ interface CodingExercise {
 
 type SelectedItemType = Lecture | Quiz | Assignment | CodingExercise;
 
-const StudentVideoPreview = ({
+const InstructorVideoPreview = ({
   videoContent,
   setShowVideoPreview,
   lecture,
@@ -1788,4 +1788,4 @@ const StudentVideoPreview = ({
   );
 };
 
-export default StudentVideoPreview;
+export default InstructorVideoPreview;
