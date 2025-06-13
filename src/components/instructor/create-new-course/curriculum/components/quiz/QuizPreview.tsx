@@ -29,7 +29,7 @@ export interface Answer {
   explanation: string;
 }
 
-interface LectureType {
+export interface LectureType {
   id: number;
   title: string;
   videoUrl: string;

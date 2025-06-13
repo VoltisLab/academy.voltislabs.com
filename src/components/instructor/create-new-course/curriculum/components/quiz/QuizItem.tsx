@@ -11,7 +11,9 @@ import QuestionForm from "./QuestionForm";
 import { FaCircleCheck } from "react-icons/fa6";
 import { GoQuestion } from "react-icons/go";
 import { RxHamburgerMenu } from "react-icons/rx";
-import StudentVideoPreview from "../lecture/components/StudentVideoPeview";
+import StudentVideoPreview, {
+  QuizData,
+} from "../lecture/components/StudentVideoPeview";
 import QuizForm from "./QuizForm";
 import { useQuizOperations } from "@/services/quizService";
 import toast, { LoaderIcon } from "react-hot-toast";
@@ -693,13 +695,14 @@ const QuizItem: React.FC<QuizItemProps> = ({
     }, 50);
   };
 
-  const quizData = {
+  const quizData: QuizData = {
     id: lecture.id,
     name: lecture.name || "New quiz",
     description: lecture.description,
     questions: questions.map((q) => ({
       ...q,
       id: q.id || `q-${Date.now()}-${Math.random()}`,
+      relatedLecture: undefined,
     })),
   };
 
