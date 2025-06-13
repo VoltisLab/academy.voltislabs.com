@@ -918,6 +918,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
                     setShowQuestionForm(false);
                     setShowQuestionTypeSelector(false);
                   }}
+                  sectionId={sectionId}
                 />
               </div>
             )}
@@ -1113,6 +1114,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
                           ? questions[editingQuestionIndex]
                           : null
                       }
+                      sectionId={sectionId}
                     />
                   </div>
                 )}
