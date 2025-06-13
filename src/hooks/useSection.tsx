@@ -299,11 +299,13 @@ export const useSections = (
     title?: string,
     description?: string
   ) => {
-    console.log("Adding lecture with title:", title);
+    console.log("Adding lecture with title dff:", title);
 
-    if (contentType === "quiz") {
-      return await addQuiz(sectionId, title ?? "", description ?? "");
-    }
+    // if (contentType === "quiz") {
+    //   return await addQuiz(sectionId, title ?? "", description ?? "");
+    // }
+
+    console.log("Adding lecture with title dffdddddddddd:", title);
 
     const newLecture: Lecture = {
       id: generateId(),
@@ -462,7 +464,6 @@ export const useSections = (
     title: string,
     description: string
   ): Promise<void> => {
-    console.log("hahahahah");
     try {
       // Convert sectionId to number for backend
       const numericSectionId = parseInt(sectionId);
@@ -477,6 +478,8 @@ export const useSections = (
       console.log("Response from backend:", description);
 
       const backendQuizId = response.createQuiz.quiz.id.toString();
+
+      console.log("Create quiz with idddd: ", backendQuizId);
 
       // Create local quiz with backend ID
       const newLecture: Lecture = {
@@ -493,6 +496,8 @@ export const useSections = (
         isPublished: false,
         questions: [],
       };
+
+      console.log("New lecture for quiz:", newLecture);
 
       setSections((prevSections) =>
         prevSections.map((section) => {
@@ -1003,12 +1008,14 @@ export const useSections = (
   // Add new function for updating quiz in backend
   const updateQuiz = async (
     sectionId: string,
-    quizId: string,
+    quizId: number,
     title: string,
     description: string
   ) => {
     try {
-      const numericQuizId = parseInt(quizId);
+      const numericQuizId = Number(quizId);
+
+      console.log("Edit quiz with idddd: ", numericQuizId);
 
       await updateQuizBackend({
         quizId: numericQuizId,
@@ -1022,7 +1029,7 @@ export const useSections = (
             return {
               ...section,
               lectures: section.lectures.map((lecture) => {
-                if (lecture.id === quizId) {
+                if (lecture.id === String(quizId)) {
                   return {
                     ...lecture,
                     name: title,

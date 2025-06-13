@@ -35,10 +35,13 @@ import { useSections } from "@/hooks/useSection";
 import { FileUploadFunction } from "../../CourseSectionBuilder";
 import { CREATE_ASSIGNMENT } from "@/api/assignment/mutation";
 import { useAssignmentService } from "@/services/useAssignmentService";
+import { useQuizOperations } from "@/services/quizService";
 
 // Updated SectionItemProps interface with the missing property
 interface SectionItemProps {
   setNewassignment?: React.Dispatch<React.SetStateAction<number | undefined>>;
+  setNewQuizId?: React.Dispatch<React.SetStateAction<number | undefined>>;
+  newQuizId?: number;
   section: {
     id: string;
     name: string;
@@ -108,7 +111,7 @@ interface SectionItemProps {
   addCurriculumItem: (sectionId: string) => void;
   updateQuizQuestions?: (
     sectionId: string,
-    quizId: string,
+    quizId: number,
     questions: any[]
   ) => void;
 
@@ -148,7 +151,7 @@ interface SectionItemProps {
   ) => Promise<void>;
   updateQuiz?: (
     sectionId: string,
-    quizId: string,
+    quizId: number,
     title: string,
     description: string
   ) => Promise<void>;
@@ -198,6 +201,8 @@ interface SectionItemProps {
 export default function SectionItem({
   section,
   setNewassignment,
+  setNewQuizId,
+  newQuizId,
   index,
   totalSections,
   editingSectionId,
@@ -252,7 +257,7 @@ export default function SectionItem({
   videoUploading,
   videoUploadProgress,
   saveArticleToBackend,
-  uploadFileToBackend, 
+  uploadFileToBackend,
 }: SectionItemProps) {
   const sectionNameInputRef = useRef<HTMLInputElement>(null);
   // State for toggling action buttons
@@ -266,8 +271,6 @@ export default function SectionItem({
   const [showEditForm, setShowEditForm] = useState<boolean>(false);
   const [editTitle, setEditTitle] = useState<string>("");
   const [editObjective, setEditObjective] = useState<string>("");
-
-  const [quizOperationLoading, setQuizOperationLoading] = useState(false);
 
   // Added states to track active sections for resources and descriptions
   const [activeResourceSection, setActiveResourceSection] = useState<{
@@ -378,33 +381,71 @@ export default function SectionItem({
     }
   };
 
+  const { createQuiz, loading: quizOperationLoading } = useQuizOperations();
   // Enhanced handler for adding a quiz - uses addQuiz instead of addLecture
   const handleAddQuiz = async (
     sectionId: string,
     title: string,
     description: string
-    // loading: boolean
   ) => {
-    console.log("SectionItem handling quiz addddd:", {
-      sectionId,
-      title,
-      description,
-    });
+    try {
+      // Use the service method instead of apolloClient directly
+      const response = await createQuiz({
+        sectionId: Number(sectionId),
+        title,
+        description,
+      });
 
-    // if (addQuiz) {
-    //   // Use the addQuiz function which properly handles the quiz creation with description
-    //   await addQuiz(sectionId, title, description);
-    // }
+      if (response.createQuiz) {
+        setNewQuizId?.(Number(response.createQuiz.quiz.id));
+      }
 
-    await addLecture(sectionId, "quiz", title, description);
+      if (response.createQuiz.success) {
+        // Add lecture (backend)
+        await addLecture(sectionId, "quiz", title, description);
 
-    setShowQuizForm(false);
+        // Get backend and local IDs
+        const backendLectureId = response.createQuiz.quiz.id;
+        const localLectureId = await addLocalLecture(
+          sectionId,
+          "quiz",
+          title,
+          description
+        );
+
+        // Update local lecture state with the backend ID
+        setSections((prevSections) =>
+          prevSections.map((section) => {
+            if (section.id === sectionId) {
+              return {
+                ...section,
+                lectures: section.lectures.map((lecture) =>
+                  lecture.id === localLectureId
+                    ? { ...lecture, id: backendLectureId }
+                    : lecture
+                ),
+              };
+            }
+            return section;
+          })
+        );
+
+        setShowQuizForm(false);
+        return backendLectureId;
+      }
+
+      return "";
+    } catch (error) {
+      console.error("Failed to create quiz:", error);
+      // Optional: show a toast if not already handled in the service
+      return "";
+    }
   };
 
   // Handler for editing a quiz
   const handleEditQuiz = async (
     sectionId: string,
-    quizId: string,
+    quizId: number,
     title: string,
     description: string
   ) => {
@@ -698,6 +739,7 @@ export default function SectionItem({
         <QuizItem
           key={lecture.id}
           lecture={lecture}
+          newQuizId={newQuizId} // Pass the newQuizId setter
           lectureIndex={typeSpecificIndex} // Use quiz-specific index
           totalLectures={
             section.lectures.filter((l) => l.contentType === "quiz").length

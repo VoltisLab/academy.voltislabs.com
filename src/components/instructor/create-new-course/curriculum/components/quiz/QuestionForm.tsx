@@ -4,6 +4,8 @@ import React, { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import "react-quill-new/dist/quill.snow.css";
 import RichTextEditor from "../../RichTextEditor";
+import { useLectureData } from "@/services/fetchLectureService";
+
 import { useQuizOperations } from "@/services/quizService";
 
 interface QuestionFormProps {
@@ -12,7 +14,16 @@ interface QuestionFormProps {
   initialQuestion?: any;
   isEditedForm?: boolean;
   onLoad?: boolean;
-  quizId: string;
+  quizId: number;
+  sectionId?: string;
+}
+
+interface LectureType {
+  id: number;
+  title: string;
+  videoUrl: string;
+  notes?: string;
+  description?: string;
 }
 
 const QuestionForm: React.FC<QuestionFormProps> = ({
@@ -22,6 +33,7 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
   isEditedForm,
   onLoad,
   quizId,
+  sectionId,
 }) => {
   const [questionText, setQuestionText] = useState("");
   const [answers, setAnswers] = useState<
@@ -35,7 +47,9 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
   const [correctAnswerIndex, setCorrectAnswerIndex] = useState<number | null>(
     null
   );
-  const [relatedLecture, setRelatedLecture] = useState("");
+  const [relatedLecture, setRelatedLecture] = useState<LectureType | null>(
+    null
+  );
   const [error, setError] = useState("");
   const [hoveredAnswerIndex, setHoveredAnswerIndex] = useState<number | null>(
     null
@@ -43,6 +57,25 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
   const [focusedAnswerIndex, setFocusedAnswerIndex] = useState<number | null>(
     null
   );
+
+  const { lectures, loading: lecturesLoading } = useLectureData(
+    parseInt(sectionId as string)
+  );
+
+  console.log("Lectures:", lectures);
+
+  // Update the select handler
+  const handleLectureChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const lectureId = e.target.value;
+    if (!lectureId) {
+      setRelatedLecture(null);
+      return;
+    }
+    const selectedLecture = lectures.find(
+      (lecture) => lecture.id.toString() === lectureId
+    );
+    setRelatedLecture(selectedLecture || null);
+  };
 
   // const {
   //   createQuiz,
@@ -74,7 +107,7 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
         { text: "", explanation: "" },
       ]);
       setCorrectAnswerIndex(null);
-      setRelatedLecture("");
+      setRelatedLecture(null);
     }
     setError("");
   }, [initialQuestion]);
@@ -126,62 +159,6 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
     setAnswers(newAnswers);
   };
 
-  // const handleSubmit = () => {
-  //   // Validate question text
-  //   if (!questionText.trim()) {
-  //     setError("Question text is required");
-  //     toast.error("Question text is required");
-  //     return;
-  //   }
-
-  //   // Filter out empty answers but keep original indices
-  //   const validAnswers = answers
-  //     .map((answer, index) => ({ ...answer, originalIndex: index }))
-  //     .filter((answer) => answer.text.trim() !== "");
-
-  //   // Validate at least 2 answers
-  //   if (validAnswers.length < 2) {
-  //     setError("At least 2 answers are required");
-  //     toast.error("At least 2 answers are required");
-  //     return;
-  //   }
-
-  //   // Validate correct answer is selected
-  //   if (correctAnswerIndex === null) {
-  //     setError("You must select a correct answer");
-  //     toast.error("You must select a correct answer");
-  //     return;
-  //   }
-
-  //   // Validate selected answer isn't empty
-  //   const selectedAnswer = answers[correctAnswerIndex];
-  //   if (!selectedAnswer || selectedAnswer.text.trim() === "") {
-  //     setError("The correct answer cannot be empty");
-  //     toast.error("The correct answer cannot be empty");
-  //     return;
-  //   }
-
-  //   // Find the new index of the correct answer after filtering
-  //   const newCorrectIndex = validAnswers.findIndex(
-  //     (answer) => answer.originalIndex === correctAnswerIndex
-  //   );
-
-  //   // Create the question object
-  //   const question = {
-  //     ...(isEditedForm && initialQuestion?.id && { id: initialQuestion.id }),
-  //     text: questionText,
-  //     answers: validAnswers.map(({ text, explanation }) => ({
-  //       text,
-  //       explanation,
-  //     })),
-  //     correctAnswerIndex: newCorrectIndex,
-  //     relatedLecture,
-  //     type: "multiple-choice",
-  //   };
-
-  //   onSubmit(question);
-  // };
-
   const handleSubmit = () => {
     // Validate inputs
     if (!questionText.trim()) {
@@ -229,7 +206,7 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
         text,
         explanation,
       })),
-      quizId: parseInt(quizId),
+      quizId: Number(quizId),
       choices, // Add choices for API
       correctAnswerIndex,
       relatedLecture,
@@ -329,18 +306,28 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
       </div>
 
       <div className="mb-6">
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Related Lecture
-        </label>
-        <select
-          value={relatedLecture}
-          onChange={(e) => setRelatedLecture(e.target.value)}
-          className="w-full border border-zinc-400 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-        >
-          <option value="">-- Select One --</option>
-        </select>
-        <div className="text-xs text-gray-500 mt-1">
-          Select a related video lecture to help students answer this question.
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Related Lecture
+          </label>
+          <select
+            value={relatedLecture?.id || ""}
+            onChange={handleLectureChange}
+            className="w-full border border-zinc-400 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            disabled={lecturesLoading}
+          >
+            <option value="">-- Select One --</option>
+            {lectures.map((lecture) => (
+              <option key={lecture.id} value={lecture.id}>
+                {lecture.title}
+              </option>
+            ))}
+          </select>
+          <div className="text-xs text-gray-500 mt-1">
+            {lecturesLoading
+              ? "Loading lectures..."
+              : "Select a related video lecture to help students answer this question."}
+          </div>
         </div>
       </div>
 

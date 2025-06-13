@@ -38,7 +38,7 @@ import {
 import ReactPlayer from "react-player";
 import StudentPreviewSidebar from "./StudentPreviewSidebar";
 import ReportAbuseModal from "../modals/ReportAbuseModal";
-import QuizPreview from "../../quiz/QuizPreview";
+import QuizPreview, { LectureType } from "../../quiz/QuizPreview";
 import AssignmentPreview from "../../assignment/AssignmentPreview";
 import VideoControls from "./VideoControls";
 import LearningReminderModal from "../modals/LearningReminderModal";
@@ -60,7 +60,7 @@ interface QuizData {
       explanation: string;
     }>;
     correctAnswerIndex: number;
-    relatedLecture?: string;
+    relatedLecture?: LectureType;
     type: string;
   }>;
 }
