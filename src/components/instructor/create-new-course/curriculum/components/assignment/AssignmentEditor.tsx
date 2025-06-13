@@ -1,5 +1,5 @@
 "use client"
-import React, { useState, useRef, JSX } from "react";
+import React, { useState, useRef, JSX, useEffect } from "react";
 import { ArrowLeft } from "lucide-react";
 import SolutionsTab from "./SolutionsTab";
 import QuestionsTab from "./QuestionsTab";
@@ -11,7 +11,9 @@ import AssignmentPreview from "./AssignmentPreview";
 import { useAssignment } from "@/context/AssignmentDataContext";
 import { UpdateAssignmentVariables } from "@/api/assignment/mutation";
 import { useAssignmentService } from "@/services/useAssignmentService";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
+import { GET_ASSIGNMENT, GetAssignmentData, GetAssignmentVariables } from "@/api/assignment/query";
+
 
 // Types
 interface AssignmentQuestion {
@@ -39,7 +41,9 @@ const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState("basic-info");
   const router = useRouter()
-
+  
+  const params = useParams();
+    const id = params?.id; 
   // const [assignmentData, setAssignmentData] = useState<ExtendedLecture>({
   //   ...(initialData || {
   //     id: Date.now().toString(),
@@ -76,6 +80,12 @@ const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
   >("overview");
 
   const { assignmentData, setAssignmentData } = useAssignment();
+  
+
+
+
+
+  
 
   const validateAssignment = () => {
     const errors: string[] = [];
@@ -122,8 +132,43 @@ const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
     setShowPublishModal(true);
     // }
   };
-  const {updateAssignment} = useAssignmentService()
+  const {updateAssignment, getAssignment} = useAssignmentService()
+  console.log("assignmentment===", assignmentData)
 
+const fetchAssignment: () => Promise<void> = async () => {
+    if (!id) return;
+    try {
+      const data = await getAssignment({ id: Number(id) });
+      setAssignmentData(
+              {
+              id: data?.id,
+              name: "",
+              description: "hfgfgfg",
+              captions: "jjjjjj",
+              lectureNotes: "",
+              attachedFiles: [],
+              videos: [],
+              contentType: "assignment",
+              isExpanded: false,
+              assignmentTitle: data?.title,
+              assignmentDescription: data?.description,
+              estimatedDuration: data?.estimatedDurationMinutes,
+              durationUnit: "minutes",
+              assignmentInstructions: data?.description,
+              assignmentQuestions: data?.questions,
+              isPublished: false,
+              solution: data?.questionSolutions
+              }
+          )
+    } catch (err) {
+      // Error already handled inside getAssignment
+    }
+  };
+  useEffect(() => {
+  if (id) {
+    fetchAssignment();
+  }
+}, [id]);
   const handleConfirmPublish = async() => {
     if (!validateAssignment()) {
       
@@ -336,6 +381,7 @@ const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
       case "basic-info":
         return (
           <BasicInfoTab
+            fetchAssignment={fetchAssignment}
             data={assignmentData}
             onChange={handleDataChange}
             onSave={() => console.log("Basic info saved", assignmentData)}
@@ -344,6 +390,7 @@ const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
       case "instructions":
         return (
           <InstructionsTab
+            fetchAssignment={fetchAssignment}
             data={assignmentData}
             onChange={handleDataChange}
             isEditing={isEditingInstructions}
@@ -353,11 +400,13 @@ const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
         );
       case "questions":
         return (
-          <QuestionsTab data={assignmentData} onChange={handleDataChange} assignmentId={newAssinment}  />
+          <QuestionsTab     fetchAssignment={fetchAssignment} data={assignmentData} onChange={handleDataChange} assignmentId={newAssinment}  />
         );
       case "solutions":
         return (
           <SolutionsTab
+                      fetchAssignment={fetchAssignment}
+
             data={assignmentData}
             onChange={handleDataChange}
             setActiveTab={setActiveTab}
@@ -366,6 +415,7 @@ const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
       default:
         return (
           <BasicInfoTab
+            fetchAssignment={fetchAssignment}
             data={assignmentData}
             onChange={handleDataChange}
             onSave={() => console.log("Basic info saved")}

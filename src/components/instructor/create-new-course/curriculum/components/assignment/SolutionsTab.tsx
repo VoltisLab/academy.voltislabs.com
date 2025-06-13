@@ -8,7 +8,9 @@ const SolutionsTab: React.FC<{
   data: ExtendedLecture;
   onChange: (field: string, value: any) => void;
   setActiveTab: (tab: string) => void; // Add this line
-}> = ({ data, onChange, setActiveTab }) => {
+  fetchAssignment: () => Promise<void>
+
+}> = ({ data, onChange, setActiveTab, fetchAssignment }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [activeVideoTab, setActiveVideoTab] = useState<
     "upload" | "library" | null
@@ -135,7 +137,7 @@ console.log(question)
       data.assignmentQuestions?.map((q) =>
         q.id === questionId ? { ...q, solution: { ...existingSolution, text: answerContent } } : q
       ) || [];
-
+    fetchAssignment()
     onChange("assignmentQuestions", updatedQuestions);
     setEditingAnswers((prev) => ({ ...prev, [questionId]: false }));
     toast.success("Answer saved successfully!");
@@ -317,7 +319,7 @@ console.log(question)
             <div className="border border-gray-300 rounded-md p-4 bg-gray-100">
               <div className="flex justify-between items-center font-semibold">
                 <span className="text-gray-700">
-                  {data.solutionVideo?.file?.name ||
+                  {  data.solutionVideo?.file?.name ||
                     data.solutionVideo?.url?.split("/").pop() ||
                     "No video selected"}
                 </span>
@@ -410,7 +412,7 @@ console.log(question)
                 Question {question.order}
               </h3>
               <div className="prose max-w-none mt-2">
-                {question.content.split("\n").map((paragraph, i) => (
+                {question?.text?.split("\n").map((paragraph, i) => (
                   <p key={i}>{paragraph}</p>
                 ))}
               </div>
@@ -454,8 +456,10 @@ console.log(question)
                       <div className="space-y-2">
                         <div
                           className="prose max-w-none"
+                          
                           dangerouslySetInnerHTML={{
-                            __html: question.solution?.text ?? "",
+                          
+                            __html: question?.solution?.text ?? "",
                           }}
                         />
                         <div className="flex gap-2 mt-2">
