@@ -724,3 +724,8 @@ export const exactDarkTheme = {
             return 'javascript';
         }
       };
+
+        // Custom input styles with focus state
+  export const inputClasses = "w-full px-3 py-2 border border-gray-500 rounded text-gray-700 focus:outline-none focus:1 focus:ring-[#6D28D2] focus:border-[#6D28D2]";
+  export const searchInputClasses = "w-full px-3 py-1 border border-gray-400 rounded text-gray-800 focus:outline-none focus:ring-1 focus:ring-[#6D28D2] focus:border-[#6D28D2]";
+  

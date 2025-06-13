@@ -140,7 +140,6 @@ const ContactUs: React.FC = () => {
       }
     } catch (error) {
       setFormStatus("error");
-      console.log("Error submitting form:", error);
     } finally {
       setIsSubmitting(false);
     }

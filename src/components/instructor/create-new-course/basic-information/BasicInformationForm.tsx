@@ -109,8 +109,6 @@ export const BasicInformationForm = ({ onSaveNext }: BasicInformationFormProps) 
         },
         fetchPolicy: 'no-cache' // Force network request, bypass cache
       });
-
-      console.log("Creating course with variables ",data.createCourse )
       
       if (errors) {
         console.error("GraphQL errors:", errors);

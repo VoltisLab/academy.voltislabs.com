@@ -154,7 +154,6 @@ const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
     if (ContentTypeDetector) {
       const detectedType = ContentTypeDetector.detectLectureContentType(enhancedLecture);
       if (detectedType !== 'unknown' && detectedType !== 'video') {
-        console.log(`✅ ContentTypeDetector result: ${detectedType}`);
         return detectedType;
       }
     }
@@ -162,24 +161,19 @@ const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
     // Priority 5: Check enhanced lecture properties for article content
     if (enhancedLecture.hasArticleContent || 
         (enhancedLecture.articleContent && enhancedLecture.articleContent.text && enhancedLecture.articleContent.text.trim().length > 0)) {
-      console.log(`✅ Detected as article based on content`);
       return 'article';
     }
     
     // Priority 6: Check enhanced lecture properties for video content
     if (enhancedLecture.hasVideoContent || enhancedLecture.videoDetails) {
-      console.log(`✅ Detected as video based on content`);
       return 'video';
     }
     
     // Priority 7: Check explicit content type
     if (lecture.contentType === 'article') {
-      console.log(`✅ Explicit article content type`);
       return 'article';
     }
     
-    // Priority 8: Default to video for regular lectures
-    console.log(`⚠️ Defaulting to video for lecture ${lecture.id}`);
     return 'video';
   };
 

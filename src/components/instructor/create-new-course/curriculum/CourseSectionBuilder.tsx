@@ -175,7 +175,6 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
       );
 
       if (isDuplicate) {
-        console.log("⚠️ Duplicate source code file detected, skipping add");
         return prev;
       }
 
