@@ -29,6 +29,7 @@ import {
   UpdateAssignmentQuestionSolutionResponse,
   UPDATE_ASSIGNMENT_QUESTION_SOLUTION
 } from '@/api/assignment/mutation';
+import { GET_ASSIGNMENT, GetAssignmentData, GetAssignmentVariables } from '@/api/assignment/query';
 
 export const useAssignmentService = () => {
   const [loading, setLoading] = useState(false);
@@ -421,6 +422,52 @@ const updateAssignmentQuestionSolution = async (
   }
 };
 
+//getting assignment by ID
+const getAssignment = async (variables: GetAssignmentVariables) => {
+  try {
+    setLoading(true);
+    setError(null);
+
+    const { data, errors } = await apolloClient.query<GetAssignmentData, GetAssignmentVariables>({
+      query: GET_ASSIGNMENT,
+      variables,
+      context: {
+        includeAuth: true,
+      },
+      fetchPolicy: 'no-cache',
+    });
+
+    if (errors && errors.length > 0) {
+      console.error('GraphQL errors:', errors);
+      throw new Error(errors[0]?.message || 'An error occurred while fetching the assignment');
+    }
+
+    if (!data?.getAssignment) {
+      throw new Error('Assignment not found');
+    }
+
+    return data.getAssignment;
+  } catch (err) {
+    console.error('Assignment fetch error:', err);
+
+    if (err instanceof ApolloError) {
+      const errorMessage = err.message || 'Network error. Please check your connection and try again.';
+      setError(new Error(errorMessage));
+      toast.error(errorMessage);
+    } else if (err instanceof Error) {
+      setError(err);
+      toast.error(err.message);
+    } else {
+      const genericError = new Error('An unexpected error occurred');
+      setError(genericError);
+      toast.error(genericError.message);
+    }
+
+    throw err;
+  } finally {
+    setLoading(false);
+  }
+};
   return {
     createAssignment,
     updateAssignment,
@@ -430,6 +477,7 @@ const updateAssignmentQuestionSolution = async (
     deleteAssignmentQuestion,
     createAssignmentQuestionSolution,
     updateAssignmentQuestionSolution,
+    getAssignment,
     loading,
     error
   };

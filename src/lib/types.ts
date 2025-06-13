@@ -311,13 +311,14 @@ export interface Question {
 }
 
 export interface AssignmentQuestion {
+  text?: string;
   id: string;
   content: string;
   order: number;
   solution?: {
     id?: string,
     text?: string
-  };
+  } ;
 
   
 }

@@ -1,10 +1,12 @@
 "use client"
 import AssignmentEditor from '@/components/instructor/create-new-course/curriculum/components/assignment/AssignmentEditor'
-import { AssignmentProvider } from '@/context/AssignmentDataContext'
-import React from 'react'
+import { AssignmentProvider, useAssignment } from '@/context/AssignmentDataContext'
+import React, { useEffect } from 'react'
 import { Toaster } from 'react-hot-toast'
 
 const page = () => {
+
+    
   return (
 
     <div>
