@@ -12,7 +12,8 @@ const InstructionsTab: React.FC<{
   isEditing: boolean;
   onEditToggle: (value: boolean) => void;
   hasSubmitted: boolean;
-}> = ({ data, onChange, isEditing, onEditToggle, hasSubmitted }) => {
+  fetchAssignment: () => Promise<void>
+}> = ({ data, onChange, isEditing, onEditToggle, hasSubmitted, fetchAssignment }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [activeVideoTab, setActiveVideoTab] = useState<
     "upload" | "library" | null
@@ -117,7 +118,7 @@ const InstructionsTab: React.FC<{
 
     await updateAssignment(variables);
       toast.success("instructions saved successfully!");
-
+    fetchAssignment()
     setIsEditingInstructions(false);
     onEditToggle(false);
     toast.success("Instructions saved successfully!");

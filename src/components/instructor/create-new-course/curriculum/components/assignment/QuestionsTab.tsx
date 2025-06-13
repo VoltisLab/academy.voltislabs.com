@@ -9,7 +9,8 @@ const QuestionsTab: React.FC<{
   data: ExtendedLecture;
   onChange: (field: string, value: any) => void;
   assignmentId?: number;
-}> = ({ data, onChange, assignmentId }) => {
+  fetchAssignment: () => Promise<void>
+}> = ({ data, onChange, assignmentId, fetchAssignment }) => {
   const [showInfo, setShowInfo] = useState(true);
   const [questions, setQuestions] = useState<AssignmentQuestion[]>([]);
   const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null);
@@ -66,7 +67,7 @@ const params = useParams();
               }
             : q
         );
-
+        fetchAssignment()
         setQuestions(updatedQuestions);
         onChange("assignmentQuestions", updatedQuestions);
         setEditingQuestionId(null);
@@ -174,7 +175,9 @@ const params = useParams();
   const renderQuestionDisplay = (question: AssignmentQuestion) => (
     <div className="mt-2">
       <div className="prose max-w-none">
-        {question.content.split("\n").map((paragraph, i) => (
+        {question?.text?.split("\n")?.map((paragraph, i) => (
+          <p key={i}>{paragraph}</p>
+        )) ?? question?.content?.split("\n")?.map((paragraph, i) => (
           <p key={i}>{paragraph}</p>
         ))}
       </div>

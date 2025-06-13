@@ -10,8 +10,9 @@ const BasicInfoTab: React.FC<{
   data: ExtendedLecture;
   onChange: (field: string, value: any) => void;
   onSave?: () => void; // Made optional to prevent errors
+  fetchAssignment: () => Promise<void>
   
-}> = ({ data, onChange, onSave }) => {
+}> = ({ data, onChange, onSave, fetchAssignment }) => {
   const [validation, setValidation] = useState({
     title: true,
     description: true,
@@ -84,6 +85,7 @@ const BasicInfoTab: React.FC<{
     await updateAssignment(variables);
       toast.success("Basic info saved successfully!");
     }
+    fetchAssignment()
   };
 
   return (
