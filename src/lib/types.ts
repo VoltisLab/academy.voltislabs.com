@@ -1,5 +1,6 @@
 import { ReactNode } from "react";
 import { CourseLevelEnum, DurationUnitEnum, LanguageEnum } from "./utils";
+import { LectureType } from "@/components/instructor/create-new-course/curriculum/components/quiz/QuizPreview";
 
 // Authentication related types
 export interface SignUpData {
@@ -306,7 +307,7 @@ export interface Question {
     explanation: string;
   }>;
   correctAnswerIndex: number;
-  relatedLecture?: string;
+  relatedLecture?: LectureType;
   type: string;
 }
 
@@ -316,11 +317,9 @@ export interface AssignmentQuestion {
   content: string;
   order: number;
   solution?: {
-    id?: string,
-    text?: string
-  } ;
-
-  
+    id?: string;
+    text?: string;
+  };
 }
 
 // UPDATED: Base Lecture interface
@@ -921,7 +920,10 @@ export interface LectureItemProps {
   }) => void;
   removeUploadedFile?: (fileName: string, lectureId: string) => void;
   addSourceCodeFile?: (file: SourceCodeFile) => void;
-  removeSourceCodeFile?: (fileName: string | undefined, lectureId: string) => void;
+  removeSourceCodeFile?: (
+    fileName: string | undefined,
+    lectureId: string
+  ) => void;
   addExternalResource?: (resource: ExternalResourceItem) => void;
   removeExternalResource?: (title: string, lectureId: string) => void;
 }
@@ -1015,7 +1017,6 @@ export interface CodingExercisePreviewData {
     }[];
   } | null;
 }
-
 
 export type VideoNote = {
   id: string;
