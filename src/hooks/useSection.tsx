@@ -311,7 +311,7 @@ export const useSections = (
       id: generateId(),
       name: title,
       title: title,
-      description: "",
+      description: description,
       captions: "",
       lectureNotes: "",
       attachedFiles: [],
