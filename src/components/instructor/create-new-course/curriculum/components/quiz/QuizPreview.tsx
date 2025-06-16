@@ -137,6 +137,9 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({ quiz, onClose }) => {
     setShowRelatedLectureVideo(!showRelatedLectureVideo);
   };
 
+  console.log("Quiz data:", quiz);
+  console.log("Current question index:", currentQuestionIndex);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (quizStatus !== "Questions") return;
@@ -404,36 +407,37 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({ quiz, onClose }) => {
                         </span>
                       </div>
 
-                      {showRelatedLectureVideo && isRelatedLecture.videoUrl ? (
-                        <div className="h-80 flex items-center justify-center">
-                          <video
-                            controls
-                            className="max-w-full max-h-full"
-                            src={isRelatedLecture.videoUrl}
-                          >
-                            Your browser does not support the video tag.
-                          </video>
-                        </div>
-                      ) : (
-                        <div className="text-gray-800 h-80 flex items-center">
-                          <div className="max-w-xl mx-auto">
-                            Your video failed to process for the following
-                            reasons:
-                            <ul className="list-disc pl-5">
-                              <li>
-                                Your video didn't meet our lowest permissible
-                                resolution of at least 720p.{" "}
-                                <Link
-                                  href={"#"}
-                                  className="text-purple-600 underline cursor-pointer hover:text-purple-800 transition"
-                                >
-                                  Get Help
-                                </Link>
-                              </li>
-                            </ul>
+                      {showRelatedLectureVideo &&
+                        (isRelatedLecture.videoUrl ? (
+                          <div className="h-80 flex items-center justify-center">
+                            <video
+                              controls
+                              className="max-w-full max-h-full"
+                              src={isRelatedLecture.videoUrl}
+                            >
+                              Your browser does not support the video tag.
+                            </video>
                           </div>
-                        </div>
-                      )}
+                        ) : (
+                          <div className="text-gray-800 h-80 flex items-center">
+                            <div className="max-w-xl mx-auto">
+                              Your video failed to process for the following
+                              reasons:
+                              <ul className="list-disc pl-5">
+                                <li>
+                                  Your video didn't meet our lowest permissible
+                                  resolution of at least 720p.{" "}
+                                  <Link
+                                    href="#"
+                                    className="text-purple-600 underline cursor-pointer hover:text-purple-800 transition"
+                                  >
+                                    Get Help
+                                  </Link>
+                                </li>
+                              </ul>
+                            </div>
+                          </div>
+                        ))}
                     </>
                   )}
 

@@ -311,7 +311,7 @@ export const useSections = (
       id: generateId(),
       name: title,
       title: title,
-      description: "",
+      description: description,
       captions: "",
       lectureNotes: "",
       attachedFiles: [],
@@ -1008,7 +1008,7 @@ export const useSections = (
   // Add new function for updating quiz in backend
   const updateQuiz = async (
     sectionId: string,
-    quizId: number,
+    quizId: string,
     title: string,
     description: string
   ) => {
@@ -1029,7 +1029,7 @@ export const useSections = (
             return {
               ...section,
               lectures: section.lectures.map((lecture) => {
-                if (lecture.id === String(quizId)) {
+                if (lecture.id === quizId) {
                   return {
                     ...lecture,
                     name: title,

@@ -17,6 +17,7 @@ import StudentVideoPreview, {
 import QuizForm from "./QuizForm";
 import { useQuizOperations } from "@/services/quizService";
 import toast, { LoaderIcon } from "react-hot-toast";
+import { LectureType } from "./QuizPreview";
 
 interface QuizItemProps {
   lecture: Lecture;
@@ -58,7 +59,7 @@ interface QuizItemProps {
   allSections: any[];
   onEditQuiz?: (
     sectionId: string,
-    quizId: number,
+    quizId: string,
     title: string,
     description: string
   ) => Promise<void>;
@@ -77,7 +78,7 @@ interface Question {
     explanation: string;
   }>;
   correctAnswerIndex: number;
-  relatedLecture?: string;
+  relatedLecture?: LectureType;
   type: string;
 }
 
@@ -389,7 +390,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
   ) => {
     try {
       if (onEditQuiz) {
-        await onEditQuiz(sectionId, quizId, title, description);
+        await onEditQuiz(sectionId, lecture.id, title, description);
       }
     } catch (error) {
       throw error;
@@ -702,7 +703,6 @@ const QuizItem: React.FC<QuizItemProps> = ({
     questions: questions.map((q) => ({
       ...q,
       id: q.id || `q-${Date.now()}-${Math.random()}`,
-      relatedLecture: undefined,
     })),
   };
 
