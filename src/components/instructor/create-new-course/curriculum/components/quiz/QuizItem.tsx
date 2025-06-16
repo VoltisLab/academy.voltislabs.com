@@ -59,7 +59,7 @@ interface QuizItemProps {
   allSections: any[];
   onEditQuiz?: (
     sectionId: string,
-    quizId: number,
+    quizId: string,
     title: string,
     description: string
   ) => Promise<void>;
@@ -390,7 +390,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
   ) => {
     try {
       if (onEditQuiz) {
-        await onEditQuiz(sectionId, quizId, title, description);
+        await onEditQuiz(sectionId, lecture.id, title, description);
       }
     } catch (error) {
       throw error;

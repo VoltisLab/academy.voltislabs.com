@@ -151,7 +151,7 @@ interface SectionItemProps {
   ) => Promise<void>;
   updateQuiz?: (
     sectionId: string,
-    quizId: number,
+    quizId: string,
     title: string,
     description: string
   ) => Promise<void>;
@@ -402,16 +402,21 @@ export default function SectionItem({
 
       if (response.createQuiz.success) {
         // Add lecture (backend)
-        await addLecture(sectionId, "quiz", title, description);
-
-        // Get backend and local IDs
-        const backendLectureId = response.createQuiz.quiz.id;
-        const localLectureId = await addLocalLecture(
+        const localLectureId = await addLecture(
           sectionId,
           "quiz",
           title,
           description
         );
+
+        // Get backend and local IDs
+        const backendLectureId = response.createQuiz.quiz.id;
+        // const localLectureId = await addLocalLecture(
+        //   sectionId,
+        //   "quiz",
+        //   title,
+        //   description
+        // );
 
         // Update local lecture state with the backend ID
         setSections((prevSections) =>
@@ -445,7 +450,7 @@ export default function SectionItem({
   // Handler for editing a quiz
   const handleEditQuiz = async (
     sectionId: string,
-    quizId: number,
+    quizId: string,
     title: string,
     description: string
   ) => {
@@ -744,6 +749,7 @@ export default function SectionItem({
           totalLectures={
             section.lectures.filter((l) => l.contentType === "quiz").length
           }
+          // updateQuiz={updateQuiz} // Pass the updateQuiz function
           sectionId={section.id}
           editingLectureId={editingLectureId}
           setEditingLectureId={setEditingLectureId}
