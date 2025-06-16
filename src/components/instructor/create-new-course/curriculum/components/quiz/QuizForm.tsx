@@ -176,7 +176,8 @@ const QuizForm: React.FC<QuizFormProps> = ({
           await onAddQuiz(sectionId, title.trim(), description.trim());
         }
         setQuizEditLoading(false);
-        toast.success(isEdit ? "Quiz updated" : "Quiz created");
+
+        isEdit && toast.success(isEdit ? "Quiz updated" : "Quiz created");
         if (setShowEditQuizForm) setShowEditQuizForm(false);
       } catch (error) {
         toast.error("Operation failed");
