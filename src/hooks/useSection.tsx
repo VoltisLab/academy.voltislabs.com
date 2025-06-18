@@ -462,8 +462,8 @@ export const useSections = (
   const addQuiz = async (
     sectionId: string,
     title: string,
-    description: string
-  ): Promise<void> => {
+    description?: string
+  ): Promise<string> => {
     try {
       // Convert sectionId to number for backend
       const numericSectionId = parseInt(sectionId);
@@ -482,40 +482,78 @@ export const useSections = (
       console.log("Create quiz with idddd: ", backendQuizId);
 
       // Create local quiz with backend ID
-      const newLecture: Lecture = {
+      const newQuiz: Lecture = {
         id: backendQuizId, // Use the backend ID
         name: title,
         title: title,
         description: description,
-        captions: "",
-        lectureNotes: "",
         attachedFiles: [],
         videos: [],
         contentType: "quiz",
         isExpanded: true,
         isPublished: false,
-        questions: [],
+        externalResources: [],
       };
 
-      console.log("New lecture for quiz:", newLecture);
+      console.log("New lecture for quiz:", newQuiz);
 
       setSections((prevSections) =>
         prevSections.map((section) => {
           if (section.id === sectionId) {
             return {
               ...section,
-              lectures: [...section.lectures, newLecture],
+              lectures: [...section.lectures, newQuiz],
             };
           }
           return section;
         })
       );
-      return backendQuizId;
+
+      toast.success(`New Quiz added`);
+
+      return newQuiz.id;
     } catch (error) {
       toast.error("Failed to create quiz");
       console.error(error);
+      throw error;
     }
   };
+
+  // const addQuiz = async (
+  //   sectionId: string,
+  //   title: string,
+  //   description?: string
+  // ) => {
+  //   console.log("Adding Quiz with title", title);
+
+  //   const newQuiz: Lecture = {
+  //     id: generateId(),
+  //     name: title,
+  //     title: title,
+  //     description: description,
+  //     attachedFiles: [],
+  //     videos: [],
+  //     contentType: "quiz",
+  //     isExpanded: true,
+  //     isPublished: false,
+  //     externalResources: [],
+  //   };
+
+  //   setSections((prevSections) =>
+  //     prevSections.map((section) => {
+  //       if (section.id === sectionId) {
+  //         return {
+  //           ...section,
+  //           lectures: [...section.lectures, newQuiz],
+  //         };
+  //       }
+  //       return section;
+  //     })
+  //   );
+  //   toast.success(`New Quiz added`);
+
+  //   return newQuiz.id;
+  // };
 
   // Delete a section
   const deleteSection = (sectionId: string) => {

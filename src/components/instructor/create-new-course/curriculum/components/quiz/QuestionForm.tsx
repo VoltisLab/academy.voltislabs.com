@@ -206,7 +206,7 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
         text,
         explanation,
       })),
-      quizId: Number(quizId),
+      quizId: quizId,
       choices, // Add choices for API
       correctAnswerIndex,
       relatedLecture,
