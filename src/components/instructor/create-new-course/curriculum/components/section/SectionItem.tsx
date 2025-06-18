@@ -108,6 +108,7 @@ interface SectionItemProps {
     title?: string,
     description?: string
   ) => Promise<string>;
+  deleteLocalQuiz: (sectionId: string, quizId: string) => void;
   addCurriculumItem: (sectionId: string) => void;
   updateQuizQuestions?: (
     sectionId: string,
@@ -147,8 +148,9 @@ interface SectionItemProps {
   addQuiz?: (
     sectionId: string,
     title: string,
-    description: string
-  ) => Promise<void>;
+    description?: string
+  ) => Promise<string>;
+
   updateQuiz?: (
     sectionId: string,
     quizId: string,
@@ -219,6 +221,7 @@ export default function SectionItem({
   handleDrop,
   addLecture,
   addCurriculumItem,
+  deleteLocalQuiz,
   updateQuizQuestions,
   savePracticeCode,
   children,
@@ -386,64 +389,35 @@ export default function SectionItem({
   const handleAddQuiz = async (
     sectionId: string,
     title: string,
-    description: string
+    description?: string
   ) => {
     try {
       // Use the service method instead of apolloClient directly
-      const response = await createQuiz({
-        sectionId: Number(sectionId),
-        title,
-        description,
-      });
+      // const response = await createQuiz({
+      //   sectionId: Number(sectionId),
+      //   title,
+      //   description,
+      // });
 
-      if (response.createQuiz) {
-        setNewQuizId?.(Number(response.createQuiz.quiz.id));
-      }
+      // if (response.createQuiz) {
+      //   setNewQuizId?.(Number(response.createQuiz.quiz.id));
+      // }
 
-      if (response.createQuiz.success) {
-        // Add lecture (backend)
-        const localLectureId = await addLecture(
-          sectionId,
-          "quiz",
-          title,
-          description
-        );
+      // if (response.createQuiz.success) {
+      // Add lecture (backend)
+      if (addQuiz) await addQuiz(sectionId, title, description);
 
-        // Get backend and local IDs
-        const backendLectureId = response.createQuiz.quiz.id;
-        // const localLectureId = await addLocalLecture(
-        //   sectionId,
-        //   "quiz",
-        //   title,
-        //   description
-        // );
+      // Get backend and local IDs
+      // const backendLectureId = response.createQuiz.quiz.id;
 
-        // Update local lecture state with the backend ID
-        setSections((prevSections) =>
-          prevSections.map((section) => {
-            if (section.id === sectionId) {
-              return {
-                ...section,
-                lectures: section.lectures.map((lecture) =>
-                  lecture.id === localLectureId
-                    ? { ...lecture, id: backendLectureId }
-                    : lecture
-                ),
-              };
-            }
-            return section;
-          })
-        );
+      setShowQuizForm(false);
+      // return backendLectureId;
 
-        setShowQuizForm(false);
-        return backendLectureId;
-      }
-
-      return "";
+      // return "";
     } catch (error) {
       console.error("Failed to create quiz:", error);
       // Optional: show a toast if not already handled in the service
-      return "";
+      // return "";
     }
   };
 
@@ -755,6 +729,7 @@ export default function SectionItem({
           setEditingLectureId={setEditingLectureId}
           updateLectureName={updateLectureName}
           deleteLecture={deleteLecture}
+          deleteLocalQuiz={deleteLocalQuiz}
           moveLecture={moveLecture}
           handleDragStart={handleDragStart}
           handleDragOver={handleDragOver}
