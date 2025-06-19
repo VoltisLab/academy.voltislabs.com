@@ -182,7 +182,6 @@ export const UPDATE_LECTURE_RESOURCE = gql`
   }
 `;
 
-// Updated TypeScript interfaces with correct enum types
 export type LectureResourceTypeEnum = 'DOWNLOADABLE_FILES' | 'EXTERNAL_RESOURCES' | 'SOURCE_CODE';
 
 export interface UpdateLectureResourceVariables {

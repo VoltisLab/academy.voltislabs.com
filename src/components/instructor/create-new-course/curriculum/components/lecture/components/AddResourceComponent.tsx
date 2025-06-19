@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useRef, ChangeEvent, Dispatch, SetStateAction } from 'react';
+import React, { useState, useRef, ChangeEvent, Dispatch, SetStateAction, use, useEffect } from 'react';
 import { ContentType, ResourceTabType, StoredVideo } from '@/lib/types';
 import { Search, ChevronDown, Trash2 } from 'lucide-react';
 import { inputClasses, searchInputClasses } from '@/lib/utils';
@@ -81,47 +81,22 @@ export default function ResourceComponent({
   const [sourceUploadComplete, setSourceUploadComplete] = useState<boolean>(false);
   const [isFileUploading, setIsFileUploading] = useState<boolean>(false);
   const [fileUploadProgress, setFileUploadProgress] = useState<number>(0);
+  // const [libraryFiles, setLibraryFiles] = useState<GetLectureResourcesResponse[]>([]);
 
   // Backend service
-  const { saveDescriptionToLecture, loading } = useLectureService();
+  const { saveDescriptionToLecture, loading, getLectureResources, error } = useLectureService();
 
   // Custom resource update functions using the working pattern
-  const updateLectureWithResource = async (lectureId: number, resourceUrl: string, resourceType: string) => {
-    try {
-      // Use the same working pattern as uploadVideoToLecture
-      const { data, errors } = await apolloClient.mutate<UpdateLectureContentResponse>({
-        mutation: UPDATE_LECTURE_CONTENT,
-        variables: {
-          lectureId,
-          // Store resource info in notes field as a workaround
-          notes: `Resource added: ${resourceType} - ${resourceUrl}`
-        },
-        context: {
-          includeAuth: true
-        },
-        fetchPolicy: 'no-cache'
-      });
-
-      if (errors) {
-        console.error("GraphQL errors:", errors);
-        throw new Error(errors[0]?.message || "An error occurred during resource update");
-      }
-
-      if (!data?.updateLecture.success) {
-        throw new Error("Failed to update lecture with resource");
-      }
-
-      return data;
-    } catch (error) {
-      console.error("Resource update error:", error);
-      throw error;
-    }
-  };
+useEffect(() => {
+  if (lectureId) {
+    getLectureResources({ lectureId: parseInt(lectureId) }); // Pass as object
+  }
+}, [lectureId]);
 
   // Fixed ref types - the issue is resolved by making sure they're correctly typed
   const fileInputRef = useRef<HTMLInputElement>(null);
   const sourceFileInputRef = useRef<HTMLInputElement>(null);
-  
+
   // Sample library data for demonstration
   const libraryFiles = [
     { id: '1', filename: 'Netflix.mp4', type: 'Video', status: 'Success', date: '05/08/2025' },
@@ -848,4 +823,8 @@ export default function ResourceComponent({
       )}
     </div>
   );
+}
+
+function updateLectureWithResource(numericLectureId: number, uploadedUrl: string, arg2: string) {
+  throw new Error('Function not implemented.');
 }

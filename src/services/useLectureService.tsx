@@ -24,6 +24,7 @@ import {
   UPDATE_LECTURE_RESOURCE,
   UpdateLectureResourceVariables,
 } from '@/api/course/lecture/mutation';
+import { GET_LECTURE_RESOURCECS, GetLectureResourcesResponse, GetLectureResourcesVariables } from '@/api/course/lecture/queries';
 
 export const useLectureService = () => {
   const [loading, setLoading] = useState(false);
@@ -449,10 +450,89 @@ const updateLectureResource = async (variables: UpdateLectureResourceVariables) 
     setLoading(false);
   }
 };
+
+const getLectureResources = async (variables: GetLectureResourcesVariables) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const { data, errors } = await apolloClient.query<GetLectureResourcesResponse>({
+        query: GET_LECTURE_RESOURCECS,
+        variables,
+        fetchPolicy: "network-only",
+      });
+
+      console.log(data)
+
+      if (errors) {
+        console.error("GraphQL errors:", errors);
+        throw new Error(errors[0]?.message || "An error occurred during lecture resources fetching");
+      }
+
+      if (!data?.getLecture.resource) {
+        throw new Error("Failed to fetch lecture resources");
+      }
+      return data;
+    } catch (err) {
+      console.error("Lecture Resources Fetching error:", err);
+      
+      if (err instanceof ApolloError) {
+        const errorMessage = err.message || "Network error. Please check your connection and try again.";
+        setError(new Error(errorMessage));
+        toast.error(errorMessage);
+      } else if (err instanceof Error) {
+        setError(err);
+        toast.error(err.message);
+      } else {
+        const genericError = new Error("An unexpected error occurred");
+        setError(genericError);
+        toast.error(genericError.message);
+      }
+      
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+    const updateLectureWithResource = async (lectureId: number, resourceUrl: string, resourceType: string) => {
+      try {
+        // Use the same working pattern as uploadVideoToLecture
+        const { data, errors } = await apolloClient.mutate<UpdateLectureContentResponse>({
+          mutation: UPDATE_LECTURE_CONTENT,
+          variables: {
+            lectureId,
+            // Store resource info in notes field as a workaround
+            notes: `Resource added: ${resourceType} - ${resourceUrl}`
+          },
+          context: {
+            includeAuth: true
+          },
+          fetchPolicy: 'no-cache'
+        });
+  
+        if (errors) {
+          console.error("GraphQL errors:", errors);
+          throw new Error(errors[0]?.message || "An error occurred during resource update");
+        }
+  
+        if (!data?.updateLecture.success) {
+          throw new Error("Failed to update lecture with resource");
+        }
+  
+        return data;
+      } catch (error) {
+        console.error("Resource update error:", error);
+        throw error;
+      }
+    };
+
   return {
     createLecture,
+    updateLectureWithResource,
     updateLecture,
     deleteLecture,
+    getLectureResources,
     updateLectureDescription,
     uploadVideoToLecture,
     saveArticleToLecture,
