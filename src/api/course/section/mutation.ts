@@ -62,8 +62,6 @@ export const DELETE_SECTION = gql`
   }
 `;
 
-
-// TypeScript interfaces
 export interface CreateSectionVariables {
   courseId: number;
   order: number;

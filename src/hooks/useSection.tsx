@@ -299,19 +299,17 @@ export const useSections = (
     title?: string,
     description?: string
   ) => {
-    console.log("Adding lecture with title dff:", title);
+    console.log("Adding lecture with title:", title);
 
-    // if (contentType === "quiz") {
-    //   return await addQuiz(sectionId, title ?? "", description ?? "");
-    // }
-
-    console.log("Adding lecture with title dffdddddddddd:", title);
+    if (contentType === "quiz") {
+      return await addQuiz(sectionId, title ?? "", description ?? "");
+    }
 
     const newLecture: Lecture = {
       id: generateId(),
       name: title,
       title: title,
-      description: description,
+      description: "",
       captions: "",
       lectureNotes: "",
       attachedFiles: [],
@@ -479,8 +477,6 @@ export const useSections = (
 
       const backendQuizId = response.createQuiz.quiz.id.toString();
 
-      console.log("Create quiz with idddd: ", backendQuizId);
-
       // Create local quiz with backend ID
       const newQuiz: Lecture = {
         id: backendQuizId, // Use the backend ID
@@ -494,8 +490,6 @@ export const useSections = (
         isPublished: false,
         externalResources: [],
       };
-
-      console.log("New lecture for quiz:", newQuiz);
 
       setSections((prevSections) =>
         prevSections.map((section) => {
@@ -1051,9 +1045,7 @@ export const useSections = (
     description: string
   ) => {
     try {
-      const numericQuizId = Number(quizId);
-
-      console.log("Edit quiz with idddd: ", numericQuizId);
+      const numericQuizId = parseInt(quizId);
 
       await updateQuizBackend({
         quizId: numericQuizId,

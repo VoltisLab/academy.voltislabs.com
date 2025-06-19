@@ -6,7 +6,6 @@ import { BasicInformationForm } from "@/components/instructor/create-new-course/
 import { AdvanceInformationForm } from "@/components/instructor/create-new-course/advance-information/AdvancedInformation";
 import { Curriculum } from "@/components/instructor/create-new-course/curriculum/Curriculum";
 import Image from "next/image";
-import { LockKeyhole } from "lucide-react";
 
 // Define tab interface
 interface Tab {
@@ -54,34 +53,15 @@ export default function CourseFormTabs() {
 
   // Get active tab data
   const currentTab = tabs.find(tab => tab.key === activeTab) || tabs[0];
-  
-  // Check if a tab is accessible based on previous tabs completion
-  const isTabAccessible = (tabKey: string) => {
-    const tabIndex = tabs.findIndex(tab => tab.key === tabKey);
-    
-    // First tab is always accessible
-    if (tabIndex === 0) return true;
-    
-    // Check if all previous tabs are completed
-    for (let i = 0; i < tabIndex; i++) {
-      if (!completedTabs.has(tabs[i].key)) {
-        return false;
-      }
-    }
-    
-    return true;
-  };
 
   // Check if a tab is completed
   const isTabCompleted = (tabKey: string) => {
     return completedTabs.has(tabKey);
   };
 
-  // Function to handle tab click with accessibility check
+  // Function to handle tab click
   const handleTabClick = (tabKey: string) => {
-    if (isTabAccessible(tabKey)) {
-      setActiveTab(tabKey);
-    }
+    setActiveTab(tabKey);
   };
   
   // Function to mark current tab as completed and move to next tab
@@ -119,7 +99,6 @@ export default function CourseFormTabs() {
       <div className="md:hidden border-b border-gray-200 pb-2">
         <div className="flex items-center overflow-x-auto scrollbar-hide gap-8 px-1">
           {tabs.map((tab) => {
-            const isAccessible = isTabAccessible(tab.key);
             const isCompleted = isTabCompleted(tab.key);
             const isActive = activeTab === tab.key;
             
@@ -127,14 +106,11 @@ export default function CourseFormTabs() {
               <button
                 key={tab.key}
                 onClick={() => handleTabClick(tab.key)}
-                disabled={!isAccessible}
                 className={cn(
                   "py-3 flex-shrink-0 flex items-center gap-1 whitespace-nowrap transition-all relative",
-                  isActive && isAccessible
+                  isActive
                     ? "text-[#313273] font-bold border-b-2 border-pink-600" 
-                    : isAccessible
-                    ? "text-gray-500 font-normal text-sm hover:text-[#313273]"
-                    : "text-gray-300 font-normal text-sm cursor-not-allowed"
+                    : "text-gray-500 font-normal text-sm hover:text-[#313273]"
                 )}
               >
                 <div className="relative">
@@ -143,10 +119,7 @@ export default function CourseFormTabs() {
                     alt={tab.name}
                     width={18}
                     height={18}
-                    className={cn(
-                      "object-contain",
-                      !isAccessible && "opacity-50"
-                    )}
+                    className="object-contain"
                   />
                   {isCompleted && (
                     <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full flex items-center justify-center">
@@ -155,13 +128,10 @@ export default function CourseFormTabs() {
                   )}
                 </div>
                 <span>{tab.shortName || tab.name}</span>
-                {tab.progress && isActive && isAccessible && (
+                {tab.progress && isActive && (
                   <span className="text-green-600 text-xs bg-green-50 px-1.5 py-0.5 rounded-full">
                     {tab.progress}
                   </span>
-                )}
-                {!isAccessible && (
-                  <span className="text-xs text-gray-400 ml-1"><LockKeyhole size={15} color="#666"/></span>
                 )}
               </button>
             );
@@ -172,7 +142,6 @@ export default function CourseFormTabs() {
       {/* Desktop Tabs - Full width */}
       <div className="hidden md:flex items-center border-b border-gray-200 px-2">
         {tabs.map((tab) => {
-          const isAccessible = isTabAccessible(tab.key);
           const isCompleted = isTabCompleted(tab.key);
           const isActive = activeTab === tab.key;
           
@@ -180,14 +149,11 @@ export default function CourseFormTabs() {
             <button
               key={tab.key}
               onClick={() => handleTabClick(tab.key)}
-              disabled={!isAccessible}
               className={cn(
                 "relative py-4 px-2 lg:px-4 text-sm font-medium border-b-2 border-transparent transition flex items-center gap-1 lg:gap-2",
-                isActive && isAccessible
+                isActive
                   ? "text-[#313273] font-bold border-b-pink-600"
-                  : isAccessible
-                  ? "text-gray-500 hover:text-[#313273]"
-                  : "text-gray-300 cursor-not-allowed"
+                  : "text-gray-500 hover:text-[#313273]"
               )}
             >
               <div className="relative">
@@ -196,10 +162,7 @@ export default function CourseFormTabs() {
                   alt={tab.name}
                   width={20}
                   height={20}
-                  className={cn(
-                    "object-contain flex-shrink-0",
-                    !isAccessible && "opacity-50"
-                  )}
+                  className="object-contain flex-shrink-0"
                 />
                 {isCompleted && (
                   <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
@@ -210,11 +173,8 @@ export default function CourseFormTabs() {
               <div className="flex items-center gap-1 whitespace-nowrap">
                 <span className="hidden lg:inline">{tab.name}</span>
                 <span className="lg:hidden">{tab.shortName || tab.name}</span>
-                {tab.progress && isActive && isAccessible && (
+                {tab.progress && isActive && (
                   <span className="text-green-600 text-xs">{tab.progress}</span>
-                )}
-                {!isAccessible && (
-                  <span className="text-xs text-gray-400 ml-1"><LockKeyhole size={15} color="#666"/></span>
                 )}
               </div>
             </button>
