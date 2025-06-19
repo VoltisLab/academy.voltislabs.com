@@ -293,17 +293,12 @@ export const useSections = (
   };
 
   // Add a new lecture to a section with custom title
-  const addLecture = async (
+  const addLecture = (
     sectionId: string,
     contentType: ContentItemType,
-    title?: string,
-    description?: string
+    title?: string
   ) => {
     console.log("Adding lecture with title:", title);
-
-    if (contentType === "quiz") {
-      return await addQuiz(sectionId, title ?? "", description ?? "");
-    }
 
     const newLecture: Lecture = {
       id: generateId(),
@@ -552,10 +547,10 @@ export const useSections = (
   // Delete a section
   const deleteSection = (sectionId: string) => {
     setSections((prevSections) => {
-      if (prevSections.length === 1) {
-        toast.error("You must have at least one section");
-        return prevSections;
-      }
+      // if (prevSections.length === 1) {
+      //   toast.error("You must have at least one section");
+      //   return prevSections;
+      // }
       return prevSections.filter((section) => section.id !== sectionId);
     });
   };

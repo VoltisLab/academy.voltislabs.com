@@ -18,6 +18,7 @@ import QuizForm from "./QuizForm";
 import { useQuizOperations } from "@/services/quizService";
 import toast, { LoaderIcon } from "react-hot-toast";
 import { LectureType } from "./QuizPreview";
+import { DeleteItemFn } from "../section/SectionItem";
 
 interface QuizItemProps {
   lecture: Lecture;
@@ -32,7 +33,7 @@ interface QuizItemProps {
     lectureId: string,
     newName: string
   ) => void;
-  deleteLecture: (sectionId: string, lectureId: string) => void;
+  deleteLecture: DeleteItemFn;
   deleteLocalQuiz: (sectionId: string, quizId: string) => void;
   moveLecture: (
     sectionId: string,

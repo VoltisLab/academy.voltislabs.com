@@ -3,22 +3,25 @@ import { X } from "lucide-react";
 import { useState } from "react";
 
 interface SectionFormProps {
-  onAddSection: (title: string, objective: string) => Promise<void>;
+  onAddSection: (
+    title: string,
+    objective: string
+  ) => Promise<string | undefined>;
   onCancel: () => void;
   isLoading?: boolean;
 }
 
-const SectionForm: React.FC<SectionFormProps> = ({ 
-  onAddSection, 
-  onCancel, 
-  isLoading = false 
+const SectionForm: React.FC<SectionFormProps> = ({
+  onAddSection,
+  onCancel,
+  isLoading = false,
 }) => {
-  const [title, setTitle] = useState('');
-  const [objective, setObjective] = useState('');
-  
+  const [title, setTitle] = useState("");
+  const [objective, setObjective] = useState("");
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!title.trim()) {
       return;
     }
@@ -31,23 +34,25 @@ const SectionForm: React.FC<SectionFormProps> = ({
       console.error("Error creating section:", error);
     }
   };
-  
+
   return (
     <div className="relative border border-gray-300 px-6 py-2 mb-2 rounded mt-15">
       {/* X button positioned at the top right */}
-      <button 
-        onClick={onCancel} 
+      <button
+        onClick={onCancel}
         className="absolute -top-6 -left-3 bg-white text-gray-500 hover:text-gray-700"
         aria-label="Close"
         disabled={isLoading}
       >
         <X className="w-5 h-5" />
       </button>
-      
+
       <div className="mb-6">
         <div className="flex items-center mb-4">
           <div className="w-28">
-            <label className="text-md font-bold text-gray-800">New Section:</label>
+            <label className="text-md font-bold text-gray-800">
+              New Section:
+            </label>
           </div>
           <div className="flex-1 relative">
             <input
@@ -65,7 +70,7 @@ const SectionForm: React.FC<SectionFormProps> = ({
             </div>
           </div>
         </div>
-        
+
         <div className="ml-28">
           <label className="block text-sm font-medium text-gray-800 mb-2">
             What will students be able to do at the end of this section?
@@ -85,7 +90,7 @@ const SectionForm: React.FC<SectionFormProps> = ({
           </div>
         </div>
       </div>
-      
+
       <div className="flex justify-end space-x-3">
         <button
           type="button"
