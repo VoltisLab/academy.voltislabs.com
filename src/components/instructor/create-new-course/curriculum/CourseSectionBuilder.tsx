@@ -112,6 +112,7 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
     addLecture: addLocalLecture,
     deleteSection: deleteLocalSection,
     deleteLecture: deleteLocalLecture,
+    addQuiz,
     toggleSectionExpansion,
     updateSectionName: updateLocalSectionName,
     updateLectureName: updateLocalLectureName,
@@ -403,6 +404,25 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
       return "";
     }
   };
+
+  // const handleAddQuiz = async (
+  //   sectionId: string,
+  //   title: string,
+  //   description?: string
+  // ): Promise<string> => {
+  //   try {
+
+  //       const localLectureId = await addQuiz(sectionId, title, description);
+
+  //       // const finalId =
+  //       //   contentType === "quiz" ? localLectureId : backendLectureId;
+
+  //   } catch (error) {
+  //     console.error("Failed to create lecture:", error);
+  //     // Error is already handled in the service with toast
+  //     return "";
+  //   }
+  // };
 
   // NEW: Backend-integrated lecture update
   const updateLectureName = async (
@@ -848,6 +868,8 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
                 handleDragLeave={handleDragLeave}
                 handleDrop={(e) => handleDrop(e, section.id)}
                 addLecture={handleAddLecture}
+                addQuiz={addQuiz}
+                deleteLocalQuiz={deleteLocalLecture}
                 editingLectureId={editingLectureId}
                 setEditingLectureId={setEditingLectureId}
                 updateLectureName={updateLectureName}

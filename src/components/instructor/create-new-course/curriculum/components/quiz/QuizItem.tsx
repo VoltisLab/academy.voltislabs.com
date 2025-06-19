@@ -33,6 +33,7 @@ interface QuizItemProps {
     newName: string
   ) => void;
   deleteLecture: (sectionId: string, lectureId: string) => void;
+  deleteLocalQuiz: (sectionId: string, quizId: string) => void;
   moveLecture: (
     sectionId: string,
     lectureId: string,
@@ -91,6 +92,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
   lectureIndex,
   newQuizId,
   sectionId,
+  deleteLocalQuiz,
   editingLectureId,
   setEditingLectureId,
   updateLectureName,
@@ -151,12 +153,12 @@ const QuizItem: React.FC<QuizItemProps> = ({
 
     try {
       const result = await deleteQuiz({
-        quizId: newQuizId as number,
+        quizId: Number(lecture.id),
       });
 
       if (result?.deleteQuiz?.success) {
-        // toast.success("Quiz deleted successfully!");
-        deleteLecture(sectionId, lecture.id); // This updates the local state
+        toast.success("Quiz deleted successfully!");
+        deleteLocalQuiz(sectionId, lecture.id); // This updates the local state
       }
     } catch (error) {
       console.error("Error deleting quiz:", error);
@@ -509,7 +511,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
 
       // Call the backend to add the question
       const result = await addQuestionToQuiz({
-        quizId: newQuizId as number, // Make sure `quiz` is defined
+        quizId: Number(lecture.id), // Make sure `quiz` is defined
         text: question.text,
         explanation: "",
         maxPoints: 1, // Default points
@@ -1036,7 +1038,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
               isEdit={true}
               initialTitle={lecture.name || ""}
               initialDescription={lecture.description || ""}
-              quizId={newQuizId}
+              quizId={Number(lecture.id)}
               setShowEditQuizForm={setShowEditQuizForm}
             />
           ) : showQuestionForm || showQuestionTypeSelector ? (
@@ -1109,7 +1111,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
                         setShowQuestionTypeSelector(false);
                         setEditingQuestionIndex(null);
                       }}
-                      quizId={newQuizId as number}
+                      quizId={Number(lecture.id) as number}
                       onLoad={quizOperationLoading}
                       isEditedForm={editingQuestionIndex !== null}
                       initialQuestion={
