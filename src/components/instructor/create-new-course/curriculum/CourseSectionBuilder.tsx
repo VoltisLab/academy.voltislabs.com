@@ -7,6 +7,7 @@ import {
   ExternalResourceItem,
   ExtendedLecture,
   ContentItemType,
+  Lecture,
 } from "@/lib/types";
 import { useSections } from "@/hooks/useSection";
 import { useFileUpload } from "@/hooks/useFileUpload";
@@ -27,6 +28,7 @@ export interface FileUploadFunction {
   (file: File, fileType: "VIDEO" | "RESOURCE"): Promise<string | null>;
 }
 import { useAssignmentService } from "@/services/useAssignmentService";
+import { ConfirmationModal } from "@/components/modals/DeleteConfirmationModal";
 
 interface CourseBuilderProps {
   onSaveNext?: () => void;
@@ -88,6 +90,72 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
   // NEW: Assignment editor state
   const [showAssignmentEditor, setShowAssignmentEditor] =
     useState<boolean>(false);
+
+  const [deleteModal, setDeleteModal] = useState<{
+    isOpen: boolean;
+    type: "section" | "lecture" | null;
+    id: string | null;
+    sectionId?: string | null;
+  }>({
+    isOpen: false,
+    type: null,
+    id: null,
+    sectionId: null,
+  });
+
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // Trigger delete confirmation
+  const handleDeleteClick = (
+    type: "section" | "lecture",
+    id: string,
+    sectionId?: string
+  ) => {
+    setDeleteModal({
+      isOpen: true,
+      type,
+      id,
+      sectionId,
+    });
+  };
+
+  // Handle confirmed deletion
+  const handleConfirmDelete = async () => {
+    if (!deleteModal.id || !deleteModal.type) return;
+
+    setIsDeleting(true);
+
+    try {
+      if (deleteModal.type === "section") {
+        await handleDeleteSection(deleteModal.id);
+      } else if (deleteModal.type === "lecture" && deleteModal.sectionId) {
+        await handleDeleteLecture(deleteModal.sectionId, deleteModal.id);
+      }
+    } catch (error) {
+      console.error("Deletion failed:", error);
+      // Optionally show error message
+    } finally {
+      setIsDeleting(false);
+      setDeleteModal({
+        isOpen: false,
+        type: null,
+        id: null,
+        sectionId: null,
+      });
+    }
+  };
+
+  // Close modal
+  const handleCloseModal = () => {
+    if (!isDeleting) {
+      setDeleteModal({
+        isOpen: false,
+        type: null,
+        id: null,
+        sectionId: null,
+      });
+    }
+  };
 
   // Services for backend operations
   const {
@@ -290,12 +358,33 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
         );
 
         setShowSectionForm(false);
+        return backendSectionId;
       }
     } catch (error) {
       console.error("Failed to create section:", error);
       // Error is already handled in the service with toast
     }
   };
+  const [hasCreatedIntro, setHasCreatedIntro] = useState(false);
+
+  useEffect(() => {
+    const createIntroduction = async () => {
+      if (!courseId || sections.length > 0 || hasCreatedIntro) return;
+
+      try {
+        const sectionId = await handleAddSection("Introduction", "");
+
+        await handleAddLecture(sectionId as string, "video", "Introduction");
+        setHasCreatedIntro(true); // Mark as created
+      } catch (error) {
+        console.error("Error creating introduction:", error);
+      }
+    };
+
+    // Add a small delay to avoid race conditions with other initializations
+    const timer = setTimeout(createIntroduction, 500);
+    return () => clearTimeout(timer);
+  }, [courseId, sections.length, hasCreatedIntro]);
 
   // NEW: Backend-integrated section update
   const updateSectionName = async (
@@ -349,10 +438,10 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
   const handleAddLecture = async (
     sectionId: string,
     contentType: ContentItemType,
-    title?: string,
-    description?: string
+    title?: string
   ): Promise<string> => {
     try {
+      console.log("Yepppp yep", sectionId);
       // Create lecture on backend
       const response = await createLecture({
         sectionId: Number(sectionId),
@@ -362,18 +451,7 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
       if (response.createLecture.success) {
         // Add to local state with backend ID
         const backendLectureId = response.createLecture.lecture.id;
-        const localLectureId = await addLocalLecture(
-          sectionId,
-          contentType,
-          title,
-          description
-        );
-
-        console.log("localLecture", localLectureId);
-        console.log("backendLectureId", backendLectureId);
-
-        // const finalId =
-        //   contentType === "quiz" ? localLectureId : backendLectureId;
+        const localLectureId = addLocalLecture(sectionId, contentType, title);
 
         // Update the local lecture with the backend ID
         setSections((prevSections) =>
@@ -404,25 +482,6 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
       return "";
     }
   };
-
-  // const handleAddQuiz = async (
-  //   sectionId: string,
-  //   title: string,
-  //   description?: string
-  // ): Promise<string> => {
-  //   try {
-
-  //       const localLectureId = await addQuiz(sectionId, title, description);
-
-  //       // const finalId =
-  //       //   contentType === "quiz" ? localLectureId : backendLectureId;
-
-  //   } catch (error) {
-  //     console.error("Failed to create lecture:", error);
-  //     // Error is already handled in the service with toast
-  //     return "";
-  //   }
-  // };
 
   // NEW: Backend-integrated lecture update
   const updateLectureName = async (
@@ -858,7 +917,7 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
                 editingSectionId={editingSectionId}
                 setEditingSectionId={setEditingSectionId}
                 updateSectionName={updateSectionName}
-                deleteSection={handleDeleteSection}
+                deleteSection={handleDeleteClick}
                 moveSection={moveSection}
                 toggleSectionExpansion={toggleSectionExpansion}
                 isDragging={isDragging}
@@ -873,7 +932,7 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
                 editingLectureId={editingLectureId}
                 setEditingLectureId={setEditingLectureId}
                 updateLectureName={updateLectureName}
-                deleteLecture={handleDeleteLecture}
+                deleteLecture={handleDeleteClick}
                 moveLecture={moveLecture}
                 toggleContentSection={contentSectionModal.toggle}
                 toggleAddResourceModal={toggleAddResourceModal}
@@ -992,6 +1051,21 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
           />
         </div>
       )}
+
+      <ConfirmationModal
+        isOpen={deleteModal.isOpen}
+        onClose={handleCloseModal}
+        onConfirm={handleConfirmDelete}
+        title={
+          deleteModal.type === "section" ? "Delete Section" : "Delete Lecture"
+        }
+        message={
+          deleteModal.type === "section"
+            ? "Are you sure you want to delete this section? All lectures within it will also be deleted."
+            : "Are you sure you want to delete this lecture?"
+        }
+        isLoading={isDeleting}
+      />
     </div>
   );
 };
