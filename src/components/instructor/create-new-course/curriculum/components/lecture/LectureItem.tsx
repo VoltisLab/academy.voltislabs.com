@@ -38,6 +38,7 @@ import { FileUploadFunction } from "../../CourseSectionBuilder";
 import { uploadFile } from "@/services/fileUploadService";
 import VideoContentManager from "./components/VideoContentManager";
 import LectureContentDisplay from "./components/LectureContentDisplay";
+import { DeleteItemFn } from "../section/SectionItem";
 
 // Updated LectureItemProps interface with async functions
 interface UpdatedLectureItemProps {
@@ -52,7 +53,7 @@ interface UpdatedLectureItemProps {
     lectureId: string,
     newName: string
   ) => Promise<void>;
-  deleteLecture: (sectionId: string, lectureId: string) => Promise<void>;
+  deleteLecture: DeleteItemFn;
   moveLecture: (
     sectionId: string,
     lectureId: string,
@@ -109,7 +110,10 @@ interface UpdatedLectureItemProps {
   }) => void;
   removeUploadedFile?: (fileName: string, lectureId: string) => void;
   addSourceCodeFile?: (file: SourceCodeFile) => void;
-  removeSourceCodeFile?: (fileName: string | undefined, lectureId: string) => void;
+  removeSourceCodeFile?: (
+    fileName: string | undefined,
+    lectureId: string
+  ) => void;
   addExternalResource?: (resource: ExternalResourceItem) => void;
   removeExternalResource?: (title: string, lectureId: string) => void;
   uploadVideoToBackend?: (
@@ -180,14 +184,17 @@ export default function LectureItem(props: UpdatedLectureItemProps) {
   const [content, setContent] = useState("");
   const [htmlMode, setHtmlMode] = useState(false);
   const [isVideoUploading, setIsVideoUploading] = useState(false);
-  const [videoUploadProgress, setVideoUploadProgress] = useState(videoUploadProgres);
+  const [videoUploadProgress, setVideoUploadProgress] =
+    useState(videoUploadProgres);
   const [videoUploadComplete, setVideoUploadComplete] = useState(false);
-  const [showEditLectureForm, setShowEditLectureForm] = useState<boolean>(false);
+  const [showEditLectureForm, setShowEditLectureForm] =
+    useState<boolean>(false);
   const [editLectureTitle, setEditLectureTitle] = useState<string>("");
   const [editLoading, setEditLoading] = useState<boolean>(false);
   const [deleteLoading, setDeleteLoading] = useState<boolean>(false);
   const lectureFormRef = useRef<HTMLDivElement>(null);
-  const [activeContentType, setActiveContentType] = useState<ContentItemType | null>(null);
+  const [activeContentType, setActiveContentType] =
+    useState<ContentItemType | null>(null);
   const [activeResourceTab, setActiveResourceTab] = useState<ResourceTabType>(
     ResourceTabType.DOWNLOADABLE_FILE
   );
@@ -247,20 +254,28 @@ export default function LectureItem(props: UpdatedLectureItemProps) {
     selectedVideoDetails: null,
   });
 
-  const [videoSlideContent, setVideoSlideContent] = useState<VideoSlideContent>({
-    video: { selectedFile: null },
-    presentation: { selectedFile: null },
-    step: 1,
-  });
+  const [videoSlideContent, setVideoSlideContent] = useState<VideoSlideContent>(
+    {
+      video: { selectedFile: null },
+      presentation: { selectedFile: null },
+      step: 1,
+    }
+  );
 
   const [articleContent, setArticleContent] = useState<ArticleContent>({
     text: "",
   });
 
   // Filtered resources for current lecture
-  const currentLectureUploadedFiles = globalUploadedFiles.filter(file => file.lectureId === lecture.id);
-  const currentLectureSourceCodeFiles = globalSourceCodeFiles.filter(file => file.lectureId === lecture.id);
-  const currentLectureExternalResources = globalExternalResources.filter(resource => resource.lectureId === lecture.id);
+  const currentLectureUploadedFiles = globalUploadedFiles.filter(
+    (file) => file.lectureId === lecture.id
+  );
+  const currentLectureSourceCodeFiles = globalSourceCodeFiles.filter(
+    (file) => file.lectureId === lecture.id
+  );
+  const currentLectureExternalResources = globalExternalResources.filter(
+    (resource) => resource.lectureId === lecture.id
+  );
 
   // Initialize edit form when opened
   useEffect(() => {
@@ -270,7 +285,10 @@ export default function LectureItem(props: UpdatedLectureItemProps) {
   }, [showEditLectureForm, lecture.name]);
 
   // File upload function
-  const handleFileUpload: FileUploadFunction = async (file: File, fileType: 'VIDEO' | 'RESOURCE') => {
+  const handleFileUpload: FileUploadFunction = async (
+    file: File,
+    fileType: "VIDEO" | "RESOURCE"
+  ) => {
     if (uploadFileToBackend) {
       return await uploadFileToBackend(file, fileType);
     } else {
@@ -278,7 +296,7 @@ export default function LectureItem(props: UpdatedLectureItemProps) {
         const uploadedUrl = await uploadFile(file, fileType);
         return uploadedUrl;
       } catch (error) {
-        console.error('File upload failed:', error);
+        console.error("File upload failed:", error);
         throw error;
       }
     }
@@ -290,13 +308,13 @@ export default function LectureItem(props: UpdatedLectureItemProps) {
       if (saveArticleToBackend) {
         await saveArticleToBackend(sectionId, lecture.id, articleContent);
       }
-      
+
       setArticleContent({ text: articleContent });
-      
+
       if (videoContent.selectedVideoDetails) {
         setVideoContent({
           ...videoContent,
-          selectedVideoDetails: null
+          selectedVideoDetails: null,
         });
       }
 
@@ -304,7 +322,7 @@ export default function LectureItem(props: UpdatedLectureItemProps) {
         const enhancedLecture = createEnhancedLectureForPreview();
         const updatedLecture = ContentTypeDetector.updateLectureContentType(
           enhancedLecture,
-          'article',
+          "article",
           { text: articleContent }
         );
         updateLectureContent(sectionId, lecture.id, updatedLecture);
@@ -321,47 +339,70 @@ export default function LectureItem(props: UpdatedLectureItemProps) {
         toggleContentSection(sectionId, lecture.id);
       }
     } catch (error) {
-      console.error('Failed to save article to backend:', error);
-      toast.error('Failed to save article. Please try again.');
+      console.error("Failed to save article to backend:", error);
+      toast.error("Failed to save article. Please try again.");
     }
   };
 
   // Create enhanced lecture for preview
   const createEnhancedLectureForPreview = (): EnhancedLecture => {
-    const hasRealVideoContent = !!(videoContent.selectedVideoDetails && videoContent.selectedVideoDetails.url);
-    const hasRealArticleContent = !!(articleContent && articleContent.text && articleContent.text.trim() !== '');
+    const hasRealVideoContent = !!(
+      videoContent.selectedVideoDetails && videoContent.selectedVideoDetails.url
+    );
+    const hasRealArticleContent = !!(
+      articleContent &&
+      articleContent.text &&
+      articleContent.text.trim() !== ""
+    );
 
     const enhancedLecture: EnhancedLecture = {
       ...lecture,
       hasVideoContent: hasRealVideoContent,
       hasArticleContent: hasRealArticleContent,
       articleContent: hasRealArticleContent ? articleContent : undefined,
-      videoDetails: hasRealVideoContent && videoContent.selectedVideoDetails ? videoContent.selectedVideoDetails : undefined,
+      videoDetails:
+        hasRealVideoContent && videoContent.selectedVideoDetails
+          ? videoContent.selectedVideoDetails
+          : undefined,
       contentMetadata: {
         createdAt: new Date(),
         lastModified: new Date(),
         ...(hasRealArticleContent && {
-          articleWordCount: articleContent.text.split(/\s+/).length
+          articleWordCount: articleContent.text.split(/\s+/).length,
         }),
-        ...(hasRealVideoContent && videoContent.selectedVideoDetails?.duration && {
-          videoDuration: videoContent.selectedVideoDetails.duration
-        })
-      }
+        ...(hasRealVideoContent &&
+          videoContent.selectedVideoDetails?.duration && {
+            videoDuration: videoContent.selectedVideoDetails.duration,
+          }),
+      },
     };
 
-    let detectedType: "article" | "video" | "quiz" | "coding-exercise" | "assignment";
-    
+    let detectedType:
+      | "article"
+      | "video"
+      | "quiz"
+      | "coding-exercise"
+      | "assignment";
+
     if (hasRealArticleContent && !hasRealVideoContent) {
-      detectedType = 'article';
+      detectedType = "article";
     } else if (hasRealVideoContent && !hasRealArticleContent) {
-      detectedType = 'video';
+      detectedType = "video";
     } else if (hasRealArticleContent && hasRealVideoContent) {
-      console.warn('⚠️ Both article and video content exist - this is unexpected');
-      detectedType = 'article';
+      console.warn(
+        "⚠️ Both article and video content exist - this is unexpected"
+      );
+      detectedType = "article";
     } else {
-      detectedType = (lecture.contentType as "article" | "video" | "quiz" | "coding-exercise" | "assignment") || 'video';
+      detectedType =
+        (lecture.contentType as
+          | "article"
+          | "video"
+          | "quiz"
+          | "coding-exercise"
+          | "assignment") || "video";
     }
-    
+
     enhancedLecture.actualContentType = detectedType;
     enhancedLecture.contentType = detectedType;
 
@@ -379,7 +420,8 @@ export default function LectureItem(props: UpdatedLectureItemProps) {
         id: selectedVideo.id,
         filename: selectedVideo.filename,
         duration: selectedVideo.duration,
-        thumbnailUrl: "https://via.placeholder.com/160x120/000000/FFFFFF/?text=Netflix",
+        thumbnailUrl:
+          "https://via.placeholder.com/160x120/000000/FFFFFF/?text=Netflix",
         isDownloadable: false,
         url: selectedVideo.url || "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
       };
@@ -399,7 +441,7 @@ export default function LectureItem(props: UpdatedLectureItemProps) {
         const enhancedLecture = createEnhancedLectureForPreview();
         const updatedLecture = ContentTypeDetector.updateLectureContentType(
           enhancedLecture,
-          'video',
+          "video",
           selectedDetails
         );
         updateLectureContent(sectionId, lecture.id, updatedLecture);
@@ -476,7 +518,7 @@ export default function LectureItem(props: UpdatedLectureItemProps) {
     e.stopPropagation();
     try {
       setDeleteLoading(true);
-      await deleteLecture(sectionId, lecture.id);
+      deleteLecture("lecture", lecture.id, sectionId);
     } catch (error) {
       console.error("Failed to delete lecture:", error);
     } finally {
@@ -575,7 +617,10 @@ export default function LectureItem(props: UpdatedLectureItemProps) {
                   setIsVideoUploading(false);
                   setVideoUploadComplete(true);
 
-                  const videoId = `${file.name.replace(/\s+/g, "")}-${Date.now()}`;
+                  const videoId = `${file.name.replace(
+                    /\s+/g,
+                    ""
+                  )}-${Date.now()}`;
 
                   const existingVideo = videoContent.libraryTab.videos.find(
                     (v) => v.filename === file.name
@@ -616,11 +661,11 @@ export default function LectureItem(props: UpdatedLectureItemProps) {
           }, 200);
         }
       } catch (error) {
-        console.error('Video upload failed:', error);
+        console.error("Video upload failed:", error);
         setIsVideoUploading(false);
         setVideoUploadProgress(0);
         setVideoUploadComplete(false);
-        toast.error('Failed to upload video. Please try again.');
+        toast.error("Failed to upload video. Please try again.");
       }
     }
   };
@@ -632,7 +677,7 @@ export default function LectureItem(props: UpdatedLectureItemProps) {
 
     if (contentType === "video") {
       setArticleContent({ text: "" });
-      
+
       const existingVideos = videoContent.libraryTab.videos;
       const existingSelectedVideoDetails = videoContent.selectedVideoDetails;
 
@@ -656,7 +701,7 @@ export default function LectureItem(props: UpdatedLectureItemProps) {
     } else if (contentType === "article") {
       setVideoContent({
         ...videoContent,
-        selectedVideoDetails: null
+        selectedVideoDetails: null,
       });
       setArticleContent({ text: "" });
     }
@@ -678,7 +723,9 @@ export default function LectureItem(props: UpdatedLectureItemProps) {
       activeContentSection.sectionId === sectionId &&
       activeContentSection.lectureId === lecture.id
     ) {
-      console.log("Section already expanded, just updating content type and tab");
+      console.log(
+        "Section already expanded, just updating content type and tab"
+      );
     } else if (toggleContentSection) {
       toggleContentSection(sectionId, lecture.id);
     }
@@ -700,13 +747,17 @@ export default function LectureItem(props: UpdatedLectureItemProps) {
     }
   };
 
-  const handleExternalResourceAdd = (title: string, url: string, name: string) => {
+  const handleExternalResourceAdd = (
+    title: string,
+    url: string,
+    name: string
+  ) => {
     if (addExternalResource) {
       addExternalResource({
         title: title,
         url: url,
         name: name,
-        lectureId: lecture.id
+        lectureId: lecture.id,
       });
     }
 
@@ -807,14 +858,18 @@ export default function LectureItem(props: UpdatedLectureItemProps) {
   // Determine lecture type label
   const getLectureTypeLabel = (): string => {
     const enhancedLecture = createEnhancedLectureForPreview();
-    
+
     let detectedType: string;
-    if (ContentTypeDetector && typeof ContentTypeDetector.detectLectureContentType === 'function') {
-      detectedType = ContentTypeDetector.detectLectureContentType(enhancedLecture);
+    if (
+      ContentTypeDetector &&
+      typeof ContentTypeDetector.detectLectureContentType === "function"
+    ) {
+      detectedType =
+        ContentTypeDetector.detectLectureContentType(enhancedLecture);
     } else {
-      detectedType = enhancedLecture.actualContentType || 'video';
+      detectedType = enhancedLecture.actualContentType || "video";
     }
-    
+
     switch (detectedType) {
       case "video":
         return "Lecture";
@@ -835,9 +890,9 @@ export default function LectureItem(props: UpdatedLectureItemProps) {
   const hasExistingContent = (lecture: Lecture): boolean => {
     return Boolean(
       (lecture.videos && lecture.videos.length > 0) ||
-      lecture.contentType === "article" ||
-      videoContent.selectedVideoDetails !== null ||
-      (articleContent.text && articleContent.text.trim() !== "")
+        lecture.contentType === "article" ||
+        videoContent.selectedVideoDetails !== null ||
+        (articleContent.text && articleContent.text.trim() !== "")
     );
   };
 
@@ -885,7 +940,7 @@ export default function LectureItem(props: UpdatedLectureItemProps) {
         );
       case "video-slide":
         return (
-          <VideoSlideMashupComponent 
+          <VideoSlideMashupComponent
             sectionId={sectionId}
             lectureId={lecture.id}
             uploadVideoToBackend={uploadVideoToBackend}
@@ -1035,7 +1090,11 @@ export default function LectureItem(props: UpdatedLectureItemProps) {
                         aria-label="Delete"
                         disabled={deleteLoading}
                       >
-                        <Trash2 className={`w-4 h-4 text-gray-400 hover:bg-gray-200 p-2 rounded ${deleteLoading ? 'opacity-50 cursor-not-allowed' : ''}`} />
+                        <Trash2
+                          className={`w-4 h-4 text-gray-400 hover:bg-gray-200 p-2 rounded ${
+                            deleteLoading ? "opacity-50 cursor-not-allowed" : ""
+                          }`}
+                        />
                       </button>
                     </div>
                   )}
@@ -1183,29 +1242,29 @@ export default function LectureItem(props: UpdatedLectureItemProps) {
             <div>
               {/* Resource Component */}
 
-{/* Resource Component */}
-{isResourceSectionActive && (
-  <AddResourceComponent
-    activeContentSection={activeResourceSection}
-    onClose={() => {
-      if (toggleAddResourceModal) {
-        toggleAddResourceModal(sectionId, lecture.id);
-      }
-    }}
-    activeResourceTab={activeResourceTab}
-    setActiveResourceTab={setActiveResourceTab}
-    sections={sections}
-    isUploading={isUploading}
-    uploadProgress={uploadProgress}
-    triggerFileUpload={triggerFileUpload}
-    onLibraryItemSelect={handleLibraryItemSelect}
-    onSourceCodeSelect={handleSourceCodeSelect}
-    onExternalResourceAdd={handleExternalResourceAdd}
-    // NEW: Add these required props
-    lectureId={lecture.id}
-    sectionId={sectionId}
-  />
-)}
+              {/* Resource Component */}
+              {isResourceSectionActive && (
+                <AddResourceComponent
+                  activeContentSection={activeResourceSection}
+                  onClose={() => {
+                    if (toggleAddResourceModal) {
+                      toggleAddResourceModal(sectionId, lecture.id);
+                    }
+                  }}
+                  activeResourceTab={activeResourceTab}
+                  setActiveResourceTab={setActiveResourceTab}
+                  sections={sections}
+                  isUploading={isUploading}
+                  uploadProgress={uploadProgress}
+                  triggerFileUpload={triggerFileUpload}
+                  onLibraryItemSelect={handleLibraryItemSelect}
+                  onSourceCodeSelect={handleSourceCodeSelect}
+                  onExternalResourceAdd={handleExternalResourceAdd}
+                  // NEW: Add these required props
+                  lectureId={lecture.id}
+                  sectionId={sectionId}
+                />
+              )}
 
               {/* Description Component */}
               {isDescriptionSectionActive &&
@@ -1261,8 +1320,12 @@ export default function LectureItem(props: UpdatedLectureItemProps) {
                     onSetActiveContentType={setActiveContentType}
                     onToggleContentSection={toggleContentSection}
                     currentLectureUploadedFiles={currentLectureUploadedFiles}
-                    currentLectureSourceCodeFiles={currentLectureSourceCodeFiles}
-                    currentLectureExternalResources={currentLectureExternalResources}
+                    currentLectureSourceCodeFiles={
+                      currentLectureSourceCodeFiles
+                    }
+                    currentLectureExternalResources={
+                      currentLectureExternalResources
+                    }
                     removeUploadedFile={removeUploadedFile}
                     removeSourceCodeFile={removeSourceCodeFile}
                     removeExternalResource={removeExternalResource}

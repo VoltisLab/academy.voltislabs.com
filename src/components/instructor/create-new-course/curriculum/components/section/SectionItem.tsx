@@ -37,6 +37,12 @@ import { CREATE_ASSIGNMENT } from "@/api/assignment/mutation";
 import { useAssignmentService } from "@/services/useAssignmentService";
 import { useQuizOperations } from "@/services/quizService";
 
+export type DeleteItemFn = (
+  type: "section" | "lecture",
+  id: string,
+  sectionId?: string
+) => void;
+
 // Updated SectionItemProps interface with the missing property
 interface SectionItemProps {
   setNewassignment?: React.Dispatch<React.SetStateAction<number | undefined>>;
@@ -65,8 +71,8 @@ interface SectionItemProps {
     lectureId: string,
     newName: string
   ) => Promise<void>;
-  deleteSection: (sectionId: string) => Promise<void>;
-  deleteLecture: (sectionId: string, lectureId: string) => Promise<void>;
+  deleteSection: DeleteItemFn;
+  deleteLecture: DeleteItemFn;
   deleteAssignment: (sectionId: string, lectureId: string) => Promise<void>;
   moveSection: (sectionId: string, direction: "up" | "down") => void;
   moveLecture: (
@@ -940,9 +946,9 @@ export default function SectionItem({
                       <Edit3 className="w-3 h-3" />
                     </button>
                     <button
-                      onClick={async (e) => {
+                      onClick={(e) => {
                         e.stopPropagation();
-                        await deleteSection(section.id);
+                        deleteSection("section", section.id);
                       }}
                       className="text-gray-500 hover:text-red-600"
                     >
