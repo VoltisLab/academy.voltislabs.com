@@ -7,7 +7,7 @@ import { uploadFile } from '@/services/fileUploadService';
 import { useLectureService } from '@/services/useLectureService';
 import { toast } from 'react-hot-toast';
 import { apolloClient } from '@/lib/apollo-client';
-import { UPDATE_LECTURE_CONTENT, UpdateLectureContentResponse } from '@/api/course/lecture/mutation';
+import { UPDATE_LECTURE_CONTENT, UpdateLectureContentResponse, UpdateLectureVariables } from '@/api/course/lecture/mutation';
 
 interface LibraryFileWithSize extends StoredVideo {
   size?: string;
@@ -84,7 +84,7 @@ export default function ResourceComponent({
   // const [libraryFiles, setLibraryFiles] = useState<GetLectureResourcesResponse[]>([]);
 
   // Backend service
-  const { saveDescriptionToLecture, loading, getLectureResources, error } = useLectureService();
+  const { saveDescriptionToLecture, loading, getLectureResources, error, updateLecture } = useLectureService();
 
   // Custom resource update functions using the working pattern
 useEffect(() => {
@@ -185,11 +185,22 @@ useEffect(() => {
     }
 
     try {
-      await updateLectureWithResource(
-        parseInt(lectureId),
-        externalForm.url,
-        `EXTERNAL_RESOURCE: ${externalForm.title}`
-      );
+      // await updateLectureWithResource(
+      //   parseInt(lectureId),
+      //   externalForm.url,
+      //   `EXTERNAL_RESOURCE: ${externalForm.title}`
+      // );
+      await updateLecture({
+        lectureId: parseInt(lectureId),
+        resources: [
+          {
+            url: externalForm.url,
+            title: `EXTERNAL_RESOURCES: ${externalForm.url}`,
+            type: 'EXTERNAL_RESOURCES',
+            action: 'ADD',
+          },
+        ],
+      });
 
       // Call the handler if provided (for local state updates)
       if (onExternalResourceAdd) {
@@ -211,31 +222,56 @@ useEffect(() => {
   };
 
   // NEW: Handle downloadable file upload with backend integration
-  const handleUpload = async () => {
-    if (!selectedFile || !lectureId) {
-      toast.error('Please select a file and ensure lecture ID is available');
-      return;
-    }
+ const handleUpload = async (resourceType: string, externalUrl?: string) => {
+  // Safety checks
+  if (!lectureId) {
+    toast.error('Lecture ID is missing');
+    return;
+  }
 
-    // Additional safety check to ensure we have a numeric backend ID
-    const numericLectureId = parseInt(lectureId);
-    if (isNaN(numericLectureId) || numericLectureId <= 0) {
-      toast.error('Invalid lecture ID. Please refresh and try again.');
-      return;
-    }
+  const numericLectureId = parseInt(lectureId);
+  if (isNaN(numericLectureId) || numericLectureId <= 0) {
+    toast.error('Invalid lecture ID. Please refresh and try again.');
+    return;
+  }
 
-    try {
-      setIsFileUploading(true);
-      setFileUploadProgress(0);
+  try {
+    setIsFileUploading(true);
+    setFileUploadProgress(0);
 
-      // Simulate progress for better UX
+    // For external URL resources
+    if (resourceType === 'EXTERNAL_RESOURCE') {
+      if (!externalUrl) {
+        toast.error('Please provide a valid URL');
+        return;
+      }
+
+      await updateLecture({
+        lectureId: numericLectureId,
+        resources: [
+          {
+            url: externalUrl,
+            title: `EXTERNAL_RESOURCE: ${externalUrl}`,
+            type: 'DOWNLOADABLE_FILES',
+            action: 'ADD',
+          },
+        ],
+      });
+
+      toast.success('External resource added!');
+    } else {
+      // For DOWNLOADABLE_FILE and SOURCE_CODE
+      if (!selectedFile) {
+        toast.error('Please select a file to upload');
+        return;
+      }
+
+      // Simulated upload progress
       const progressInterval = setInterval(() => {
         setFileUploadProgress(prev => Math.min(prev + 10, 90));
       }, 200);
 
-      // Upload file to backend (always use RESOURCE for downloadable files)
       const uploadedUrl = await uploadFile(selectedFile, 'RESOURCE');
-      
       clearInterval(progressInterval);
       setFileUploadProgress(95);
 
@@ -243,33 +279,40 @@ useEffect(() => {
         throw new Error('File upload failed - no URL returned');
       }
 
-      // Update lecture with resource using working pattern
-      await updateLectureWithResource(
-        numericLectureId,
-        uploadedUrl,
-        `DOWNLOADABLE_FILE: ${selectedFile.name}`
-      );
+      await updateLecture({
+        lectureId: numericLectureId,
+        resources: [
+          {
+            url: uploadedUrl,
+            title: `${resourceType}: ${selectedFile.name}`,
+           type: 'DOWNLOADABLE_FILES',
+            action: 'ADD',
+          },
+        ],
+      });
 
       setFileUploadProgress(100);
-      setShowUploadComplete(true);
       toast.success('File uploaded successfully!');
-
-      // After the upload is "complete", show the success status
-      setTimeout(() => {
-        if (onClose) {
-          onClose();
-        }
-      }, 1000);
-
-    } catch (error) {
-      console.error('Error uploading file:', error);
-      setSelectedFile(null);
-      setFileUploadProgress(0);
-      // Error toast is already handled in the service
-    } finally {
-      setIsFileUploading(false);
     }
-  };
+
+    // Show upload complete UI
+    setShowUploadComplete(true);
+
+    // Close after short delay
+    setTimeout(() => {
+      if (onClose) onClose();
+    }, 1000);
+
+  } catch (error) {
+    console.error('Upload error:', error);
+    toast.error('Something went wrong. Please try again.');
+    setFileUploadProgress(0);
+    setSelectedFile(null);
+  } finally {
+    setIsFileUploading(false);
+  }
+};
+
 
   // NEW: Handle source code upload with backend integration
   const handleSourceCodeUpload = async () => {
@@ -305,11 +348,22 @@ useEffect(() => {
       }
 
       // Update lecture with source code resource using working pattern
-      await updateLectureWithResource(
-        numericLectureId,
-        uploadedUrl,
-        `SOURCE_CODE: ${sourceFile.name}`
-      );
+      // await updateLecture(
+      //   numericLectureId,
+      //   uploadedUrl,
+      //   `SOURCE_CODE: ${sourceFile.name}`
+      // );
+      await updateLecture({
+        lectureId: numericLectureId,
+        resources: [
+          {
+            url: uploadedUrl,
+            title: `SOURCE_CODE: ${sourceFile.name}`,
+            type: 'SOURCE_CODE',
+            action: 'ADD',
+          },
+        ],
+      });
 
       setSourceUploadProgress(100);
       setSourceUploadComplete(true);
@@ -495,7 +549,7 @@ useEffect(() => {
                 {selectedFile && (
                   <div className="flex justify-end mt-4">
                     <button
-                      onClick={handleUpload}
+                      onClick={() => handleUpload("DOWNLOADABLE_FILE")}
                       disabled={isFileUploading}
                       className="px-4 py-2 bg-[#6D28D2] text-white rounded text-sm font-medium hover:bg-[#5D18C9] disabled:opacity-50 disabled:cursor-not-allowed"
                     >
@@ -547,6 +601,7 @@ useEffect(() => {
             
             <div className="flex justify-end">
               <button
+              // onClick={() => handleUpload("EXTERNAL_RESOURCE", externalForm.url)}
                 type="submit"
                 className="px-4 py-2 bg-[#6D28D2] text-white text-sm font-medium rounded hover:bg-[#7D28D2]"
               >
@@ -825,6 +880,4 @@ useEffect(() => {
   );
 }
 
-function updateLectureWithResource(numericLectureId: number, uploadedUrl: string, arg2: string) {
-  throw new Error('Function not implemented.');
-}
+
