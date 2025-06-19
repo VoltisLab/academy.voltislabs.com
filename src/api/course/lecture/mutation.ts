@@ -21,16 +21,46 @@ export const CREATE_LECTURE = gql`
 export const UPDATE_LECTURE = gql`
   mutation UpdateLecture(
     $lectureId: Int!
-    $title: String!
+    $title: String
+    $description: String
+    $duration: Int
+    $notes: String
+    $videoUrl: String
+    $resources: [LectureResourceInputType]
   ) {
     updateLecture(
       lectureId: $lectureId
       title: $title
+      description: $description
+      duration: $duration
+      notes: $notes
+      videoUrl: $videoUrl
+      resources: $resources
     ) {
       success
+      lecture {
+        id
+        title
+        description
+        duration
+        notes
+        videoUrl
+        resources
+        section {
+          id
+          title
+        }
+        codingexerciseSet {
+          id
+        }
+        questionSet {
+          id
+        }
+      }
     }
   }
 `;
+
 
 export const DELETE_LECTURE = gql`
   mutation DeleteLecture(
@@ -102,14 +132,50 @@ export interface CreateLectureResponse {
   };
 }
 
+export interface ResourceInput {
+  title: string;
+  type: string;
+  url: string;
+  action: string;
+}
+
 export interface UpdateLectureVariables {
   lectureId: number;
-  title: string;
+  title?: string;
+  description?: string;
+  duration?: number;
+  notes?: string;
+  videoUrl?: string;
+  resources?: ResourceInput[];
 }
 
 export interface UpdateLectureResponse {
   updateLecture: {
     success: boolean;
+    lecture: {
+      id: number;
+      title: string;
+      description: string;
+      duration: number;
+      notes: string;
+      videoUrl: string;
+      resources: {
+        title: string;
+        type: string;
+        url: string;
+        action: string;
+      }[];
+      section: {
+        id: number;
+        title: string;
+      };
+      codingexerciseSet: {
+        id: number;
+      } | null;
+      questionSet: {
+        id: number;
+      } | null;
+    };
   };
 }
 
