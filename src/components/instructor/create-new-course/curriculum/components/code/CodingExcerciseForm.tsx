@@ -1,35 +1,35 @@
 // components/CodingExerciseForm.tsx
-import React, { useState } from 'react';
-import { X } from 'lucide-react';
+import React, { useState } from "react";
+import { X } from "lucide-react";
 
 interface CodingExerciseFormProps {
   sectionId: string;
-  onAddCodingExercise: (sectionId: string, title: string) => void;
+  onAddCodingExercise: (sectionId: string, title: string) => Promise<void>;
   onCancel: () => void;
+  isAddingCodingExercise: boolean;
 }
 
 const CodingExerciseForm: React.FC<CodingExerciseFormProps> = ({
   sectionId,
   onAddCodingExercise,
-  onCancel
+  onCancel,
+  isAddingCodingExercise,
 }) => {
-  const [title, setTitle] = useState<string>('');
+  const [title, setTitle] = useState<string>("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (title.trim()) {
-      onAddCodingExercise(sectionId, title.trim());
+      await onAddCodingExercise(sectionId, title.trim());
     }
   };
 
   return (
     <div className=" overflow-hidden mb-4">
- 
-        <button onClick={onCancel} className="text-gray-500 hover:text-gray-700">
-          <X className="w-5 h-5" />
-        </button>
+      <button onClick={onCancel} className="text-gray-500 hover:text-gray-700">
+        <X className="w-5 h-5" />
+      </button>
 
-      
       <div className="p-2 ml-8 bg-white border-gray-400 border">
         <form onSubmit={handleSubmit}>
           <div className="mb-4 relative">
@@ -47,7 +47,7 @@ const CodingExerciseForm: React.FC<CodingExerciseFormProps> = ({
               {100 - title.length}
             </div>
           </div>
-          
+
           <div className="flex justify-end space-x-3">
             <button
               type="button"
@@ -58,10 +58,12 @@ const CodingExerciseForm: React.FC<CodingExerciseFormProps> = ({
             </button>
             <button
               type="submit"
-              disabled={!title.trim()}
-              className={`px-2 xl:py-2 py-1 ${!title.trim() ? 'bg-[#9E28D2] cursor-not-allowed' : 'bg-[#6D28D2] hover:bg-[#7D28D2]'} text-white rounded-md focus:outline-none focus:ring-1 focus:ring-[#6D28D2]`}
+              disabled={!title.trim() || isAddingCodingExercise}
+              className={`px-2 xl:py-2 py-1 disabled:bg-[#9E28D2] disabled:cursor-not-allowed bg-[#6D28D2] hover:bg-[#7D28D2] text-white rounded-md focus:outline-none focus:ring-1 focus:ring-[#6D28D2]`}
             >
-              Add Coding Exercise
+              {isAddingCodingExercise
+                ? "Adding coding exercise..."
+                : " Add Coding Exercise"}
             </button>
           </div>
         </form>
