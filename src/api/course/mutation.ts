@@ -115,22 +115,6 @@ export const CREATE_QUIZ = gql`
       success
       quiz {
         id
-        title
-        description
-        allowMultipleAttempts
-        maxAttempts
-        passingScorePercent
-        timeLimitMinutes
-        questions {
-          id
-          text
-          questionType
-          order
-          explanation
-          maxPoints
-          mediaUrl
-          allowMultipleCorrect
-        }
       }
     }
   }
@@ -174,13 +158,9 @@ export const ADD_QUESTION_TO_QUIZ = gql`
       success
       question {
         id
-        text
-        questionType
-        order
-        explanation
-        maxPoints
-        mediaUrl
-        allowMultipleCorrect
+        answerChoices {
+          id
+        }
       }
     }
   }

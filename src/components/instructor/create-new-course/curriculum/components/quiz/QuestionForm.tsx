@@ -6,8 +6,6 @@ import "react-quill-new/dist/quill.snow.css";
 import RichTextEditor from "../../RichTextEditor";
 import { useLectureData } from "@/services/fetchLectureService";
 
-import { useQuizOperations } from "@/services/quizService";
-
 interface QuestionFormProps {
   onSubmit: (question: any) => void;
   onCancel: () => void;
@@ -37,7 +35,7 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
 }) => {
   const [questionText, setQuestionText] = useState("");
   const [answers, setAnswers] = useState<
-    Array<{ text: string; explanation: string }>
+    Array<{ text: string; explanation: string; id?: number }>
   >([
     { text: "", explanation: "" },
     { text: "", explanation: "" },
@@ -62,8 +60,6 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
     parseInt(sectionId as string)
   );
 
-  console.log("Lectures:", lectures);
-
   // Update the select handler
   const handleLectureChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const lectureId = e.target.value;
@@ -76,15 +72,6 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
     );
     setRelatedLecture(selectedLecture || null);
   };
-
-  // const {
-  //   createQuiz,
-  //   updateQuiz,
-  //   addQuestionToQuiz,
-  //   updateQuestion,
-  //   deleteQuestion,
-  //   loading: quizOperationLoading,
-  // } = useQuizOperations;
 
   useEffect(() => {
     // Reset all form state when initialQuestion changes
@@ -202,9 +189,10 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
     const question = {
       ...(isEditedForm && initialQuestion?.id && { id: initialQuestion.id }),
       text: questionText,
-      answers: validAnswers.map(({ text, explanation }) => ({
+      answers: validAnswers.map(({ text, explanation, id }) => ({
         text,
         explanation,
+        id: Number(id),
       })),
       quizId: quizId,
       choices, // Add choices for API

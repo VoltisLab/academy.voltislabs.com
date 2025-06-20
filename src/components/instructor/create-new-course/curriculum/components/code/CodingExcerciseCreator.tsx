@@ -60,7 +60,8 @@ type FileType = {
 interface CodingExerciseCreatorProps {
   lectureId: string | null;
   onClose: () => void;
-  onSave: (updatedLecture: Partial<Lecture>) => void;
+  onSave: (updatedLecture: Partial<Lecture>) => Promise<void>;
+  isUpdating: boolean;
   initialData?: Lecture;
 }
 
@@ -442,6 +443,7 @@ const CodingExerciseCreatorWithMonaco: React.FC<CodingExerciseCreatorProps> = ({
   onClose,
   onSave,
   initialData,
+  isUpdating,
 }) => {
   // State for modal and views
   const [view, setView] = useState<View>("languageSelection");
@@ -826,9 +828,9 @@ const CodingExerciseCreatorWithMonaco: React.FC<CodingExerciseCreatorProps> = ({
     onClose(); // We want to go back to the list view
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (lectureId) {
-      onSave({
+      await onSave({
         id: lectureId,
         name: exerciseTitle,
         codeLanguage: selectedLanguage?.id,
@@ -1292,10 +1294,11 @@ const CodingExerciseCreatorWithMonaco: React.FC<CodingExerciseCreatorProps> = ({
             Preview
           </button>
           <button
-            className="border border-[#6D28D2] text-[#6D28D2] px-4 py-2 rounded-md"
+            className="border border-[#6D28D2] text-[#6D28D2] px-4 py-2 rounded-md disabled:bg-purple-50"
             onClick={handleSave}
+            disabled={isUpdating}
           >
-            Save
+            {isUpdating ? "Saving..." : "Save"}
           </button>
           <button
             className="bg-[#6D28D2] text-white px-4 py-2 rounded-md"
