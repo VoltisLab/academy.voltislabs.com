@@ -19,6 +19,7 @@ import { useQuizOperations } from "@/services/quizService";
 import toast, { LoaderIcon } from "react-hot-toast";
 import { LectureType } from "./QuizPreview";
 import { DeleteItemFn } from "../section/SectionItem";
+import { ConfirmQuizDeleteModal } from "@/components/modals/DeleteConfirmationModal";
 
 interface QuizItemProps {
   lecture: Lecture;
@@ -147,11 +148,15 @@ const QuizItem: React.FC<QuizItemProps> = ({
     number | null
   >(null);
 
-  const [loadingQuestion, setLoadingQuestion] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
 
   const handleDeleteQuiz = async (e: React.MouseEvent) => {
     e.stopPropagation();
+    console.log("Hello modal you suppose show nah");
+    setShowConfirmModal(true); // show modal first
+  };
 
+  const confirmDelete = async () => {
     try {
       const result = await deleteQuiz({
         quizId: Number(lecture.id),
@@ -159,7 +164,8 @@ const QuizItem: React.FC<QuizItemProps> = ({
 
       if (result?.deleteQuiz?.success) {
         toast.success("Quiz deleted successfully!");
-        deleteLocalQuiz(sectionId, lecture.id); // This updates the local state
+        deleteLocalQuiz(sectionId, lecture.id);
+        setShowConfirmModal(false);
       }
     } catch (error) {
       console.error("Error deleting quiz:", error);
@@ -499,8 +505,6 @@ const QuizItem: React.FC<QuizItemProps> = ({
 
   const handleAddQuestion = async (question: Question) => {
     try {
-      setLoadingQuestion(true);
-
       // Convert answers to backend-compatible format
       const choices = question.answers.map((answer, idx) => ({
         text: answer.text,
@@ -522,15 +526,28 @@ const QuizItem: React.FC<QuizItemProps> = ({
       });
 
       const newQuestionId = result?.addQuestionToQuiz?.question?.id;
-      if (!newQuestionId)
-        throw new Error("No question ID returned from backend");
+      const newQuestionChoices =
+        result?.addQuestionToQuiz?.question?.answerChoices;
 
-      // Add the new question to the local state with the real ID
+      console.log(
+        "This is the question id ooooo",
+        newQuestionId,
+        newQuestionChoices
+      );
+      if (!newQuestionId || !newQuestionChoices)
+        throw new Error("No question ID or choices returned from backend");
+
+      const newAnswers = question.answers.map((answer, idx) => ({
+        ...answer,
+        id: newQuestionChoices[idx]?.id, // Assign backend ID
+      }));
+
       const newQuestions = [
         ...questions,
         {
           ...question,
           id: newQuestionId.toString(),
+          answers: newAnswers, // Save updated answers with IDs
         },
       ];
 
@@ -538,9 +555,9 @@ const QuizItem: React.FC<QuizItemProps> = ({
 
       setQuestions(newQuestions);
 
-      if (updateQuizQuestions) {
-        updateQuizQuestions(sectionId, newQuizId as number, newQuestions);
-      }
+      // if (updateQuizQuestions) {
+      //   updateQuizQuestions(sectionId, newQuizId as number, newQuestions);
+      // }
 
       toast.success("Question added successfully!");
       setShowQuestionForm(false);
@@ -551,8 +568,6 @@ const QuizItem: React.FC<QuizItemProps> = ({
     } catch (error) {
       toast.error("Failed to save question");
       console.error("Error adding question:", error);
-    } finally {
-      setLoadingQuestion(false);
     }
   };
 
@@ -620,20 +635,18 @@ const QuizItem: React.FC<QuizItemProps> = ({
 
       // Convert answers to choices format
       const choices = question.answers.map((answer: any, idx: number) => {
-        const parsedId = parseInt(answer.id);
-        const isValidId = !isNaN(parsedId) && parsedId > 0;
-
+        console.log("Hey youuuuuu", answer);
         return {
           text: answer.text,
           explanation: answer.explanation || "",
           isCorrect: idx === question.correctAnswerIndex,
           order: answer.order || idx + 1,
-          id: idx + 1,
+          id: answer.id,
         };
       });
 
       const result = await updateQuestion({
-        questionId: parseInt(question.id),
+        questionId: Number(question.id),
         text: question.text,
         choices,
       });
@@ -778,6 +791,16 @@ const QuizItem: React.FC<QuizItemProps> = ({
       />
     );
   };
+
+  if (showConfirmModal) {
+    return (
+      <ConfirmQuizDeleteModal
+        closeModal={() => setShowConfirmModal(false)}
+        onConfirm={confirmDelete}
+        isLoading={quizOperationLoading}
+      />
+    );
+  }
 
   // Collapsed view for new quizzes
   if (!expanded && isNewQuiz) {

@@ -37,7 +37,7 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
 }) => {
   const [questionText, setQuestionText] = useState("");
   const [answers, setAnswers] = useState<
-    Array<{ text: string; explanation: string }>
+    Array<{ text: string; explanation: string; id?: number }>
   >([
     { text: "", explanation: "" },
     { text: "", explanation: "" },
@@ -61,8 +61,6 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
   const { lectures, loading: lecturesLoading } = useLectureData(
     parseInt(sectionId as string)
   );
-
-  console.log("Lectures:", lectures);
 
   // Update the select handler
   const handleLectureChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -202,9 +200,10 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
     const question = {
       ...(isEditedForm && initialQuestion?.id && { id: initialQuestion.id }),
       text: questionText,
-      answers: validAnswers.map(({ text, explanation }) => ({
+      answers: validAnswers.map(({ text, explanation, id }) => ({
         text,
         explanation,
+        id: Number(id),
       })),
       quizId: quizId,
       choices, // Add choices for API
