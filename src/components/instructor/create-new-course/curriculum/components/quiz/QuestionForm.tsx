@@ -6,8 +6,6 @@ import "react-quill-new/dist/quill.snow.css";
 import RichTextEditor from "../../RichTextEditor";
 import { useLectureData } from "@/services/fetchLectureService";
 
-import { useQuizOperations } from "@/services/quizService";
-
 interface QuestionFormProps {
   onSubmit: (question: any) => void;
   onCancel: () => void;
@@ -74,15 +72,6 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
     );
     setRelatedLecture(selectedLecture || null);
   };
-
-  // const {
-  //   createQuiz,
-  //   updateQuiz,
-  //   addQuestionToQuiz,
-  //   updateQuestion,
-  //   deleteQuestion,
-  //   loading: quizOperationLoading,
-  // } = useQuizOperations;
 
   useEffect(() => {
     // Reset all form state when initialQuestion changes

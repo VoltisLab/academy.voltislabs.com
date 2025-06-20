@@ -339,58 +339,6 @@ const QuizItem: React.FC<QuizItemProps> = ({
     }));
   };
 
-  // Quiz edit handler
-  // const handleQuizEditSubmit = (
-  //   sectionId: string,
-  //   quizId: string,
-  //   title: string,
-  //   description: string
-  // ) => {
-  //   if (onEditQuiz) {
-  //     onEditQuiz(sectionId, quizId, title, description);
-  //   }
-  //   setShowEditQuizForm(false);
-  // };
-
-  // const handleQuizEditSubmit = async (
-  //   sectionId: string,
-  //   quizId: string,
-  //   title: string,
-  //   description: string
-  // ) => {
-  //   try {
-  //     if (onEditQuiz) {
-  //       // If it's an existing quiz, update it
-  //       const result = await updateQuiz({
-  //         quizId: parseInt(quizId),
-  //         title,
-  //         description,
-  //       });
-
-  //       if (result?.updateQuiz?.success) {
-  //         toast.success("Quiz updated successfully!");
-  //         onEditQuiz(sectionId, quizId, title, description);
-  //       }
-  //     } else {
-  //       // If it's a new quiz, create it
-  //       const result = await createQuiz({
-  //         sectionId: parseInt(sectionId),
-  //         title,
-  //         description,
-  //       });
-
-  //       if (result?.createQuiz?.success) {
-  //         toast.success("Quiz created successfully!");
-  //         // You'll need to update your state with the new quiz
-  //       }
-  //     }
-  //   } catch (error) {
-  //     console.error("Error saving quiz:", error);
-  //     toast.error("Failed to save quiz");
-  //   }
-  //   setShowEditQuizForm(false);
-  // };
-
   const handleQuizEditSubmit = async (
     sectionId: string,
     quizId: number,
@@ -481,28 +429,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
     }
   };
 
-  // const handleAddQuestion = (question: Question) => {
-  //   let newQuestions;
-
-  //   if (editingQuestionIndex !== null) {
-  //     newQuestions = [...questions];
-  //     newQuestions[editingQuestionIndex] = question;
-  //   } else {
-  //     newQuestions = [...questions, { ...question, id: `q-${Date.now()}` }];
-  //   }
-
-  //   setQuestions(newQuestions);
-  //   if (updateQuizQuestions) {
-  //     updateQuizQuestions(sectionId, lecture.id, newQuestions);
-  //   }
-
-  //   setShowQuestionForm(false);
-  //   setShowQuestionTypeSelector(false);
-  //   setExpanded(true);
-  //   setShowEditForm(false);
-  //   setEditingQuestionIndex(null);
-  // };
-
+  
   const handleAddQuestion = async (question: Question) => {
     try {
       // Convert answers to backend-compatible format
@@ -529,11 +456,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
       const newQuestionChoices =
         result?.addQuestionToQuiz?.question?.answerChoices;
 
-      console.log(
-        "This is the question id ooooo",
-        newQuestionId,
-        newQuestionChoices
-      );
+      
       if (!newQuestionId || !newQuestionChoices)
         throw new Error("No question ID or choices returned from backend");
 
@@ -551,13 +474,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
         },
       ];
 
-      console.log("New question added:", newQuestions);
-
       setQuestions(newQuestions);
-
-      // if (updateQuizQuestions) {
-      //   updateQuizQuestions(sectionId, newQuizId as number, newQuestions);
-      // }
 
       toast.success("Question added successfully!");
       setShowQuestionForm(false);
@@ -570,14 +487,6 @@ const QuizItem: React.FC<QuizItemProps> = ({
       console.error("Error adding question:", error);
     }
   };
-
-  // const handleDeleteQuestion = (index: number) => {
-  //   const newQuestions = questions.filter((_, idx) => idx !== index);
-  //   setQuestions(newQuestions);
-  //   if (updateQuizQuestions) {
-  //     updateQuizQuestions(sectionId, lecture.id, newQuestions);
-  //   }
-  // };
 
   const handleDeleteQuestion = async (index: number) => {
     const questionId = questions[index]?.id;
@@ -605,33 +514,14 @@ const QuizItem: React.FC<QuizItemProps> = ({
     }
   };
 
-  // const handleDeleteQuestion = async (index: number) => {
-  //   try {
-  //     const questionToDelete = questions[index];
-  //     const newQuestions = questions.filter((_, idx) => idx !== index);
-
-  //     // Update both local state and backend
-  //     if (updateQuizQuestions) {
-  //       await updateQuizQuestions(sectionId, lecture.id, newQuestions);
-  //     }
-
-  //     setQuestions(newQuestions);
-  //     toast.success("Question deleted successfully");
-  //   } catch (error) {
-  //     toast.error("Failed to delete question");
-  //     console.error(error);
-  //   }
-  // };
-
+  
   const handleUpdateQuestion = async (question: any, index: number) => {
     try {
-      console.log("Updating questionnnnn:", question.id);
 
       if (!question.id || isNaN(parseInt(question.id))) {
         throw new Error("Question ID is missing or invalid");
       }
 
-      console.log("Updating questionnnnn:", question.id);
 
       // Convert answers to choices format
       const choices = question.answers.map((answer: any, idx: number) => {
@@ -650,14 +540,6 @@ const QuizItem: React.FC<QuizItemProps> = ({
         text: question.text,
         choices,
       });
-
-      console.log("🚨 Final payload for updateQuestion:", {
-        questionId: parseInt(question.id),
-        text: question.text,
-        choices,
-      });
-
-      console.log("Update result:", result);
 
       if (result?.updateQuestion?.success) {
         const newQuestions = [...questions];
