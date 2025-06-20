@@ -305,6 +305,7 @@ export interface Question {
   answers: Array<{
     text: string;
     explanation: string;
+    id: string;
   }>;
   correctAnswerIndex: number;
   relatedLecture?: LectureType;
