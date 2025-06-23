@@ -1017,6 +1017,20 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
             Section
           </button>
         )}
+
+        {/* Save & Next button for curriculum step */}
+        <div className="flex justify-end mt-8">
+          <button
+            className="bg-[#2E2C6F] text-white font-medium text-sm px-6 py-2 rounded-md hover:bg-[#25235a]"
+            onClick={() => {
+              // You may want to add validation or save logic here before calling onSaveNext
+              if (onSaveNext) onSaveNext();
+            }}
+            disabled={isLoading}
+          >
+            Save & Next
+          </button>
+        </div>
       </div>
 
       {/* Hidden file input for file uploads */}

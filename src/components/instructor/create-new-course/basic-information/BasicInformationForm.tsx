@@ -7,11 +7,12 @@ import { CREATE_COURSE_BASIC_INFO, GET_CATEGORIES } from "@/api/course/mutation"
 import toast from "react-hot-toast";
 import FormHeader from "../../layout/FormHeader";
 
-interface BasicInformationFormProps {
-  onSaveNext: (courseId: number) => void;
-}
+type BasicInformationFormProps = {
+  onSaveNext: (id: number) => void;
+  courseId?: number;
+};
 
-export const BasicInformationForm = ({ onSaveNext }: BasicInformationFormProps) => {
+export const BasicInformationForm = ({ onSaveNext, courseId }: BasicInformationFormProps) => {
   // Form state
   const [formData, setFormData] = useState<FormData>({
     title: "",
@@ -184,11 +185,10 @@ export const BasicInformationForm = ({ onSaveNext }: BasicInformationFormProps) 
     
       if (response?.createCourse?.success) {
         toast.success(response.createCourse.message || "Course information saved successfully!");
-        
         // Extract course ID and pass it to the parent component
         const courseId = response.createCourse?.course?.id;
         if (courseId) {
-          onSaveNext(courseId); // Pass the course ID to the parent
+          onSaveNext(courseId); // Always call onSaveNext with courseId
         } else {
           console.error("Course ID not found in response");
           toast.error("Course created but ID not found. Please refresh and try again.");
