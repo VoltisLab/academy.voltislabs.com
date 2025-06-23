@@ -14,10 +14,57 @@ import {
   DELETE_SECTION,
   DeleteSectionVariables
 } from '@/api/course/section/mutation';
+import {
+  GET_COURSE_SECTIONS,
+  CourseSectionsVariables,
+  CourseSectionsResponse
+} from '@/api/course/section/queries';
 
 export const useSectionService = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
+
+  const getCourseSections = async (variables: CourseSectionsVariables) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const { data, errors } = await apolloClient.query<CourseSectionsResponse>({
+        query: GET_COURSE_SECTIONS,
+        variables,
+        context: {
+          includeAuth: true
+        },
+        fetchPolicy: 'no-cache'
+      });
+
+      if (errors) {
+        console.error("GraphQL errors:", errors);
+        throw new Error(errors[0]?.message || "An error occurred while fetching course sections");
+      }
+
+      return data;
+    } catch (err) {
+      console.error("Course sections fetch error:", err);
+      
+      if (err instanceof ApolloError) {
+        const errorMessage = err.message || "Network error. Please check your connection and try again.";
+        setError(new Error(errorMessage));
+        toast.error(errorMessage);
+      } else if (err instanceof Error) {
+        setError(err);
+        toast.error(err.message);
+      } else {
+        const genericError = new Error("An unexpected error occurred");
+        setError(genericError);
+        toast.error(genericError.message);
+      }
+      
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const createSection = async (variables: CreateSectionVariables) => {
     try {
@@ -161,6 +208,7 @@ export const useSectionService = () => {
   };
 
   return {
+    getCourseSections,
     createSection,
     updateSection,
     deleteSection,

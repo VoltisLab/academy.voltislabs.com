@@ -9,6 +9,7 @@ import { toast } from "react-hot-toast";
 import CourseObjectivesInput from "./components/CourseObjectivesInput";
 import CourseThumbnailUploader from "./components/CourseThumbnailUploader";
 import { BasicInformationFormProps, CourseInfo } from "@/lib/types";
+
 // Dynamically import CourseDescriptionEditor with SSR disabled
 const CourseDescriptionEditor = dynamic(() => import("./components/CourseDescriptionEditor"), {
   ssr: false,
