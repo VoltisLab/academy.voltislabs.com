@@ -19,8 +19,9 @@ import {
   ContentTypeDetector,
   PreviewSection,
 } from "@/lib/types";
-import StudentVideoPreview from "./StudentVideoPeview";
-import InstructorVideoPreview from "./InstructorVideoPeview";
+import StudentCoursePreview from "./StudentCoursePreview";
+import InstructorVideoPreview from "./InstructorVideoPreview";
+import Link from "next/link";
 
 interface LectureContentDisplayProps {
   lecture: Lecture;
@@ -49,6 +50,7 @@ interface LectureContentDisplayProps {
   globalExternalResources: ExternalResourceItem[];
   allSections: PreviewSection[];
   children?: React.ReactNode;
+  courseId?: number
 }
 
 const LectureContentDisplay: React.FC<LectureContentDisplayProps> = ({
@@ -75,7 +77,8 @@ const LectureContentDisplay: React.FC<LectureContentDisplayProps> = ({
   globalSourceCodeFiles,
   globalExternalResources,
   allSections,
-  children
+  children,
+  courseId
 }) => {
   const [showPreviewDropdown, setShowPreviewDropdown] = useState(false);
   const [showVideoPreview, setShowVideoPreview] = useState(false);
@@ -245,7 +248,7 @@ const LectureContentDisplay: React.FC<LectureContentDisplayProps> = ({
 
     if (previewMode === "student") {
       return (
-        <StudentVideoPreview
+        <StudentCoursePreview
           videoContent={videoContent}
           articleContent={articleContent}
           setShowVideoPreview={setShowVideoPreview}
@@ -327,6 +330,7 @@ const LectureContentDisplay: React.FC<LectureContentDisplayProps> = ({
                 >
                   Preview <ChevronDown className="ml-1 w-4 h-4" />
                 </button>
+         
 
                 {showPreviewDropdown && (
                   <div className="absolute mt-1 right-0 w-40 bg-white border border-gray-200 rounded-md shadow-lg z-50">
@@ -340,15 +344,17 @@ const LectureContentDisplay: React.FC<LectureContentDisplayProps> = ({
                           As Instructor
                         </button>
                       </li>
+                      <Link href={`/preview/${courseId}/${lecture.id}`}>
                       <li>
                         <button
-                          onClick={() => handlePreviewSelection("student")}
+                          // onClick={() => handlePreviewSelection("student")}
                           className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                           type="button"
                         >
                           As Student
                         </button>
                       </li>
+                      </Link>
                     </ul>
                   </div>
                 )}

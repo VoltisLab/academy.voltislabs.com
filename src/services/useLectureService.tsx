@@ -23,8 +23,11 @@ import {
   UpdateLectureResourceResponse,
   UPDATE_LECTURE_RESOURCE,
   UpdateLectureResourceVariables,
+  AddLectureResourcesVariables,
+  AddLectureResourcesResponse,
+  ADD_LECTURE_RESOURCES,
 } from '@/api/course/lecture/mutation';
-import { GET_LECTURE_RESOURCECS, GetLectureResourcesResponse, GetLectureResourcesVariables } from '@/api/course/lecture/queries';
+import { GET_LECTURE_RESOURCECS, GET_LECTURE_RESOURCES_LIST, GetLectureResourcesListResponse, GetLectureResourcesListVariables, GetLectureResourcesResponse, GetLectureResourcesVariables } from '@/api/course/lecture/queries';
 
 export const useLectureService = () => {
   const [loading, setLoading] = useState(false);
@@ -451,7 +454,7 @@ const updateLectureResource = async (variables: UpdateLectureResourceVariables) 
   }
 };
 
-const getLectureResources = async (variables: GetLectureResourcesVariables) => {
+const getLectureResources = async (variables: GetLectureResourcesVariables, setData?: any) => {
     try {
       setLoading(true);
       setError(null);
@@ -463,6 +466,9 @@ const getLectureResources = async (variables: GetLectureResourcesVariables) => {
       });
 
       console.log(data)
+      if(setData){
+        setData(data)
+      }
 
       if (errors) {
         console.error("GraphQL errors:", errors);
@@ -494,6 +500,58 @@ const getLectureResources = async (variables: GetLectureResourcesVariables) => {
       setLoading(false);
     }
   };
+
+  const getLectureResourcesList = async (
+  variables: GetLectureResourcesListVariables,
+  setData?: (data: GetLectureResourcesListResponse) => void
+) => {
+  try {
+    setLoading(true);
+    setError(null);
+
+    const { data, errors } = await apolloClient.query<GetLectureResourcesListResponse>({
+      query: GET_LECTURE_RESOURCES_LIST,
+      variables,
+      fetchPolicy: 'network-only',
+    });
+
+    console.log(data);
+
+    if (setData) {
+      setData(data);
+    }
+
+    if (errors) {
+      console.error('GraphQL errors:', errors);
+      throw new Error(errors[0]?.message || 'An error occurred during lecture resources fetching');
+    }
+
+    if (!data?.getLecture.resources || !Array.isArray(data.getLecture.resources)) {
+      throw new Error('Failed to fetch lecture resources');
+    }
+
+    return data;
+  } catch (err) {
+    console.error('Lecture Resources Fetching error:', err);
+
+    if (err instanceof ApolloError) {
+      const errorMessage = err.message || 'Network error. Please check your connection and try again.';
+      setError(new Error(errorMessage));
+      toast.error(errorMessage);
+    } else if (err instanceof Error) {
+      setError(err);
+      toast.error(err.message);
+    } else {
+      const genericError = new Error('An unexpected error occurred');
+      setError(genericError);
+      toast.error(genericError.message);
+    }
+
+    throw err;
+  } finally {
+    setLoading(false);
+  }
+};
 
     const updateLectureWithResource = async (lectureId: number, resourceUrl: string, resourceType: string) => {
       try {
@@ -527,6 +585,44 @@ const getLectureResources = async (variables: GetLectureResourcesVariables) => {
       }
     };
 
+
+const addLectureResources = async (variables: AddLectureResourcesVariables) => {
+  try {
+    setLoading(true);
+    setError(null);
+
+    const { data, errors } = await apolloClient.mutate<AddLectureResourcesResponse>({
+      mutation: ADD_LECTURE_RESOURCES,
+      variables,
+      context: {
+        includeAuth: true
+      },
+      fetchPolicy: 'no-cache'
+    });
+
+    if (errors) {
+      throw new Error(errors[0]?.message || 'Error adding resources');
+    }
+
+    if (!data?.addLectureResources.success) {
+      throw new Error(data?.addLectureResources.message || 'Failed to add resources');
+    }
+
+    toast.success('Resources added successfully!');
+    return data;
+  } catch (err) {
+    console.error('Add resources error:', err);
+
+    const message = err instanceof Error ? err.message : 'Unexpected error';
+    setError(new Error(message));
+    toast.error(message);
+
+    throw err;
+  } finally {
+    setLoading(false);
+  }
+};
+
   return {
     createLecture,
     updateLectureWithResource,
@@ -538,6 +634,8 @@ const getLectureResources = async (variables: GetLectureResourcesVariables) => {
     saveArticleToLecture,
     saveDescriptionToLecture,
     updateLectureResource,
+    addLectureResources,
+    getLectureResourcesList,
     loading,
     videoUploading,
     videoUploadProgress,

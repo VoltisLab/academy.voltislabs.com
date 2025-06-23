@@ -130,6 +130,7 @@ interface UpdatedLectureItemProps {
   videoUploading?: boolean;
   videoUploadProgres?: number;
   uploadFileToBackend?: FileUploadFunction;
+  courseId?: number
 }
 
 export default function LectureItem(props: UpdatedLectureItemProps) {
@@ -176,6 +177,7 @@ export default function LectureItem(props: UpdatedLectureItemProps) {
     videoUploading = false,
     videoUploadProgres = 0,
     uploadFileToBackend,
+    courseId
   } = props;
 
   const lectureNameInputRef = useRef<HTMLInputElement>(null);
@@ -1334,6 +1336,7 @@ export default function LectureItem(props: UpdatedLectureItemProps) {
                     globalExternalResources={globalExternalResources}
                     allSections={allSections}
                     children={children}
+                    courseId={courseId}
                   />
                 )}
             </div>

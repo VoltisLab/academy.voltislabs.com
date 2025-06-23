@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { BasicInformationForm } from "@/components/instructor/create-new-course/basic-information/BasicInformationForm";
 import { AdvanceInformationForm } from "@/components/instructor/create-new-course/advance-information/AdvancedInformation";
 import { Curriculum } from "@/components/instructor/create-new-course/curriculum/Curriculum";
 import Image from "next/image";
+import { toast } from "react-hot-toast";
 
 // Define tab interface
 interface Tab {
@@ -44,20 +45,12 @@ const tabs: Tab[] = [
   },
 ];
 
-export default function CourseFormTabs() {
+function CourseFormTabsInner() {
   const [activeTab, setActiveTab] = useState("basic");
   const [courseId, setCourseId] = useState<number | null>(null);
 
   // Track completion status of each tab
   const [completedTabs, setCompletedTabs] = useState<Set<string>>(new Set());
-
-  const [completedSteps, setCompletedSteps] = useState<Record<string, boolean>>(
-    {
-      basic: false,
-      advanced: false,
-      curriculum: false,
-    }
-  );
 
   // Get active tab data
   const currentTab = tabs.find((tab) => tab.key === activeTab) || tabs[0];
@@ -80,13 +73,13 @@ export default function CourseFormTabs() {
     // Move to next tab if available
     const currentIndex = tabs.findIndex((tab) => tab.key === activeTab);
     if (currentIndex < tabs.length - 1) {
-      setActiveTab(tabs[currentIndex + 1].key);
+      const nextTab = tabs[currentIndex + 1].key;
+      setActiveTab(nextTab);
     }
   };
 
   // Function to handle saving courseId, mark basic tab as completed, and move to next tab
   const handleBasicInfoSave = (id: number) => {
-    console.log("Course ID received in parent:", id);
     setCourseId(id);
     handleNextTab(); // This will mark basic as completed and move to advanced
   };
@@ -101,13 +94,28 @@ export default function CourseFormTabs() {
     handleNextTab(); // Mark curriculum as completed and move to publish
   };
 
+  // Function to handle publish course
+  const handlePublishCourse = () => {
+    // TODO: Implement publish course functionality
+    // This will call the backend API to publish the course
+    console.log("Publishing course:", courseId);
+    toast.success("Course published successfully!");
+    // After publishing, you might want to redirect to the course dashboard
+    // router.push(`/instructor/dashboard`);
+  };
+
+  // Function to check if course can be published
+  const canPublishCourse = () => {
+    // Check if all required steps are completed
+    return courseId !== undefined;
+  };
+
   return (
     <div className="bg-white w-full xl:max-w-[90rem] p-1 mx-auto min-h-screen">
       {/* Mobile Tabs - Horizontally Scrollable */}
       <div className="md:hidden border-b border-gray-200 pb-2">
         <div className="flex items-center overflow-x-auto scrollbar-hide gap-8 px-1">
           {tabs.map((tab) => {
-            const isCompleted = isTabCompleted(tab.key);
             const isActive = activeTab === tab.key;
 
             return (
@@ -129,11 +137,6 @@ export default function CourseFormTabs() {
                     height={18}
                     className="object-contain"
                   />
-                  {isCompleted && (
-                    <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full flex items-center justify-center">
-                      <span className="text-white text-xs">✓</span>
-                    </div>
-                  )}
                 </div>
                 <span>{tab.shortName || tab.name}</span>
                 {tab.progress && isActive && (
@@ -150,7 +153,6 @@ export default function CourseFormTabs() {
       {/* Desktop Tabs - Full width */}
       <div className="hidden md:flex items-center border-b border-gray-200 px-2">
         {tabs.map((tab) => {
-          const isCompleted = isTabCompleted(tab.key);
           const isActive = activeTab === tab.key;
 
           return (
@@ -172,11 +174,6 @@ export default function CourseFormTabs() {
                   height={20}
                   className="object-contain flex-shrink-0"
                 />
-                {isCompleted && (
-                  <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
-                    <span className="text-white text-xs">✓</span>
-                  </div>
-                )}
               </div>
               <div className="flex items-center gap-1 whitespace-nowrap">
                 <span className="hidden lg:inline">{tab.name}</span>
@@ -204,10 +201,38 @@ export default function CourseFormTabs() {
         {activeTab === "curriculum" && courseId && (
           <Curriculum onSaveNext={handleCurriculumSave} courseId={courseId} />
         )}
-        {activeTab === "publish" && courseId && (
-          <div>
-            <p>Publish Step</p>
-            <p className="text-sm text-gray-500">Course ID: {courseId}</p>
+        {activeTab === "publish" && (
+          <div className="space-y-6">
+            <div className="bg-white p-6 rounded-lg border border-gray-200">
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                Publish Your Course
+              </h2>
+              <p className="text-gray-600 mb-6">
+                You're almost there! Review your course details and publish it
+                to make it available to students.
+              </p>
+
+              {/* Publish Button */}
+              <div className="flex items-center justify-between">
+                <button
+                  onClick={() => handleTabClick("curriculum")}
+                  className="text-gray-500 font-medium text-sm px-5 py-2 rounded-md hover:bg-gray-100"
+                >
+                  ← Back to Curriculum
+                </button>
+                <button
+                  onClick={handlePublishCourse}
+                  disabled={!canPublishCourse()}
+                  className={`px-6 py-3 rounded-md font-medium text-sm ${
+                    canPublishCourse()
+                      ? "bg-green-600 text-white hover:bg-green-700"
+                      : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                  }`}
+                >
+                  Publish Course
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>
@@ -239,4 +264,9 @@ export default function CourseFormTabs() {
       </div>
     </div>
   );
+}
+
+// Main component
+export default function CourseFormTabs() {
+  return <CourseFormTabsInner />;
 }

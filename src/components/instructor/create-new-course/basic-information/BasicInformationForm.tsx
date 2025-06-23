@@ -162,6 +162,8 @@ export const BasicInformationForm = ({ onSaveNext }: BasicInformationFormProps) 
           !formData.topic || !formData.language || !formData.courseLevel || 
           !formData.durationValue) {
         console.log("Please fill in all required fields");
+        toast.error("Please fill in all required fields");
+        return;
       }
       
       const response = await createCourseBasicInfo({
@@ -179,14 +181,13 @@ export const BasicInformationForm = ({ onSaveNext }: BasicInformationFormProps) 
           unit: formData.durationUnit
         }
       });
-  
+    
       if (response?.createCourse?.success) {
         toast.success(response.createCourse.message || "Course information saved successfully!");
         
         // Extract course ID and pass it to the parent component
         const courseId = response.createCourse?.course?.id;
         if (courseId) {
-
           onSaveNext(courseId); // Pass the course ID to the parent
         } else {
           console.error("Course ID not found in response");

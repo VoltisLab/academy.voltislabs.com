@@ -15,7 +15,20 @@ export const GET_SECTION_LECTURES = gql`
 export const GET_LECTURE_RESOURCECS = gql`
   query GetLectureResources($lectureId: Int!) {
     getLecture(id: $lectureId) {
-      resource
+      resources
+    }
+  }
+`;
+
+export const GET_LECTURE_RESOURCES_LIST = gql`
+  query GetLectureResources($id: Int!) {
+    getLecture(id: $id) {
+      resources {
+        createdAt
+        type
+        title
+        url
+      }
     }
   }
 `;
@@ -27,5 +40,20 @@ export interface GetLectureResourcesVariables {
 export interface GetLectureResourcesResponse {
   getLecture: {
     resource: string;
+  };
+}
+
+export interface GetLectureResourcesListVariables {
+  id: number;
+}
+
+export interface GetLectureResourcesListResponse {
+  getLecture: {
+    resources: {
+      createdAt: string;
+      type: string;
+      title: string;
+      url: string;
+    }[];
   };
 }

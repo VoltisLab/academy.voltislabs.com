@@ -116,6 +116,14 @@ export const UPDATE_LECTURE_DESCRIPTION = gql`
     }
   }
 `;
+export const ADD_LECTURE_RESOURCES = gql`
+  mutation AddLectureResources($lectureId: Int!, $resources: [LectureResourceInputType!]!) {
+    addLectureResources(lectureId: $lectureId, resources: $resources) {
+      success
+      message
+    }
+  }
+`;
 
 // TypeScript interfaces
 export interface CreateLectureVariables {
@@ -264,5 +272,22 @@ export interface UpdateLectureResourceResponse {
       id: string;
       title: string;
     };
+  };
+}
+
+export interface AddLectureResourcesVariables {
+  lectureId: number;
+  resources: {
+    type: string; 
+    url: string;
+    title?: string;
+    action?: string; 
+  }[];
+}
+
+export interface AddLectureResourcesResponse {
+  addLectureResources: {
+    success: boolean;
+    message: string;
   };
 }
