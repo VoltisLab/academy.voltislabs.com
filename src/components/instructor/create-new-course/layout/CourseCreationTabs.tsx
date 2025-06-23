@@ -34,10 +34,10 @@ const tabs = [
 export default function CourseCreationTabs() {
   const searchParams = useSearchParams();
   const pathname = usePathname();
-  const courseId = searchParams.get("courseId");
+  const courseId = searchParams?.get("courseId");
 
   // Determine current step from pathname
-  const currentStep = pathname.split("/").pop();
+  const currentStep = pathname?.split("/").pop();
 
   return (
     <>
