@@ -7,11 +7,12 @@ import { CREATE_COURSE_BASIC_INFO, GET_CATEGORIES } from "@/api/course/mutation"
 import toast from "react-hot-toast";
 import FormHeader from "../../layout/FormHeader";
 
-interface BasicInformationFormProps {
-  onSaveNext: (courseId: number) => void;
-}
+type BasicInformationFormProps = {
+  onSaveNext: (id: number) => void;
+  courseId?: number;
+};
 
-export const BasicInformationForm = ({ onSaveNext }: BasicInformationFormProps) => {
+export const BasicInformationForm = ({ onSaveNext, courseId }: BasicInformationFormProps) => {
   // Form state
   const [formData, setFormData] = useState<FormData>({
     title: "",
