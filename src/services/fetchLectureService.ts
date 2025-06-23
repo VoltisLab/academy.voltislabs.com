@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { useQuery } from "@apollo/client";
 import { GET_SECTION_LECTURES } from "@/api/course/lecture/queries";
 import { apolloClient } from "@/lib/apollo-client";
 import Cookies from "js-cookie";
