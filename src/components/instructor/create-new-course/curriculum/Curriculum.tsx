@@ -3,7 +3,8 @@ import FormHeader from "../../layout/FormHeader";
 import CourseSectionsBuilder from "./CourseSectionBuilder";
 import { AssignmentProvider } from "@/context/AssignmentDataContext";
 import { ExtendedLecture } from "@/lib/types";
-interface BasicInformationFormProps {
+
+interface CurriculumProps {
   onSaveNext: () => void;
   courseId?: number;
 }
@@ -13,7 +14,7 @@ const handleCurriculm = () => {};
 export const Curriculum = ({
   onSaveNext,
   courseId,
-}: BasicInformationFormProps) => {
+}: CurriculumProps) => {
   const [loading, setLoading] = useState<boolean>(false);
   const [currentAssignment, setCurrentAssignment] = useState<{
     sectionId: string;
