@@ -84,15 +84,34 @@ export default function ResourceComponent({
   // const [libraryFiles, setLibraryFiles] = useState<GetLectureResourcesResponse[]>([]);
 
   // Backend service
-  const { saveDescriptionToLecture, loading, getLectureResources, error, updateLecture } = useLectureService();
+  const { saveDescriptionToLecture, loading, getLectureResources, error, updateLecture, addLectureResources, getLectureResourcesList } = useLectureService();
 
   // Custom resource update functions using the working pattern
-useEffect(() => {
+  const [resources, setResources] = useState<any>()
+  
+  useEffect(() => {
+  const fetchResources = async () => {
+   const numericId = parseInt(lectureId ?? "0");
+   if (!isNaN(numericId)) {
+     try {
+       const data = await getLectureResourcesList({ id: numericId }, setResources);
+
+       // ✅ Safely access the resource array
+       const fetchedResources = data ?? [];
+      //  setResources(fetchedResources);
+     } catch (error) {
+       console.error("Failed to fetch resources:", error);
+     }
+   }
+ };
+  
+
   if (lectureId) {
-    getLectureResources({ lectureId: parseInt(lectureId) }); // Pass as object
+    fetchResources();
   }
 }, [lectureId]);
 
+console.log("recources===", resources?.getLecture?.resources)
   // Fixed ref types - the issue is resolved by making sure they're correctly typed
   const fileInputRef = useRef<HTMLInputElement>(null);
   const sourceFileInputRef = useRef<HTMLInputElement>(null);
@@ -112,19 +131,19 @@ useEffect(() => {
   ];
 
   // Filter library files based on search query
-  const filteredFiles = libraryFiles.filter(file => 
-    file.filename.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredFiles = resources?.getLecture?.resources?.filter((file: any) => 
+    file.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const filesPerPage = 5;
-  const totalPages = Math.ceil(filteredFiles.length / filesPerPage);
+  const totalPages = Math.ceil(filteredFiles?.length / filesPerPage);
   
   // Get current files for pagination
   const indexOfLastFile = currentPage * filesPerPage;
   const indexOfFirstFile = indexOfLastFile - filesPerPage;
-  const currentFiles = filteredFiles.slice(indexOfFirstFile, indexOfLastFile);
+  const currentFiles = filteredFiles?.slice(indexOfFirstFile, indexOfLastFile);
   
   // Update parent component's state if provided
   const handleTabChange = (tab: ResourceTabType) => {
@@ -190,7 +209,7 @@ useEffect(() => {
       //   externalForm.url,
       //   `EXTERNAL_RESOURCE: ${externalForm.title}`
       // );
-      await updateLecture({
+      await addLectureResources({
         lectureId: parseInt(lectureId),
         resources: [
           {
@@ -246,7 +265,7 @@ useEffect(() => {
         return;
       }
 
-      await updateLecture({
+      await addLectureResources({
         lectureId: numericLectureId,
         resources: [
           {
@@ -279,7 +298,7 @@ useEffect(() => {
         throw new Error('File upload failed - no URL returned');
       }
 
-      await updateLecture({
+      await addLectureResources({
         lectureId: numericLectureId,
         resources: [
           {
@@ -353,7 +372,7 @@ useEffect(() => {
       //   uploadedUrl,
       //   `SOURCE_CODE: ${sourceFile.name}`
       // );
-      await updateLecture({
+      await addLectureResources({
         lectureId: numericLectureId,
         resources: [
           {
@@ -645,22 +664,22 @@ useEffect(() => {
               </div>
               
               {currentFiles.length > 0 ? (
-                currentFiles.map(file => (
-                  <div key={file.id} className="grid grid-cols-4 gap-2 md:gap-4 p-3 border-b border-gray-200 hover:bg-gray-50 items-center">
-                    <div className="truncate">{file.filename}</div>
-                    <div>{file.type}</div>
+                currentFiles.map((file: any) => (
+                  <div key={file?.id} className="grid grid-cols-4 gap-2 md:gap-4 p-3 border-b border-gray-200 hover:bg-gray-50 items-center">
+                    <div className="truncate">{file?.title}</div>
+                    <div>{file?.type}</div>
                     <div className="text-sm font-medium text-green-800">
                       {file.status}
                     </div>
                     <div className="flex items-center justify-between">
-                      <div>{file.date}</div>
+                      <div>{file?.date}</div>
                       <div className="text-indigo-600">
                         <button 
                           onClick={() => {
                             // Create enhanced item with size information
                             const enhancedItem: LibraryFileWithSize = {
                               ...file,
-                              size: file.type === 'Video' ? '01:45' : '1.2 MB'
+                              size: file?.type === 'Video' ? '01:45' : '1.2 MB'
                             };
                             
                             // Call the onLibraryItemSelect handler if provided
