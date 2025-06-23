@@ -8,7 +8,7 @@ import CourseCreationTabs from "@/components/instructor/create-new-course/layout
 export default function AdvancedInformationPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const courseId = searchParams.get("courseId");
+  const courseId = searchParams?.get("courseId");
 
   // When the form is saved, redirect to curriculum step with courseId
   const handleSaveNext = useCallback(() => {
