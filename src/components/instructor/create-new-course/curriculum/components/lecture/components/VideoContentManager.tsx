@@ -240,16 +240,6 @@ const VideoContentManager: React.FC<VideoContentManagerProps> = ({
   return (
     <div className="border border-gray-300 rounded-md">
       <div className="p-2">
-        <div className="flex justify-between items-center mb-2">
-          <h3 className="font-bold text-gray-800">Add Video</h3>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-        
         <div className="flex border-b border-gray-300">
           {videoTabs.map((tab) => (
             <button

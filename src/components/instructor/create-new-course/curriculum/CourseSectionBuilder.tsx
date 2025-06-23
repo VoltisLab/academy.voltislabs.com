@@ -975,6 +975,7 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
                 videoUploadProgress={videoUploadProgress}
                 // NEW: Pass file upload function
                 uploadFileToBackend={uploadFileToBackend}
+                courseId={courseId}
               />
             ))
           ) : (

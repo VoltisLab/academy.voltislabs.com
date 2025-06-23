@@ -13,7 +13,7 @@ import { GoQuestion } from "react-icons/go";
 import { RxHamburgerMenu } from "react-icons/rx";
 import StudentVideoPreview, {
   QuizData,
-} from "../lecture/components/StudentVideoPeview";
+} from "../lecture/components/StudentCoursePreview";
 import QuizForm from "./QuizForm";
 import { useQuizOperations } from "@/services/quizService";
 import toast, { LoaderIcon } from "react-hot-toast";
@@ -71,6 +71,7 @@ interface QuizItemProps {
   uploadedFiles?: Array<{ name: string; size: string; lectureId: string }>;
   sourceCodeFiles?: SourceCodeFile[];
   externalResources?: ExternalResourceItem[];
+  courseId?: number
 }
 
 interface Question {
@@ -112,6 +113,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
   uploadedFiles = [],
   sourceCodeFiles = [],
   externalResources = [],
+  courseId
 }) => {
   const lectureNameInputRef = useRef<HTMLInputElement>(null);
   const [expanded, setExpanded] = useState(false);

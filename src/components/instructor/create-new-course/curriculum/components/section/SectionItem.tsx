@@ -204,6 +204,7 @@ interface SectionItemProps {
   videoUploading?: boolean;
   videoUploadProgress?: number;
   uploadFileToBackend?: FileUploadFunction;
+  courseId?: number
 }
 
 export default function SectionItem({
@@ -267,6 +268,7 @@ export default function SectionItem({
   videoUploadProgress,
   saveArticleToBackend,
   uploadFileToBackend,
+  courseId
 }: SectionItemProps) {
   const sectionNameInputRef = useRef<HTMLInputElement>(null);
   // State for toggling action buttons
@@ -728,6 +730,7 @@ export default function SectionItem({
           uploadedFiles={globalUploadedFiles}
           sourceCodeFiles={globalSourceCodeFiles}
           externalResources={globalExternalResources}
+          courseId = {courseId}
           // loading={}
         />
       );
@@ -814,6 +817,7 @@ export default function SectionItem({
         saveArticleToBackend={saveArticleToBackend}
         videoUploading={videoUploading}
         videoUploadProgres={videoUploadProgress}
+        courseId={courseId}
       />
     );
   };
