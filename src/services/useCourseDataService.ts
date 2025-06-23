@@ -5,16 +5,22 @@ import Cookies from "js-cookie";
 import { toast } from "react-hot-toast";
 
 type Course = {
-  id: number;
+  id: string;
   title: string;
   banner: string;
+  description: string;
   category: {
-    id: number;
+    id: string;
     name: string;
+  };
+  instructor: {
+    id: string;
+    thumbnailUrl: string;
   };
   createdAt: string;
   updatedAt: string;
 };
+
 
 type Filters = {
   category?: number;

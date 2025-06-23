@@ -9,28 +9,22 @@ interface ViewToggleProps {
 
 export default function ViewToggle({ isGrid, onToggle }: ViewToggleProps) {
   return (
-    <div className="inline-flex items-center border rounded-md overflow-hidden text-sm font-medium">
+    <div className="inline-flex items-center gap-2">
       <button
         onClick={() => onToggle(false)}
-        className={`flex items-center gap-1 px-4 py-2 transition-colors duration-200 ${
-          !isGrid
-            ? 'bg-purple-700 text-white'
-            : 'bg-white text-gray-700 hover:bg-gray-100'
+        className={`p-2 rounded-md transition-colors duration-200 ${
+          !isGrid ? 'bg-purple-100 text-purple-700' : 'text-gray-500 hover:text-black'
         }`}
       >
-        <MdViewList size={18} />
-        List
+        <MdViewList size={20} />
       </button>
       <button
         onClick={() => onToggle(true)}
-        className={`flex items-center gap-1 px-4 py-2 transition-colors duration-200 ${
-          isGrid
-            ? 'bg-purple-700 text-white'
-            : 'bg-white text-gray-700 hover:bg-gray-100'
+        className={`p-2 rounded-md transition-colors duration-200 ${
+          isGrid ? 'bg-purple-100 text-purple-700' : 'text-gray-500 hover:text-black'
         }`}
       >
-        <MdGridView size={18} />
-        Grid
+        <MdGridView size={20} />
       </button>
     </div>
   )
