@@ -15,7 +15,13 @@ const CourseDescriptionEditor = dynamic(() => import("./components/CourseDescrip
   ssr: false,
 });
 
-export const AdvanceInformationForm = ({ onSaveNext, courseId}: BasicInformationFormProps) => {
+// At the top, update the props type
+type AdvanceInformationFormProps = {
+  onSaveNext: () => void;
+  courseId?: number;
+};
+
+export const AdvanceInformationForm = ({ onSaveNext, courseId }: AdvanceInformationFormProps) => {
   // State to store all course information
   const [courseInfo, setCourseInfo] = useState<CourseInfo>({
     courseThumbnail: "",
