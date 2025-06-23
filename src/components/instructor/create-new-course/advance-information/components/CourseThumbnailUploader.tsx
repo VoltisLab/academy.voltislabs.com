@@ -8,12 +8,14 @@ interface CourseThumbnailUploaderProps {
   onFileSelect: (file: File) => void;
   isUploading?: boolean;
   imageUrl?: string;
+  required?: boolean;
 }
 
 export default function CourseThumbnailUploader({
   onFileSelect,
   isUploading = false,
   imageUrl = "",
+  required = false,
 }: CourseThumbnailUploaderProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const localPreviewUrlRef = useRef<string | null>(null);
@@ -89,7 +91,7 @@ export default function CourseThumbnailUploader({
           className="bg-[#D9D6FB] text-[#2E2C6F] font-semibold px-6 py-2 text-sm flex items-center gap-2"
           disabled={isUploading || localUploading}
         >
-          {(isUploading || localUploading) ? "Uploading..." : "Upload Image"}
+          {isUploading || localUploading ? "Uploading..." : "Upload Image"}
           <Upload className="w-4 h-4" />
         </button>
 
@@ -99,6 +101,7 @@ export default function CourseThumbnailUploader({
           ref={inputRef}
           onChange={handleFileChange}
           className="hidden"
+          required={required}
         />
       </div>
     </div>

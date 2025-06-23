@@ -18,41 +18,49 @@ interface Tab {
 
 // Tab data
 const tabs: Tab[] = [
-  { 
-    name: "Basic Information", 
-    shortName: "Basic", 
-    key: "basic", 
-    icon: "/icons/Stack.svg", 
-    progress: "7/12" 
+  {
+    name: "Basic Information",
+    shortName: "Basic",
+    key: "basic",
+    icon: "/icons/Stack.svg",
+    progress: "7/12",
   },
-  { 
-    name: "Advanced Information", 
-    shortName: "Advanced", 
-    key: "advanced", 
-    icon: "/icons/ClipboardText.svg" 
+  {
+    name: "Advanced Information",
+    shortName: "Advanced",
+    key: "advanced",
+    icon: "/icons/ClipboardText.svg",
   },
-  { 
-    name: "Curriculum", 
-    key: "curriculum", 
-    icon: "/icons/MonitorPlay.svg" 
+  {
+    name: "Curriculum",
+    key: "curriculum",
+    icon: "/icons/MonitorPlay.svg",
   },
-  { 
-    name: "Publish Course", 
-    shortName: "Publish", 
-    key: "publish", 
-    icon: "/icons/PlayCircle.svg" 
+  {
+    name: "Publish Course",
+    shortName: "Publish",
+    key: "publish",
+    icon: "/icons/PlayCircle.svg",
   },
 ];
 
 export default function CourseFormTabs() {
   const [activeTab, setActiveTab] = useState("basic");
   const [courseId, setCourseId] = useState<number | null>(null);
-  
+
   // Track completion status of each tab
   const [completedTabs, setCompletedTabs] = useState<Set<string>>(new Set());
 
+  const [completedSteps, setCompletedSteps] = useState<Record<string, boolean>>(
+    {
+      basic: false,
+      advanced: false,
+      curriculum: false,
+    }
+  );
+
   // Get active tab data
-  const currentTab = tabs.find(tab => tab.key === activeTab) || tabs[0];
+  const currentTab = tabs.find((tab) => tab.key === activeTab) || tabs[0];
 
   // Check if a tab is completed
   const isTabCompleted = (tabKey: string) => {
@@ -63,14 +71,14 @@ export default function CourseFormTabs() {
   const handleTabClick = (tabKey: string) => {
     setActiveTab(tabKey);
   };
-  
+
   // Function to mark current tab as completed and move to next tab
   const handleNextTab = () => {
     // Mark current tab as completed
-    setCompletedTabs(prev => new Set([...prev, activeTab]));
-    
+    setCompletedTabs((prev) => new Set([...prev, activeTab]));
+
     // Move to next tab if available
-    const currentIndex = tabs.findIndex(tab => tab.key === activeTab);
+    const currentIndex = tabs.findIndex((tab) => tab.key === activeTab);
     if (currentIndex < tabs.length - 1) {
       setActiveTab(tabs[currentIndex + 1].key);
     }
@@ -101,7 +109,7 @@ export default function CourseFormTabs() {
           {tabs.map((tab) => {
             const isCompleted = isTabCompleted(tab.key);
             const isActive = activeTab === tab.key;
-            
+
             return (
               <button
                 key={tab.key}
@@ -109,7 +117,7 @@ export default function CourseFormTabs() {
                 className={cn(
                   "py-3 flex-shrink-0 flex items-center gap-1 whitespace-nowrap transition-all relative",
                   isActive
-                    ? "text-[#313273] font-bold border-b-2 border-pink-600" 
+                    ? "text-[#313273] font-bold border-b-2 border-pink-600"
                     : "text-gray-500 font-normal text-sm hover:text-[#313273]"
                 )}
               >
@@ -144,7 +152,7 @@ export default function CourseFormTabs() {
         {tabs.map((tab) => {
           const isCompleted = isTabCompleted(tab.key);
           const isActive = activeTab === tab.key;
-          
+
           return (
             <button
               key={tab.key}
@@ -188,16 +196,13 @@ export default function CourseFormTabs() {
           <BasicInformationForm onSaveNext={handleBasicInfoSave} />
         )}
         {activeTab === "advanced" && courseId && (
-          <AdvanceInformationForm 
-            onSaveNext={handleAdvancedInfoSave} 
-            courseId={courseId} 
+          <AdvanceInformationForm
+            onSaveNext={handleAdvancedInfoSave}
+            courseId={courseId}
           />
         )}
         {activeTab === "curriculum" && courseId && (
-          <Curriculum 
-            onSaveNext={handleCurriculumSave} 
-            courseId={courseId} 
-          />
+          <Curriculum onSaveNext={handleCurriculumSave} courseId={courseId} />
         )}
         {activeTab === "publish" && courseId && (
           <div>
@@ -210,14 +215,24 @@ export default function CourseFormTabs() {
       {/* Progress indicator for mobile & tablet */}
       <div className="md:hidden px-3 mt-4 mb-2">
         <div className="flex items-center justify-between text-xs text-gray-500">
-          <span>Step {tabs.findIndex(tab => tab.key === activeTab) + 1} of {tabs.length}</span>
-          {activeTab === "basic" && <span className="text-green-600">7/12 completed</span>}
+          <span>
+            Step {tabs.findIndex((tab) => tab.key === activeTab) + 1} of{" "}
+            {tabs.length}
+          </span>
+          {activeTab === "basic" && (
+            <span className="text-green-600">7/12 completed</span>
+          )}
         </div>
         <div className="w-full bg-gray-200 h-1 mt-2 rounded-full overflow-hidden">
-          <div 
-            className="bg-pink-600 h-full rounded-full" 
+          <div
+            className="bg-pink-600 h-full rounded-full"
             style={{
-              width: `${((completedTabs.size + (activeTab === tabs[tabs.length - 1].key ? 1 : 0)) / tabs.length) * 100}%`
+              width: `${
+                ((completedTabs.size +
+                  (activeTab === tabs[tabs.length - 1].key ? 1 : 0)) /
+                  tabs.length) *
+                100
+              }%`,
             }}
           />
         </div>
