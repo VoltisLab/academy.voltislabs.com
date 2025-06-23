@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { GET_ALL_INSTRUCTOR_COURSES } from "@/api/course/queries";
+import { GET_ALL_INSTRUCTOR_COURSES, GET_INSTRUCTOR_COURSES_TOTAL } from "@/api/course/queries";
 import { apolloClient } from "@/lib/apollo-client";
 import Cookies from "js-cookie";
 import { toast } from "react-hot-toast";
@@ -39,6 +39,7 @@ export const useCoursesData = () => {
   const [filters, setFilters] = useState<Filters>({});
   const [pageNumber, setPageNumber] = useState(1);
   const [pageCount] = useState(10); // items per page
+  const [total, setTotal] = useState(0)
 
   const fetchInstructorCourses = async () => {
     try {
@@ -69,8 +70,34 @@ export const useCoursesData = () => {
     }
   };
 
+  const fetchInstructorCoursesTotal = async (
+  
+) => {
+  try {
+    setLoading(true)
+    setError(null)
+
+    const token = Cookies.get('auth_token')
+    if (!token) throw new Error('Authentication token not found')
+
+    const { data } = await apolloClient.query({
+      query: GET_INSTRUCTOR_COURSES_TOTAL,
+      fetchPolicy: 'network-only',
+    })
+
+    setTotal(data.instructorCoursesTotalNumber)
+  } catch (err: any) {
+    console.error('Fetch total failed', err)
+    setError(err.message || 'Failed to fetch course total')
+    toast.error('Failed to load course count')
+  } finally {
+    setLoading(false)
+  }
+}
+
   useEffect(() => {
     fetchInstructorCourses();
+    fetchInstructorCoursesTotal();
   }, [search, filters, pageNumber]);
 
   return {
@@ -83,6 +110,7 @@ export const useCoursesData = () => {
     setFilters,
     pageNumber,
     setPageNumber,
+    total,
     refetch: fetchInstructorCourses,
   };
 };

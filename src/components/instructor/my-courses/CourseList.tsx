@@ -54,6 +54,7 @@ const MyCourseList = () => {
 
   const {
         instructorCourses,
+        total,
         loading,
         search,
         setSearch,
@@ -80,9 +81,9 @@ const MyCourseList = () => {
   return (
    <div className="flex flex-col gap-4 p-4">
   {/* Toggle */}
-  <div className="hidden md:block mb-4">
-    <ViewToggle isGrid={grid} onToggle={setGrid} />
-  </div>
+  <div className="hidden md:flex mb-4 w-full items-end justify-end ">
+  <ViewToggle isGrid={grid} onToggle={setGrid} />
+</div>
 
   {/* Course Cards */}
   <div className={`${grid && 'w-full flex items-center justify-center'}`}>
@@ -110,30 +111,37 @@ const MyCourseList = () => {
   </div>
 
   {/* Pagination */}
-  {instructorCourses && instructorCourses.length > 0 && (
-    <div className="flex items-center justify-center mt-6 gap-3 text-sm">
-      <button
-        onClick={() => setPageNumber(prev => Math.max(prev - 1, 1))}
-        disabled={pageNumber === 1}
-        className={`px-3 py-1 border rounded-md ${
-          pageNumber === 1
-            ? 'text-gray-400 border-gray-300 cursor-not-allowed'
-            : 'text-purple-700 border-purple-700 hover:bg-purple-50'
-        }`}
-      >
-        Previous
-      </button>
+{instructorCourses && instructorCourses.length > 0 && (
+  <div className="flex items-center justify-center mt-6 gap-3 text-sm">
+    <button
+      onClick={() => setPageNumber((prev) => Math.max(prev - 1, 1))}
+      disabled={pageNumber === 1}
+      className={`px-3 py-1 border rounded-md transition ${
+        pageNumber === 1
+          ? 'text-gray-400 border-gray-300 cursor-not-allowed'
+          : 'text-purple-700 border-purple-700 hover:bg-purple-50'
+      }`}
+    >
+      Previous
+    </button>
 
-      <span className="text-gray-700">Page {pageNumber}</span>
+    <span className="text-gray-700">
+      Page {pageNumber} of {Math.ceil(total / 10)}
+    </span>
 
-      <button
-        onClick={() => setPageNumber(prev => prev + 1)}
-        className="px-3 py-1 border border-purple-700 text-purple-700 rounded-md hover:bg-purple-50"
-      >
-        Next
-      </button>
-    </div>
-  )}
+    <button
+      onClick={() => setPageNumber((prev) => prev + 1)}
+      disabled={pageNumber >= Math.ceil(total / 10)}
+      className={`px-3 py-1 border rounded-md transition ${
+        pageNumber >= Math.ceil(total / 10)
+          ? 'text-gray-400 border-gray-300 cursor-not-allowed'
+          : 'text-purple-700 border-purple-700 hover:bg-purple-50'
+      }`}
+    >
+      Next
+    </button>
+  </div>
+)}
 </div>
   )
 }

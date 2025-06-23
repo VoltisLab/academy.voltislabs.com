@@ -303,7 +303,7 @@ console.log("recources===", resources?.getLecture?.resources)
         resources: [
           {
             url: uploadedUrl,
-            title: `${resourceType}: ${selectedFile.name}`,
+            title: `${selectedFile.name}`,
            type: 'DOWNLOADABLE_FILES',
             action: 'ADD',
           },
@@ -663,18 +663,18 @@ console.log("recources===", resources?.getLecture?.resources)
                 </div>
               </div>
               
-              {currentFiles.length > 0 ? (
-                currentFiles.map((file: any) => (
+              {currentFiles?.length > 0 ? (
+                currentFiles?.map((file: any) => (
                   <div key={file?.id} className="grid grid-cols-4 gap-2 md:gap-4 p-3 border-b border-gray-200 hover:bg-gray-50 items-center">
-                    <div className="truncate">{file?.title}</div>
+                    <div className="truncate">{file?.title?.replace('DOWNLOADABLE_FILE:', '')?.trim()}</div>
                     <div>{file?.type}</div>
                     <div className="text-sm font-medium text-green-800">
                       {file.status}
                     </div>
                     <div className="flex items-center justify-between">
-                      <div>{file?.date}</div>
+                      <div>{file?.createdAt?.split('T')[0]}</div>
                       <div className="text-indigo-600">
-                        <button 
+                        {/* <button 
                           onClick={() => {
                             // Create enhanced item with size information
                             const enhancedItem: LibraryFileWithSize = {
@@ -695,7 +695,7 @@ console.log("recources===", resources?.getLecture?.resources)
                           className="text-indigo-600 hover:text-indigo-800 text-xs font-medium"
                         >
                           Select
-                        </button>
+                        </button> */}
                         <button 
                           className="ml-2 text-indigo-600 hover:text-red-600"
                         >
