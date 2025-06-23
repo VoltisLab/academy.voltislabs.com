@@ -19,6 +19,7 @@ import { useQuizOperations } from "@/services/quizService";
 import toast, { LoaderIcon } from "react-hot-toast";
 import { LectureType } from "./QuizPreview";
 import { DeleteItemFn } from "../section/SectionItem";
+import { ConfirmQuizDeleteModal } from "@/components/modals/DeleteConfirmationModal";
 
 interface QuizItemProps {
   lecture: Lecture;
@@ -147,11 +148,15 @@ const QuizItem: React.FC<QuizItemProps> = ({
     number | null
   >(null);
 
-  const [loadingQuestion, setLoadingQuestion] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
 
   const handleDeleteQuiz = async (e: React.MouseEvent) => {
     e.stopPropagation();
+    console.log("Hello modal you suppose show nah");
+    setShowConfirmModal(true); // show modal first
+  };
 
+  const confirmDelete = async () => {
     try {
       const result = await deleteQuiz({
         quizId: Number(lecture.id),
@@ -159,7 +164,8 @@ const QuizItem: React.FC<QuizItemProps> = ({
 
       if (result?.deleteQuiz?.success) {
         toast.success("Quiz deleted successfully!");
-        deleteLocalQuiz(sectionId, lecture.id); // This updates the local state
+        deleteLocalQuiz(sectionId, lecture.id);
+        setShowConfirmModal(false);
       }
     } catch (error) {
       console.error("Error deleting quiz:", error);
@@ -333,58 +339,6 @@ const QuizItem: React.FC<QuizItemProps> = ({
     }));
   };
 
-  // Quiz edit handler
-  // const handleQuizEditSubmit = (
-  //   sectionId: string,
-  //   quizId: string,
-  //   title: string,
-  //   description: string
-  // ) => {
-  //   if (onEditQuiz) {
-  //     onEditQuiz(sectionId, quizId, title, description);
-  //   }
-  //   setShowEditQuizForm(false);
-  // };
-
-  // const handleQuizEditSubmit = async (
-  //   sectionId: string,
-  //   quizId: string,
-  //   title: string,
-  //   description: string
-  // ) => {
-  //   try {
-  //     if (onEditQuiz) {
-  //       // If it's an existing quiz, update it
-  //       const result = await updateQuiz({
-  //         quizId: parseInt(quizId),
-  //         title,
-  //         description,
-  //       });
-
-  //       if (result?.updateQuiz?.success) {
-  //         toast.success("Quiz updated successfully!");
-  //         onEditQuiz(sectionId, quizId, title, description);
-  //       }
-  //     } else {
-  //       // If it's a new quiz, create it
-  //       const result = await createQuiz({
-  //         sectionId: parseInt(sectionId),
-  //         title,
-  //         description,
-  //       });
-
-  //       if (result?.createQuiz?.success) {
-  //         toast.success("Quiz created successfully!");
-  //         // You'll need to update your state with the new quiz
-  //       }
-  //     }
-  //   } catch (error) {
-  //     console.error("Error saving quiz:", error);
-  //     toast.error("Failed to save quiz");
-  //   }
-  //   setShowEditQuizForm(false);
-  // };
-
   const handleQuizEditSubmit = async (
     sectionId: string,
     quizId: number,
@@ -475,32 +429,9 @@ const QuizItem: React.FC<QuizItemProps> = ({
     }
   };
 
-  // const handleAddQuestion = (question: Question) => {
-  //   let newQuestions;
-
-  //   if (editingQuestionIndex !== null) {
-  //     newQuestions = [...questions];
-  //     newQuestions[editingQuestionIndex] = question;
-  //   } else {
-  //     newQuestions = [...questions, { ...question, id: `q-${Date.now()}` }];
-  //   }
-
-  //   setQuestions(newQuestions);
-  //   if (updateQuizQuestions) {
-  //     updateQuizQuestions(sectionId, lecture.id, newQuestions);
-  //   }
-
-  //   setShowQuestionForm(false);
-  //   setShowQuestionTypeSelector(false);
-  //   setExpanded(true);
-  //   setShowEditForm(false);
-  //   setEditingQuestionIndex(null);
-  // };
-
+  
   const handleAddQuestion = async (question: Question) => {
     try {
-      setLoadingQuestion(true);
-
       // Convert answers to backend-compatible format
       const choices = question.answers.map((answer, idx) => ({
         text: answer.text,
@@ -522,25 +453,28 @@ const QuizItem: React.FC<QuizItemProps> = ({
       });
 
       const newQuestionId = result?.addQuestionToQuiz?.question?.id;
-      if (!newQuestionId)
-        throw new Error("No question ID returned from backend");
+      const newQuestionChoices =
+        result?.addQuestionToQuiz?.question?.answerChoices;
 
-      // Add the new question to the local state with the real ID
+      
+      if (!newQuestionId || !newQuestionChoices)
+        throw new Error("No question ID or choices returned from backend");
+
+      const newAnswers = question.answers.map((answer, idx) => ({
+        ...answer,
+        id: newQuestionChoices[idx]?.id, // Assign backend ID
+      }));
+
       const newQuestions = [
         ...questions,
         {
           ...question,
           id: newQuestionId.toString(),
+          answers: newAnswers, // Save updated answers with IDs
         },
       ];
 
-      console.log("New question added:", newQuestions);
-
       setQuestions(newQuestions);
-
-      if (updateQuizQuestions) {
-        updateQuizQuestions(sectionId, newQuizId as number, newQuestions);
-      }
 
       toast.success("Question added successfully!");
       setShowQuestionForm(false);
@@ -551,18 +485,8 @@ const QuizItem: React.FC<QuizItemProps> = ({
     } catch (error) {
       toast.error("Failed to save question");
       console.error("Error adding question:", error);
-    } finally {
-      setLoadingQuestion(false);
     }
   };
-
-  // const handleDeleteQuestion = (index: number) => {
-  //   const newQuestions = questions.filter((_, idx) => idx !== index);
-  //   setQuestions(newQuestions);
-  //   if (updateQuizQuestions) {
-  //     updateQuizQuestions(sectionId, lecture.id, newQuestions);
-  //   }
-  // };
 
   const handleDeleteQuestion = async (index: number) => {
     const questionId = questions[index]?.id;
@@ -590,61 +514,32 @@ const QuizItem: React.FC<QuizItemProps> = ({
     }
   };
 
-  // const handleDeleteQuestion = async (index: number) => {
-  //   try {
-  //     const questionToDelete = questions[index];
-  //     const newQuestions = questions.filter((_, idx) => idx !== index);
-
-  //     // Update both local state and backend
-  //     if (updateQuizQuestions) {
-  //       await updateQuizQuestions(sectionId, lecture.id, newQuestions);
-  //     }
-
-  //     setQuestions(newQuestions);
-  //     toast.success("Question deleted successfully");
-  //   } catch (error) {
-  //     toast.error("Failed to delete question");
-  //     console.error(error);
-  //   }
-  // };
-
+  
   const handleUpdateQuestion = async (question: any, index: number) => {
     try {
-      console.log("Updating questionnnnn:", question.id);
 
       if (!question.id || isNaN(parseInt(question.id))) {
         throw new Error("Question ID is missing or invalid");
       }
 
-      console.log("Updating questionnnnn:", question.id);
 
       // Convert answers to choices format
       const choices = question.answers.map((answer: any, idx: number) => {
-        const parsedId = parseInt(answer.id);
-        const isValidId = !isNaN(parsedId) && parsedId > 0;
-
+        console.log("Hey youuuuuu", answer);
         return {
           text: answer.text,
           explanation: answer.explanation || "",
           isCorrect: idx === question.correctAnswerIndex,
           order: answer.order || idx + 1,
-          id: idx + 1,
+          id: answer.id,
         };
       });
 
       const result = await updateQuestion({
-        questionId: parseInt(question.id),
+        questionId: Number(question.id),
         text: question.text,
         choices,
       });
-
-      console.log("🚨 Final payload for updateQuestion:", {
-        questionId: parseInt(question.id),
-        text: question.text,
-        choices,
-      });
-
-      console.log("Update result:", result);
 
       if (result?.updateQuestion?.success) {
         const newQuestions = [...questions];
@@ -778,6 +673,16 @@ const QuizItem: React.FC<QuizItemProps> = ({
       />
     );
   };
+
+  if (showConfirmModal) {
+    return (
+      <ConfirmQuizDeleteModal
+        closeModal={() => setShowConfirmModal(false)}
+        onConfirm={confirmDelete}
+        isLoading={quizOperationLoading}
+      />
+    );
+  }
 
   // Collapsed view for new quizzes
   if (!expanded && isNewQuiz) {

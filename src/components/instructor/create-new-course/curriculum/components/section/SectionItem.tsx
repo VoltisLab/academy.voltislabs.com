@@ -398,32 +398,10 @@ export default function SectionItem({
     description?: string
   ) => {
     try {
-      // Use the service method instead of apolloClient directly
-      // const response = await createQuiz({
-      //   sectionId: Number(sectionId),
-      //   title,
-      //   description,
-      // });
-
-      // if (response.createQuiz) {
-      //   setNewQuizId?.(Number(response.createQuiz.quiz.id));
-      // }
-
-      // if (response.createQuiz.success) {
-      // Add lecture (backend)
       if (addQuiz) await addQuiz(sectionId, title, description);
-
-      // Get backend and local IDs
-      // const backendLectureId = response.createQuiz.quiz.id;
-
       setShowQuizForm(false);
-      // return backendLectureId;
-
-      // return "";
     } catch (error) {
       console.error("Failed to create quiz:", error);
-      // Optional: show a toast if not already handled in the service
-      // return "";
     }
   };
 
@@ -996,6 +974,7 @@ export default function SectionItem({
                 sectionId={section.id}
                 onAddCodingExercise={handleAddCodingExercise}
                 onCancel={() => setShowCodingExerciseForm(false)}
+                isAddingCodingExercise={isLoading}
               />
             )}
 

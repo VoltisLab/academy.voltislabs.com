@@ -544,33 +544,42 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
     setShowCodingExerciseCreator(true);
   };
 
-  const handleSaveCodingExercise = (updatedLecture: any) => {
+  const handleSaveCodingExercise = async (updatedLecture: any) => {
     if (!currentCodingExercise) return;
+    try {
+      await updateLecture({
+        lectureId: Number(updatedLecture.id),
+        title: updatedLecture.name,
+      });
 
-    setSections(
-      sections.map((section) => {
-        if (section.id === currentCodingExercise.sectionId) {
-          return {
-            ...section,
-            lectures: section.lectures.map((lecture) =>
-              lecture.id === updatedLecture.id
-                ? {
-                    ...lecture,
-                    name: updatedLecture.name || lecture.name,
-                    codeLanguage: updatedLecture.codeLanguage,
-                    version: updatedLecture.version,
-                  }
-                : lecture
-            ),
-          };
-        }
-        return section;
-      })
-    );
+      setSections(
+        sections.map((section) => {
+          if (section.id === currentCodingExercise.sectionId) {
+            return {
+              ...section,
+              lectures: section.lectures.map((lecture) =>
+                lecture.id === updatedLecture.id
+                  ? {
+                      ...lecture,
+                      name: updatedLecture.name || lecture.name,
+                      codeLanguage: updatedLecture.codeLanguage,
+                      version: updatedLecture.version,
+                    }
+                  : lecture
+              ),
+            };
+          }
+          return section;
+        })
+      );
 
-    setShowCodingExerciseCreator(false);
-    setCurrentCodingExercise(null);
-    toast.success("Coding exercise updated successfully!");
+      setShowCodingExerciseCreator(false);
+      setCurrentCodingExercise(null);
+      toast.success("Coding exercise updated successfully!");
+    } catch (error) {
+      console.error("Failed to update coding exercise:", error);
+      toast.error("Failed to update coding exercise.");
+    }
   };
 
   // NEW: Assignment editor handlers
@@ -1048,6 +1057,7 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
                 currentCodingExercise.lectureId
               ) ?? undefined
             }
+            isUpdating={lectureLoading}
           />
         </div>
       )}

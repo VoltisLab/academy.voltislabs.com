@@ -98,66 +98,6 @@ const QuizForm: React.FC<QuizFormProps> = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // const handleSubmit = () => {
-  //   if (title.trim()) {
-  //     if (isEdit && onEditQuiz && quizId) {
-  //       onEditQuiz(sectionId, quizId, title.trim(), description.trim());
-  //     } else if (!isEdit && onAddQuiz) {
-  //       onAddQuiz(sectionId, title.trim(), description.trim());
-  //     }
-  //   }
-  // };
-
-  // const handleSubmit = async () => {
-  //   if (!title.trim()) {
-  //     toast.error("Quiz title is required");
-  //     return;
-  //   }
-
-  //   try {
-  //     if (isEdit && quizId) {
-  //       // Update existing quiz
-  //       const result = await updateQuiz({
-  //         quizId: parseInt(quizId),
-  //         title: title.trim(),
-  //         description: description.trim(),
-  //         // ...settings,
-  //       });
-
-  //       if (result?.updateQuiz?.success) {
-  //         toast.success("Quiz updated successfully!");
-  //         if (onEditQuiz) {
-  //           onEditQuiz(sectionId, quizId, title.trim(), description.trim());
-  //         }
-  //       }
-  //     } else {
-  //       // Create new quiz
-  //       const result = await createQuiz({
-  //         sectionId: parseInt(sectionId),
-  //         title: title.trim(),
-  //         description: description.trim(),
-  //         // ...settings,
-  //       });
-
-  //       console.log("Resullllt", result);
-  //       if (result?.createQuiz?.success) {
-  //         toast.success("Quiz created successfully!");
-  //         if (onAddQuiz) {
-  //           onAddQuiz(
-  //             sectionId,
-  //             title.trim(),
-  //             description.trim(),
-  //             parseInt(quizId!)
-  //           );
-  //         }
-  //       }
-  //     }
-  //   } catch (error) {
-  //     console.error("Error saving quiz:", error);
-  //     toast.error("Failed to save quiz");
-  //   }
-  // };
-
   const [quizEditLoading, setQuizEditLoading] = useState(false);
 
   const handleSubmit = async () => {
