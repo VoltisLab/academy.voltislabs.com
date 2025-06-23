@@ -185,11 +185,10 @@ export const BasicInformationForm = ({ onSaveNext, courseId }: BasicInformationF
     
       if (response?.createCourse?.success) {
         toast.success(response.createCourse.message || "Course information saved successfully!");
-        
         // Extract course ID and pass it to the parent component
         const courseId = response.createCourse?.course?.id;
         if (courseId) {
-          onSaveNext(courseId); // Pass the course ID to the parent
+          onSaveNext(courseId); // Always call onSaveNext with courseId
         } else {
           console.error("Course ID not found in response");
           toast.error("Course created but ID not found. Please refresh and try again.");
