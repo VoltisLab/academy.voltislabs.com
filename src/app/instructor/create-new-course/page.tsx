@@ -11,7 +11,9 @@ export default function CreateNewCourseRedirect() {
     // If courseId is present in query, preserve it
     const courseId = searchParams!.get("courseId");
     if (courseId) {
-      router.replace(`/instructor/create-new-course/basic?courseId=${courseId}`);
+      router.replace(
+        `/instructor/create-new-course/basic?courseId=${courseId}`
+      );
     } else {
       router.replace("/instructor/create-new-course/basic");
     }
