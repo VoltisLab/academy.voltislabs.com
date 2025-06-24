@@ -1,8 +1,8 @@
-import { gql } from '@apollo/client';
-import { apolloClient } from '@/lib/apollo-client';
-import { toast } from 'react-hot-toast';
+import { gql } from "@apollo/client";
+import { apolloClient } from "@/lib/apollo-client";
+import { toast } from "react-hot-toast";
 
-export type FileTypeEnum = 'RESOURCE' | 'PROFILE_PICTURE' | 'VIDEO';
+export type FileTypeEnum = "RESOURCE" | "PROFILE_PICTURE" | "VIDEO";
 
 interface UploadResponse {
   baseUrl: string;
@@ -24,9 +24,11 @@ const UPLOAD_FILE = gql`
   }
 `;
 
-export const uploadFile = async (file: File, filetype: FileTypeEnum): Promise<string | null> => {
+export const uploadFile = async (
+  file: File,
+  filetype: FileTypeEnum
+): Promise<string | null> => {
   try {
-
     if (!(file instanceof File)) {
       throw new Error("Invalid file object");
     }
@@ -40,7 +42,7 @@ export const uploadFile = async (file: File, filetype: FileTypeEnum): Promise<st
       context: {
         includeAuth: true,
       },
-      fetchPolicy: 'no-cache',
+      fetchPolicy: "no-cache",
     });
 
     if (errors && errors.length) {
@@ -49,7 +51,7 @@ export const uploadFile = async (file: File, filetype: FileTypeEnum): Promise<st
       return null;
     }
 
-    console.log(data)
+    console.log(data);
 
     if (data?.upload?.success) {
       return data.upload.baseUrl;
