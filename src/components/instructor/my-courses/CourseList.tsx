@@ -6,48 +6,7 @@ import ViewToggle from './MyCourseViewToggle'
 import bg from '@/../public/education.jpg'
 import { useCoursesData } from '@/services/useCourseDataService'
 
-const sampleCourses = [
-  {
-    title: 'Frontend from Scratch',
-    status: 'DRAFT',
-    isPublic: true,
-    description:
-      'Build responsive and interactive user interfaces using HTML, CSS, JavaScript, and React.',
-    editUrl: '/courses/edit/1',
-  },
-  {
-    title: 'Mastering React in 30 Days',
-    status: 'PUBLISHED',
-    isPublic: false,
-    description:
-      'Advanced concepts in React including hooks, context, and performance optimization.',
-    editUrl: '/courses/edit/2',
-  },
-  {
-    title: 'TypeScript for Beginners',
-    status: 'DRAFT',
-    isPublic: true,
-    description:
-      'Understand the power of TypeScript and how to use it in modern web applications.',
-    editUrl: '/courses/edit/3',
-  },
-  {
-    title: 'Next.js Fullstack Guide',
-    status: 'PUBLISHED',
-    isPublic: true,
-    description:
-      'Create fullstack web applications using Next.js, APIs, and server-side rendering.',
-    editUrl: '/courses/edit/4',
-  },
-  {
-    title: 'Tailwind CSS Crash Course',
-    status: 'DRAFT',
-    isPublic: false,
-    description:
-      'Quickly build modern and responsive designs using Tailwind CSS utility classes.',
-    editUrl: '/courses/edit/5',
-  },
-]
+
 
 const MyCourseList = () => {
   const [grid, setGrid] = useState(true)

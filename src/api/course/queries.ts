@@ -81,7 +81,7 @@ export interface CourseFiltersInput {
   status?: 'DRAFT' | 'PUBLISHED';
   isPublic?: boolean;
 }
-
+//instructorresponse
 export interface GetInstructorCoursesTotalResponse {
   instructorCoursesTotalNumber: number
 }

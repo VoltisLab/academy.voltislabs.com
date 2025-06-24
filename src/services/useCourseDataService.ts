@@ -78,7 +78,7 @@ export const useCoursesData = () => {
     setError(null)
 
     const token = Cookies.get('auth_token')
-    if (!token) throw new Error('Authentication token not found')
+    if (!token) throw new Error('no Authentication token  found')
 
     const { data } = await apolloClient.query({
       query: GET_INSTRUCTOR_COURSES_TOTAL,

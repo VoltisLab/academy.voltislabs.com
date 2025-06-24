@@ -1,19 +1,18 @@
 'use client'
-
 import Image, { StaticImageData } from 'next/image'
 import Link from 'next/link'
 import { FiEdit } from 'react-icons/fi'
 
 interface CourseCardProps {
-  title: string
-  description: string
-  imageUrl?: string | StaticImageData
-  isGrid?: boolean
-  category?: string
-  progressPercent?: number
-  status?: 'DRAFT' | 'PUBLISHED'
-  isPublic?: boolean
-  editUrl?: string
+  title: string;
+  description: string;
+  imageUrl?: string | StaticImageData;
+  isGrid?: boolean;
+  category?: string;
+  progressPercent?: number;
+  status?: 'DRAFT' | 'PUBLISHED';
+  isPublic?: boolean;
+  editUrl?: string;
 }
 
 const cleanHtmlContent = (htmlString: string): string => {
