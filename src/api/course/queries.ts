@@ -25,6 +25,15 @@ export const GET_ALL_INSTRUCTOR_COURSES = gql`
         id
         name
       }
+      sections {
+        assignment {
+          description
+          downloadableResourceUrl
+          dueDate
+          id
+        }
+        id
+      }
       createdAt
       updatedAt
     }

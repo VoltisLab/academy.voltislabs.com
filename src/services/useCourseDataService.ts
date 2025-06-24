@@ -101,6 +101,7 @@ export const useCoursesData = () => {
   }, [search, filters, pageNumber]);
 
   return {
+    fetchInstructorCourses,
     instructorCourses,
     loading,
     error,

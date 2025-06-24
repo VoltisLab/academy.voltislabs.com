@@ -20,9 +20,10 @@ import toast, { LoaderIcon } from "react-hot-toast";
 import { LectureType } from "./QuizPreview";
 import { DeleteItemFn } from "../section/SectionItem";
 import { ConfirmQuizDeleteModal } from "@/components/modals/DeleteConfirmationModal";
+import { CourseSectionQuiz, CourseSectionQuizQuestion } from "@/api/course/section/queries";
 
 interface QuizItemProps {
-  lecture: Lecture;
+  lecture: CourseSectionQuiz;
   lectureIndex: number;
   newQuizId?: number; // For new quizzes
   totalLectures: number;
@@ -129,8 +130,8 @@ const QuizItem: React.FC<QuizItemProps> = ({
   >(null);
   const [showEditQuizForm, setShowEditQuizForm] = useState(false);
 
-  const [questions, setQuestions] = useState<Question[]>(
-    lecture.questions || []
+  const [questions, setQuestions] = useState<CourseSectionQuizQuestion[]>(
+    lecture?.questions || []
   );
   const [editingQuestionIndex, setEditingQuestionIndex] = useState<
     number | null
@@ -400,7 +401,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
   }, [editingLectureId, lecture.id]);
 
   useEffect(() => {
-    setQuestions(lecture.questions || []);
+    setQuestions(lecture?.questions || []);
   }, [lecture.questions]);
 
   // Add effect to close dropdown when clicking outside
@@ -472,11 +473,11 @@ const QuizItem: React.FC<QuizItemProps> = ({
         {
           ...question,
           id: newQuestionId.toString(),
-          answers: newAnswers, // Save updated answers with IDs
+          text: newAnswers, // Save updated answers with IDs
         },
       ];
 
-      setQuestions(newQuestions);
+      // setQuestions(newQuestions);
 
       toast.success("Question added successfully!");
       setShowQuestionForm(false);
@@ -596,9 +597,9 @@ const QuizItem: React.FC<QuizItemProps> = ({
     }, 50);
   };
 
-  const quizData: QuizData = {
+  const quizData: CourseSectionQuiz = {
     id: lecture.id,
-    name: lecture.name || "New quiz",
+    title: lecture.title || "New quiz",
     description: lecture.description,
     questions: questions.map((q) => ({
       ...q,
@@ -709,7 +710,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
                 <input
                   ref={lectureNameInputRef}
                   type="text"
-                  value={lecture.name || ""}
+                  value={lecture.title || ""}
                   onChange={(e) =>
                     updateLectureName(sectionId, lecture.id, e.target.value)
                   }
@@ -723,7 +724,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
                 />
               ) : (
                 <h4 className="font-medium text-sm w-max shrink-0">
-                  {lecture.name || "New quiz"}
+                  {lecture.title || "New quiz"}
                 </h4>
               )}
             </div>
@@ -867,7 +868,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
               <input
                 ref={lectureNameInputRef}
                 type="text"
-                value={lecture.name || ""}
+                value={lecture.title || ""}
                 onChange={(e) =>
                   updateLectureName(sectionId, lecture.id, e.target.value)
                 }
@@ -881,7 +882,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
               />
             ) : (
               <h4 className="font-medium text-sm w-max">
-                {lecture.name || "New quiz"}
+                {lecture.title || "New quiz"}
               </h4>
             )}
           </div>
@@ -944,7 +945,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
               onEditQuiz={handleQuizEditSubmit}
               onCancel={() => setShowEditQuizForm(false)}
               isEdit={true}
-              initialTitle={lecture.name || ""}
+              initialTitle={lecture.title || ""}
               initialDescription={lecture.description || ""}
               quizId={Number(lecture.id)}
               setShowEditQuizForm={setShowEditQuizForm}

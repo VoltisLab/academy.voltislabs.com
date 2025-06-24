@@ -28,6 +28,7 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
         await onAddLecture(sectionId, 'video', lectureTitle.trim());
         setShowLectureForm(false);
         setLectureTitle("");
+        
       } catch (error) {
         console.error("Failed to add lecture:", error);
         // Error is already handled in the service with toast

@@ -22,9 +22,10 @@ import {
 import StudentCoursePreview from "./StudentCoursePreview";
 import InstructorVideoPreview from "./InstructorVideoPreview";
 import Link from "next/link";
+import { CourseSectionLecture } from "@/api/course/section/queries";
 
 interface LectureContentDisplayProps {
-  lecture: Lecture;
+  lecture: CourseSectionLecture;
   sectionId: string;
   videoContent: VideoContent;
   articleContent: ArticleContent;
@@ -90,7 +91,7 @@ const LectureContentDisplay: React.FC<LectureContentDisplayProps> = ({
     const hasRealVideoContent = !!(videoContent.selectedVideoDetails && videoContent.selectedVideoDetails.url);
     const hasRealArticleContent = !!(articleContent && articleContent.text && articleContent.text.trim() !== '');
 
-    const enhancedLecture: EnhancedLecture = {
+    const enhancedLecture: any = {
       ...lecture,
       hasVideoContent: hasRealVideoContent,
       hasArticleContent: hasRealArticleContent,
@@ -105,7 +106,9 @@ const LectureContentDisplay: React.FC<LectureContentDisplayProps> = ({
         ...(hasRealVideoContent && videoContent.selectedVideoDetails?.duration && {
           videoDuration: videoContent.selectedVideoDetails.duration
         })
-      }
+      },
+      attachedFiles: [],
+      videos: []
     };
 
     let detectedType: "article" | "video" | "quiz" | "coding-exercise" | "assignment";
@@ -118,7 +121,7 @@ const LectureContentDisplay: React.FC<LectureContentDisplayProps> = ({
       console.warn('⚠️ Both article and video content exist - this is unexpected');
       detectedType = 'article';
     } else {
-      detectedType = (lecture.contentType as "article" | "video" | "quiz" | "coding-exercise" | "assignment") || 'video';
+      detectedType = (lecture.title as "article" | "video" | "quiz" | "coding-exercise" | "assignment") || 'video';
     }
     
     enhancedLecture.actualContentType = detectedType;
