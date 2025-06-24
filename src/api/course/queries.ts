@@ -31,6 +31,12 @@ export const GET_ALL_INSTRUCTOR_COURSES = gql`
   }
 `;
 
+export const GET_INSTRUCTOR_COURSES_TOTAL = gql`
+  query GetInstructorCoursesTotal {
+    instructorCoursesTotalNumber
+  }
+`
+
 
 // Root response type
 export interface GetInstructorCoursesResponse {
@@ -75,3 +81,8 @@ export interface CourseFiltersInput {
   status?: 'DRAFT' | 'PUBLISHED';
   isPublic?: boolean;
 }
+//instructorresponse
+export interface GetInstructorCoursesTotalResponse {
+  instructorCoursesTotalNumber: number
+}
+
