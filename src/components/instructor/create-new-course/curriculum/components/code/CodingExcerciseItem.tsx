@@ -2,9 +2,10 @@ import React, { useState } from "react";
 import { Lecture } from "@/lib/types";
 import { Trash2, Edit3, Code, AlignJustify } from "lucide-react";
 import { DeleteItemFn } from "../section/SectionItem";
+import { CourseSectionAssignnments } from "@/api/course/section/queries";
 
 interface CodingExerciseItemProps {
-  lecture: Lecture;
+  lecture: CourseSectionAssignnments;
   lectureIndex: number;
   totalLectures: number;
   sectionId: string;
@@ -108,7 +109,7 @@ const CodingExerciseItem: React.FC<CodingExerciseItemProps> = ({
                 <Code size={14} />
               </span>
               <span className="ml-1 xl:text-sm font-medium text-sm">
-                {lecture.name || ""}
+                {lecture.title || ""}
               </span>
             </div>
 

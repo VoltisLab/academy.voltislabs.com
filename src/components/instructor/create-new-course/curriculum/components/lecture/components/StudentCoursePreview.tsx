@@ -46,6 +46,7 @@ import BottomTabsContainer from "./BottomTabsContainer";
 import { useRouter } from "next/navigation";
 import ContentInformationDisplay from "./ContentInformationDisplay";
 import { useAssignment } from "@/context/AssignmentDataContext";
+import { CourseSectionQuiz } from "@/api/course/section/queries";
 
 // Add QuizData interface
 export interface QuizData {
@@ -68,7 +69,7 @@ export interface QuizData {
 type ChildProps = {
   videoContent: VideoContent;
   setShowVideoPreview: React.Dispatch<React.SetStateAction<boolean>>;
-  lecture: Lecture;
+  lecture: any;
   uploadedFiles?: Array<{ name: string; size: string; lectureId?: string }>;
   sourceCodeFiles?: SourceCodeFile[];
   externalResources?: ExternalResource[];
@@ -90,7 +91,7 @@ type ChildProps = {
     codingExercises?: any[];
   };
   articleContent?: ArticleContent;
-  quizData?: QuizData;
+  quizData?: CourseSectionQuiz;
 };
 
 // Define interfaces for missing types

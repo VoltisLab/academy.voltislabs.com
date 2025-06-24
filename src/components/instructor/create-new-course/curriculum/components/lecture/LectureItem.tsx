@@ -39,10 +39,11 @@ import { uploadFile } from "@/services/fileUploadService";
 import VideoContentManager from "./components/VideoContentManager";
 import LectureContentDisplay from "./components/LectureContentDisplay";
 import { DeleteItemFn } from "../section/SectionItem";
+import { CourseSectionLecture } from "@/api/course/section/queries";
 
 // Updated LectureItemProps interface with async functions
 interface UpdatedLectureItemProps {
-  lecture: Lecture;
+  lecture: CourseSectionLecture;
   lectureIndex: number;
   totalLectures: number;
   sectionId: string;
@@ -282,9 +283,9 @@ export default function LectureItem(props: UpdatedLectureItemProps) {
   // Initialize edit form when opened
   useEffect(() => {
     if (showEditLectureForm) {
-      setEditLectureTitle(lecture.name || "");
+      setEditLectureTitle(lecture?.title || "");
     }
-  }, [showEditLectureForm, lecture.name]);
+  }, [showEditLectureForm, lecture?.title]);
 
   // File upload function
   const handleFileUpload: FileUploadFunction = async (
@@ -357,7 +358,7 @@ export default function LectureItem(props: UpdatedLectureItemProps) {
       articleContent.text.trim() !== ""
     );
 
-    const enhancedLecture: EnhancedLecture = {
+    const enhancedLecture: any = {
       ...lecture,
       hasVideoContent: hasRealVideoContent,
       hasArticleContent: hasRealArticleContent,
@@ -397,7 +398,7 @@ export default function LectureItem(props: UpdatedLectureItemProps) {
       detectedType = "article";
     } else {
       detectedType =
-        (lecture.contentType as
+        (lecture?.title as
           | "article"
           | "video"
           | "quiz"
@@ -889,10 +890,10 @@ export default function LectureItem(props: UpdatedLectureItemProps) {
   };
 
   // Check if lecture has existing content
-  const hasExistingContent = (lecture: Lecture): boolean => {
+  const hasExistingContent = (lecture: CourseSectionLecture): boolean => {
     return Boolean(
-      (lecture.videos && lecture.videos.length > 0) ||
-        lecture.contentType === "article" ||
+      (lecture.videoUrl && lecture.videoUrl.length > 0) ||
+        lecture.title === "article" ||
         videoContent.selectedVideoDetails !== null ||
         (articleContent.text && articleContent.text.trim() !== "")
     );
@@ -1055,7 +1056,7 @@ export default function LectureItem(props: UpdatedLectureItemProps) {
                 <input
                   ref={lectureNameInputRef}
                   type="text"
-                  value={lecture.name}
+                  value={lecture.title}
                   onChange={(e) =>
                     updateLectureName(sectionId, lecture.id, e.target.value)
                   }
@@ -1075,7 +1076,7 @@ export default function LectureItem(props: UpdatedLectureItemProps) {
                     className="ml-2 inline-block flex-shrink-0"
                   />
                   <span className="truncate overflow-hidden ml-1">
-                    {lecture.name}
+                    {lecture.title}
                   </span>
                   {isHovering && !isLoading && (
                     <div>

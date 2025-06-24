@@ -5,6 +5,8 @@ export const GET_COURSE_SECTIONS = gql`
     courseSections(id: $id) {
       id
       order
+      title
+      description
       lectures {
         id
         videoUrl
@@ -12,6 +14,7 @@ export const GET_COURSE_SECTIONS = gql`
         notes
         duration
         description
+        
         resources {
           id
           type
@@ -19,6 +22,18 @@ export const GET_COURSE_SECTIONS = gql`
           title
           createdAt
         }
+      }
+      assignment {
+        title
+        id
+      }
+      practiceSet {
+      id
+      title
+      }
+      codingExercises {
+        id
+        title
       }
       quiz {
         description
@@ -48,6 +63,34 @@ export interface CourseSectionsVariables {
   id: number;
 }
 
+export interface CourseSectionAssignnments{
+  id: string;
+  title: string;
+}
+export interface CourseSectionQuiz {
+  id: string;
+  title: string;
+  description: string;
+  questions: CourseSectionQuizQuestion[];
+}
+
+export interface CourseSectionQuizQuestion {
+  id: string;
+  text: string;
+  order: number;
+  answerChoices: CourseSectionAnswerChoice[];
+  relatedLecture: {
+    title: string;
+  };
+}
+
+export interface CourseSectionAnswerChoice {
+  id: string;
+  text: string;
+  order: number;
+  isCorrect: boolean;
+  explanation: string;
+}
 export interface Resource {
   id: string;
   type: string;
@@ -56,7 +99,7 @@ export interface Resource {
   createdAt: string;
 }
 
-export interface Lecture {
+export interface CourseSectionLecture {
   id: string;
   videoUrl: string;
   title: string;
@@ -69,7 +112,14 @@ export interface Lecture {
 export interface CourseSection {
   id: string;
   order: number;
-  lectures: Lecture[];
+  title: string;
+  quiz: CourseSectionQuiz[];
+  lectures: CourseSectionLecture[];
+  assignment: CourseSectionAssignnments[]
+  description: string;
+  codingExercises: CourseSectionAssignnments[]
+  practiceSet: CourseSectionAssignnments[]
+
 }
 
 export interface CourseSectionsResponse {

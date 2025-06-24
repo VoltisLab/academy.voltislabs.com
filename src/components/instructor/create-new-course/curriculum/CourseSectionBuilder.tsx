@@ -159,6 +159,7 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
 
   // Services for backend operations
   const {
+    getCourseSections,
     createSection,
     updateSection,
     deleteSection,
@@ -232,6 +233,10 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
     );
   };
 
+
+
+
+
   const addSourceCodeFile = (file: SourceCodeFile) => {
     setGlobalSourceCodeFiles((prev) => {
       // Prevent duplicates by checking both name and filename
@@ -267,6 +272,9 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
       })
     );
   };
+
+
+  
 
   const uploadFileToBackend: FileUploadFunction = async (
     file: File,
@@ -366,10 +374,17 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
     }
   };
   const [hasCreatedIntro, setHasCreatedIntro] = useState(false);
+  const [mainSectionData, setMainSectionData] = useState<any>(null)
+  
+  
 
   useEffect(() => {
     const createIntroduction = async () => {
-      if (!courseId || sections.length > 0 || hasCreatedIntro) return;
+      const data = await getCourseSections({id: Number(courseId)})
+      setMainSectionData(data?.courseSections)
+
+    
+      if (!courseId || data?.courseSections?.length > 0 || hasCreatedIntro) return;
 
       try {
         const sectionId = await handleAddSection("Introduction", "");
@@ -385,6 +400,9 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
     const timer = setTimeout(createIntroduction, 500);
     return () => clearTimeout(timer);
   }, [courseId, sections.length, hasCreatedIntro]);
+
+    console.log("sectionmain===", mainSectionData)
+
 
   // NEW: Backend-integrated section update
   const updateSectionName = async (
@@ -912,8 +930,8 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
           </button>
         </div>
         <div className="bg-white border border-gray-200 mb-6 mt-20">
-          {sections.length > 0 ? (
-            sections.map((section, index) => (
+          {mainSectionData?.length > 0 ? (
+            mainSectionData?.map((section:any, index:number) => (
               <SectionItem
                 setNewassignment={setNewassignment}
                 setNewQuizId={setNewQuizId}
@@ -922,7 +940,7 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
                 key={section.id}
                 section={section}
                 index={index}
-                totalSections={sections.length}
+                totalSections={mainSectionData?.length}
                 editingSectionId={editingSectionId}
                 setEditingSectionId={setEditingSectionId}
                 updateSectionName={updateSectionName}
@@ -988,7 +1006,7 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
             <div className="absolute z-10 left-0 mt-2">
               <ContentTypeSelector
                 sectionId={
-                  sections.length > 0 ? sections[sections.length - 1].id : ""
+                  mainSectionData?.length > 0 ? mainSectionData[mainSectionData?.length - 1].id : ""
                 }
                 onSelect={handleAddLecture}
                 onClose={() => setShowContentTypeSelector(false)}
