@@ -343,7 +343,7 @@ console.log("recources===", resources?.getLecture?.resources)
     // Additional safety check to ensure we have a numeric backend ID
     const numericLectureId = parseInt(lectureId);
     if (isNaN(numericLectureId) || numericLectureId <= 0) {
-      toast.error('Invalid lecture ID. Please refresh and try again.');
+      toast.error('Invalid lecture ID. refresh and try again.');
       return;
     }
 

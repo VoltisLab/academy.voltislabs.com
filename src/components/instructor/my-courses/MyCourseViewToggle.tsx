@@ -3,8 +3,8 @@
 import { MdViewList, MdGridView } from 'react-icons/md'
 
 interface ViewToggleProps {
-  isGrid: boolean
-  onToggle: (value: boolean) => void
+  isGrid: boolean;
+  onToggle: (value: boolean) => void;
 }
 
 export default function ViewToggle({ isGrid, onToggle }: ViewToggleProps) {
