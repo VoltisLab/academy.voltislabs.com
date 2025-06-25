@@ -51,10 +51,11 @@ export const uploadFile = async (
       return null;
     }
 
-    console.log(data);
-
     if (data?.upload?.success) {
-      return data.upload.baseUrl;
+      const modifiedUrl =
+        data.upload.baseUrl +
+        JSON.parse(data?.upload.data[0] as string).file_url;
+      return modifiedUrl;
     } else {
       toast.error("File upload failed");
       return null;

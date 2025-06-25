@@ -9,16 +9,18 @@ const QuestionsTab: React.FC<{
   data: ExtendedLecture;
   onChange: (field: string, value: any) => void;
   assignmentId?: number;
-  fetchAssignment: () => Promise<void>
+  fetchAssignment: () => Promise<void>;
 }> = ({ data, onChange, assignmentId, fetchAssignment }) => {
   const [showInfo, setShowInfo] = useState(true);
   const [questions, setQuestions] = useState<AssignmentQuestion[]>([]);
-  const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null);
+  const [editingQuestionId, setEditingQuestionId] = useState<string | null>(
+    null
+  );
   const [currentQuestionContent, setCurrentQuestionContent] = useState("");
   const [questionToDelete, setQuestionToDelete] = useState<string | null>(null);
   const [isAddingNewQuestion, setIsAddingNewQuestion] = useState(false);
-const params = useParams();
-  const id = params?.id; 
+  const params = useParams();
+  const id = params?.id;
   useEffect(() => {
     const existingQuestions = data.assignmentQuestions || [];
     setQuestions(existingQuestions);
@@ -28,7 +30,11 @@ const params = useParams();
     }
   }, [data.assignmentQuestions]);
 
-  const { createAssignmentQuestion, updateAssignmentQuestion, deleteAssignmentQuestion } = useAssignmentService();
+  const {
+    createAssignmentQuestion,
+    updateAssignmentQuestion,
+    deleteAssignmentQuestion,
+  } = useAssignmentService();
 
   const handleSubmitQuestion = async () => {
     const cleanContent = currentQuestionContent.replace(/<[^>]*>/g, "");
@@ -67,7 +73,7 @@ const params = useParams();
               }
             : q
         );
-        fetchAssignment()
+        fetchAssignment();
         setQuestions(updatedQuestions);
         onChange("assignmentQuestions", updatedQuestions);
         setEditingQuestionId(null);
@@ -113,31 +119,31 @@ const params = useParams();
   };
 
   const confirmDeleteQuestion = async (questionId: string) => {
-  try {
-    // Call the delete mutation first
-    await deleteAssignmentQuestion({
-      assignmentQuestionId: parseInt(questionId, 10),
-    });
+    try {
+      // Call the delete mutation first
+      await deleteAssignmentQuestion({
+        assignmentQuestionId: parseInt(questionId, 10),
+      });
 
-    // Update local state only after successful deletion
-    const updatedQuestions = questions.filter((q) => q.id !== questionId);
-    const reorderedQuestions = updatedQuestions.map((q, index) => ({
-      ...q,
-      order: index + 1,
-    }));
+      // Update local state only after successful deletion
+      const updatedQuestions = questions.filter((q) => q.id !== questionId);
+      const reorderedQuestions = updatedQuestions.map((q, index) => ({
+        ...q,
+        order: index + 1,
+      }));
 
-    setQuestions(reorderedQuestions);
-    onChange("assignmentQuestions", reorderedQuestions);
-    setQuestionToDelete(null);
+      setQuestions(reorderedQuestions);
+      onChange("assignmentQuestions", reorderedQuestions);
+      setQuestionToDelete(null);
 
-    if (reorderedQuestions.length === 0) {
-      setIsAddingNewQuestion(true);
+      if (reorderedQuestions.length === 0) {
+        setIsAddingNewQuestion(true);
+      }
+    } catch (error) {
+      console.error("Failed to delete assignment question:", error);
+      // Error toast already handled inside deleteAssignmentQuestion service
     }
-  } catch (error) {
-    console.error("Failed to delete assignment question:", error);
-    // Error toast already handled inside deleteAssignmentQuestion service
-  }
-};
+  };
 
   const startAddingNewQuestion = () => {
     setIsAddingNewQuestion(true);
@@ -175,11 +181,12 @@ const params = useParams();
   const renderQuestionDisplay = (question: AssignmentQuestion) => (
     <div className="mt-2">
       <div className="prose max-w-none">
-        {question?.text?.split("\n")?.map((paragraph, i) => (
-          <p key={i}>{paragraph}</p>
-        )) ?? question?.content?.split("\n")?.map((paragraph, i) => (
-          <p key={i}>{paragraph}</p>
-        ))}
+        {question?.text
+          ?.split("\n")
+          ?.map((paragraph, i) => <p key={i}>{paragraph}</p>) ??
+          question?.content
+            ?.split("\n")
+            ?.map((paragraph, i) => <p key={i}>{paragraph}</p>)}
       </div>
       <div className="flex gap-2 mt-2">
         <button
@@ -204,10 +211,13 @@ const params = useParams();
       {showInfo && (
         <div className="border border-purple-200 bg-purple-50 rounded-md p-4">
           <div className="flex items-start gap-3">
-            <div className="w-6 h-6 bg-[#6d28d2] rounded-full flex items-center justify-center text-white text-sm flex-shrink-0 mt-1">i</div>
+            <div className="w-6 h-6 bg-[#6d28d2] rounded-full flex items-center justify-center text-white text-sm flex-shrink-0 mt-1">
+              i
+            </div>
             <div className="flex-1">
               <p className="text-gray-700 mb-3">
-                Each assignment must include at least one question. You can add a maximum of 12 questions.
+                Each assignment must include at least one question. You can add
+                a maximum of 12 questions.
               </p>
               <div className="flex gap-2">
                 <button className="px-4 py-2 border border-[#6d28d2] text-[#6d28d2] rounded-md hover:bg-purple-100">
@@ -228,7 +238,9 @@ const params = useParams();
       {/* render questions */}
       {questions.map((question) => (
         <div key={question.id} className="pb-6">
-          <h3 className="text-lg font-medium text-gray-900">Question {question.order}</h3>
+          <h3 className="text-lg font-medium text-gray-900">
+            Question {question.order}
+          </h3>
           {editingQuestionId === question.id
             ? renderQuestionEditor(question.order)
             : renderQuestionDisplay(question)}
@@ -238,7 +250,9 @@ const params = useParams();
       {/* new question editor */}
       {isAddingNewQuestion && (
         <div className="pb-6">
-          <h3 className="text-lg font-medium text-gray-900">Question {questions.length + 1}</h3>
+          <h3 className="text-lg font-medium text-gray-900">
+            Question {questions.length + 1}
+          </h3>
           {renderQuestionEditor(questions.length + 1)}
         </div>
       )}
@@ -257,7 +271,9 @@ const params = useParams();
       {questionToDelete && (
         <div className="fixed inset-0 bg-black/30 bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Confirm Deletion</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-4">
+              Confirm Deletion
+            </h3>
             <p className="text-gray-600 mb-6">
               Are you sure you want to delete this question?
             </p>

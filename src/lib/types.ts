@@ -312,6 +312,14 @@ export interface Question {
   type: string;
 }
 
+export interface AssignmentQuestionSolution {
+  id: string;
+  text: string;
+  videoUrl: string;
+  downloadableResourceUrl: string | null;
+  __typename: "AssignmentQuestionSolutionType";
+}
+
 export interface AssignmentQuestion {
   text?: string;
   id: string;
@@ -321,6 +329,7 @@ export interface AssignmentQuestion {
     id?: string;
     text?: string;
   };
+  questionSolutions?: AssignmentQuestionSolution[];
 }
 
 // UPDATED: Base Lecture interface
@@ -362,6 +371,7 @@ export interface Lecture {
   instructionalVideo?: {
     file: File | null;
     url?: string;
+    name?: string;
   };
   downloadableResource?: {
     file: File | null;
@@ -372,6 +382,7 @@ export interface Lecture {
   solutionVideo?: {
     file: File | null;
     url?: string;
+    name?: string;
   };
   isPublished?: boolean;
 }
@@ -418,6 +429,7 @@ export interface ExtendedLecture extends Lecture {
   instructionalVideo?: {
     file: File | null;
     url?: string;
+    name?: string;
   };
   instructionalResource?: {
     file: File | null;
@@ -433,6 +445,7 @@ export interface ExtendedLecture extends Lecture {
   solutionVideo?: {
     file: File | null;
     url?: string;
+    name?: string;
   };
   isPublished?: boolean;
 }

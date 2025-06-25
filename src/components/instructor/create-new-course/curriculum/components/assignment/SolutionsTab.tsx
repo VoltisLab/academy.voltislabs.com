@@ -10,16 +10,25 @@ import {
   UpdateAssignmentQuestionSolutionVariables,
   UpdateAssignmentVariables,
 } from "@/api/assignment/mutation";
-import { useParams } from "next/navigation";
 import { ChevronDown, Search, Trash2 } from "lucide-react";
 import { motion } from "framer-motion";
+import { HLSVideoPlayer } from "./HLSVideoPlayer";
 
 const SolutionsTab: React.FC<{
   data: ExtendedLecture;
   onChange: (field: string, value: any) => void;
   setActiveTab: (tab: string) => void; // Add this line
   fetchAssignment: () => Promise<void>;
-}> = ({ data, onChange, setActiveTab, fetchAssignment }) => {
+  libraryVideos: any;
+  setLibraryVideos: any;
+}> = ({
+  data,
+  onChange,
+  setActiveTab,
+  fetchAssignment,
+  libraryVideos,
+  setLibraryVideos,
+}) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [activeVideoTab, setActiveVideoTab] = useState<
     "upload" | "library" | null
@@ -35,30 +44,6 @@ const SolutionsTab: React.FC<{
   );
 
   const [answerToDelete, setAnswerToDelete] = useState<string | null>(null);
-  const params = useParams();
-  const id = params?.id;
-
-  // Sample library videos
-  const [libraryVideos, setLibraryVideos] = useState([
-    {
-      filename: "2024-11-13-175733.webm",
-      type: "Video",
-      status: "success",
-      date: "05/13/2025",
-    },
-    {
-      filename: "Netflix.mp4",
-      type: "Video",
-      status: "success",
-      date: "05/08/2025",
-    },
-    {
-      filename: "Netflix.mp4",
-      type: "Video",
-      status: "success",
-      date: "05/07/2025",
-    },
-  ]);
 
   const [uploadState, setUploadState] = useState<UploadState>({
     isUploading: false,
@@ -87,8 +72,8 @@ const SolutionsTab: React.FC<{
   const handleVideoSelect = (video: any) => {
     onChange("solutionVideo", {
       file: null,
-      url: video.filename,
-      filename: video.filename,
+      url: video.url,
+      name: video.filename,
     });
     setShowVideoUploaded(true);
     setActiveVideoTab(null);
@@ -186,13 +171,13 @@ const SolutionsTab: React.FC<{
   const hasQuestions =
     data.assignmentQuestions && data.assignmentQuestions.length > 0;
 
-  const filteredVideos = libraryVideos.filter((video) =>
+  const filteredVideos = libraryVideos.filter((video: any) =>
     video.filename.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const handleDeleteVideo = (filenameToDelete: string) => {
-    setLibraryVideos((prev) =>
-      prev.filter((video) => video.filename !== filenameToDelete)
+    setLibraryVideos((prev: any) =>
+      prev.filter((video: any) => video.filename !== filenameToDelete)
     );
   };
 
@@ -216,7 +201,7 @@ const SolutionsTab: React.FC<{
       date: new Date().toLocaleDateString(),
     };
 
-    setLibraryVideos((prev) => [newVideo, ...prev]);
+    setLibraryVideos((prev: any) => [newVideo, ...prev]);
 
     // Simulate realistic progress
     const progressInterval = setInterval(() => {
@@ -247,9 +232,12 @@ const SolutionsTab: React.FC<{
 
       // 3. Update the assignment with the new video URL
       const updateVariables: UpdateAssignmentQuestionSolutionVariables = {
-        questionSolutionId: Number(id),
-        videoUrl: baseUrl, // Make sure your API accepts this field
+        questionSolutionId: Number(
+          data.assignmentQuestions?.[0].questionSolutions?.[0]?.id
+        ),
+        videoUrl: baseUrl,
       };
+      console.log(data.assignmentQuestions);
 
       await updateAssignmentQuestionSolution(updateVariables);
 
@@ -264,10 +252,11 @@ const SolutionsTab: React.FC<{
         filename: file.name,
         type: "Video",
         status: "success",
+        url: baseUrl,
         date: new Date().toLocaleDateString(),
       };
 
-      setLibraryVideos((prev) => [newVideo, ...prev]);
+      setLibraryVideos((prev: any) => [newVideo, ...prev]);
 
       setUploadState({
         isUploading: false,
@@ -277,8 +266,8 @@ const SolutionsTab: React.FC<{
         error: null,
       });
 
-      setLibraryVideos((prev) =>
-        prev.filter((video) => video.status !== "processing")
+      setLibraryVideos((prev: any) =>
+        prev.filter((video: any) => video.status !== "processing")
       );
 
       setShowVideoUploaded(true);
@@ -296,13 +285,11 @@ const SolutionsTab: React.FC<{
         date: new Date().toLocaleDateString(),
       };
 
-      setLibraryVideos((prev) => [newVideo, ...prev]);
+      setLibraryVideos((prev: any) => [newVideo, ...prev]);
 
-      setLibraryVideos((prev) =>
-        prev.filter((video) => video.status !== "processing")
+      setLibraryVideos((prev: any) =>
+        prev.filter((video: any) => video.status !== "processing")
       );
-
-      console.log();
 
       const errorMessage =
         error instanceof Error ? error.message : "Video upload failed";
@@ -499,7 +486,7 @@ const SolutionsTab: React.FC<{
                             No result found
                           </div>
                         ) : (
-                          filteredVideos.map((video, index) => (
+                          filteredVideos.map((video: any, index: number) => (
                             <div
                               key={index}
                               className="px-4 py-3 hover:bg-gray-50"
@@ -571,7 +558,7 @@ const SolutionsTab: React.FC<{
               <div className="flex justify-between items-center font-semibold">
                 <span className="text-gray-700">
                   {data.solutionVideo?.file?.name ||
-                    data.solutionVideo?.url?.split("/").pop() ||
+                    data.solutionVideo?.name ||
                     "No video selected"}
                 </span>
               </div>
@@ -579,15 +566,19 @@ const SolutionsTab: React.FC<{
 
             <div className="h-80">
               {data.solutionVideo?.url ? (
-                <video
-                  controls
-                  src={
-                    data.solutionVideo.file
-                      ? URL.createObjectURL(data.solutionVideo.file)
-                      : data.solutionVideo.url
-                  }
-                  className="w-full h-full rounded-md object-contain"
-                />
+                data.solutionVideo.file ? (
+                  <video
+                    controls
+                    src={
+                      data.solutionVideo.file
+                        ? URL.createObjectURL(data.solutionVideo.file)
+                        : data.solutionVideo.url
+                    }
+                    className="w-full h-full rounded-md object-contain"
+                  />
+                ) : (
+                  <HLSVideoPlayer src={data.solutionVideo.url} />
+                )
               ) : (
                 <div className="flex items-center justify-center h-full text-center text-gray-500">
                   <p>No video preview available.</p>
@@ -658,7 +649,7 @@ const SolutionsTab: React.FC<{
       {/* Questions and Answers Section */}
       {hasQuestions && (
         <div className="space-y-8">
-          {data.assignmentQuestions?.map((question) => (
+          {data.assignmentQuestions?.map((question, idx) => (
             <div key={question.id} className="border-b pb-6 last:border-b-0">
               <h3 className="text-lg font-medium text-gray-900">
                 Question {question.order}
@@ -704,12 +695,13 @@ const SolutionsTab: React.FC<{
                   </>
                 ) : (
                   <>
-                    {question.solution ? (
+                    {question.questionSolutions?.[idx] ? (
                       <div className="space-y-2">
                         <div
                           className="prose max-w-none"
                           dangerouslySetInnerHTML={{
-                            __html: question?.solution?.text ?? "",
+                            __html:
+                              question?.questionSolutions?.[idx].text ?? "",
                           }}
                         />
                         <div className="flex gap-2 mt-2">
