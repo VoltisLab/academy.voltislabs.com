@@ -926,9 +926,11 @@ const renderPractice = (lecture: CourseSectionAssignnments, typeSpecificIndex: n
 
               {isHovering && !isLoading && (
                 <div className="flex items-center space-x-2">
+                  {/* <div> kkkkkkkkmmm </div> */}
                   <AlignJustify className="w-5 h-5 text-gray-500 cursor-move" />
                 </div>
               )}
+
             </div>
           )}
         </div>
