@@ -885,7 +885,7 @@ export default function LectureItem(props: UpdatedLectureItemProps) {
       case "assignment":
         return "Assignment";
       default:
-        return "Item";
+        return "Lecture";
     }
   };
 

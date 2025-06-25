@@ -62,6 +62,7 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
     undefined
   );
   const [newQuizId, setNewQuizId] = useState<number | undefined>(undefined);
+  const [mainSectionData, setMainSectionData] = useState<any>(null)
 
   const [dragTarget, setDragTarget] = useState<{
     sectionId: string | null;
@@ -331,7 +332,11 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
     sectionId: string;
     lectureId: string;
   } | null>(null);
-
+ const fetchSectionData = async() =>{
+    const data = await getCourseSections({id: Number(courseId)})
+    setMainSectionData(data?.courseSections)
+    return data
+  } 
   // NEW: Backend-integrated section creation
   const handleAddSection = async (title: string, objective: string) => {
     try {
@@ -353,6 +358,7 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
 
       if (response.createSection.success) {
         // Add to local state with backend ID
+        await fetchSectionData()
         const backendSectionId = response.createSection.section.id;
         addLocalSection(title, objective);
 
@@ -374,15 +380,12 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
     }
   };
   const [hasCreatedIntro, setHasCreatedIntro] = useState(false);
-  const [mainSectionData, setMainSectionData] = useState<any>(null)
   
-  
+ 
 
   useEffect(() => {
     const createIntroduction = async () => {
-      const data = await getCourseSections({id: Number(courseId)})
-      setMainSectionData(data?.courseSections)
-
+      const data = await fetchSectionData()
     
       if (!courseId || data?.courseSections?.length > 0 || hasCreatedIntro) return;
 
@@ -429,6 +432,7 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
       });
 
       // Update local state
+      await fetchSectionData()
       updateLocalSectionName(sectionId, newName, objective);
     } catch (error) {
       console.error("Failed to update section:", error);
@@ -445,6 +449,7 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
       });
 
       // Delete from local state
+      await fetchSectionData()
       deleteLocalSection(sectionId);
     } catch (error) {
       console.error("Failed to delete section:", error);
@@ -468,6 +473,7 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
 
       if (response.createLecture.success) {
         // Add to local state with backend ID
+        await fetchSectionData()
         const backendLectureId = response.createLecture.lecture.id;
         const localLectureId = addLocalLecture(sectionId, contentType, title);
 
@@ -513,6 +519,7 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
         lectureId: Number(lectureId),
         title: newName,
       });
+      await fetchSectionData()
 
       // Update local state
       updateLocalLectureName(sectionId, lectureId, newName);
@@ -530,7 +537,7 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
       await deleteLecture({
         lectureId: Number(lectureId),
       });
-
+      await fetchSectionData()
       // Delete from local state
       deleteLocalLecture(sectionId, lectureId);
     } catch (error) {
@@ -548,6 +555,7 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
       await deleteAssignment({
         assignmentId: Number(newAssinment),
       });
+      await fetchSectionData()
     } catch (error) {
       console.log("failed to delete Assignment", error);
     }
@@ -590,7 +598,8 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
           return section;
         })
       );
-
+  
+      await fetchSectionData()
       setShowCodingExerciseCreator(false);
       setCurrentCodingExercise(null);
       toast.success("Coding exercise updated successfully!");
@@ -676,6 +685,7 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
     );
 
     // Show success message
+    // await fetchSectionData()
     toast.success("Assignment updated successfully!");
   };
 
