@@ -76,6 +76,7 @@ export const AdvanceInformationForm = ({
     try {
       setIsUploading(true);
       const url = await uploadFile(file, "RESOURCE");
+
       if (url) {
         setCourseInfo((prev) => ({ ...prev, courseThumbnail: url }));
         setErrors((prev) => ({ ...prev, courseThumbnail: "" }));

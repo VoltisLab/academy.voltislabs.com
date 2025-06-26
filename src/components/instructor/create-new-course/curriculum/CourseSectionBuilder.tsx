@@ -553,7 +553,7 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
   ) => {
     try {
       await deleteAssignment({
-        assignmentId: Number(newAssinment),
+        assignmentId: Number(lectureId),
       });
       await fetchSectionData()
     } catch (error) {
@@ -943,6 +943,7 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
           {mainSectionData?.length > 0 ? (
             mainSectionData?.map((section:any, index:number) => (
               <SectionItem
+                fetchSectionData={fetchSectionData}
                 setNewassignment={setNewassignment}
                 setNewQuizId={setNewQuizId}
                 newQuizId={newQuizId}

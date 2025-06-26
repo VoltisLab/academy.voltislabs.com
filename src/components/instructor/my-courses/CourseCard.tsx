@@ -1,7 +1,9 @@
 'use client'
 import Image, { StaticImageData } from 'next/image'
 import Link from 'next/link'
-import { FiEdit } from 'react-icons/fi'
+import { useState } from 'react'
+import DeleteModal from './DeleteCourseModal'
+
 
 interface CourseCardProps {
   title: string;
@@ -41,6 +43,8 @@ const cleanHtmlContent = (htmlString: string): string => {
     return cleaned;
   };
 
+  
+
 export default function MyCourseCard({
   title,
   description,
@@ -52,6 +56,17 @@ export default function MyCourseCard({
   isPublic = false,
   editUrl = '#',
 }: CourseCardProps) {
+
+const [showDeleteModal, setShowDeleteModal] = useState(false);
+
+const handleDeleteConfirm = () => {
+  setShowDeleteModal(false);
+  console.log(`Deleting course: ${title}`);
+  // You can place your actual delete logic here
+};
+
+
+
   if (isGrid) {
     return (
       <div className="rounded-xl relative overflow-hidden shadow-md bg-[#F7F7F7] w-[300px]">
@@ -72,13 +87,13 @@ export default function MyCourseCard({
               {category}
             </span>
             {/* Edit Icon */}
-            <div className="flex justify-center text-purple-700 mt-3">
+            {/* <div className="flex justify-center text-purple-700 mt-3">
               <Link href={editUrl}>
-                {/* <FiEdit size={18} className="hover:text-purple-800 transition-colors" /> */}
                 <p className="text-[#A99EF6] transition-colors font-semibold">Edit</p>
 
               </Link>
-            </div>
+              <button className='text-red-500'>Delete</button>
+            </div> */}
 
           </div>
 
@@ -103,28 +118,42 @@ export default function MyCourseCard({
               style={{ width: `${progressPercent}%` }}
             />
           </div>
+          <div className="flex justify-center text-purple-700 mt-3 gap-3">
+              <Link href={editUrl} className='w-full'>
+                {/* <FiEdit size={18} className="hover:text-purple-800 transition-colors" /> */}
+                <button className="text-white transition-colors text-sm font-semibold w-full py-1 rounded-xl border bg-[#A99EF6]">Edit</button>
 
+              </Link>
+              <button onClick={() => setShowDeleteModal(true)} className='text-[#A99EF6] w-full border border-[#A99EF6] py-1 rounded-xl text-sm'>Delete</button>
+            </div>
           
         </div>
+
+        <DeleteModal
+          isOpen={showDeleteModal}
+          onClose={() => setShowDeleteModal(false)}
+          onConfirm={handleDeleteConfirm}
+          courseTitle={title}
+        />
       </div>
     )
   }
 
   // List view
   return (
-    <div className="group relative flex items-center gap-4 p-4 w-full max-w-4xl rounded-md shadow-md transition-colors duration-200 hover:bg-gray-50">
+    <div className="group relative flex items-center gap-4  pr-4 w-full max-w-6xl rounded-md shadow-md transition-colors duration-200 hover:bg-gray-50">
       {/* Image */}
-      <div className="relative w-16 h-16 shrink-0">
+      <div className="relative w-36 h-28 shrink-0">
         <Image
           src={imageUrl}
           alt="Course Icon"
           fill
-          className="object-contain rounded-md"
+          className="object-cover rounded-md"
         />
       </div>
 
       {/* Content */}
-      <div className="flex flex-col gap-1 flex-1">
+      <div className="flex flex-col gap-1 flex-1  h-24 " >
         <span className="text-[10px] font-semibold text-[#A99EF6] uppercase tracking-wide">
           {category}
         </span>
@@ -153,12 +182,21 @@ export default function MyCourseCard({
       </div>
 
       {/* Edit Icon */}
-      <div className="text-purple-700  mt-auto ml-auto">
+      <div className="text-purple-700  mt-auto ml-auto flex items-center gap-2">
         <Link href={editUrl}>
           {/* <FiEdit size={18} className="hover:text-purple-800 transition-colors" /> */}
           <p className="text-[#A99EF6] transition-colors font-semibold">Edit</p>
         </Link>
+        <button onClick={() => setShowDeleteModal(true)} className='text-red-500'>Delete</button>
       </div>
+      <DeleteModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={handleDeleteConfirm}
+        courseTitle={title}
+      />
     </div>
+
+
   )
 }
