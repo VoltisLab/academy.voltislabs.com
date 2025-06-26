@@ -62,7 +62,7 @@ const MyCourseList = () => {
           description={course?.description}
           editUrl={course?.id}
           isGrid={grid}
-          imageUrl={course?.instructor?.thumbnailUrl ?? bg}
+          imageUrl={course?.banner?.thumbnail === "https://prelura.s3.eu-west-2.amazonaws.com/" ? bg : course?.banner?.thumbnail ?? bg}
           category={course?.category?.name}
         />
       ))}

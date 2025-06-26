@@ -46,6 +46,7 @@ export type DeleteItemFn = (
 
 // Updated SectionItemProps interface with the missing property
 interface SectionItemProps {
+  fetchSectionData?: any;
   setNewassignment?: React.Dispatch<React.SetStateAction<number | undefined>>;
   setNewQuizId?: React.Dispatch<React.SetStateAction<number | undefined>>;
   newQuizId?: number;
@@ -203,6 +204,7 @@ interface SectionItemProps {
 }
 
 export default function SectionItem({
+  fetchSectionData,
   section,
   setNewassignment,
   setNewQuizId,
@@ -350,7 +352,8 @@ export default function SectionItem({
 
       if (response.createAssignment.success) {
         
-        await addLecture(sectionId, "assignment", title);
+        // await addLecture(sectionId, "assignment", title);
+        await fetchSectionData()
         setShowAssignmentForm(false);
         // Add to local state with backend ID
         const backendLectureId = response.createAssignment.assignment.id;
@@ -398,6 +401,7 @@ export default function SectionItem({
     try {
       if (addQuiz) await addQuiz(sectionId, title, description);
       setShowQuizForm(false);
+      await fetchSectionData()
     } catch (error) {
       console.error("Failed to create quiz:", error);
     }
@@ -714,6 +718,7 @@ const renderAssignmentItem = (assignment: CourseSectionAssignnments, assignmentI
   const renderQuizItem = (lecture: CourseSectionQuiz, typeSpecificIndex: number) => {
   return (
     <QuizItem
+      fetchSectionData={fetchSectionData}
       key={lecture.id}
       lecture={lecture}
       newQuizId={newQuizId}
@@ -939,14 +944,14 @@ const renderPractice = (lecture: CourseSectionAssignnments, typeSpecificIndex: n
           <div className="p-2 bg-gray-100 relative">
             {/* Render lectures and assignments */}
 
-            {section?.assignment?.map((assignment: CourseSectionAssignnments, assignmentIndex: number) => {
-              return renderAssignmentItem(assignment, assignmentIndex);
-            })}
             
             {section?.lectures?.map((lecture: CourseSectionLecture, lectureIndex: number) => {
               return renderLectureItem(lecture, lectureIndex);
             })}
 
+            {section?.assignment?.map((assignment: CourseSectionAssignnments, assignmentIndex: number) => {
+              return renderAssignmentItem(assignment, assignmentIndex);
+            })}
             {section?.quiz?.map((quiz: CourseSectionQuiz, quizIndex: number) => {
               return renderQuizItem(quiz, quizIndex);
             })}

@@ -40,6 +40,7 @@ import VideoContentManager from "./components/VideoContentManager";
 import LectureContentDisplay from "./components/LectureContentDisplay";
 import { DeleteItemFn } from "../section/SectionItem";
 import { CourseSectionLecture } from "@/api/course/section/queries";
+import { BsTrash2Fill } from "react-icons/bs";
 
 // Updated LectureItemProps interface with async functions
 interface UpdatedLectureItemProps {
@@ -1078,6 +1079,7 @@ export default function LectureItem(props: UpdatedLectureItemProps) {
                   <span className="truncate overflow-hidden ml-1">
                     {lecture.title}
                   </span>
+                  
                   {isHovering && !isLoading && (
                     <div>
                       <button
@@ -1094,7 +1096,7 @@ export default function LectureItem(props: UpdatedLectureItemProps) {
                         disabled={deleteLoading}
                       >
                         <Trash2
-                          className={`w-4 h-4 text-gray-400 hover:bg-gray-200 p-2 rounded ${
+                          className={`w-4 h-4 text-gray-400 hover:text-red-500  rounded ${
                             deleteLoading ? "opacity-50 cursor-not-allowed" : ""
                           }`}
                         />
@@ -1213,12 +1215,15 @@ export default function LectureItem(props: UpdatedLectureItemProps) {
                 className="p-1 text-gray-400 hover:text-gray-600 ml-1"
                 onClick={(e) => {
                   e.stopPropagation();
+                 
                   if (toggleContentSection) {
                     toggleContentSection(sectionId, lecture.id);
+                    
                     if (isExpanded) {
                       setShowContentTypeSelector(false);
                       setActiveContentType(null);
-                    }
+                      
+                    } 
                   }
                 }}
                 aria-label={isExpanded ? "Collapse" : "Expand"}

@@ -34,7 +34,6 @@ export default function CourseThumbnailUploader({
     const file = e.target.files?.[0];
     if (file) {
       const url = URL.createObjectURL(file);
-
       // Store it in a ref so it survives re-renders
       localPreviewUrlRef.current = url;
       setPreview(url);

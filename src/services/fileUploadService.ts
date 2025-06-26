@@ -24,6 +24,7 @@ const UPLOAD_FILE = gql`
   }
 `;
 
+
 export const uploadFile = async (
   file: File,
   filetype: FileTypeEnum
@@ -54,7 +55,16 @@ export const uploadFile = async (
     console.log(data);
 
     if (data?.upload?.success) {
-      return data.upload.baseUrl;
+      const baseUrl = data.upload.baseUrl;
+      const rawJson = data.upload.data?.[0]; // JSON string
+      const parsed = rawJson ? JSON.parse(rawJson) : null;
+
+      if (parsed?.file_url) {
+        return `${baseUrl}${parsed.file_url}`;
+      } else {
+        toast.error("Invalid upload response format");
+        return null;
+      }
     } else {
       toast.error("File upload failed");
       return null;
@@ -65,3 +75,4 @@ export const uploadFile = async (
     return null;
   }
 };
+

@@ -23,6 +23,7 @@ import { ConfirmQuizDeleteModal } from "@/components/modals/DeleteConfirmationMo
 import { CourseSectionQuiz, CourseSectionQuizQuestion } from "@/api/course/section/queries";
 
 interface QuizItemProps {
+  fetchSectionData?: any;
   lecture: CourseSectionQuiz;
   lectureIndex: number;
   newQuizId?: number; // For new quizzes
@@ -92,6 +93,7 @@ export const generateNumericId = (): string => {
 };
 
 const QuizItem: React.FC<QuizItemProps> = ({
+  fetchSectionData,
   lecture,
   lectureIndex,
   newQuizId,
@@ -167,6 +169,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
 
       if (result?.deleteQuiz?.success) {
         toast.success("Quiz deleted successfully!");
+        await fetchSectionData()
         deleteLocalQuiz(sectionId, lecture.id);
         setShowConfirmModal(false);
       }
@@ -746,7 +749,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
                 <button
                   onClick={handleDeleteQuiz}
                   disabled={quizOperationLoading}
-                  className={`text-gray-500 hover:text-blue-600 p-1 transition-opacity cursor-pointer disabled:cursor-not-allowed ${
+                  className={`text-gray-500 hover:text-red-500 p-1 transition-opacity cursor-pointer disabled:cursor-not-allowed ${
                     quizOperationLoading ? "animate-pulse" : ""
                   }`}
                 >
