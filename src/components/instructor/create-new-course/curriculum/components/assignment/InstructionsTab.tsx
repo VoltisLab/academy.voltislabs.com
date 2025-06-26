@@ -273,32 +273,32 @@ const InstructionsTab: React.FC<{
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-20">
       {/* Video Section */}
       <div>
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Video</h3>
+        <h3 className="text-sm font-bold text-gray-900 mb-2">Video</h3>
 
         {!showVideoUploaded ? (
           <>
             {/* Video Tabs */}
             <div className="border-b border-gray-200 mb-4">
-              <div className="flex">
+              <div className="flex gap-4">
                 <button
                   onClick={() => setActiveVideoTab("upload")}
-                  className={`px-4 py-2 font-medium text-sm border-b-2 ${
+                  className={`px-1 py-2 font-bold text-sm border-b-2 ${
                     activeVideoTab === "upload"
-                      ? "border-[#6D28D9] text-[#6D28D9]"
-                      : "border-transparent text-gray-500 hover:text-gray-700"
+                      ? "border-zinc-700 text-zincborder-zinc-700"
+                      : "border-transparent text-zinc-500 hover:text-zincborder-zinc-700"
                   }`}
                 >
                   Upload Video
                 </button>
                 <button
                   onClick={() => setActiveVideoTab("library")}
-                  className={`px-4 py-2 font-medium text-sm border-b-2 ml-8 ${
+                  className={`px-1 py-2 font-bold text-sm border-b-2 ${
                     activeVideoTab === "library"
-                      ? "border-[#6D28D9] text-[#6D28D9]"
-                      : "border-transparent text-gray-500 hover:text-gray-700"
+                      ? "border-zinc-700 text-zincborder-zinc-700"
+                      : "border-transparent text-zinc-500 hover:text-zincborder-zinc-700"
                   }`}
                 >
                   Add from library
@@ -325,7 +325,7 @@ const InstructionsTab: React.FC<{
                             <div>Date</div>
                           </div>
                           <div
-                            className="grid text-sm text-gray-700 mt-2 items-center"
+                            className="grid text-sm text-zincborder-zinc-700 mt-2 items-center"
                             style={{ gridTemplateColumns: "35% 15% 30% 20%" }}
                           >
                             <div className="truncate">
@@ -369,15 +369,15 @@ const InstructionsTab: React.FC<{
                   </div>
                 ) : (
                   <>
-                    <div className="flex items-center gap-4">
-                      <span className="text-gray-500 max-w-xl w-full border border-zinc-700 py-3 px-4 rounded">
+                    <div className="flex items-center gap-2">
+                      <span className="text-gray-500 max-w-lg w-full border border-zinc-700 py-3 px-4 rounded">
                         {data.instructionalVideo?.file
                           ? data.instructionalVideo.file.name
                           : "No file selected"}
                       </span>
                       <button
                         onClick={() => fileInputRef.current?.click()}
-                        className="px-4 py-3 border border-purple-600 text-purple-600 rounded-md hover:bg-purple-50 cursor-pointer"
+                        className="px-3 py-3 border font-bold text-sm border-[#6d28d2] text-[#6d28d2] rounded hover:bg-[rgba(108,40,210,0.125)] cursor-pointer transition"
                       >
                         Select Video
                       </button>
@@ -385,14 +385,14 @@ const InstructionsTab: React.FC<{
                     {showChangeCancel && (
                       <button
                         onClick={handleCancelChange}
-                        className="mt-2 px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700   cursor-pointer"
+                        className="mt-2 px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 cursor-pointer"
                       >
                         Cancel
                       </button>
                     )}
-                    <p className="text-sm text-gray-500 mt-2">
-                      Note: All files should be at least 720p and less than 4.0
-                      GB.
+                    <p className="text-xs text-gray-500 mt-2">
+                      <span className="font-bold">Note:</span> All files should
+                      be at least 720p and less than 4.0 GB.
                     </p>
                   </>
                 )}
@@ -410,10 +410,10 @@ const InstructionsTab: React.FC<{
                       placeholder="Search files by name"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full py-2 px-3 border border-gray-400 rounded-md focus:outline-none focus:border-[#6D28D9]"
+                      className="w-full py-2 px-3 border border-gray-400 rounded focus:outline-none focus:border-[#6D28D9]"
                     />
 
-                    <button className="p-2 bg-[#6D28D9] text-white rounded-md hover:bg-indigo-700">
+                    <button className="p-2 bg-[#6D28D9] text-white rounded hover:bg-indigo-700">
                       <Search className="w-5 h-5" />
                     </button>
                   </div>
@@ -428,7 +428,7 @@ const InstructionsTab: React.FC<{
                       {/* Table Header */}
                       <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
                         <div
-                          className="grid font-bold  text-sm text-gray-700"
+                          className="grid font-bold  text-sm text-zincborder-zinc-700"
                           style={{
                             gridTemplateColumns: "35% 11.67% 16.67% 16.66% 20%",
                           }}
@@ -457,7 +457,7 @@ const InstructionsTab: React.FC<{
                               className="px-4 py-3 hover:bg-gray-50"
                             >
                               <div
-                                className="grid font-medium text-sm text-gray-700"
+                                className="grid font-medium text-sm text-zincborder-zinc-700"
                                 style={{
                                   gridTemplateColumns:
                                     "35% 11.67% 16.67% 16.66% 20%",
@@ -519,9 +519,9 @@ const InstructionsTab: React.FC<{
           </>
         ) : (
           <div className="space-y-4">
-            <div className="border border-gray-300 rounded-md p-4 bg-gray-100">
+            <div className="border border-gray-300 rounded p-4 bg-gray-100">
               <div className="flex justify-between items-center font-semibold">
-                <span className="text-gray-700">
+                <span className="text-zincborder-zinc-700">
                   {data.instructionalVideo?.file?.name ||
                     data.instructionalVideo?.name ||
                     "No video selected"}
@@ -539,7 +539,7 @@ const InstructionsTab: React.FC<{
                         ? URL.createObjectURL(data.instructionalVideo.file)
                         : data.instructionalVideo.url
                     }
-                    className="w-full h-full rounded-md object-contain"
+                    className="w-full h-full rounded object-contain"
                   />
                 ) : (
                   <HLSVideoPlayer src={data.instructionalVideo.url} />
@@ -563,7 +563,7 @@ const InstructionsTab: React.FC<{
             <div className="flex space-x-2 mb-20">
               <button
                 onClick={handleChangeVideo}
-                className="px-4 py-2 bg-[#6d28d2] text-white rounded-md hover:bg-purple-600 cursor-pointer"
+                className="px-4 py-2 bg-[#6d28d2] text-white rounded hover:bg-purple-600 cursor-pointer"
               >
                 Change
               </button>
@@ -582,7 +582,7 @@ const InstructionsTab: React.FC<{
                   setShowChangeCancel(false);
                   setActiveVideoTab("upload");
                 }}
-                className="px-4 py-2 text-purple-600 hover:text-purple-800 border border-purple-600 rounded-md hover:bg-purple-50 cursor-pointer"
+                className="px-3 py-3 border font-bold text-sm border-[#6d28d2] text-[#6d28d2] rounded hover:bg-[rgba(108,40,210,0.125)] cursor-pointer transition"
               >
                 Delete
               </button>
@@ -606,7 +606,7 @@ const InstructionsTab: React.FC<{
             <div className="flex gap-2 mt-4">
               <button
                 onClick={handleSubmitInstructions}
-                className="px-4 py-2 bg-[#6d28d2] text-white rounded-md hover:bg-purple-600 cursor-pointer"
+                className="px-4 py-2 bg-[#6d28d2] text-white rounded hover:bg-purple-600 cursor-pointer"
               >
                 Submit
               </button>
@@ -615,7 +615,7 @@ const InstructionsTab: React.FC<{
                   setIsEditingInstructions(false);
                   onEditToggle(false);
                 }}
-                className="px-4 py-2 border border-[#6d28d2] text-[#6d28d2] rounded-md hover:bg-purple-50 cursor-pointer"
+                className="px-3 py-3 border font-bold text-sm border-[#6d28d2] text-[#6d28d2] rounded hover:bg-[rgba(108,40,210,0.125)] cursor-pointer transition"
               >
                 Cancel
               </button>
@@ -631,7 +631,7 @@ const InstructionsTab: React.FC<{
             />
             <button
               onClick={handleEditInstructions}
-              className="px-4 py-2 bg-[#6d28d2] text-white rounded-md hover:bg-purple-600 cursor-pointer"
+              className="px-4 py-2 bg-[#6d28d2] text-white rounded hover:bg-purple-600 cursor-pointer"
             >
               Edit
             </button>
@@ -641,11 +641,11 @@ const InstructionsTab: React.FC<{
 
       {/* Downloadable Resource */}
       <div className="mt-10">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">
+        <h3 className="text-sm font-bold text-gray-900 mb-2">
           Downloadable resource
         </h3>
         <div className="flex items-center gap-4">
-          <span className="text-gray-500 max-w-xl w-full border border-zinc-700 py-3 px-4 rounded">
+          <span className="text-gray-500 max-w-lg w-full border border-zinc-700 py-3 px-4 rounded">
             {data.instructionalResource?.file
               ? data.instructionalResource.file.name
               : "No file selected"}
@@ -660,16 +660,16 @@ const InstructionsTab: React.FC<{
               };
               input.click();
             }}
-            className="px-4 py-3 border border-[#6d28d2] text-[#6d28d2] rounded-md hover:bg-purple-50 cursor-pointer"
+            className="px-3 py-3 border inline-block font-bold text-sm border-[#6d28d2] text-[#6d28d2] rounded hover:bg-[rgba(108,40,210,0.125)] cursor-pointer transition w-max"
           >
             Select File
           </button>
         </div>
-        <p className="text-sm text-gray-600 mt-2 max-w-xl w-full">
-          Note: A resource is for any type of document that can be used to help
-          students in the lecture. This file is going to be such as a lecture
-          extra. Make sure everything is legible and the file size is less than
-          1 GB.
+        <p className="text-xs text-zinc-600 mt-2 max-w-[calc(32rem+90px)] w-full">
+          <span className="font-bold">Note:</span> A resource is for any type of
+          document that can be used to help students in the lecture. This file
+          is going to be such as a lecture extra. Make sure everything is
+          legible and the file size is less than 1 GB.
         </p>
       </div>
 
