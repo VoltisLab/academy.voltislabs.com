@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import { usePathname, useSearchParams } from 'next/navigation';
-import { useEffect, Suspense } from 'react';
-import { useLoading } from '@/context/LoadingContext';
-import VoltisLoader from '@/components/loader/loader';
-import Header from '@/components/layout/Header';
-import Footer from '@/components/layout/Footer';
+import { usePathname, useSearchParams } from "next/navigation";
+import { useEffect, Suspense } from "react";
+import { useLoading } from "@/context/LoadingContext";
+import VoltisLoader from "@/components/loader/loader";
+import Header from "@/components/layout/Header";
+import Footer from "@/components/layout/Footer";
 
 // Logic component for managing loading state
 function LoaderLogic({ children }: { children: React.ReactNode }) {
@@ -26,14 +26,19 @@ function LoaderLogic({ children }: { children: React.ReactNode }) {
   if (!pathname) return null;
 
   const hideLayout =
-    pathname.startsWith('/dashboard') || pathname.startsWith('/instructor');
+    pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/instructor") ||
+    pathname.startsWith("/assignment");
+
+  const hideLayout2 =
+    pathname.startsWith("/dashboard") || pathname.startsWith("/instructor");
 
   return (
     <>
       {isLoading && <VoltisLoader />}
       {!hideLayout && <Header />}
       <main>{children}</main>
-      {!hideLayout && <Footer />}
+      {!hideLayout2 && <Footer />}
     </>
   );
 }

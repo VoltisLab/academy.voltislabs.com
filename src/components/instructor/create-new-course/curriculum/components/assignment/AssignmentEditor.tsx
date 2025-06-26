@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useRef, JSX, useEffect } from "react";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ChevronLeft } from "lucide-react";
 import SolutionsTab from "./SolutionsTab";
 import QuestionsTab from "./QuestionsTab";
 import BasicInfoTab from "./BasicInfoTab";
@@ -47,30 +47,6 @@ const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
 
   const params = useParams();
   const id = params?.id;
-  // const [assignmentData, setAssignmentData] = useState<ExtendedLecture>({
-  //   ...(initialData || {
-  //     id: Date.now().toString(),
-  //     name: "",
-  //     description: "",
-  //     captions: "",
-  //     lectureNotes: "",
-  //     attachedFiles: [],
-  //     videos: [],
-  //     contentType: "assignment",
-  //     isExpanded: false,
-  //     assignmentTitle: "",
-  //     assignmentDescription: "",
-  //     estimatedDuration: 0,
-  //     durationUnit: "minutes",
-  //     assignmentInstructions: "",
-  //     assignmentQuestions: [],
-  //     isPublished: false,
-  //   }),
-
-  //   // Make sure isPublished is never undefined
-  //   isPublished:
-  //     initialData?.isPublished !== undefined ? initialData.isPublished : false,
-  // });
 
   const [showPublishModal, setShowPublishModal] = useState(false);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
@@ -434,15 +410,15 @@ const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-white z-50 flex flex-col px-20">
+    <div className=" bg-white z-50 flex flex-col px-4 max-w-7xl mx-auto">
       {/* Top Bar */}
       <div className="border-b border-gray-200 px-6 py-4 flex items-center justify-between">
         <div className=" gap-4 w-full">
           <button
             onClick={() => router.back()}
-            className="flex items-center gap-2 py-1.5 px-2 hover:bg-purple-100 font-bold rounded-md text-[#6d28d2] hover:text-purple-800 cursor-pointer transition"
+            className="flex items-center gap-2 py-2 px-2 hover:bg-[rgba(108,40,210,0.125)] font-bold rounded-md text-[#6d28d2] cursor-pointer transition text-sm"
           >
-            <ArrowLeft className="w-4 h-4" />
+            <ChevronLeft className="w-4 h-4" />
             Back to curriculum
           </button>
 
@@ -453,7 +429,7 @@ const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
             <button
               onClick={handlePublishClick}
               disabled={assignmentData.isPublished}
-              className="px-6 py-2 bg-[#6d28d2] text-white cursor-pointer rounded-md hover:bg-purple-600 disabled:bg-purple-300 disabled:cursor-not-allowed transition"
+              className="px-4 py-2 bg-[#6d28d2] text-white cursor-pointer rounded-md hover:bg-purple-600 disabled:bg-purple-300 disabled:cursor-not-allowed transition font-bold text-sm"
             >
               Publish
             </button>
@@ -471,7 +447,7 @@ const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
       )}
 
       {/* Main Content */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden mt-10">
         {/* Left Sidebar */}
         <div className="w-64 ">
           <nav className="p-4 space-y-1">
@@ -479,11 +455,11 @@ const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`w-full text-left px-3 py-2 text-sm ${
+                className={`w-full text-left px-4 py-2 text-sm border-l-4  ${
                   activeTab === tab.id
-                    ? "text-gray-800 border-l-4 border-gray-800"
-                    : "text-gray-800"
-                } hover:bg-gray-100`}
+                    ? "text-gray-800 border-gray-800"
+                    : "text-gray-800 border-transparent"
+                } hover:bg-gray-100 transition`}
               >
                 {tab.label}
               </button>
@@ -492,7 +468,7 @@ const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
         </div>
 
         {/* Content Area */}
-        <div className="flex-1 overflow-auto">{renderTabContent()}</div>
+        <div className="flex-1 overflow-auto ">{renderTabContent()}</div>
       </div>
 
       {/* Publish Confirmation Modal */}
