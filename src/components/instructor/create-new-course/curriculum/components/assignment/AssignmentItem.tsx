@@ -180,13 +180,15 @@ console.log("assignment===", lecture)
                 <FileText size={16} className="shrink-0 ml-1" />{" "}
                 {lecture?.title || lecture?.title || "Assignment"}
               </h3>
-              <div className="flex flex-row gap-1">
+              {
+                isHovering && 
+             <div className="flex flex-row gap-1">
                 <button
                   onClick={handleEditClick}
                   className="p-1 text-gray-400 hover:text-gray-600"
                   title="Edit Assignment"
                 >
-                  <Edit className="w-4 h-4" />
+                  <Edit3 className="w-4 h-4" />
                 </button>
                 <button
                   onClick={(e) => {
@@ -198,6 +200,7 @@ console.log("assignment===", lecture)
                   <Trash2 className="w-4 h-4" />
                 </button>
               </div>
+              }
             </div>
           )}
         </div>

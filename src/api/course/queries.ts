@@ -56,7 +56,10 @@ export interface GetInstructorCoursesResponse {
 export interface InstructorCourse {
   id: string;
   title: string;
-  banner: string;
+  banner: {
+    thumbnail: string;
+    url: string;
+  };
   description: string;
   instructor: Instructor;
   category: CourseCategory;

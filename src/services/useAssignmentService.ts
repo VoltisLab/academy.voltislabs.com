@@ -68,7 +68,7 @@ export const useAssignmentService = () => {
         );
       }
 
-      toast.success("Assignment created successfully!");
+      // toast.success("Assignment created successfully!");
       return data;
     } catch (err) {
       console.error("Assignment creation error:", err);

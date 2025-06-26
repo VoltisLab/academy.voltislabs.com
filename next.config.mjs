@@ -12,6 +12,14 @@ const nextConfig = {
       });
       return config;
     },
+    images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'prelura.s3.eu-west-2.amazonaws.com',
+      },
+    ],
+  },
   };
   
   export default nextConfig;

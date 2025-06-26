@@ -7,7 +7,10 @@ import { toast } from "react-hot-toast";
 type Course = {
   id: string;
   title: string;
-  banner: string;
+  banner: {
+    thumbnail: string;
+    url: string;
+  };
   description: string;
   category: {
     id: string;
