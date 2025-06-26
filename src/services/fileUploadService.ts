@@ -52,8 +52,6 @@ export const uploadFile = async (
       return null;
     }
 
-    console.log(data);
-
     if (data?.upload?.success) {
       const baseUrl = data.upload.baseUrl;
       const rawJson = data.upload.data?.[0]; // JSON string

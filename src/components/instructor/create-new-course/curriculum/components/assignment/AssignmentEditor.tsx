@@ -1,4 +1,4 @@
-"use client"
+"use client";
 import React, { useState, useRef, JSX, useEffect } from "react";
 import { ArrowLeft } from "lucide-react";
 import SolutionsTab from "./SolutionsTab";
@@ -12,8 +12,11 @@ import { useAssignment } from "@/context/AssignmentDataContext";
 import { UpdateAssignmentVariables } from "@/api/assignment/mutation";
 import { useAssignmentService } from "@/services/useAssignmentService";
 import { useParams, useRouter } from "next/navigation";
-import { GET_ASSIGNMENT, GetAssignmentData, GetAssignmentVariables } from "@/api/assignment/query";
-
+import {
+  GET_ASSIGNMENT,
+  GetAssignmentData,
+  GetAssignmentVariables,
+} from "@/api/assignment/query";
 
 // Types
 interface AssignmentQuestion {
@@ -21,15 +24,15 @@ interface AssignmentQuestion {
   content: string;
   order: number;
   solution?: {
-    text?:string;
-  } // Optional solution field for answers
+    text?: string;
+  }; // Optional solution field for answers
 }
 
 interface AssignmentEditorProps {
   initialData?: ExtendedLecture;
   onClose?: () => void;
   onSave: (data: ExtendedLecture) => void;
-  newAssinment?: number
+  newAssinment?: number;
 }
 
 // Main Assignment Editor Component
@@ -40,10 +43,10 @@ const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
   onSave,
 }) => {
   const [activeTab, setActiveTab] = useState("basic-info");
-  const router = useRouter()
-  
+  const router = useRouter();
+
   const params = useParams();
-    const id = params?.id; 
+  const id = params?.id;
   // const [assignmentData, setAssignmentData] = useState<ExtendedLecture>({
   //   ...(initialData || {
   //     id: Date.now().toString(),
@@ -75,17 +78,18 @@ const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
   const [showValidation, setShowValidation] = useState(false);
   const [publishSuccess, setPublishSuccess] = useState(false);
   const [isEditingInstructions, setIsEditingInstructions] = useState(true);
-  const [assignmentStatus, setAssignmentStatus] = useState<
-    "overview" | "assignment" | "summary/feedback"
-  >("overview");
+  // Sample library videos
+  const [libraryVideos, setLibraryVideos] = useState([
+    {
+      filename: "2024-11-13-175733.webm",
+      type: "Video",
+      status: "success",
+      date: "05/13/2025",
+      url: "",
+    },
+  ]);
 
   const { assignmentData, setAssignmentData } = useAssignment();
-  
-
-
-
-
-  
 
   const validateAssignment = () => {
     const errors: string[] = [];
@@ -132,60 +136,57 @@ const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
     setShowPublishModal(true);
     // }
   };
-  const {updateAssignment, getAssignment} = useAssignmentService()
-  console.log("assignmentment===", assignmentData)
+  const { updateAssignment, getAssignment } = useAssignmentService();
+  console.log("assignmentment===", assignmentData);
 
-const fetchAssignment: () => Promise<void> = async () => {
+  const fetchAssignment: () => Promise<void> = async () => {
     if (!id) return;
     try {
       const data = await getAssignment({ id: Number(id) });
-      setAssignmentData(
-              {
-              id: data?.id,
-              name: "",
-              description: "hfgfgfg",
-              captions: "jjjjjj",
-              lectureNotes: "",
-              attachedFiles: [],
-              videos: [],
-              contentType: "assignment",
-              isExpanded: false,
-              assignmentTitle: data?.title,
-              assignmentDescription: data?.description,
-              estimatedDuration: data?.estimatedDurationMinutes,
-              durationUnit: "minutes",
-              assignmentInstructions: data?.description,
-              assignmentQuestions: data?.questions,
-              isPublished: false,
-              solution: data?.questionSolutions
-              }
-          )
+      setAssignmentData({
+        id: data?.id,
+        name: "",
+        description: "hfgfgfg",
+        captions: "jjjjjj",
+        lectureNotes: "",
+        attachedFiles: [],
+        videos: [],
+        contentType: "assignment",
+        isExpanded: false,
+        assignmentTitle: data?.title,
+        assignmentDescription: data?.description,
+        estimatedDuration: data?.estimatedDurationMinutes,
+        durationUnit: "minutes",
+        assignmentInstructions: data?.description,
+        assignmentQuestions: data?.questions,
+        isPublished: false,
+        solution: data?.questionSolutions,
+      });
     } catch (err) {
       // Error already handled inside getAssignment
     }
   };
   useEffect(() => {
-  if (id) {
-    fetchAssignment();
-  }
-}, [id]);
-  const handleConfirmPublish = async() => {
+    if (id) {
+      fetchAssignment();
+    }
+  }, [id]);
+  const handleConfirmPublish = async () => {
     if (!validateAssignment()) {
-      
       setShowPublishModal(false);
       return;
     }
 
     const publishedData = { ...assignmentData, isPublished: true };
     const variables: UpdateAssignmentVariables = {
-        assignmentId: Number(newAssinment),
-        title: publishedData.assignmentTitle,
-        description: publishedData.assignmentDescription,
-        estimatedDurationMinutes: publishedData.estimatedDuration,
-        instructions: publishedData.assignmentInstructions,
-        resourceUrl: publishedData.instructionalResource?.url,
-        videoUrl: publishedData.instructionalVideo?.url
-      };
+      assignmentId: Number(newAssinment),
+      title: publishedData.assignmentTitle,
+      description: publishedData.assignmentDescription,
+      estimatedDurationMinutes: publishedData.estimatedDuration,
+      instructions: publishedData.assignmentInstructions,
+      resourceUrl: publishedData.instructionalResource?.url,
+      videoUrl: publishedData.instructionalVideo?.url,
+    };
 
     await updateAssignment(variables);
     onSave(publishedData);
@@ -396,20 +397,28 @@ const fetchAssignment: () => Promise<void> = async () => {
             isEditing={isEditingInstructions}
             onEditToggle={setIsEditingInstructions}
             hasSubmitted={Boolean(assignmentData.assignmentInstructions)}
+            libraryVideos={libraryVideos}
+            setLibraryVideos={setLibraryVideos}
           />
         );
       case "questions":
         return (
-          <QuestionsTab     fetchAssignment={fetchAssignment} data={assignmentData} onChange={handleDataChange} assignmentId={newAssinment}  />
+          <QuestionsTab
+            fetchAssignment={fetchAssignment}
+            data={assignmentData}
+            onChange={handleDataChange}
+            assignmentId={newAssinment}
+          />
         );
       case "solutions":
         return (
           <SolutionsTab
-                      fetchAssignment={fetchAssignment}
-
+            fetchAssignment={fetchAssignment}
             data={assignmentData}
             onChange={handleDataChange}
             setActiveTab={setActiveTab}
+            libraryVideos={libraryVideos}
+            setLibraryVideos={setLibraryVideos}
           />
         );
       default:

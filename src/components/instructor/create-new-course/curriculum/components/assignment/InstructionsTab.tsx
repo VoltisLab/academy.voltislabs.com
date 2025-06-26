@@ -8,6 +8,7 @@ import { useAssignmentService } from "@/services/useAssignmentService";
 import { ChevronDown, Search, Trash2 } from "lucide-react";
 import { uploadFile } from "@/services/fileUploadService";
 import { motion } from "framer-motion";
+import { HLSVideoPlayer } from "./HLSVideoPlayer";
 
 export interface UploadState {
   isUploading: boolean;
@@ -24,6 +25,8 @@ const InstructionsTab: React.FC<{
   onEditToggle: (value: boolean) => void;
   hasSubmitted: boolean;
   fetchAssignment: () => Promise<void>;
+  libraryVideos: any;
+  setLibraryVideos: any;
 }> = ({
   data,
   onChange,
@@ -31,6 +34,8 @@ const InstructionsTab: React.FC<{
   onEditToggle,
   hasSubmitted,
   fetchAssignment,
+  libraryVideos,
+  setLibraryVideos,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [activeVideoTab, setActiveVideoTab] = useState<
@@ -44,28 +49,6 @@ const InstructionsTab: React.FC<{
   const id = params?.id;
 
   const showEditor = isEditing || !hasSubmitted;
-
-  // Sample library videos
-  const [libraryVideos, setLibraryVideos] = useState([
-    {
-      filename: "2024-11-13-175733.webm",
-      type: "Video",
-      status: "success",
-      date: "05/13/2025",
-    },
-    {
-      filename: "Netflix.mp4",
-      type: "Video",
-      status: "success",
-      date: "05/08/2025",
-    },
-    {
-      filename: "Netflix.mp4",
-      type: "Video",
-      status: "success",
-      date: "05/07/2025",
-    },
-  ]);
 
   const [uploadState, setUploadState] = useState<UploadState>({
     isUploading: false,
@@ -97,7 +80,7 @@ const InstructionsTab: React.FC<{
     onChange("instructionalVideo", {
       file: null,
       url: video.url,
-      filename: video.filename,
+      name: video.filename,
     });
     setShowVideoUploaded(true);
     setActiveVideoTab(null); // Hide tabs after selection
@@ -116,6 +99,8 @@ const InstructionsTab: React.FC<{
   };
 
   const { updateAssignment } = useAssignmentService();
+
+  console.log("This is the data", data);
 
   const handleSubmitInstructions = async () => {
     if (
@@ -155,13 +140,13 @@ const InstructionsTab: React.FC<{
     onEditToggle(true);
   };
 
-  const filteredVideos = libraryVideos.filter((video) =>
+  const filteredVideos = libraryVideos.filter((video: any) =>
     video.filename.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const handleDeleteVideo = (filenameToDelete: string) => {
-    setLibraryVideos((prev) =>
-      prev.filter((video) => video.filename !== filenameToDelete)
+    setLibraryVideos((prev: any) =>
+      prev.filter((video: any) => video.filename !== filenameToDelete)
     );
   };
 
@@ -185,7 +170,7 @@ const InstructionsTab: React.FC<{
       date: new Date().toLocaleDateString(),
     };
 
-    setLibraryVideos((prev) => [newVideo, ...prev]);
+    setLibraryVideos((prev: any) => [newVideo, ...prev]);
 
     // Simulate realistic progress
     const progressInterval = setInterval(() => {
@@ -233,10 +218,11 @@ const InstructionsTab: React.FC<{
         filename: file.name,
         type: "Video",
         status: "success",
+        url: baseUrl,
         date: new Date().toLocaleDateString(),
       };
 
-      setLibraryVideos((prev) => [newVideo, ...prev]);
+      setLibraryVideos((prev: any) => [newVideo, ...prev]);
 
       setUploadState({
         isUploading: false,
@@ -246,8 +232,8 @@ const InstructionsTab: React.FC<{
         error: null,
       });
 
-      setLibraryVideos((prev) =>
-        prev.filter((video) => video.status !== "processing")
+      setLibraryVideos((prev: any) =>
+        prev.filter((video: any) => video.status !== "processing")
       );
 
       setShowVideoUploaded(true);
@@ -265,13 +251,11 @@ const InstructionsTab: React.FC<{
         date: new Date().toLocaleDateString(),
       };
 
-      setLibraryVideos((prev) => [newVideo, ...prev]);
+      setLibraryVideos((prev: any) => [newVideo, ...prev]);
 
-      setLibraryVideos((prev) =>
-        prev.filter((video) => video.status !== "processing")
+      setLibraryVideos((prev: any) =>
+        prev.filter((video: any) => video.status !== "processing")
       );
-
-      console.log();
 
       const errorMessage =
         error instanceof Error ? error.message : "Video upload failed";
@@ -467,7 +451,7 @@ const InstructionsTab: React.FC<{
                             No result found
                           </div>
                         ) : (
-                          filteredVideos.map((video, index) => (
+                          filteredVideos.map((video: any, index: number) => (
                             <div
                               key={index}
                               className="px-4 py-3 hover:bg-gray-50"
@@ -539,7 +523,7 @@ const InstructionsTab: React.FC<{
               <div className="flex justify-between items-center font-semibold">
                 <span className="text-gray-700">
                   {data.instructionalVideo?.file?.name ||
-                    data.instructionalVideo?.url?.split("/").pop() ||
+                    data.instructionalVideo?.name ||
                     "No video selected"}
                 </span>
               </div>
@@ -547,15 +531,19 @@ const InstructionsTab: React.FC<{
 
             <div className="h-80">
               {data.instructionalVideo?.url ? (
-                <video
-                  controls
-                  src={
-                    data.instructionalVideo.file
-                      ? URL.createObjectURL(data.instructionalVideo.file)
-                      : data.instructionalVideo.url
-                  }
-                  className="w-full h-full rounded-md object-contain"
-                />
+                data.instructionalVideo.file ? (
+                  <video
+                    controls
+                    src={
+                      data.instructionalVideo.file
+                        ? URL.createObjectURL(data.instructionalVideo.file)
+                        : data.instructionalVideo.url
+                    }
+                    className="w-full h-full rounded-md object-contain"
+                  />
+                ) : (
+                  <HLSVideoPlayer src={data.instructionalVideo.url} />
+                )
               ) : (
                 <div className="flex items-center justify-center h-full text-center text-gray-500">
                   <p>No video preview available.</p>
