@@ -41,7 +41,7 @@ export default function InstructorCourseList() {
         ) : (
           instructorCourses.map((course) => (
             <div key={course.id}>
-              <img src={course.banner} alt={course.title} />
+              <img src={course?.banner?.url ?? ""} alt={course.title} />
               <h3>{course.title}</h3>
               <p>Category: {course.category?.name}</p>
             </div>
