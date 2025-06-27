@@ -28,6 +28,14 @@ interface AssignmentQuestion {
   }; // Optional solution field for answers
 }
 
+export type Video = {
+  filename: string;
+  type: "Video";
+  status: "success" | "failed" | "uploading" | "processing"; // You can adjust if needed
+  url?: string;
+  date: string;
+};
+
 interface AssignmentEditorProps {
   initialData?: ExtendedLecture;
   onClose?: () => void;
@@ -55,15 +63,7 @@ const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
   const [publishSuccess, setPublishSuccess] = useState(false);
   const [isEditingInstructions, setIsEditingInstructions] = useState(true);
   // Sample library videos
-  const [libraryVideos, setLibraryVideos] = useState([
-    {
-      filename: "2024-11-13-175733.webm",
-      type: "Video",
-      status: "success",
-      date: "05/13/2025",
-      url: "",
-    },
-  ]);
+  const [libraryVideos, setLibraryVideos] = useState<Video[]>([]);
 
   const { assignmentData, setAssignmentData } = useAssignment();
 
