@@ -63,6 +63,16 @@ ql-editor a {
   border-top: none !important;
   border: none !important;
 }
+/* .my-quill .ql-container:hover { */
+/* background-color: #9792924a; */
+/* } */
+
+.my-quill .ql-editor:focus {
+  outline: none !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
 .my-quill .ql-editor::before {
   font-style: normal !important; /* Make placeholder not italic */
 }

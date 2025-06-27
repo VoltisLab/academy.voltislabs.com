@@ -1,14 +1,16 @@
 import { ExtendedLecture } from "@/lib/types";
-import { useRef, useState } from "react";
+import { Dispatch, SetStateAction, useEffect, useRef, useState } from "react";
 import RichTextEditor from "./NewRichTextEditor";
 import toast from "react-hot-toast";
 import { UpdateAssignmentVariables } from "@/api/assignment/mutation";
 import { useParams } from "next/navigation";
 import { useAssignmentService } from "@/services/useAssignmentService";
-import { ChevronDown, Search, Trash2 } from "lucide-react";
+import { ChevronDown, Search, Trash2, XIcon } from "lucide-react";
 import { uploadFile } from "@/services/fileUploadService";
 import { motion } from "framer-motion";
 import { HLSVideoPlayer } from "./HLSVideoPlayer";
+import { Video } from "./AssignmentEditor";
+import { FiDownload } from "react-icons/fi";
 
 export interface UploadState {
   isUploading: boolean;
@@ -25,8 +27,8 @@ const InstructionsTab: React.FC<{
   onEditToggle: (value: boolean) => void;
   hasSubmitted: boolean;
   fetchAssignment: () => Promise<void>;
-  libraryVideos: any;
-  setLibraryVideos: any;
+  libraryVideos: Video[];
+  setLibraryVideos: Dispatch<SetStateAction<Video[]>>;
 }> = ({
   data,
   onChange,
@@ -44,7 +46,10 @@ const InstructionsTab: React.FC<{
   const [searchQuery, setSearchQuery] = useState("");
   const [isEditingInstructions, setIsEditingInstructions] = useState(true);
   const [showVideoUploaded, setShowVideoUploaded] = useState(false);
+  const [showResourceUploaded, setShowResourceUploaded] = useState(false);
   const [showChangeCancel, setShowChangeCancel] = useState(false);
+  const [showResourceChangeCancel, setShowResourceChangeCancel] =
+    useState(false);
   const params = useParams();
   const id = params?.id;
 
@@ -58,22 +63,110 @@ const InstructionsTab: React.FC<{
     error: null,
   });
 
-  // const handleVideoUpload = (file: File) => {
-  //   if (!file) return; // Add null check
+  const [resourceUploadState, setResourceUploadState] = useState<UploadState>({
+    isUploading: false,
+    progress: 0,
+    file: null,
+    status: "idle",
+    error: null,
+  });
 
-  //   onChange("instructionalVideo", { file, url: URL.createObjectURL(file) });
-  //   setShowVideoUploaded(true);
-  //   setActiveVideoTab(null); // Hide tabs after upload
-  // };
+  const handleResourceUpload = async (file: File) => {
+    if (!file) return;
 
-  const handleResourceUpload = (file: File) => {
-    if (!file) return; // Add null check
-    onChange("instructionalResource", {
-      // Changed from downloadableResource
+    abortControllerRef.current = new AbortController();
+
+    // Set uploading state
+    setResourceUploadState({
+      isUploading: true,
+      progress: 0,
       file,
-      url: URL.createObjectURL(file),
-      name: file.name,
+      status: "uploading",
+      error: null,
     });
+
+    const progressInterval = setInterval(() => {
+      setResourceUploadState((prev) => {
+        if (prev.progress >= 95) return prev;
+
+        const increment =
+          prev.progress < 40 ? Math.random() * 10 + 5 : Math.random() * 3 + 1;
+
+        return {
+          ...prev,
+          progress: Math.min(prev.progress + increment, 95),
+        };
+      });
+    }, 300);
+
+    try {
+      const baseUrl = await uploadFile(
+        file,
+        "RESOURCE",
+        abortControllerRef.current.signal
+      );
+
+      if (!baseUrl) {
+        throw new Error("Upload failed - no URL returned");
+      }
+
+      clearInterval(progressInterval);
+      setResourceUploadState((prev) => ({ ...prev, progress: 100 }));
+
+      const updateVariables: UpdateAssignmentVariables = {
+        assignmentId: Number(id),
+        resourceUrl: baseUrl,
+      };
+
+      await updateAssignment(updateVariables);
+
+      onChange("instructionalResource", {
+        file,
+        url: baseUrl,
+        name: file.name,
+      });
+
+      setResourceUploadState({
+        isUploading: false,
+        progress: 100,
+        file: null,
+        status: "success",
+        error: null,
+      });
+
+      setShowResourceUploaded(true);
+
+      toast.success("Resource uploaded successfully!");
+    } catch (error: any) {
+      clearInterval(progressInterval);
+
+      if (error.name === "AbortError") {
+        setResourceUploadState({
+          isUploading: false,
+          progress: 0,
+          file: null,
+          status: "idle",
+          error: null,
+        });
+
+        return;
+      }
+
+      const errorMessage =
+        error instanceof Error ? error.message : "Resource upload failed";
+
+      setResourceUploadState({
+        isUploading: false,
+        progress: 100,
+        file: null,
+        status: "error",
+        error: errorMessage,
+      });
+
+      toast.error(errorMessage);
+    } finally {
+      abortControllerRef.current = null;
+    }
   };
 
   const handleVideoSelect = (video: any) => {
@@ -96,6 +189,15 @@ const InstructionsTab: React.FC<{
     setShowChangeCancel(false);
     setShowVideoUploaded(true);
     setActiveVideoTab(null);
+  };
+
+  const handleChangeResource = () => {
+    setShowResourceChangeCancel(true);
+    setShowResourceUploaded(false);
+  };
+  const handleCancelResourceChange = () => {
+    setShowResourceChangeCancel(false);
+    setShowResourceUploaded(true);
   };
 
   const { updateAssignment } = useAssignmentService();
@@ -140,18 +242,22 @@ const InstructionsTab: React.FC<{
     onEditToggle(true);
   };
 
-  const filteredVideos = libraryVideos.filter((video: any) =>
+  const filteredVideos = libraryVideos.filter((video) =>
     video.filename.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const handleDeleteVideo = (filenameToDelete: string) => {
-    setLibraryVideos((prev: any) =>
-      prev.filter((video: any) => video.filename !== filenameToDelete)
+    setLibraryVideos((prev) =>
+      prev.filter((video) => video.filename !== filenameToDelete)
     );
   };
 
+  const abortControllerRef = useRef<AbortController | null>(null);
+
   const handleVideoUpload = async (file: File) => {
     if (!file) return;
+
+    abortControllerRef.current = new AbortController();
 
     // Reset and set initial state
     setUploadState({
@@ -163,14 +269,14 @@ const InstructionsTab: React.FC<{
     });
 
     // 2. Add to library immediately (optimistic update)
-    const newVideo = {
+    const newVideo: Video = {
       filename: file.name,
       type: "Video",
       status: "processing",
       date: new Date().toLocaleDateString(),
     };
 
-    setLibraryVideos((prev: any) => [newVideo, ...prev]);
+    setLibraryVideos((prev) => [newVideo, ...prev]);
 
     // Simulate realistic progress
     const progressInterval = setInterval(() => {
@@ -189,8 +295,11 @@ const InstructionsTab: React.FC<{
     }, 300);
 
     try {
-      // 1. Upload the file
-      const baseUrl = await uploadFile(file, "VIDEO");
+      const baseUrl = await uploadFile(
+        file,
+        "VIDEO",
+        abortControllerRef.current.signal
+      );
 
       if (!baseUrl) {
         throw new Error("Upload failed - no URL returned");
@@ -214,7 +323,7 @@ const InstructionsTab: React.FC<{
         filename: file.name,
       });
 
-      const newVideo = {
+      const newVideo: Video = {
         filename: file.name,
         type: "Video",
         status: "success",
@@ -222,7 +331,7 @@ const InstructionsTab: React.FC<{
         date: new Date().toLocaleDateString(),
       };
 
-      setLibraryVideos((prev: any) => [newVideo, ...prev]);
+      setLibraryVideos((prev) => [newVideo, ...prev]);
 
       setUploadState({
         isUploading: false,
@@ -240,20 +349,35 @@ const InstructionsTab: React.FC<{
       setActiveVideoTab(null);
 
       toast.success("Video uploaded and assignment updated successfully!");
-    } catch (error) {
+    } catch (error: any) {
       clearInterval(progressInterval);
 
+      console.log(error);
+
+      if (error.name === "AbortError") {
+        // User canceled the upload
+        setUploadState({
+          isUploading: false,
+          progress: 0,
+          file: null,
+          status: "idle",
+          error: null,
+        });
+        return;
+      }
+
       // Add to library even if failed
-      const newVideo = {
+      const newVideo: Video = {
         filename: file.name,
         type: "Video",
-        status: "Failed",
+        status: "failed",
+        url: "",
         date: new Date().toLocaleDateString(),
       };
 
-      setLibraryVideos((prev: any) => [newVideo, ...prev]);
+      setLibraryVideos((prev) => [newVideo, ...prev]);
 
-      setLibraryVideos((prev: any) =>
+      setLibraryVideos((prev) =>
         prev.filter((video: any) => video.status !== "processing")
       );
 
@@ -269,36 +393,82 @@ const InstructionsTab: React.FC<{
       });
 
       toast.error(errorMessage);
+    } finally {
+      abortControllerRef.current = null;
     }
   };
 
+  const cancelUpload = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    setUploadState({
+      isUploading: false,
+      progress: 0,
+      file: null,
+      status: "error",
+      error: null,
+    });
+
+    // Remove the "processing" video from library
+    setLibraryVideos((prev) =>
+      prev.filter((video) => video.status !== "processing")
+    );
+
+    // toast.success("Upload canceled");
+  };
+
+  const cancelResourceUpload = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    setResourceUploadState({
+      isUploading: false,
+      progress: 0,
+      file: null,
+      status: "error",
+      error: null,
+    });
+  };
+
+  // Clean up on unmount
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
+
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-20">
       {/* Video Section */}
       <div>
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Video</h3>
+        <h3 className="text-sm font-bold text-gray-900 mb-2">Video</h3>
 
         {!showVideoUploaded ? (
           <>
             {/* Video Tabs */}
             <div className="border-b border-gray-200 mb-4">
-              <div className="flex">
+              <div className="flex gap-4">
                 <button
                   onClick={() => setActiveVideoTab("upload")}
-                  className={`px-4 py-2 font-medium text-sm border-b-2 ${
+                  className={`px-1 py-2 font-bold text-sm border-b-2 ${
                     activeVideoTab === "upload"
-                      ? "border-[#6D28D9] text-[#6D28D9]"
-                      : "border-transparent text-gray-500 hover:text-gray-700"
+                      ? "border-zinc-700 text-zincborder-zinc-700"
+                      : "border-transparent text-zinc-500 hover:text-zincborder-zinc-700"
                   }`}
                 >
                   Upload Video
                 </button>
                 <button
                   onClick={() => setActiveVideoTab("library")}
-                  className={`px-4 py-2 font-medium text-sm border-b-2 ml-8 ${
+                  className={`px-1 py-2 font-bold text-sm border-b-2 ${
                     activeVideoTab === "library"
-                      ? "border-[#6D28D9] text-[#6D28D9]"
-                      : "border-transparent text-gray-500 hover:text-gray-700"
+                      ? "border-zinc-700 text-zincborder-zinc-700"
+                      : "border-transparent text-zinc-500 hover:text-zincborder-zinc-700"
                   }`}
                 >
                   Add from library
@@ -317,16 +487,21 @@ const InstructionsTab: React.FC<{
                         <div className="border-b border-gray-300 py-2">
                           <div
                             className="grid font-bold text-gray-800"
-                            style={{ gridTemplateColumns: "35% 15% 30% 20%" }}
+                            style={{
+                              gridTemplateColumns: "30% 15% 25% 20% 10%",
+                            }}
                           >
                             <div>Filename</div>
                             <div>Type</div>
                             <div>Status</div>
                             <div>Date</div>
+                            <div></div>
                           </div>
                           <div
-                            className="grid text-sm text-gray-700 mt-2 items-center"
-                            style={{ gridTemplateColumns: "35% 15% 30% 20%" }}
+                            className="grid text-sm text-zincborder-zinc-700 mt-2 items-center"
+                            style={{
+                              gridTemplateColumns: "30% 15% 25% 20% 10%",
+                            }}
                           >
                             <div className="truncate">
                               {uploadState.file?.name || "Uploading..."}
@@ -334,9 +509,9 @@ const InstructionsTab: React.FC<{
                             <div>Video</div>
                             <div className="flex items-center">
                               <div className="w-full flex items-center">
-                                <div className="w-20 bg-gray-200 h-2 overflow-hidden rounded-full">
+                                <div className="w-30 bg-gray-200 h-2 overflow-hidden rounded">
                                   <motion.div
-                                    className="bg-[#6D28D2] h-2 rounded-full"
+                                    className="bg-[#6D28D2] h-2"
                                     initial={{ width: 0 }}
                                     animate={{
                                       width: `${uploadState.progress}%`,
@@ -356,6 +531,12 @@ const InstructionsTab: React.FC<{
                               </div>
                             </div>
                             <div>{new Date().toLocaleDateString()}</div>
+                            <div className="flex">
+                              <XIcon
+                                className="text-[#6D28D9] hover:bg-[rgba(108,40,210,0.125)] font-semibold ml-auto cursor-pointer text-sm"
+                                onClick={() => cancelUpload()}
+                              />
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -369,15 +550,15 @@ const InstructionsTab: React.FC<{
                   </div>
                 ) : (
                   <>
-                    <div className="flex items-center gap-4">
-                      <span className="text-gray-500 max-w-xl w-full border border-zinc-700 py-3 px-4 rounded">
+                    <div className="flex items-center gap-2">
+                      <span className="text-zinc-700 max-w-lg font-semibold text-sm w-full border border-zinc-700 py-3 px-4 rounded">
                         {data.instructionalVideo?.file
                           ? data.instructionalVideo.file.name
                           : "No file selected"}
                       </span>
                       <button
                         onClick={() => fileInputRef.current?.click()}
-                        className="px-4 py-3 border border-purple-600 text-purple-600 rounded-md hover:bg-purple-50 cursor-pointer"
+                        className="px-3 py-3 border font-bold text-sm border-[#6d28d2] text-[#6d28d2] rounded hover:bg-[rgba(108,40,210,0.125)] cursor-pointer transition"
                       >
                         Select Video
                       </button>
@@ -385,14 +566,14 @@ const InstructionsTab: React.FC<{
                     {showChangeCancel && (
                       <button
                         onClick={handleCancelChange}
-                        className="mt-2 px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700   cursor-pointer"
+                        className="mt-2 px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 cursor-pointer"
                       >
                         Cancel
                       </button>
                     )}
-                    <p className="text-sm text-gray-500 mt-2">
-                      Note: All files should be at least 720p and less than 4.0
-                      GB.
+                    <p className="text-xs text-gray-500 mt-2">
+                      <span className="font-bold">Note:</span> All files should
+                      be at least 720p and less than 4.0 GB.
                     </p>
                   </>
                 )}
@@ -410,10 +591,10 @@ const InstructionsTab: React.FC<{
                       placeholder="Search files by name"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full py-2 px-3 border border-gray-400 rounded-md focus:outline-none focus:border-[#6D28D9]"
+                      className="w-full py-2 px-3 border border-gray-400 rounded focus:outline-none focus:border-[#6D28D9]"
                     />
 
-                    <button className="p-2 bg-[#6D28D9] text-white rounded-md hover:bg-indigo-700">
+                    <button className="p-2 bg-[#6D28D9] text-white rounded hover:bg-indigo-700">
                       <Search className="w-5 h-5" />
                     </button>
                   </div>
@@ -426,9 +607,9 @@ const InstructionsTab: React.FC<{
                     {/* Inner Wrapper with Min Width to Trigger Scroll on Small Screens */}
                     <div className="min-w-[700px]">
                       {/* Table Header */}
-                      <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
+                      <div className="px-4 py-3 border-b border-gray-200">
                         <div
-                          className="grid font-bold  text-sm text-gray-700"
+                          className="grid font-bold  text-sm text-zincborder-zinc-700"
                           style={{
                             gridTemplateColumns: "35% 11.67% 16.67% 16.66% 20%",
                           }}
@@ -451,13 +632,13 @@ const InstructionsTab: React.FC<{
                             No result found
                           </div>
                         ) : (
-                          filteredVideos.map((video: any, index: number) => (
+                          filteredVideos.map((video, index) => (
                             <div
                               key={index}
                               className="px-4 py-3 hover:bg-gray-50"
                             >
                               <div
-                                className="grid font-medium text-sm text-gray-700"
+                                className="grid font-medium text-sm text-zincborder-zinc-700"
                                 style={{
                                   gridTemplateColumns:
                                     "35% 11.67% 16.67% 16.66% 20%",
@@ -470,12 +651,10 @@ const InstructionsTab: React.FC<{
                                   {video.type}
                                 </div>
                                 <div
-                                  className={`${
-                                    video.status === "success"
-                                      ? "text-green-500"
-                                      : video.status === "processing"
-                                      ? "text-gray-600"
-                                      : "text-red-600"
+                                  className={`capitalize ${
+                                    video.status === "failed"
+                                      ? "text-red-600"
+                                      : "text-gray-600"
                                   }`}
                                 >
                                   {video.status}
@@ -519,9 +698,9 @@ const InstructionsTab: React.FC<{
           </>
         ) : (
           <div className="space-y-4">
-            <div className="border border-gray-300 rounded-md p-4 bg-gray-100">
+            <div className="border border-gray-300 rounded p-4 bg-gray-100">
               <div className="flex justify-between items-center font-semibold">
-                <span className="text-gray-700">
+                <span className="text-zincborder-zinc-700">
                   {data.instructionalVideo?.file?.name ||
                     data.instructionalVideo?.name ||
                     "No video selected"}
@@ -539,7 +718,7 @@ const InstructionsTab: React.FC<{
                         ? URL.createObjectURL(data.instructionalVideo.file)
                         : data.instructionalVideo.url
                     }
-                    className="w-full h-full rounded-md object-contain"
+                    className="w-full h-full rounded object-contain"
                   />
                 ) : (
                   <HLSVideoPlayer src={data.instructionalVideo.url} />
@@ -550,20 +729,12 @@ const InstructionsTab: React.FC<{
                 </div>
               )}
             </div>
-            {/* <div className="h-80 flex items-center justify-center text-center text-gray-500">
-              <p>
-                We've uploaded your file, and are processing it to ensure it
-                works smoothly on Udemy.
-                <br />
-                As soon as it's ready, we'll send you an email.
-              </p>
-            </div> */}
 
             {/* Files change and delete buttons */}
             <div className="flex space-x-2 mb-20">
               <button
                 onClick={handleChangeVideo}
-                className="px-4 py-2 bg-[#6d28d2] text-white rounded-md hover:bg-purple-600 cursor-pointer"
+                className="px-4 py-2 bg-[#6d28d2] text-white rounded hover:bg-purple-600 cursor-pointer"
               >
                 Change
               </button>
@@ -582,7 +753,7 @@ const InstructionsTab: React.FC<{
                   setShowChangeCancel(false);
                   setActiveVideoTab("upload");
                 }}
-                className="px-4 py-2 text-purple-600 hover:text-purple-800 border border-purple-600 rounded-md hover:bg-purple-50 cursor-pointer"
+                className="px-3 py-3 border font-bold text-sm border-[#6d28d2] text-[#6d28d2] rounded hover:bg-[rgba(108,40,210,0.125)] cursor-pointer transition"
               >
                 Delete
               </button>
@@ -606,7 +777,7 @@ const InstructionsTab: React.FC<{
             <div className="flex gap-2 mt-4">
               <button
                 onClick={handleSubmitInstructions}
-                className="px-4 py-2 bg-[#6d28d2] text-white rounded-md hover:bg-purple-600 cursor-pointer"
+                className="px-4 py-2 bg-[#6d28d2] text-white rounded hover:bg-purple-600 cursor-pointer"
               >
                 Submit
               </button>
@@ -615,7 +786,7 @@ const InstructionsTab: React.FC<{
                   setIsEditingInstructions(false);
                   onEditToggle(false);
                 }}
-                className="px-4 py-2 border border-[#6d28d2] text-[#6d28d2] rounded-md hover:bg-purple-50 cursor-pointer"
+                className="px-3 py-3 border font-bold text-sm border-[#6d28d2] text-[#6d28d2] rounded hover:bg-[rgba(108,40,210,0.125)] cursor-pointer transition"
               >
                 Cancel
               </button>
@@ -631,7 +802,7 @@ const InstructionsTab: React.FC<{
             />
             <button
               onClick={handleEditInstructions}
-              className="px-4 py-2 bg-[#6d28d2] text-white rounded-md hover:bg-purple-600 cursor-pointer"
+              className="px-4 py-2 bg-[#6d28d2] text-white rounded hover:bg-purple-600 cursor-pointer"
             >
               Edit
             </button>
@@ -641,36 +812,161 @@ const InstructionsTab: React.FC<{
 
       {/* Downloadable Resource */}
       <div className="mt-10">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">
+        <h3 className="text-sm font-bold text-gray-900 mb-2">
           Downloadable resource
         </h3>
-        <div className="flex items-center gap-4">
-          <span className="text-gray-500 max-w-xl w-full border border-zinc-700 py-3 px-4 rounded">
-            {data.instructionalResource?.file
-              ? data.instructionalResource.file.name
-              : "No file selected"}
-          </span>
-          <button
-            onClick={() => {
-              const input = document.createElement("input");
-              input.type = "file";
-              input.onchange = (e) => {
-                const file = (e.target as HTMLInputElement).files?.[0];
-                if (file) handleResourceUpload(file);
-              };
-              input.click();
-            }}
-            className="px-4 py-3 border border-[#6d28d2] text-[#6d28d2] rounded-md hover:bg-purple-50 cursor-pointer"
-          >
-            Select File
-          </button>
-        </div>
-        <p className="text-sm text-gray-600 mt-2 max-w-xl w-full">
-          Note: A resource is for any type of document that can be used to help
-          students in the lecture. This file is going to be such as a lecture
-          extra. Make sure everything is legible and the file size is less than
-          1 GB.
-        </p>
+
+        {!showResourceUploaded ? (
+          <div>
+            {resourceUploadState.isUploading ? (
+              <div className="overflow-hidden">
+                <div className="w-full max-w-[calc(32rem+90px)] overflow-x-auto">
+                  <div className="min-w-[600px] space-y-4">
+                    {" "}
+                    <div className="border-b border-gray-300 py-2">
+                      <div
+                        className="grid font-bold text-gray-800"
+                        style={{
+                          gridTemplateColumns: "30% 15% 25% 20% 10%",
+                        }}
+                      >
+                        <div>Filename</div>
+                        <div>Type</div>
+                        <div>Status</div>
+                        <div>Date</div>
+                        <div></div>
+                      </div>
+                      <div
+                        className="grid text-sm text-zincborder-zinc-700 mt-2 items-center"
+                        style={{
+                          gridTemplateColumns: "30% 15% 25% 20% 10%",
+                        }}
+                      >
+                        <div className="truncate">
+                          {resourceUploadState.file?.name || "Uploading..."}
+                        </div>
+                        <div>Video</div>
+                        <div className="flex items-center">
+                          <div className="w-full flex items-center">
+                            <div className="w-30 bg-gray-200 h-2 overflow-hidden rounded">
+                              <motion.div
+                                className="bg-[#6D28D2] h-2"
+                                initial={{ width: 0 }}
+                                animate={{
+                                  width: `${resourceUploadState.progress}%`,
+                                }}
+                                transition={{
+                                  duration: 0.3,
+                                  ease: "easeOut",
+                                }}
+                              />
+                            </div>
+                            <span className="ml-2 text-xs">
+                              {Math.trunc(resourceUploadState.progress)}%
+                              {resourceUploadState.progress >= 95 &&
+                                resourceUploadState.status === "uploading" &&
+                                " (Processing...)"}
+                            </span>
+                          </div>
+                        </div>
+                        <div>{new Date().toLocaleDateString()}</div>
+                        <div className="flex">
+                          <XIcon
+                            className="text-[#6D28D9] hover:bg-[rgba(108,40,210,0.125)] font-semibold ml-auto cursor-pointer text-sm"
+                            onClick={() => cancelResourceUpload()}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {resourceUploadState.status === "error" && (
+                  <div className="text-red-500 text-sm mt-2">
+                    {resourceUploadState.error}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <>
+                <div className="flex items-center gap-4">
+                  <span className="text-zinc-700 max-w-lg font-semibold text-sm w-full border border-zinc-700 py-3 px-4 rounded">
+                    {data.instructionalResource?.file
+                      ? data.instructionalResource.file.name
+                      : "No file selected"}
+                  </span>
+                  <button
+                    onClick={() => {
+                      const input = document.createElement("input");
+                      input.type = "file";
+                      input.onchange = (e) => {
+                        const file = (e.target as HTMLInputElement).files?.[0];
+                        if (file) handleResourceUpload(file);
+                      };
+                      input.click();
+                    }}
+                    className="px-3 py-3 border font-bold text-sm border-[#6d28d2] text-[#6d28d2] rounded hover:bg-[rgba(108,40,210,0.125)] cursor-pointer transition w-max"
+                  >
+                    Select File
+                  </button>
+                </div>
+
+                <p className="text-xs text-zinc-600 mt-2 max-w-[calc(32rem+90px)] w-full">
+                  <span className="font-bold">Note:</span> A resource is for any
+                  type of document that can be used to help students in the
+                  lecture. This file is going to be such as a lecture extra.
+                  Make sure everything is legible and the file size is less than
+                  1 GB.
+                </p>
+
+                {showResourceChangeCancel && (
+                  <button
+                    onClick={handleCancelResourceChange}
+                    className="mt-2 px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                )}
+              </>
+            )}
+          </div>
+        ) : (
+          <div className="flex items-center gap-4 p-3">
+            {/* Download Icon */}
+            <FiDownload />
+            {/* File Name */}
+            <span className="text-sm font-medium text-gray-900 truncate">
+              {data.instructionalResource?.name}
+            </span>
+
+            {/* Change Button */}
+            <button
+              onClick={() => handleChangeResource()}
+              className="px-4 py-2 bg-[#6d28d2] text-white rounded hover:bg-purple-600 cursor-pointer"
+            >
+              Change
+            </button>
+
+            {/* Delete Button */}
+            <button
+              onClick={() => {
+                onChange("instructionalResource", null);
+                setResourceUploadState({
+                  isUploading: false,
+                  progress: 0,
+                  file: null,
+                  status: "idle",
+                  error: null,
+                });
+                setShowResourceUploaded(false);
+                setShowResourceChangeCancel(false);
+              }}
+              className="px-3 py-3 border font-bold text-sm border-[#6d28d2] text-[#6d28d2] rounded hover:bg-[rgba(108,40,210,0.125)] cursor-pointer transition"
+            >
+              Delete
+            </button>
+          </div>
+        )}
       </div>
 
       <input
