@@ -1,4 +1,4 @@
-import { gql } from "@apollo/client";
+import { ApolloError, gql } from "@apollo/client";
 import { apolloClient } from "@/lib/apollo-client";
 import { toast } from "react-hot-toast";
 
@@ -24,10 +24,10 @@ const UPLOAD_FILE = gql`
   }
 `;
 
-
 export const uploadFile = async (
   file: File,
-  filetype: FileTypeEnum
+  filetype: FileTypeEnum,
+  signal?: AbortSignal
 ): Promise<string | null> => {
   try {
     if (!(file instanceof File)) {
@@ -42,6 +42,7 @@ export const uploadFile = async (
       },
       context: {
         includeAuth: true,
+        fetchOptions: signal ? { signal } : undefined,
       },
       fetchPolicy: "no-cache",
     });
@@ -67,10 +68,15 @@ export const uploadFile = async (
       toast.error("File upload failed");
       return null;
     }
-  } catch (err) {
+  } catch (err: any) {
+    if (
+      err.name === "AbortError" ||
+      (err instanceof ApolloError && err.message.includes("signal is aborted"))
+    ) {
+      throw new Error("UPLOAD_CANCELLED");
+    }
     console.error("Upload error:", err);
     toast.error(err instanceof Error ? err.message : "Unexpected upload error");
     return null;
   }
 };
-
