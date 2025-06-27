@@ -153,7 +153,7 @@ const QuestionsTab: React.FC<{
 
   const renderQuestionEditor = (questionNumber: number) => (
     <>
-      <div className="border border-gray-300 rounded-md mt-2">
+      <div className="border border-gray-300 rounded mt-2">
         <RichTextEditor
           key={editingQuestionId || "new"} // 🔑 force re-render when switching
           value={currentQuestionContent}
@@ -164,13 +164,13 @@ const QuestionsTab: React.FC<{
       <div className="flex gap-2 pt-4">
         <button
           onClick={handleSubmitQuestion}
-          className="px-4 py-2 bg-[#6d28d2] text-white rounded-md hover:bg-purple-600 transition cursor-pointer"
+          className="px-4 py-2 bg-[#6d28d2] text-white rounded hover:bg-purple-600 transition cursor-pointer"
         >
           Submit
         </button>
         <button
           onClick={cancelEditing}
-          className="px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-200 cursor-pointer rounded-md transition"
+          className="px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-200 cursor-pointer rounded transition"
         >
           Cancel
         </button>
@@ -191,13 +191,13 @@ const QuestionsTab: React.FC<{
       <div className="flex gap-2 mt-2">
         <button
           onClick={() => startEditing(question)}
-          className="px-4 py-2 bg-[#6d28d2] text-white rounded-md hover:bg-purple-600 transition cursor-pointer"
+          className="px-4 py-2 bg-[#6d28d2] text-white rounded hover:bg-purple-600 transition cursor-pointer"
         >
           Edit
         </button>
         <button
           onClick={() => setQuestionToDelete(question.id)}
-          className="px-3 py-1 text-sm border border-[#6d28d2] text-[#6d28d2] rounded-md hover:bg-purple-50 cursor-pointer transition"
+          className="px-3 py-1 text-sm border border-[#6d28d2] text-[#6d28d2] rounded hover:bg-purple-50 cursor-pointer transition"
         >
           Delete
         </button>
@@ -209,9 +209,9 @@ const QuestionsTab: React.FC<{
     <div className="p-6 space-y-6">
       {/* info section */}
       {showInfo && (
-        <div className="border border-purple-200 bg-purple-50 rounded-md p-4">
+        <div className="border border-[#6d28d2] rounded p-4">
           <div className="flex items-start gap-3">
-            <div className="w-6 h-6 bg-[#6d28d2] rounded-full flex items-center justify-center text-white text-sm flex-shrink-0 mt-1">
+            <div className="size-4 border border-[#6d28d2] rounded-full flex items-center justify-center text-[#6d28d2] text-xs flex-shrink-0 mt-1">
               i
             </div>
             <div className="flex-1">
@@ -220,12 +220,12 @@ const QuestionsTab: React.FC<{
                 a maximum of 12 questions.
               </p>
               <div className="flex gap-2">
-                <button className="px-4 py-2 border border-[#6d28d2] text-[#6d28d2] rounded-md hover:bg-purple-100">
+                <button className="px-3 py-1 border font-bold text-sm border-[#6d28d2] text-[#6d28d2] rounded hover:bg-[rgba(108,40,210,0.125)] cursor-pointer transition">
                   Learn more
                 </button>
                 <button
                   onClick={() => setShowInfo(false)}
-                  className="px-4 py-2 text-[#6d28d2] hover:text-purple-800"
+                  className="px-4 py-1 text-[#6d28d2] hover:text-purple-800"
                 >
                   Dismiss
                 </button>
@@ -238,7 +238,7 @@ const QuestionsTab: React.FC<{
       {/* render questions */}
       {questions.map((question) => (
         <div key={question.id} className="pb-6">
-          <h3 className="text-lg font-medium text-gray-900">
+          <h3 className="text-sm font-bold text-gray-900">
             Question {question.order}
           </h3>
           {editingQuestionId === question.id
@@ -261,7 +261,7 @@ const QuestionsTab: React.FC<{
       {!isAddingNewQuestion && questions.length < 12 && (
         <button
           onClick={startAddingNewQuestion}
-          className="flex items-center gap-2 px-4 py-2 border border-[#6d28d2] text-[#6d28d2] rounded-md hover:bg-purple-50 transition text-sm cursor-pointer"
+          className="flex items-center gap-2 px-4 py-2 border border-[#6d28d2] text-[#6d28d2] rounded hover:bg-purple-50 transition text-sm cursor-pointer"
         >
           Add More
         </button>
