@@ -5,7 +5,7 @@ import toast from "react-hot-toast";
 import { UpdateAssignmentVariables } from "@/api/assignment/mutation";
 import { useParams } from "next/navigation";
 import { useAssignmentService } from "@/services/useAssignmentService";
-import { ChevronDown, Search, Trash2, XIcon } from "lucide-react";
+import { ChevronDown, ChevronUp, Search, Trash2, XIcon } from "lucide-react";
 import { uploadFile } from "@/services/fileUploadService";
 import { motion } from "framer-motion";
 import { HLSVideoPlayer } from "./HLSVideoPlayer";
@@ -23,21 +23,25 @@ export interface UploadState {
 const InstructionsTab: React.FC<{
   data: ExtendedLecture;
   onChange: (field: string, value: any) => void;
-  isEditing: boolean;
-  onEditToggle: (value: boolean) => void;
   hasSubmitted: boolean;
   fetchAssignment: () => Promise<void>;
   libraryVideos: Video[];
   setLibraryVideos: Dispatch<SetStateAction<Video[]>>;
+  sortByNameAsc: boolean;
+  sortByDateAsc: boolean;
+  toggleSortByName: () => void;
+  toggleSortByDate: () => void;
 }> = ({
   data,
   onChange,
-  isEditing,
-  onEditToggle,
   hasSubmitted,
   fetchAssignment,
   libraryVideos,
   setLibraryVideos,
+  sortByNameAsc,
+  sortByDateAsc,
+  toggleSortByName,
+  toggleSortByDate,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [activeVideoTab, setActiveVideoTab] = useState<
@@ -53,7 +57,9 @@ const InstructionsTab: React.FC<{
   const params = useParams();
   const id = params?.id;
 
-  const showEditor = isEditing || !hasSubmitted;
+  console.log(sortByNameAsc, sortByDateAsc);
+
+  const showEditor = isEditingInstructions || !hasSubmitted;
 
   const [uploadState, setUploadState] = useState<UploadState>({
     isUploading: false,
@@ -185,6 +191,8 @@ const InstructionsTab: React.FC<{
     setActiveVideoTab("upload");
   };
 
+  console.log(libraryVideos);
+
   const handleCancelChange = () => {
     setShowChangeCancel(false);
     setShowVideoUploaded(true);
@@ -202,7 +210,7 @@ const InstructionsTab: React.FC<{
 
   const { updateAssignment } = useAssignmentService();
 
-  console.log("This is the data", data);
+  console.log("This is the data", data.videoUrl);
 
   const handleSubmitInstructions = async () => {
     if (
@@ -232,24 +240,32 @@ const InstructionsTab: React.FC<{
     toast.success("instructions saved successfully!");
     fetchAssignment();
     setIsEditingInstructions(false);
-    onEditToggle(false);
     toast.success("Instructions saved successfully!");
     console.log("Instructions saved:", data.assignmentInstructions);
   };
 
   const handleEditInstructions = () => {
     setIsEditingInstructions(true);
-    onEditToggle(true);
   };
 
   const filteredVideos = libraryVideos.filter((video) =>
     video.filename.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleDeleteVideo = (filenameToDelete: string) => {
-    setLibraryVideos((prev) =>
-      prev.filter((video) => video.filename !== filenameToDelete)
+  let sortedVideos = [...filteredVideos];
+
+  if (sortByNameAsc) {
+    sortedVideos.sort((a, b) => a.filename.localeCompare(b.filename));
+  } else if (sortByDateAsc) {
+    sortedVideos.sort(
+      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
     );
+  } else {
+    sortedVideos = [...filteredVideos];
+  }
+
+  const handleDeleteVideo = (id: string) => {
+    setLibraryVideos((prev) => prev.filter((video) => video.id !== id));
   };
 
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -270,6 +286,7 @@ const InstructionsTab: React.FC<{
 
     // 2. Add to library immediately (optimistic update)
     const newVideo: Video = {
+      id: String(libraryVideos.length + 1),
       filename: file.name,
       type: "Video",
       status: "processing",
@@ -324,6 +341,7 @@ const InstructionsTab: React.FC<{
       });
 
       const newVideo: Video = {
+        id: String(libraryVideos.length + 1),
         filename: file.name,
         type: "Video",
         status: "success",
@@ -368,6 +386,7 @@ const InstructionsTab: React.FC<{
 
       // Add to library even if failed
       const newVideo: Video = {
+        id: String(libraryVideos.length + 1),
         filename: file.name,
         type: "Video",
         status: "failed",
@@ -435,6 +454,11 @@ const InstructionsTab: React.FC<{
 
   // Clean up on unmount
   useEffect(() => {
+    console.log(data.solutionResource);
+    if (data.videoUrl) setShowVideoUploaded(true);
+    if (data.instructionalResource) setShowResourceUploaded(true);
+    if (data.assignmentInstructions) setIsEditingInstructions(false);
+
     return () => {
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
@@ -609,17 +633,50 @@ const InstructionsTab: React.FC<{
                       {/* Table Header */}
                       <div className="px-4 py-3 border-b border-gray-200">
                         <div
-                          className="grid font-bold  text-sm text-zincborder-zinc-700"
+                          className="grid font-bold text-sm text-zinc border-zinc-700"
                           style={{
                             gridTemplateColumns: "35% 11.67% 16.67% 16.66% 20%",
                           }}
                         >
-                          <div>Filename</div>
+                          <div className="flex items-center gap-1 group">
+                            <span>Filename</span>
+                            <div
+                              className="cursor-pointer"
+                              onClick={toggleSortByName}
+                            >
+                              {sortByNameAsc ? (
+                                <ChevronUp
+                                  size={23}
+                                  className="group-hover:opacity-100 opacity-0 p-1 hover:bg-gray-200 rounded transition shrink-0"
+                                />
+                              ) : (
+                                <ChevronDown
+                                  size={23}
+                                  className="group-hover:opacity-100 opacity-0 p-1 hover:bg-gray-200 rounded transition shrink-0"
+                                />
+                              )}
+                            </div>
+                          </div>
                           <div>Type</div>
                           <div>Status</div>
                           <div className="flex items-center gap-1">
                             <span>Date</span>
-                            <ChevronDown size={15} />
+                            <div
+                              className="cursor-pointer"
+                              onClick={toggleSortByDate}
+                            >
+                              {sortByDateAsc ? (
+                                <ChevronUp
+                                  size={23}
+                                  className="p-1 hover:bg-gray-200 rounded transition shrink-0"
+                                />
+                              ) : (
+                                <ChevronDown
+                                  size={23}
+                                  className="p-1 hover:bg-gray-200 rounded transition shrink-0"
+                                />
+                              )}
+                            </div>
                           </div>
                           <div></div>
                         </div>
@@ -627,12 +684,12 @@ const InstructionsTab: React.FC<{
 
                       {/* Table Body */}
                       <div className="divide-y divide-gray-200">
-                        {filteredVideos.length === 0 ? (
+                        {sortedVideos.length === 0 ? (
                           <div className="text-center text-gray-500 py-6">
                             No result found
                           </div>
                         ) : (
-                          filteredVideos.map((video, index) => (
+                          sortedVideos.map((video, index, arr) => (
                             <div
                               key={index}
                               className="px-4 py-3 hover:bg-gray-50"
@@ -667,7 +724,7 @@ const InstructionsTab: React.FC<{
                                     <button
                                       onClick={() => {
                                         handleVideoSelect(video);
-                                        handleDeleteVideo(video.filename);
+                                        handleDeleteVideo(video.id);
                                       }}
                                       className="text-[#6D28D9] hover:text-purple-800 hover:bg-purple-100 font-semibold ml-auto cursor-pointer text-sm"
                                     >
@@ -680,9 +737,7 @@ const InstructionsTab: React.FC<{
                                       video.status !== "success" && "ml-auto"
                                     }`}
                                     size={15}
-                                    onClick={() =>
-                                      handleDeleteVideo(video.filename)
-                                    }
+                                    onClick={() => handleDeleteVideo(video.id)}
                                   />
                                 </div>
                               </div>
@@ -709,8 +764,8 @@ const InstructionsTab: React.FC<{
             </div>
 
             <div className="h-80">
-              {data.instructionalVideo?.url ? (
-                data.instructionalVideo.file ? (
+              {data.instructionalVideo?.url || data.videoUrl ? (
+                data.instructionalVideo?.file ? (
                   <video
                     controls
                     src={
@@ -721,7 +776,11 @@ const InstructionsTab: React.FC<{
                     className="w-full h-full rounded object-contain"
                   />
                 ) : (
-                  <HLSVideoPlayer src={data.instructionalVideo.url} />
+                  <HLSVideoPlayer
+                    src={
+                      data.instructionalVideo?.url || (data.videoUrl as string)
+                    }
+                  />
                 )
               ) : (
                 <div className="flex items-center justify-center h-full text-center text-gray-500">
@@ -753,7 +812,7 @@ const InstructionsTab: React.FC<{
                   setShowChangeCancel(false);
                   setActiveVideoTab("upload");
                 }}
-                className="px-3 py-3 border font-bold text-sm border-[#6d28d2] text-[#6d28d2] rounded hover:bg-[rgba(108,40,210,0.125)] cursor-pointer transition"
+                className="px-4 py-2 border font-bold text-sm border-[#6d28d2] text-[#6d28d2] rounded hover:bg-[rgba(108,40,210,0.125)] cursor-pointer transition"
               >
                 Delete
               </button>
@@ -784,9 +843,8 @@ const InstructionsTab: React.FC<{
               <button
                 onClick={() => {
                   setIsEditingInstructions(false);
-                  onEditToggle(false);
                 }}
-                className="px-3 py-3 border font-bold text-sm border-[#6d28d2] text-[#6d28d2] rounded hover:bg-[rgba(108,40,210,0.125)] cursor-pointer transition"
+                className="px-4 py-2 border font-bold text-sm border-[#6d28d2] text-[#6d28d2] rounded hover:bg-[rgba(108,40,210,0.125)] cursor-pointer transition"
               >
                 Cancel
               </button>
@@ -936,7 +994,7 @@ const InstructionsTab: React.FC<{
             <FiDownload />
             {/* File Name */}
             <span className="text-sm font-medium text-gray-900 truncate">
-              {data.instructionalResource?.name}
+              {data.instructionalResource?.name || "name here"}
             </span>
 
             {/* Change Button */}
@@ -961,7 +1019,7 @@ const InstructionsTab: React.FC<{
                 setShowResourceUploaded(false);
                 setShowResourceChangeCancel(false);
               }}
-              className="px-3 py-3 border font-bold text-sm border-[#6d28d2] text-[#6d28d2] rounded hover:bg-[rgba(108,40,210,0.125)] cursor-pointer transition"
+              className="px-4 py-2 border font-bold text-sm border-[#6d28d2] text-[#6d28d2] rounded hover:bg-[rgba(108,40,210,0.125)] cursor-pointer transition"
             >
               Delete
             </button>

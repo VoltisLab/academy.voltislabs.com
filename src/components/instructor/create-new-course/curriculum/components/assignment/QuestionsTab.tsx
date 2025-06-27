@@ -21,6 +21,7 @@ const QuestionsTab: React.FC<{
   const [isAddingNewQuestion, setIsAddingNewQuestion] = useState(false);
   const params = useParams();
   const id = params?.id;
+
   useEffect(() => {
     const existingQuestions = data.assignmentQuestions || [];
     setQuestions(existingQuestions);
@@ -37,8 +38,13 @@ const QuestionsTab: React.FC<{
   } = useAssignmentService();
 
   const handleSubmitQuestion = async () => {
-    const cleanContent = currentQuestionContent.replace(/<[^>]*>/g, "");
-    if (!cleanContent.trim()) {
+    // Remove empty paragraphs and HTML tags
+    const cleanContent = currentQuestionContent
+      .replace(/<p><br><\/p>/g, "")
+      .replace(/<[^>]*>/g, "")
+      .trim();
+
+    if (!cleanContent) {
       toast.error("Question content cannot be empty");
       return;
     }
@@ -52,12 +58,9 @@ const QuestionsTab: React.FC<{
         }
 
         const response = await updateAssignmentQuestion({
-          // assignmentId: Number(assignmentId),
           assignmentQuestionId: Number(editingQuestionId),
           text: cleanContent,
           order: existing.order ?? 1,
-          // required: existing.required ?? false,
-          // maxPoints: existing.maxPoints ?? 0,
         });
 
         const updated = response.updateAssignmentQuestion.assignmentQuestion;
@@ -66,17 +69,17 @@ const QuestionsTab: React.FC<{
           q.id === editingQuestionId
             ? {
                 ...q,
-                content: updated.text,
+                text: updated.text, // Use text instead of content
                 order: updated.order,
-                maxPoints: updated.maxPoints,
-                required: updated.required,
               }
             : q
         );
+
         fetchAssignment();
         setQuestions(updatedQuestions);
         onChange("assignmentQuestions", updatedQuestions);
         setEditingQuestionId(null);
+        toast.success("Question updated successfully!");
       } else {
         const response = await createAssignmentQuestion({
           assignmentId: Number(id),
@@ -88,13 +91,15 @@ const QuestionsTab: React.FC<{
 
         const newQuestion: AssignmentQuestion = {
           id: response.createAssignmentQuestion.assignmentQuestion.id,
-          content: cleanContent,
+          text: cleanContent, // Use text instead of content
           order: questions.length + 1,
+          content: "",
         };
 
         const updatedQuestions = [...questions, newQuestion];
         setQuestions(updatedQuestions);
         onChange("assignmentQuestions", updatedQuestions);
+        toast.success("Question added successfully!");
       }
     } catch (error) {
       console.error("Failed to save question:", error);
@@ -108,8 +113,9 @@ const QuestionsTab: React.FC<{
 
   const startEditing = (question: AssignmentQuestion) => {
     setEditingQuestionId(question.id);
-    setCurrentQuestionContent(question.content);
-    setIsAddingNewQuestion(false); // hide new question editor
+    // Use question.text if available, otherwise fall back to question.content
+    setCurrentQuestionContent(question.text || question.content || "");
+    setIsAddingNewQuestion(false);
   };
 
   const cancelEditing = () => {
@@ -120,11 +126,9 @@ const QuestionsTab: React.FC<{
 
   const confirmDeleteQuestion = async (questionId: string) => {
     try {
-      // Call the delete mutation first
       await deleteAssignmentQuestion({
         assignmentQuestionId: parseInt(questionId, 10),
       });
-
       // Update local state only after successful deletion
       const updatedQuestions = questions.filter((q) => q.id !== questionId);
       const reorderedQuestions = updatedQuestions.map((q, index) => ({
@@ -135,13 +139,14 @@ const QuestionsTab: React.FC<{
       setQuestions(reorderedQuestions);
       onChange("assignmentQuestions", reorderedQuestions);
       setQuestionToDelete(null);
+      toast.success("Question deleted successfully!");
 
       if (reorderedQuestions.length === 0) {
         setIsAddingNewQuestion(true);
       }
     } catch (error) {
       console.error("Failed to delete assignment question:", error);
-      // Error toast already handled inside deleteAssignmentQuestion service
+      toast.error("Failed to delete question.");
     }
   };
 
@@ -155,7 +160,7 @@ const QuestionsTab: React.FC<{
     <>
       <div className="border border-gray-300 rounded mt-2">
         <RichTextEditor
-          key={editingQuestionId || "new"} // 🔑 force re-render when switching
+          key={editingQuestionId || "new"}
           value={currentQuestionContent}
           onChange={setCurrentQuestionContent}
           type="assignmentQuestion"
@@ -181,23 +186,28 @@ const QuestionsTab: React.FC<{
   const renderQuestionDisplay = (question: AssignmentQuestion) => (
     <div className="mt-2">
       <div className="prose max-w-none">
-        {question?.text
-          ?.split("\n")
-          ?.map((paragraph, i) => <p key={i}>{paragraph}</p>) ??
-          question?.content
-            ?.split("\n")
-            ?.map((paragraph, i) => <p key={i}>{paragraph}</p>)}
+        {question.text ? (
+          question.text
+            .split("\n")
+            .map((paragraph, i) => <p key={i}>{paragraph}</p>)
+        ) : question.content ? (
+          question.content
+            .split("\n")
+            .map((paragraph, i) => <p key={i}>{paragraph}</p>)
+        ) : (
+          <p>No question content available</p>
+        )}
       </div>
       <div className="flex gap-2 mt-2">
         <button
           onClick={() => startEditing(question)}
-          className="px-4 py-2 bg-[#6d28d2] text-white rounded hover:bg-purple-600 transition cursor-pointer"
+          className="px-4 py-1.5 bg-[#6d28d2] text-white rounded hover:bg-purple-600 cursor-pointer"
         >
           Edit
         </button>
         <button
           onClick={() => setQuestionToDelete(question.id)}
-          className="px-3 py-1 text-sm border border-[#6d28d2] text-[#6d28d2] rounded hover:bg-purple-50 cursor-pointer transition"
+          className="px-4 py-1.5 border font-bold text-sm border-[#6d28d2] text-[#6d28d2] rounded hover:bg-[rgba(108,40,210,0.125)] cursor-pointer transition"
         >
           Delete
         </button>
@@ -250,7 +260,7 @@ const QuestionsTab: React.FC<{
       {/* new question editor */}
       {isAddingNewQuestion && (
         <div className="pb-6">
-          <h3 className="text-lg font-medium text-gray-900">
+          <h3 className="text-sm font-bold text-gray-900">
             Question {questions.length + 1}
           </h3>
           {renderQuestionEditor(questions.length + 1)}
@@ -261,7 +271,7 @@ const QuestionsTab: React.FC<{
       {!isAddingNewQuestion && questions.length < 12 && (
         <button
           onClick={startAddingNewQuestion}
-          className="flex items-center gap-2 px-4 py-2 border border-[#6d28d2] text-[#6d28d2] rounded hover:bg-purple-50 transition text-sm cursor-pointer"
+          className="px-4 py-1.5 border font-bold text-sm border-[#6d28d2] text-[#6d28d2] rounded hover:bg-[rgba(108,40,210,0.125)] cursor-pointer transition"
         >
           Add More
         </button>
@@ -271,7 +281,7 @@ const QuestionsTab: React.FC<{
       {questionToDelete && (
         <div className="fixed inset-0 bg-black/30 bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">
+            <h3 className="text-sm font-bold text-gray-900 mb-4">
               Confirm Deletion
             </h3>
             <p className="text-gray-600 mb-6">

@@ -10,7 +10,7 @@ import {
   UpdateAssignmentQuestionSolutionVariables,
   UpdateAssignmentVariables,
 } from "@/api/assignment/mutation";
-import { ChevronDown, Search, Trash2, XIcon } from "lucide-react";
+import { ChevronDown, ChevronUp, Search, Trash2, XIcon } from "lucide-react";
 import { motion } from "framer-motion";
 import { HLSVideoPlayer } from "./HLSVideoPlayer";
 import { BiErrorAlt } from "react-icons/bi";
@@ -24,6 +24,10 @@ const SolutionsTab: React.FC<{
   fetchAssignment: () => Promise<void>;
   libraryVideos: Video[];
   setLibraryVideos: Dispatch<SetStateAction<Video[]>>;
+  sortByNameAsc: boolean | null;
+  sortByDateAsc: boolean | null;
+  toggleSortByName: () => void;
+  toggleSortByDate: () => void;
 }> = ({
   data,
   onChange,
@@ -31,7 +35,12 @@ const SolutionsTab: React.FC<{
   fetchAssignment,
   libraryVideos,
   setLibraryVideos,
+  sortByNameAsc,
+  sortByDateAsc,
+  toggleSortByName,
+  toggleSortByDate,
 }) => {
+  console.log(data.assignmentQuestions);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [activeVideoTab, setActiveVideoTab] = useState<
     "upload" | "library" | null
@@ -201,13 +210,19 @@ const SolutionsTab: React.FC<{
   const { createAssignmentQuestionSolution, updateAssignmentQuestionSolution } =
     useAssignmentService();
 
+  console.log(data.assignmentQuestions);
+
   const startEditingAnswer = (questionId: string) => {
     setEditingAnswers((prev) => ({ ...prev, [questionId]: true }));
+
+    // Get the question and its solution
+    const question = data.assignmentQuestions?.find((q) => q.id === questionId);
+    const solutionText =
+      question?.solution?.text || question?.questionSolutions?.[0]?.text || "";
+
     setAnswerContents((prev) => ({
       ...prev,
-      [questionId]:
-        data.assignmentQuestions?.find((q) => q.id === questionId)?.solution
-          ?.text || "",
+      [questionId]: solutionText,
     }));
   };
 
@@ -279,10 +294,20 @@ const SolutionsTab: React.FC<{
     video.filename.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleDeleteVideo = (filenameToDelete: string) => {
-    setLibraryVideos((prev) =>
-      prev.filter((video) => video.filename !== filenameToDelete)
+  let sortedVideos = [...filteredVideos];
+
+  if (sortByNameAsc) {
+    sortedVideos.sort((a, b) => a.filename.localeCompare(b.filename));
+  } else if (sortByDateAsc) {
+    sortedVideos.sort(
+      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
     );
+  } else {
+    sortedVideos = [...filteredVideos];
+  }
+
+  const handleDeleteVideo = (id: string) => {
+    setLibraryVideos((prev) => prev.filter((video) => video.id !== id));
   };
 
   const handleSolutionVideoUpload = async (file: File) => {
@@ -299,6 +324,7 @@ const SolutionsTab: React.FC<{
     });
 
     const newVideo: Video = {
+      id: String(libraryVideos.length + 1),
       filename: file.name,
       type: "Video",
       status: "processing",
@@ -351,6 +377,7 @@ const SolutionsTab: React.FC<{
       });
 
       const newVideo: Video = {
+        id: String(libraryVideos.length + 1),
         filename: file.name,
         type: "Video",
         status: "success",
@@ -380,6 +407,7 @@ const SolutionsTab: React.FC<{
       clearInterval(progressInterval);
 
       const newVideo: Video = {
+        id: String(libraryVideos.length + 1),
         filename: file.name,
         type: "Video",
         status: "failed",
@@ -442,6 +470,9 @@ const SolutionsTab: React.FC<{
   };
 
   useEffect(() => {
+    // if (data.solutionVideo) setShowResourceUploaded(true);
+    // if (data.solutionVideo) setShowVideoUploaded(true);
+
     return () => {
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
@@ -621,12 +652,45 @@ const SolutionsTab: React.FC<{
                             gridTemplateColumns: "35% 11.67% 16.67% 16.66% 20%",
                           }}
                         >
-                          <div>Filename</div>
+                          <div className="flex items-center gap-1 group">
+                            <span>Filename</span>
+                            <div
+                              className="cursor-pointer"
+                              onClick={toggleSortByName}
+                            >
+                              {sortByNameAsc ? (
+                                <ChevronUp
+                                  size={23}
+                                  className="group-hover:opacity-100 opacity-0 p-1 hover:bg-gray-200 rounded transition shrink-0"
+                                />
+                              ) : (
+                                <ChevronDown
+                                  size={23}
+                                  className="group-hover:opacity-100 opacity-0 p-1 hover:bg-gray-200 rounded transition shrink-0"
+                                />
+                              )}
+                            </div>
+                          </div>
                           <div>Type</div>
                           <div>Status</div>
                           <div className="flex items-center gap-1">
                             <span>Date</span>
-                            <ChevronDown size={15} />
+                            <div
+                              className="cursor-pointer"
+                              onClick={toggleSortByDate}
+                            >
+                              {sortByDateAsc ? (
+                                <ChevronUp
+                                  size={23}
+                                  className="p-1 hover:bg-gray-200 rounded transition shrink-0"
+                                />
+                              ) : (
+                                <ChevronDown
+                                  size={23}
+                                  className="p-1 hover:bg-gray-200 rounded transition shrink-0"
+                                />
+                              )}
+                            </div>
                           </div>
                           <div></div>
                         </div>
@@ -634,12 +698,12 @@ const SolutionsTab: React.FC<{
 
                       {/* Table Body */}
                       <div className="divide-y divide-gray-200">
-                        {filteredVideos.length === 0 ? (
+                        {sortedVideos.length === 0 ? (
                           <div className="text-center text-gray-500 py-6">
                             No result found
                           </div>
                         ) : (
-                          filteredVideos.map((video, index) => (
+                          sortedVideos.map((video, index) => (
                             <div
                               key={index}
                               className="px-4 py-3 hover:bg-gray-50"
@@ -674,7 +738,7 @@ const SolutionsTab: React.FC<{
                                     <button
                                       onClick={() => {
                                         handleVideoSelect(video);
-                                        handleDeleteVideo(video.filename);
+                                        handleDeleteVideo(video.id);
                                       }}
                                       className="text-[#6D28D9] hover:text-purple-800 hover:bg-purple-100 font-semibold ml-auto cursor-pointer text-sm"
                                     >
@@ -687,9 +751,7 @@ const SolutionsTab: React.FC<{
                                       video.status !== "success" && "ml-auto"
                                     }`}
                                     size={15}
-                                    onClick={() =>
-                                      handleDeleteVideo(video.filename)
-                                    }
+                                    onClick={() => handleDeleteVideo(video.id)}
                                   />
                                 </div>
                               </div>
@@ -755,7 +817,7 @@ const SolutionsTab: React.FC<{
                   setShowChangeCancel(false);
                   setActiveVideoTab("upload");
                 }}
-                className="px-3 py-3 border font-bold text-sm border-[#6d28d2] text-[#6d28d2] rounded hover:bg-[rgba(108,40,210,0.125)] cursor-pointer transition"
+                className="px-4 py-2 border font-bold text-sm border-[#6d28d2] text-[#6d28d2] rounded hover:bg-[rgba(108,40,210,0.125)] cursor-pointer transition"
               >
                 Delete
               </button>
@@ -791,9 +853,7 @@ const SolutionsTab: React.FC<{
                 Question {question.order}
               </h3>
               <div className="prose max-w-none mt-2">
-                {question?.text?.split("\n").map((paragraph, i) => (
-                  <p key={i}>{paragraph}</p>
-                ))}
+                {question?.text || question.content}
               </div>
 
               {/* Answer Section */}
@@ -805,6 +865,7 @@ const SolutionsTab: React.FC<{
                 {editingAnswers[question.id] ? (
                   <>
                     <RichTextEditor
+                      key={`editor-${question.id}`} // Important to force re-render when switching questions
                       value={answerContents[question.id] || ""}
                       onChange={(value) =>
                         setAnswerContents((prev) => ({
@@ -823,7 +884,7 @@ const SolutionsTab: React.FC<{
                       </button>
                       <button
                         onClick={() => cancelEditingAnswer(question.id)}
-                        className="px-3 py-3 border font-bold text-sm border-[#6d28d2] text-[#6d28d2] rounded hover:bg-[rgba(108,40,210,0.125)] cursor-pointer transition"
+                        className="px-4 py-2 border font-bold text-sm border-[#6d28d2] text-[#6d28d2] rounded hover:bg-[rgba(108,40,210,0.125)] cursor-pointer transition"
                       >
                         Cancel
                       </button>
@@ -849,7 +910,7 @@ const SolutionsTab: React.FC<{
                           </button>
                           <button
                             onClick={() => setAnswerToDelete(question.id)}
-                            className="px-3 py-3 border font-bold text-sm border-[#6d28d2] text-[#6d28d2] rounded hover:bg-[rgba(108,40,210,0.125)] cursor-pointer transition"
+                            className="px-4 py-2 border font-bold text-sm border-[#6d28d2] text-[#6d28d2] rounded hover:bg-[rgba(108,40,210,0.125)] cursor-pointer transition"
                           >
                             Delete
                           </button>
@@ -1022,7 +1083,7 @@ const SolutionsTab: React.FC<{
                 setShowResourceUploaded(false);
                 setShowResourceChangeCancel(false);
               }}
-              className="px-3 py-3 border font-bold text-sm border-[#6d28d2] text-[#6d28d2] rounded hover:bg-[rgba(108,40,210,0.125)] cursor-pointer transition"
+              className="px-4 py-2 border font-bold text-sm border-[#6d28d2] text-[#6d28d2] rounded hover:bg-[rgba(108,40,210,0.125)] cursor-pointer transition"
             >
               Delete
             </button>

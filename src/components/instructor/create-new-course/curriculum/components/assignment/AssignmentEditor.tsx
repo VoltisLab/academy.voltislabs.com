@@ -29,6 +29,7 @@ interface AssignmentQuestion {
 }
 
 export type Video = {
+  id: string;
   filename: string;
   type: "Video";
   status: "success" | "failed" | "uploading" | "processing"; // You can adjust if needed
@@ -61,9 +62,63 @@ const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
   const [hasAttemptedPublish, setHasAttemptedPublish] = useState(false);
   const [showValidation, setShowValidation] = useState(false);
   const [publishSuccess, setPublishSuccess] = useState(false);
-  const [isEditingInstructions, setIsEditingInstructions] = useState(true);
+  // const [isEditingInstructions, setIsEditingInstructions] = useState(true);
   // Sample library videos
-  const [libraryVideos, setLibraryVideos] = useState<Video[]>([]);
+  const [libraryVideos, setLibraryVideos] = useState<Video[]>([
+    {
+      id: "5",
+      filename: "Aetflix.mp4",
+      type: "Video",
+      status: "success",
+      date: "05/08/2025",
+      url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+    },
+    {
+      id: "4",
+      filename: "Betflix.mp4",
+      type: "Video",
+      status: "success",
+      date: "05/08/2025",
+      url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
+    },
+    {
+      id: "3",
+      filename: "f.webm",
+      type: "Video",
+      status: "success",
+      date: "05/08/2025",
+      url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+    },
+    {
+      id: "2",
+      filename: "detflix.mp4",
+      type: "Video",
+      status: "success",
+      date: "05/07/2025",
+      url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4",
+    },
+    {
+      id: "1",
+      filename: "cetflix.mp4",
+      type: "Video",
+      status: "success",
+      date: "05/07/2025",
+      url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4",
+    },
+  ]);
+
+  const [sortByNameAsc, setSortByNameAsc] = useState<boolean>(false);
+  const [sortByDateAsc, setSortByDateAsc] = useState<boolean>(false);
+
+  const toggleSortByName = () => {
+    setSortByNameAsc((prev) => !prev);
+    setSortByDateAsc(false); // disable date sort
+  };
+
+  const toggleSortByDate = () => {
+    setSortByDateAsc((prev) => !prev);
+    setSortByNameAsc(false); // disable name sort
+  };
 
   const { assignmentData, setAssignmentData } = useAssignment();
 
@@ -119,6 +174,7 @@ const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
     if (!id) return;
     try {
       const data = await getAssignment({ id: Number(id) });
+
       setAssignmentData({
         id: data?.id,
         name: "",
@@ -133,7 +189,12 @@ const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
         assignmentDescription: data?.description,
         estimatedDuration: data?.estimatedDurationMinutes,
         durationUnit: "minutes",
-        assignmentInstructions: data?.description,
+        videoUrl: data.videoUrl,
+        instructionalResource: data.downloadableResourceUrl,
+        // solutionResourceUrl:
+        // data.questions[0].questionSolutions[0].downloadableResourceUrl,
+        // solutionVideo: data.questions[0].questionSolutions[0].videoUrl,
+        assignmentInstructions: data?.instructions,
         assignmentQuestions: data?.questions,
         isPublished: false,
         solution: data?.questionSolutions,
@@ -370,11 +431,13 @@ const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
             fetchAssignment={fetchAssignment}
             data={assignmentData}
             onChange={handleDataChange}
-            isEditing={isEditingInstructions}
-            onEditToggle={setIsEditingInstructions}
             hasSubmitted={Boolean(assignmentData.assignmentInstructions)}
             libraryVideos={libraryVideos}
             setLibraryVideos={setLibraryVideos}
+            sortByNameAsc={sortByNameAsc}
+            sortByDateAsc={sortByDateAsc}
+            toggleSortByName={toggleSortByName}
+            toggleSortByDate={toggleSortByDate}
           />
         );
       case "questions":
@@ -395,6 +458,10 @@ const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
             setActiveTab={setActiveTab}
             libraryVideos={libraryVideos}
             setLibraryVideos={setLibraryVideos}
+            sortByNameAsc={sortByNameAsc}
+            sortByDateAsc={sortByDateAsc}
+            toggleSortByName={toggleSortByName}
+            toggleSortByDate={toggleSortByDate}
           />
         );
       default:

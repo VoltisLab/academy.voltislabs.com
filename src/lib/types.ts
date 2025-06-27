@@ -431,6 +431,7 @@ export interface ExtendedLecture extends Lecture {
     url?: string;
     name?: string;
   };
+  videoUrl?: string;
   instructionalResource?: {
     file: File | null;
     url?: string;
