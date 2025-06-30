@@ -68,7 +68,6 @@ export const useAssignmentService = () => {
         );
       }
 
-      // toast.success("Assignment created successfully!");
       return data;
     } catch (err) {
       console.error("Assignment creation error:", err);
@@ -121,7 +120,6 @@ export const useAssignmentService = () => {
         throw new Error("Failed to update assignment");
       }
 
-      toast.success("Assignment updated successfully!");
       return data;
     } catch (err) {
       console.error("Assignment update error:", err);
@@ -228,8 +226,6 @@ export const useAssignmentService = () => {
       if (!data?.createAssignmentQuestion.success) {
         throw new Error("Failed to create assignment question");
       }
-
-      toast.success("Assignment question created successfully!");
       return data;
     } catch (err) {
       console.error("Question creation error:", err);
@@ -337,7 +333,6 @@ export const useAssignmentService = () => {
         throw new Error("Failed to delete assignment question");
       }
 
-      toast.success("Assignment question deleted successfully!");
       return data;
     } catch (err) {
       console.error("Question deletion error:", err);
@@ -446,7 +441,6 @@ export const useAssignmentService = () => {
         throw new Error("Failed to update assignment question solution");
       }
 
-      toast.success("Solution updated successfully!");
       return data;
     } catch (err) {
       console.error("Solution update error:", err);

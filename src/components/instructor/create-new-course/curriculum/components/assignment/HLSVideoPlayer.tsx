@@ -12,14 +12,24 @@ export const HLSVideoPlayer: React.FC<HLSVideoPlayerProps> = ({ src }) => {
     const video = videoRef.current;
     if (!video) return;
 
+    if (src.endsWith(".mp4")) {
+      video.src = src;
+      return;
+    }
+
+    if (!src.endsWith(".m3u8")) {
+      video.src = src;
+      return;
+    }
+
     let hls: Hls | null = null;
 
     const handleError = (_event: Events.ERROR, data: ErrorData) => {
       console.error("HLS Error:", data);
 
-      if (video.canPlayType("video/mp4")) {
-        video.src = src.replace(".m3u8", ".mp4");
-      }
+      // if (video.canPlayType("video/mp4")) {
+      //   video.src = src.replace(".m3u8", ".mp4");
+      // }
     };
 
     if (Hls.isSupported()) {

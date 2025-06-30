@@ -80,6 +80,16 @@ const SolutionsTab: React.FC<{
   const handleResourceUpload = async (file: File) => {
     if (!file) return;
 
+    if (
+      !Array.isArray(data.assignmentQuestions) ||
+      data.assignmentQuestions.length === 0 ||
+      !Array.isArray(data.assignmentQuestions[0].questionSolutions) ||
+      data.assignmentQuestions[0].questionSolutions.length === 0
+    ) {
+      toast.error("A mininmum of a question and an answer is requied");
+      return;
+    }
+
     abortControllerRef.current = new AbortController();
 
     // Set uploading state
@@ -230,6 +240,8 @@ const SolutionsTab: React.FC<{
     setEditingAnswers((prev) => ({ ...prev, [questionId]: false }));
   };
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const handleSubmitAnswer = async (questionId: string) => {
     const answerContent = answerContents[questionId] || "";
 
@@ -237,54 +249,79 @@ const SolutionsTab: React.FC<{
       toast.error("Answer content cannot be empty");
       return;
     }
+    setIsSubmitting(true);
 
     const question = data.assignmentQuestions?.find((q) => q.id === questionId);
-    const existingSolution = question?.solution;
+    const existingSolution = question?.questionSolutions?.[0];
 
     try {
-      if (
-        existingSolution &&
-        typeof existingSolution === "object" &&
-        "id" in existingSolution
-      ) {
+      if (existingSolution) {
+        // Update existing solution
         await updateAssignmentQuestionSolution({
-          questionSolutionId: Number(existingSolution?.id),
+          questionSolutionId: Number(existingSolution.id),
           text: answerContent,
-          videoUrl: "",
-          downloadableResourceUrl: "",
         });
+        toast.success("Answer updated successfully!");
       } else {
+        // Create new solution
         await createAssignmentQuestionSolution({
           assignmentQuestionId: Number(questionId),
           text: answerContent,
-          videoUrl: "",
-          downloadableResourceUrl: "",
         });
+        toast.success("Answer created successfully!");
       }
 
-      const updatedQuestions =
-        data.assignmentQuestions?.map((q) =>
-          q.id === questionId
-            ? { ...q, solution: { ...existingSolution, text: answerContent } }
-            : q
-        ) || [];
-      fetchAssignment();
-      onChange("assignmentQuestions", updatedQuestions);
+      // Refresh the data
+      await fetchAssignment();
       setEditingAnswers((prev) => ({ ...prev, [questionId]: false }));
-      toast.success("Answer saved successfully!");
     } catch (err) {
       toast.error("Failed to save answer");
       console.error(err);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  const handleDeleteAnswer = (questionId: string) => {
-    const updatedQuestions =
-      data.assignmentQuestions?.map((q) =>
-        q.id === questionId ? { ...q, solution: undefined } : q
-      ) || [];
+  const [isDeletingAnswer, setIsDeletingAnswer] = useState(false);
 
-    onChange("assignmentQuestions", updatedQuestions);
+  const handleDeleteAnswer = async (questionId: string) => {
+    const question = data.assignmentQuestions?.find((q) => q.id === questionId);
+    const solutionId = question?.questionSolutions?.[0]?.id;
+    // const answerContent = answerContents[questionId] || "";
+
+    setIsDeletingAnswer(true);
+
+    if (!solutionId) {
+      toast.error("No solution found to delete");
+      return;
+    }
+
+    try {
+      // await updateAssignmentQuestionSolution(Number(solutionId));
+
+      await updateAssignmentQuestionSolution({
+        questionSolutionId: Number(solutionId),
+        text: " ", // Using space instead of empty string
+      });
+
+      // // If update with space was successful, now update with truly empty string
+      // if (updateResponse) {
+      //   await updateAssignmentQuestionSolution({
+      //     questionSolutionId: Number(solutionId),
+      //     text: "",
+      //   });
+      // }
+
+      toast.success("Answer Cleared successfully!");
+
+      // Refresh the data
+      await fetchAssignment();
+    } catch (err) {
+      toast.error("Failed to delete answer");
+      console.error(err);
+    } finally {
+      setIsDeletingAnswer(false);
+    }
   };
 
   const hasQuestions =
@@ -306,14 +343,97 @@ const SolutionsTab: React.FC<{
     sortedVideos = [...filteredVideos];
   }
 
-  const handleDeleteVideo = (id: string) => {
+  const handleLibraryVideoDelete = (id: string) => {
     setLibraryVideos((prev) => prev.filter((video) => video.id !== id));
+  };
+
+  const [isDeletingVideo, setIsDeletingVideo] = useState(false);
+
+  const handleVideoDelete = async () => {
+    if (
+      !Array.isArray(data.assignmentQuestions) ||
+      data.assignmentQuestions.length === 0 ||
+      !Array.isArray(data.assignmentQuestions[0].questionSolutions) ||
+      data.assignmentQuestions[0].questionSolutions.length === 0
+    ) {
+      toast.error("A mininmum of a question and an answer is requied");
+      return;
+    }
+    setIsDeletingVideo(true);
+    try {
+      const updateVariables: UpdateAssignmentQuestionSolutionVariables = {
+        questionSolutionId: Number(
+          data.assignmentQuestions?.[0].questionSolutions?.[0]?.id
+        ),
+        videoUrl: "",
+      };
+      await updateAssignmentQuestionSolution(updateVariables);
+      toast.success("Video removed successfully");
+
+      onChange("solutionVideo", null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+      setShowVideoUploaded(false);
+      setShowChangeCancel(false);
+      setActiveVideoTab("upload");
+      await fetchAssignment();
+    } catch (error) {
+      toast.error("Could not remove video");
+    } finally {
+      setIsDeletingVideo(false);
+    }
+  };
+
+  const [isDeletingResource, setIsDeletingResource] = useState(false);
+
+  const handleResourceDelete = async () => {
+    if (
+      !Array.isArray(data.assignmentQuestions) ||
+      data.assignmentQuestions.length === 0 ||
+      !Array.isArray(data.assignmentQuestions[0].questionSolutions) ||
+      data.assignmentQuestions[0].questionSolutions.length === 0
+    ) {
+      toast.error("A mininmum of a question and an answer is requied");
+      return;
+    }
+    setIsDeletingResource(true);
+    try {
+      const updateVariables: UpdateAssignmentQuestionSolutionVariables = {
+        questionSolutionId: Number(
+          data.assignmentQuestions?.[0].questionSolutions?.[0]?.id
+        ),
+        downloadableResourceUrl: "",
+      };
+      await updateAssignmentQuestionSolution(updateVariables);
+      toast.success("Resource removed successfully");
+      await fetchAssignment();
+      onChange("solutionResource", null);
+      setResourceUploadState({
+        isUploading: false,
+        progress: 0,
+        file: null,
+        status: "idle",
+        error: null,
+      });
+      setShowResourceUploaded(false);
+      setShowResourceChangeCancel(false);
+    } catch (error) {
+      toast.error("Could not remove Resource");
+    } finally {
+      setIsDeletingResource(false);
+    }
   };
 
   const handleSolutionVideoUpload = async (file: File) => {
     if (!file) return;
 
     abortControllerRef.current = new AbortController();
+
+    if (data.assignmentQuestions?.[0].questionSolutions?.length === 0) {
+      toast.error("A mininmum of a question and an answer is requied");
+      return;
+    }
 
     setUploadState({
       isUploading: true,
@@ -481,7 +601,7 @@ const SolutionsTab: React.FC<{
   }, []);
 
   return (
-    <div className="p-6 space-y-20">
+    <div className="px-2 py-4 md:p-6 space-y-10 lg:space-y-20">
       {/* Video Section */}
       <div>
         <h3 className="text-sm font-bold text-gray-900 mb-2">Video</h3>
@@ -596,7 +716,7 @@ const SolutionsTab: React.FC<{
                       </span>
                       <button
                         onClick={() => fileInputRef.current?.click()}
-                        className="px-3 py-3 border font-bold text-sm border-[#6d28d2] text-[#6d28d2] rounded hover:bg-[rgba(108,40,210,0.125)] cursor-pointer transition"
+                        className="px-3 py-3 border font-bold text-sm border-[#6d28d2] text-[#6d28d2] rounded hover:bg-[rgba(108,40,210,0.125)] cursor-pointer transition whitespace-nowrap"
                       >
                         Select Video
                       </button>
@@ -604,7 +724,7 @@ const SolutionsTab: React.FC<{
                     {showChangeCancel && (
                       <button
                         onClick={handleCancelChange}
-                        className="mt-2 px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 cursor-pointer"
+                        className="px-4 py-2 bg-[#6d28d2] text-white rounded hover:bg-purple-600 cursor-pointer mt-2"
                       >
                         Cancel
                       </button>
@@ -738,7 +858,7 @@ const SolutionsTab: React.FC<{
                                     <button
                                       onClick={() => {
                                         handleVideoSelect(video);
-                                        handleDeleteVideo(video.id);
+                                        handleLibraryVideoDelete(video.id);
                                       }}
                                       className="text-[#6D28D9] hover:text-purple-800 hover:bg-purple-100 font-semibold ml-auto cursor-pointer text-sm"
                                     >
@@ -751,7 +871,9 @@ const SolutionsTab: React.FC<{
                                       video.status !== "success" && "ml-auto"
                                     }`}
                                     size={15}
-                                    onClick={() => handleDeleteVideo(video.id)}
+                                    onClick={() =>
+                                      handleLibraryVideoDelete(video.id)
+                                    }
                                   />
                                 </div>
                               </div>
@@ -808,18 +930,11 @@ const SolutionsTab: React.FC<{
                 Change
               </button>
               <button
-                onClick={() => {
-                  onChange("solutionVideo", null);
-                  if (fileInputRef.current) {
-                    fileInputRef.current.value = "";
-                  }
-                  setShowVideoUploaded(false);
-                  setShowChangeCancel(false);
-                  setActiveVideoTab("upload");
-                }}
+                onClick={() => handleVideoDelete()}
+                disabled={isDeletingVideo}
                 className="px-4 py-2 border font-bold text-sm border-[#6d28d2] text-[#6d28d2] rounded hover:bg-[rgba(108,40,210,0.125)] cursor-pointer transition"
               >
-                Delete
+                {isDeletingVideo ? "...Deleting" : "Delete"}
               </button>
             </div>
           </div>
@@ -875,13 +990,16 @@ const SolutionsTab: React.FC<{
                       }
                       placeholder="Enter your answer..."
                     />
+
                     <div className="flex gap-2 mt-4">
                       <button
                         onClick={() => handleSubmitAnswer(question.id)}
-                        className="px-4 py-2 bg-[#6d28d2] text-white rounded hover:bg-purple-600 cursor-pointer"
+                        disabled={isSubmitting}
+                        className="px-4 py-2 bg-[#6d28d2] text-white rounded hover:bg-purple-600 cursor-pointer disabled:bg-[rgba(108,40,210,0.3)] disabled:cursor-not-allowed transition"
                       >
-                        Submit
+                        {isSubmitting ? "...Submitting" : "Submit"}
                       </button>
+
                       <button
                         onClick={() => cancelEditingAnswer(question.id)}
                         className="px-4 py-2 border font-bold text-sm border-[#6d28d2] text-[#6d28d2] rounded hover:bg-[rgba(108,40,210,0.125)] cursor-pointer transition"
@@ -892,7 +1010,7 @@ const SolutionsTab: React.FC<{
                   </>
                 ) : (
                   <>
-                    {question.questionSolutions?.[idx] ? (
+                    {question.questionSolutions?.[idx].text !== " " ? (
                       <div className="space-y-2">
                         <div
                           className="prose max-w-none"
@@ -1011,7 +1129,7 @@ const SolutionsTab: React.FC<{
               </div>
             ) : (
               <>
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
                   <span className="text-zinc-700 max-w-lg font-semibold text-sm w-full border border-zinc-700 py-3 px-4 rounded">
                     {data.solutionResource?.file
                       ? data.solutionResource.file.name
@@ -1027,7 +1145,7 @@ const SolutionsTab: React.FC<{
                       };
                       input.click();
                     }}
-                    className="px-3 py-3 border font-bold text-sm border-[#6d28d2] text-[#6d28d2] rounded hover:bg-[rgba(108,40,210,0.125)] cursor-pointer transition w-max"
+                    className="px-3 py-3 border font-bold text-sm border-[#6d28d2] text-[#6d28d2] rounded hover:bg-[rgba(108,40,210,0.125)] cursor-pointer transition whitespace-nowrap"
                   >
                     Select File
                   </button>
@@ -1044,7 +1162,7 @@ const SolutionsTab: React.FC<{
                 {showResourceChangeCancel && (
                   <button
                     onClick={handleCancelResourceChange}
-                    className="mt-2 px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 cursor-pointer"
+                    className="px-4 py-2 bg-[#6d28d2] text-white rounded hover:bg-purple-600 cursor-pointer mt-2"
                   >
                     Cancel
                   </button>
@@ -1071,21 +1189,11 @@ const SolutionsTab: React.FC<{
 
             {/* Delete Button */}
             <button
-              onClick={() => {
-                onChange("solutionResource", null);
-                setResourceUploadState({
-                  isUploading: false,
-                  progress: 0,
-                  file: null,
-                  status: "idle",
-                  error: null,
-                });
-                setShowResourceUploaded(false);
-                setShowResourceChangeCancel(false);
-              }}
+              onClick={() => handleResourceDelete()}
+              disabled={isDeletingResource}
               className="px-4 py-2 border font-bold text-sm border-[#6d28d2] text-[#6d28d2] rounded hover:bg-[rgba(108,40,210,0.125)] cursor-pointer transition"
             >
-              Delete
+              {isDeletingResource ? "...Deleting" : "Delete"}
             </button>
           </div>
         )}
@@ -1121,13 +1229,14 @@ const SolutionsTab: React.FC<{
                 Cancel
               </button>
               <button
-                onClick={() => {
-                  handleDeleteAnswer(answerToDelete);
+                onClick={async () => {
+                  await handleDeleteAnswer(answerToDelete);
                   setAnswerToDelete(null);
                 }}
-                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+                disabled={isDeletingAnswer}
+                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition cursor-pointer disabled:bg-red-300"
               >
-                Delete
+                {isDeletingAnswer ? "Deleting..." : "Delete"}
               </button>
             </div>
           </div>
