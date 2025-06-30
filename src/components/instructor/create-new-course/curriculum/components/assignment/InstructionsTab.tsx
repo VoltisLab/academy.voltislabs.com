@@ -212,36 +212,45 @@ const InstructionsTab: React.FC<{
 
   console.log("This is the data", data.videoUrl);
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const handleSubmitInstructions = async () => {
-    if (
-      !data.assignmentInstructions ||
-      data.assignmentInstructions.trim() === ""
-    ) {
-      toast.error("Please enter assignment instructions.");
-      return;
+    setIsSubmitting(true);
+
+    try {
+      if (
+        !data.assignmentInstructions ||
+        data.assignmentInstructions.trim() === ""
+      ) {
+        toast.error("Please enter assignment instructions.");
+        return;
+      }
+
+      const cleanedInstructions = data.assignmentInstructions
+        .replace(/<p><br><\/p>/g, "") // remove <p><br></p>
+        .replace(/<[^>]*>/g, "") // remove all HTML tags
+        .trim(); // trim whitespace
+
+      if (!cleanedInstructions) {
+        toast.error("Please enter assignment instructions.");
+        return;
+      }
+
+      const variables: UpdateAssignmentVariables = {
+        assignmentId: Number(id),
+        instructions: cleanedInstructions,
+      };
+
+      await updateAssignment(variables);
+      toast.success("Instructions saved successfully!");
+      fetchAssignment();
+      setIsEditingInstructions(false);
+    } catch (error) {
+      console.error("Failed to update instructions:", error);
+      toast.error("Something went wrong while saving. Please try again.");
+    } finally {
+      setIsSubmitting(false);
     }
-
-    const cleanedInstructions = data.assignmentInstructions
-      .replace(/<p><br><\/p>/g, "") // remove <p><br></p>
-      .replace(/<[^>]*>/g, "") // remove all HTML tags
-      .trim(); // trim whitespace
-
-    if (!cleanedInstructions) {
-      toast.error("Please enter assignment instructions.");
-      return;
-    }
-    // const publishedData = { ...assignmentData, isPublished: true };
-    const variables: UpdateAssignmentVariables = {
-      assignmentId: Number(id),
-      instructions: cleanedInstructions,
-    };
-
-    await updateAssignment(variables);
-    toast.success("instructions saved successfully!");
-    fetchAssignment();
-    setIsEditingInstructions(false);
-    toast.success("Instructions saved successfully!");
-    console.log("Instructions saved:", data.assignmentInstructions);
   };
 
   const handleEditInstructions = () => {
@@ -264,9 +273,89 @@ const InstructionsTab: React.FC<{
     sortedVideos = [...filteredVideos];
   }
 
-  const handleDeleteVideo = (id: string) => {
+  const handleLibraryVideoDelete = (id: string) => {
     setLibraryVideos((prev) => prev.filter((video) => video.id !== id));
   };
+
+  const [isDeletingVideo, setIsDeletingVideo] = useState(false);
+  const handleVideoDelete = async () => {
+    setIsDeletingVideo(true);
+    try {
+      const updateVariables: UpdateAssignmentVariables = {
+        assignmentId: Number(id),
+        videoUrl: "",
+      };
+      await updateAssignment(updateVariables);
+      toast.success("Video removed successfully");
+
+      // Clear the video state
+      onChange("instructionalVideo", null);
+
+      // Reset the file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+
+      // Reset all related states
+      setShowVideoUploaded(false);
+      setShowChangeCancel(false);
+      setActiveVideoTab("upload");
+      await fetchAssignment();
+    } catch (error) {
+      toast.error("Could not remove video");
+    } finally {
+      setIsDeletingVideo(false);
+    }
+  };
+
+  const [isDeletingResource, setIsDeletingResource] = useState(false);
+
+  const handleResourceDelete = async () => {
+    setIsDeletingResource(true);
+    try {
+      const updateVariables: UpdateAssignmentVariables = {
+        assignmentId: Number(id),
+        resourceUrl: "",
+      };
+      await updateAssignment(updateVariables);
+      toast.success("Resource removed successfully");
+      await fetchAssignment();
+      onChange("instructionalResource", null);
+      setResourceUploadState({
+        isUploading: false,
+        progress: 0,
+        file: null,
+        status: "idle",
+        error: null,
+      });
+      setShowResourceUploaded(false);
+      setShowResourceChangeCancel(false);
+    } catch (error) {
+      toast.error("Could not remove Resource");
+    } finally {
+      setIsDeletingResource(false);
+    }
+  };
+
+  // const [isDeletingVideo, setIsDeletingVideo] = useState(false);
+  // const [isDeletingResource, setIsDeletingResource] = useState(false);
+  // const handleDeleteVideo = async (id: string) => {
+  //   setIsDeletingVideo(true);
+  //   try {
+  //     setLibraryVideos((prev) => prev.filter((video) => video.id !== id));
+  //     const updateVariables: UpdateAssignmentVariables = {
+  //       assignmentId: Number(id),
+  //       videoUrl: "",
+  //     };
+  //     await updateAssignment(updateVariables);
+  //     toast.success("Video removed successfully");
+  //     await fetchAssignment();
+  //   } catch (error) {
+  //     toast.error("Could not remove video");
+  //   } finally {
+  //     setIsDeletingVideo(false);
+  //   }
+  // };
 
   const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -467,7 +556,7 @@ const InstructionsTab: React.FC<{
   }, []);
 
   return (
-    <div className="p-6 space-y-20">
+    <div className="px-2 py-4 md:p-6 space-y-10 lg:space-y-20">
       {/* Video Section */}
       <div>
         <h3 className="text-sm font-bold text-gray-900 mb-2">Video</h3>
@@ -582,7 +671,7 @@ const InstructionsTab: React.FC<{
                       </span>
                       <button
                         onClick={() => fileInputRef.current?.click()}
-                        className="px-3 py-3 border font-bold text-sm border-[#6d28d2] text-[#6d28d2] rounded hover:bg-[rgba(108,40,210,0.125)] cursor-pointer transition"
+                        className="px-3 py-3 border font-bold text-sm border-[#6d28d2] text-[#6d28d2] rounded hover:bg-[rgba(108,40,210,0.125)] cursor-pointer transition whitespace-nowrap"
                       >
                         Select Video
                       </button>
@@ -590,7 +679,7 @@ const InstructionsTab: React.FC<{
                     {showChangeCancel && (
                       <button
                         onClick={handleCancelChange}
-                        className="mt-2 px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 cursor-pointer"
+                        className="px-4 py-2 bg-[#6d28d2] text-white rounded hover:bg-purple-600 cursor-pointer mt-2"
                       >
                         Cancel
                       </button>
@@ -689,7 +778,7 @@ const InstructionsTab: React.FC<{
                             No result found
                           </div>
                         ) : (
-                          sortedVideos.map((video, index, arr) => (
+                          sortedVideos.map((video, index) => (
                             <div
                               key={index}
                               className="px-4 py-3 hover:bg-gray-50"
@@ -724,7 +813,7 @@ const InstructionsTab: React.FC<{
                                     <button
                                       onClick={() => {
                                         handleVideoSelect(video);
-                                        handleDeleteVideo(video.id);
+                                        handleLibraryVideoDelete(video.id);
                                       }}
                                       className="text-[#6D28D9] hover:text-purple-800 hover:bg-purple-100 font-semibold ml-auto cursor-pointer text-sm"
                                     >
@@ -737,7 +826,9 @@ const InstructionsTab: React.FC<{
                                       video.status !== "success" && "ml-auto"
                                     }`}
                                     size={15}
-                                    onClick={() => handleDeleteVideo(video.id)}
+                                    onClick={() =>
+                                      handleLibraryVideoDelete(video.id)
+                                    }
                                   />
                                 </div>
                               </div>
@@ -798,23 +889,11 @@ const InstructionsTab: React.FC<{
                 Change
               </button>
               <button
-                onClick={() => {
-                  // Clear the video state
-                  onChange("instructionalVideo", null);
-
-                  // Reset the file input
-                  if (fileInputRef.current) {
-                    fileInputRef.current.value = "";
-                  }
-
-                  // Reset all related states
-                  setShowVideoUploaded(false);
-                  setShowChangeCancel(false);
-                  setActiveVideoTab("upload");
-                }}
+                onClick={() => handleVideoDelete()}
+                disabled={isDeletingVideo}
                 className="px-4 py-2 border font-bold text-sm border-[#6d28d2] text-[#6d28d2] rounded hover:bg-[rgba(108,40,210,0.125)] cursor-pointer transition"
               >
-                Delete
+                {isDeletingVideo ? "...Deleting" : "Delete"}
               </button>
             </div>
           </div>
@@ -835,10 +914,11 @@ const InstructionsTab: React.FC<{
             />
             <div className="flex gap-2 mt-4">
               <button
+                disabled={isSubmitting}
                 onClick={handleSubmitInstructions}
-                className="px-4 py-2 bg-[#6d28d2] text-white rounded hover:bg-purple-600 cursor-pointer"
+                className="px-4 py-2 bg-[#6d28d2] text-white rounded hover:bg-purple-600 cursor-pointer disabled:bg-[rgba(108,40,210,0.3)] disabled:cursor-not-allowed transition"
               >
-                Submit
+                {isSubmitting ? "...Submitting" : "Submit"}
               </button>
               <button
                 onClick={() => {
@@ -947,7 +1027,7 @@ const InstructionsTab: React.FC<{
               </div>
             ) : (
               <>
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
                   <span className="text-zinc-700 max-w-lg font-semibold text-sm w-full border border-zinc-700 py-3 px-4 rounded">
                     {data.instructionalResource?.file
                       ? data.instructionalResource.file.name
@@ -963,7 +1043,7 @@ const InstructionsTab: React.FC<{
                       };
                       input.click();
                     }}
-                    className="px-3 py-3 border font-bold text-sm border-[#6d28d2] text-[#6d28d2] rounded hover:bg-[rgba(108,40,210,0.125)] cursor-pointer transition w-max"
+                    className="px-3 py-3 border font-bold text-sm border-[#6d28d2] text-[#6d28d2] rounded hover:bg-[rgba(108,40,210,0.125)] cursor-pointer transition whitespace-nowrap"
                   >
                     Select File
                   </button>
@@ -980,7 +1060,7 @@ const InstructionsTab: React.FC<{
                 {showResourceChangeCancel && (
                   <button
                     onClick={handleCancelResourceChange}
-                    className="mt-2 px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 cursor-pointer"
+                    className="px-4 py-2 bg-[#6d28d2] text-white rounded hover:bg-purple-600 cursor-pointer mt-2"
                   >
                     Cancel
                   </button>
@@ -1007,21 +1087,11 @@ const InstructionsTab: React.FC<{
 
             {/* Delete Button */}
             <button
-              onClick={() => {
-                onChange("instructionalResource", null);
-                setResourceUploadState({
-                  isUploading: false,
-                  progress: 0,
-                  file: null,
-                  status: "idle",
-                  error: null,
-                });
-                setShowResourceUploaded(false);
-                setShowResourceChangeCancel(false);
-              }}
+              onClick={() => handleResourceDelete()}
+              disabled={isDeletingResource}
               className="px-4 py-2 border font-bold text-sm border-[#6d28d2] text-[#6d28d2] rounded hover:bg-[rgba(108,40,210,0.125)] cursor-pointer transition"
             >
-              Delete
+              {isDeletingResource ? "...Deleting" : "Delete"}
             </button>
           </div>
         )}
