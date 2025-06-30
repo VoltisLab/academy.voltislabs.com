@@ -18,6 +18,7 @@ const BasicInfoTab: React.FC<{
     description: true,
     duration: true,
   });
+  const [isSaving, setIsSaving] = useState(false); // New state for save button loading
   const params = useParams();
   const id = params?.id;
   // Validate form whenever data changes
@@ -65,12 +66,16 @@ const BasicInfoTab: React.FC<{
   const handleUnitChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     onChange("durationUnit", e.target.value as "minutes" | "hours" | "days");
   };
-  const { assignmentData, setAssignmentData } = useAssignment();
+
+  const { assignmentData } = useAssignment();
 
   const { updateAssignment } = useAssignmentService();
 
   const handleSaveClick = async () => {
-    if (isFormValid) {
+    if (!isFormValid || isSaving) return;
+
+    setIsSaving(true);
+    try {
       const publishedData = { ...assignmentData, isPublished: true };
       const variables: UpdateAssignmentVariables = {
         assignmentId: Number(id),
@@ -83,13 +88,17 @@ const BasicInfoTab: React.FC<{
       };
 
       await updateAssignment(variables);
-      toast.success("Basic info saved successfully!");
+      toast.success("Saved");
+      await fetchAssignment();
+    } catch (error) {
+      toast.error("Failed to save basic info");
+    } finally {
+      setIsSaving(false);
     }
-    fetchAssignment();
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="px-2 py-4 md:p-6 space-y-6">
       <div>
         <label
           className={`flex items-center gap-2 text-sm font-bold mb-2 ${
@@ -186,14 +195,14 @@ const BasicInfoTab: React.FC<{
 
       <button
         onClick={handleSaveClick}
-        disabled={!isFormValid}
+        disabled={!isFormValid || isSaving}
         className={`px-6 py-1.5 rounded  ${
-          isFormValid
+          isFormValid && !isSaving
             ? "bg-[#6d28d2] text-white hover:bg-purple-700"
             : "bg-[rgba(108,40,210,0.3)] text-white cursor-not-allowed"
         }`}
       >
-        Save
+        {isSaving ? "...Saving" : "Save"}
       </button>
     </div>
   );
