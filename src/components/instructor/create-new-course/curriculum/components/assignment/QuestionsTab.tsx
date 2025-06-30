@@ -37,7 +37,10 @@ const QuestionsTab: React.FC<{
     deleteAssignmentQuestion,
   } = useAssignmentService();
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const handleSubmitQuestion = async () => {
+    setIsSubmitting(true);
     // Remove empty paragraphs and HTML tags
     const cleanContent = currentQuestionContent
       .replace(/<p><br><\/p>/g, "")
@@ -46,6 +49,7 @@ const QuestionsTab: React.FC<{
 
     if (!cleanContent) {
       toast.error("Question content cannot be empty");
+      setIsSubmitting(false);
       return;
     }
 
@@ -108,6 +112,7 @@ const QuestionsTab: React.FC<{
       setCurrentQuestionContent("");
       setEditingQuestionId(null);
       setIsAddingNewQuestion(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -124,7 +129,9 @@ const QuestionsTab: React.FC<{
     setIsAddingNewQuestion(false);
   };
 
+  const [isDeleting, setIsDeleting] = useState(false);
   const confirmDeleteQuestion = async (questionId: string) => {
+    setIsDeleting(true);
     try {
       await deleteAssignmentQuestion({
         assignmentQuestionId: parseInt(questionId, 10),
@@ -147,6 +154,8 @@ const QuestionsTab: React.FC<{
     } catch (error) {
       console.error("Failed to delete assignment question:", error);
       toast.error("Failed to delete question.");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -169,9 +178,10 @@ const QuestionsTab: React.FC<{
       <div className="flex gap-2 pt-4">
         <button
           onClick={handleSubmitQuestion}
-          className="px-4 py-2 bg-[#6d28d2] text-white rounded hover:bg-purple-600 transition cursor-pointer"
+          disabled={isSubmitting}
+          className="px-4 py-2 bg-[#6d28d2] text-white rounded hover:bg-purple-600 cursor-pointer disabled:bg-[rgba(108,40,210,0.3)] disabled:cursor-not-allowed transition"
         >
-          Submit
+          {isSubmitting ? "...Submitting" : "Submit"}
         </button>
         <button
           onClick={cancelEditing}
@@ -216,7 +226,7 @@ const QuestionsTab: React.FC<{
   );
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="px-2 py-4 md:p-6 space-y-6">
       {/* info section */}
       {showInfo && (
         <div className="border border-[#6d28d2] rounded p-4">
@@ -296,9 +306,10 @@ const QuestionsTab: React.FC<{
               </button>
               <button
                 onClick={() => confirmDeleteQuestion(questionToDelete)}
-                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+                disabled={isDeleting}
+                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition cursor-pointer disabled:bg-red-300"
               >
-                Delete
+                {isDeleting ? "Deleting..." : "Delete"}
               </button>
             </div>
           </div>
