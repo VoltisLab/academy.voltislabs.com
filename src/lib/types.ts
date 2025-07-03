@@ -367,22 +367,22 @@ export interface Lecture {
   assignmentDescription?: string;
   estimatedDuration?: number;
   durationUnit?: "minutes" | "hours" | "days";
-  assignmentInstructions?: string;
+  instructions?: string;
   instructionalVideo?: {
     file: File | null;
     url?: string;
-    name?: string;
+    file_name?: string;
   };
   downloadableResource?: {
     file: File | null;
     url?: string;
-    name?: string;
+    file_name?: string;
   };
   assignmentQuestions?: AssignmentQuestion[];
   solutionVideo?: {
     file: File | null;
     url?: string;
-    name?: string;
+    file_name?: string;
   };
   isPublished?: boolean;
 }
@@ -425,28 +425,28 @@ export interface ExtendedLecture extends Lecture {
   assignmentDescription?: string;
   estimatedDuration?: number;
   durationUnit?: "minutes" | "hours" | "days";
-  assignmentInstructions?: string;
+  instructions?: string;
   instructionalVideo?: {
     file: File | null;
     url?: string;
-    name?: string;
+    file_name?: string;
   };
   videoUrl?: string;
   instructionalResource?: {
     file: File | null;
     url?: string;
-    name?: string;
+    file_name?: string;
   };
   solutionResource?: {
     file: File | null;
     url?: string;
-    name?: string;
+    file_name?: string;
   };
   assignmentQuestions?: AssignmentQuestion[];
   solutionVideo?: {
     file: File | null;
     url?: string;
-    name?: string;
+    file_name?: string;
   };
   isPublished?: boolean;
 }
