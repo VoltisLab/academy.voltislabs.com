@@ -117,22 +117,16 @@ export const DELETE_ASSIGNMENT_QUESTION = gql`
 export const CREATE_ASSIGNMENT_QUESTION_SOLUTION = gql`
   mutation CreateAssignmentQuestionSolution(
     $assignmentQuestionId: Int!
-    $downloadableResourceUrl: String
     $text: String
-    $videoUrl: String
   ) {
     createAssignmentQuestionSolution(
       assignmentQuestionId: $assignmentQuestionId
-      downloadableResourceUrl: $downloadableResourceUrl
       text: $text
-      videoUrl: $videoUrl
     ) {
       success
       assignmentQuestionSolution {
         id
-        downloadableResourceUrl
         text
-        videoUrl
       }
     }
   }
@@ -141,22 +135,16 @@ export const CREATE_ASSIGNMENT_QUESTION_SOLUTION = gql`
 export const UPDATE_ASSIGNMENT_QUESTION_SOLUTION = gql`
   mutation UpdateAssignmentQuestionSolution(
     $questionSolutionId: Int!
-    $downloadableResourceUrl: String
     $text: String
-    $videoUrl: String
   ) {
     updateAssignmentQuestionSolution(
       questionSolutionId: $questionSolutionId
-      downloadableResourceUrl: $downloadableResourceUrl
       text: $text
-      videoUrl: $videoUrl
     ) {
       success
       assignmentQuestionSolution {
         id
         text
-        videoUrl
-        downloadableResourceUrl
       }
     }
   }

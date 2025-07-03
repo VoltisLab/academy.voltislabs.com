@@ -24,6 +24,10 @@ export const GET_ASSIGNMENT = gql`
         required
         solution
         allowMultipleCorrect
+        questionSolutions {
+          id
+          text
+        }
       }
     }
   }
@@ -55,6 +59,10 @@ export interface GetAssignmentQuery {
       maxPoints: number;
       required: boolean;
       solution: string | null;
+      questionSolutions: {
+        id: string;
+        text: string;
+      };
       allowMultipleCorrect: boolean;
     }[];
   };
