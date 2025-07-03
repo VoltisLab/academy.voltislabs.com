@@ -118,9 +118,8 @@ const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
 
   const validateAssignment = () => {
     const errors: string[] = [];
-    if (!assignmentData.assignmentTitle?.trim()) errors.push("title");
-    if (!assignmentData.assignmentDescription?.trim())
-      errors.push("description");
+    if (!assignmentData.title?.trim()) errors.push("title");
+    if (!assignmentData.description?.trim()) errors.push("description");
     if (
       !assignmentData.estimatedDuration ||
       assignmentData.estimatedDuration <= 0
