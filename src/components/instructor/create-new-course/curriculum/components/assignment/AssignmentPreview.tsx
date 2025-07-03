@@ -426,7 +426,7 @@ const Instructions = ({
               >
                 <LiaFileDownloadSolid size={17} />
                 <span>
-                  {assignmentData.instructionalResource.name ||
+                  {assignmentData.instructionalResource.file_name ||
                     assignmentData.instructionalResource.file?.name ||
                     "Resource"}
                 </span>
@@ -607,7 +607,7 @@ const InstructorExample = ({
               >
                 <LiaFileDownloadSolid size={17} />
                 <span>
-                  {assignmentData.solutionResource.name ||
+                  {assignmentData.solutionResource.file_name ||
                     assignmentData.solutionResource.file?.name ||
                     "Resource"}
                 </span>
