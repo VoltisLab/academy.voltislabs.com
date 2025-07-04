@@ -26,29 +26,29 @@ export default function PublishCoursePage() {
   }, [courseId]);
 
   return (
-    <div className="bg-white w-full xl:max-w-[90rem] mx-auto min-h-screen">
+    <div className="bg-white w-full xl:max-w-[90rem] mx-auto ">
       <CourseCreationTabs />
 
-      <div className="flex justify-center items-center h-[calc(100vh-180px)]">
-        <div className="bg-white p-6 rounded-lg border border-gray-200 max-w-lg w-full">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">
-            Publish Your Course
-          </h2>
-          <p className="text-gray-600 mb-6">
+      <div className="p-6  border-x border-b border-gray-200 w-full h-[calc(100vh-180px)] rounded-b-md">
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">
+          Publish Your Course
+        </h2>
+        <div className="flex flex-col justify-between h-[90%]">
+          <p className="text-gray-600">
             You're almost there! Review your course details and publish it to
             make it available to students.
           </p>
           <div className="flex items-center justify-between">
-            <button
+            {/* <button
               onClick={handleBackToCurriculum}
               className="text-gray-500 font-medium text-sm px-5 py-2 rounded-md hover:bg-gray-100"
             >
               ← Back to Curriculum
-            </button>
+            </button> */}
             <button
               onClick={handlePublishCourse}
               disabled={!courseId}
-              className={`px-6 py-3 rounded-md font-medium text-sm ${
+              className={`px-6 py-3 rounded-md font-medium ml-auto text-sm ${
                 courseId
                   ? "bg-green-600 text-white hover:bg-green-700"
                   : "bg-gray-300 text-gray-500 cursor-not-allowed"
