@@ -36,7 +36,12 @@ import { FileUploadFunction } from "../../CourseSectionBuilder";
 import { CREATE_ASSIGNMENT } from "@/api/assignment/mutation";
 import { useAssignmentService } from "@/services/useAssignmentService";
 import { useQuizOperations } from "@/services/quizService";
-import { CourseSection, CourseSectionAssignnments, CourseSectionLecture, CourseSectionQuiz } from "@/api/course/section/queries";
+import {
+  CourseSection,
+  CourseSectionAssignnments,
+  CourseSectionLecture,
+  CourseSectionQuiz,
+} from "@/api/course/section/queries";
 
 export type DeleteItemFn = (
   type: "section" | "lecture",
@@ -50,7 +55,7 @@ interface SectionItemProps {
   setNewassignment?: React.Dispatch<React.SetStateAction<number | undefined>>;
   setNewQuizId?: React.Dispatch<React.SetStateAction<number | undefined>>;
   newQuizId?: number;
-  section: CourseSection
+  section: CourseSection;
   index: number;
   totalSections: number;
   editingSectionId: string | null;
@@ -88,7 +93,7 @@ interface SectionItemProps {
     sectionId: string,
     lectureId: number,
     description: string
-  ) => void;
+  ) => Promise<void>;
   activeContentSection: { sectionId: string; lectureId: string } | null;
   isDragging: boolean;
   handleDragStart: (
@@ -200,7 +205,7 @@ interface SectionItemProps {
   videoUploading?: boolean;
   videoUploadProgress?: number;
   uploadFileToBackend?: FileUploadFunction;
-  courseId?: number
+  courseId?: number;
 }
 
 export default function SectionItem({
@@ -265,7 +270,7 @@ export default function SectionItem({
   videoUploadProgress,
   saveArticleToBackend,
   uploadFileToBackend,
-  courseId
+  courseId,
 }: SectionItemProps) {
   const sectionNameInputRef = useRef<HTMLInputElement>(null);
   // State for toggling action buttons
@@ -351,9 +356,8 @@ export default function SectionItem({
       }
 
       if (response.createAssignment.success) {
-        
         // await addLecture(sectionId, "assignment", title);
-        await fetchSectionData()
+        await fetchSectionData();
         setShowAssignmentForm(false);
         // Add to local state with backend ID
         const backendLectureId = response.createAssignment.assignment.id;
@@ -401,7 +405,7 @@ export default function SectionItem({
     try {
       if (addQuiz) await addQuiz(sectionId, title, description);
       setShowQuizForm(false);
-      await fetchSectionData()
+      await fetchSectionData();
     } catch (error) {
       console.error("Failed to create quiz:", error);
     }
@@ -482,10 +486,10 @@ export default function SectionItem({
     setShowActionButtons(false);
   };
 
-  const handleSaveDescription = () => {
+  const handleSaveDescription = async () => {
     if (!activeDescriptionSection || !saveDescription) return;
 
-    saveDescription(
+    await saveDescription(
       activeDescriptionSection.sectionId,
       Number(activeDescriptionSection.lectureId),
       currentDescription
@@ -629,47 +633,47 @@ export default function SectionItem({
   };
 
   // Render lecture items based on their content type
-  
-const renderAssignmentItem = (assignment: CourseSectionAssignnments, assignmentIndex: number) => {
- return (
-        <AssignmentItem
-          key={assignment.id}
-          lecture={assignment}
-          lectureIndex={assignmentIndex} // Use assignment-specific index
-          totalLectures={section?.assignment?.length}
-          sectionId={section?.id}
-          editingLectureId={editingLectureId}
-          setEditingLectureId={setEditingLectureId}
-          updateLectureName={updateLectureName}
-          deleteLecture={deleteAssignment}
-          moveLecture={moveLecture}
-          handleDragStart={handleDragStart}
-          handleDragOver={handleDragOver}
-          handleDrop={handleDrop}
-          isDragging={isDragging}
-          handleDragEnd={handleDragEnd}
-          handleDragLeave={handleDragLeave}
-          draggedLecture={draggedLecture}
-          dragTarget={dragTarget}
-          allSections={allSections}
-          onEditAssignment={onEditAssignment}
-        />
-      );
-}
 
+  const renderAssignmentItem = (
+    assignment: CourseSectionAssignnments,
+    assignmentIndex: number
+  ) => {
+    return (
+      <AssignmentItem
+        key={assignment.id}
+        lecture={assignment}
+        lectureIndex={assignmentIndex} // Use assignment-specific index
+        totalLectures={section?.assignment?.length}
+        sectionId={section?.id}
+        editingLectureId={editingLectureId}
+        setEditingLectureId={setEditingLectureId}
+        updateLectureName={updateLectureName}
+        deleteLecture={deleteAssignment}
+        moveLecture={moveLecture}
+        handleDragStart={handleDragStart}
+        handleDragOver={handleDragOver}
+        handleDrop={handleDrop}
+        isDragging={isDragging}
+        handleDragEnd={handleDragEnd}
+        handleDragLeave={handleDragLeave}
+        draggedLecture={draggedLecture}
+        dragTarget={dragTarget}
+        allSections={allSections}
+        onEditAssignment={onEditAssignment}
+      />
+    );
+  };
 
-
-
-  const renderLectureItem = (lecture: CourseSectionLecture, lectureIndex: number) => {
-    
-      return (
+  const renderLectureItem = (
+    lecture: CourseSectionLecture,
+    lectureIndex: number
+  ) => {
+    return (
       <LectureItem
         key={lecture.id}
         lecture={lecture}
         lectureIndex={lectureIndex}
-        totalLectures={
-          section?.lectures?.length
-        }
+        totalLectures={section?.lectures?.length}
         sectionId={section?.id}
         editingLectureId={editingLectureId}
         setEditingLectureId={setEditingLectureId}
@@ -713,103 +717,106 @@ const renderAssignmentItem = (assignment: CourseSectionAssignnments, assignmentI
         courseId={courseId}
       />
     );
-  
   };
-  const renderQuizItem = (lecture: CourseSectionQuiz, typeSpecificIndex: number) => {
-  return (
-    <QuizItem
-      fetchSectionData={fetchSectionData}
-      key={lecture.id}
-      lecture={lecture}
-      newQuizId={newQuizId}
-      lectureIndex={typeSpecificIndex}
-      totalLectures={section?.quiz?.length}
-      sectionId={section.id}
-      editingLectureId={editingLectureId}
-      setEditingLectureId={setEditingLectureId}
-      updateLectureName={updateLectureName}
-      deleteLecture={deleteLecture}
-      deleteLocalQuiz={deleteLocalQuiz}
-      moveLecture={moveLecture}
-      handleDragStart={handleDragStart}
-      handleDragOver={handleDragOver}
-      handleDrop={handleDrop}
-      toggleContentSection={toggleContentSection}
-      updateQuizQuestions={updateQuizQuestions}
-      sections={allSections}
-      onEditQuiz={handleEditQuiz}
-      allSections={allSectionsWithEnhanced}
-      enhancedLectures={enhancedLectures}
-      uploadedFiles={globalUploadedFiles}
-      sourceCodeFiles={globalSourceCodeFiles}
-      externalResources={globalExternalResources}
-      courseId={courseId}
-    />
-  );
-};
+  const renderQuizItem = (
+    lecture: CourseSectionQuiz,
+    typeSpecificIndex: number
+  ) => {
+    return (
+      <QuizItem
+        fetchSectionData={fetchSectionData}
+        key={lecture.id}
+        lecture={lecture}
+        newQuizId={newQuizId}
+        lectureIndex={typeSpecificIndex}
+        totalLectures={section?.quiz?.length}
+        sectionId={section.id}
+        editingLectureId={editingLectureId}
+        setEditingLectureId={setEditingLectureId}
+        updateLectureName={updateLectureName}
+        deleteLecture={deleteLecture}
+        deleteLocalQuiz={deleteLocalQuiz}
+        moveLecture={moveLecture}
+        handleDragStart={handleDragStart}
+        handleDragOver={handleDragOver}
+        handleDrop={handleDrop}
+        toggleContentSection={toggleContentSection}
+        updateQuizQuestions={updateQuizQuestions}
+        sections={allSections}
+        onEditQuiz={handleEditQuiz}
+        allSections={allSectionsWithEnhanced}
+        enhancedLectures={enhancedLectures}
+        uploadedFiles={globalUploadedFiles}
+        sourceCodeFiles={globalSourceCodeFiles}
+        externalResources={globalExternalResources}
+        courseId={courseId}
+      />
+    );
+  };
 
-const renderCodingItem = (lecture:CourseSectionAssignnments, typeSpecificIndex: number ) => {
-   return (
-        <CodingExerciseItem
-          key={lecture.id}
-          lecture={lecture}
-          lectureIndex={typeSpecificIndex} // Use coding-exercise-specific index
-          totalLectures={
-            section?.codingExercises?.length
+  const renderCodingItem = (
+    lecture: CourseSectionAssignnments,
+    typeSpecificIndex: number
+  ) => {
+    return (
+      <CodingExerciseItem
+        key={lecture.id}
+        lecture={lecture}
+        lectureIndex={typeSpecificIndex} // Use coding-exercise-specific index
+        totalLectures={section?.codingExercises?.length}
+        sectionId={section.id}
+        editingLectureId={editingLectureId}
+        setEditingLectureId={setEditingLectureId}
+        updateLectureName={updateLectureName}
+        deleteLecture={deleteLecture}
+        moveLecture={moveLecture}
+        handleDragStart={handleDragStart}
+        handleDragOver={handleDragOver}
+        handleDrop={handleDrop}
+        isDragging={isDragging}
+        handleDragEnd={handleDragEnd}
+        handleDragLeave={handleDragLeave}
+        draggedLecture={draggedLecture}
+        dragTarget={dragTarget}
+        allSections={allSections}
+        // Add the required prop here
+        customEditHandler={(lectureId) => {
+          if (openCodingExerciseModal) {
+            openCodingExerciseModal(section.id, lectureId);
           }
-          sectionId={section.id}
-          editingLectureId={editingLectureId}
-          setEditingLectureId={setEditingLectureId}
-          updateLectureName={updateLectureName}
-          deleteLecture={deleteLecture}
-          moveLecture={moveLecture}
-          handleDragStart={handleDragStart}
-          handleDragOver={handleDragOver}
-          handleDrop={handleDrop}
-          isDragging={isDragging}
-          handleDragEnd={handleDragEnd}
-          handleDragLeave={handleDragLeave}
-          draggedLecture={draggedLecture}
-          dragTarget={dragTarget}
-          allSections={allSections}
-          // Add the required prop here
-          customEditHandler={(lectureId) => {
-            if (openCodingExerciseModal) {
-              openCodingExerciseModal(section.id, lectureId);
-            }
-          }}
-        />
-      );
-}
-const renderPractice = (lecture: CourseSectionAssignnments, typeSpecificIndex: number) => {
-  return (
-        <PracticeItem
-          key={lecture.id}
-          lecture={lecture}
-          lectureIndex={typeSpecificIndex} // Use practice-specific index
-          totalLectures={
-            section?.practiceSet?.length
-          }
-          sectionId={section.id}
-          editingLectureId={editingLectureId}
-          setEditingLectureId={setEditingLectureId}
-          updateLectureName={updateLectureName}
-          deleteLecture={deleteLecture}
-          moveLecture={moveLecture}
-          savePracticeCode={savePracticeCode}
-          handleDragStart={handleDragStart}
-          handleDragOver={handleDragOver}
-          handleDrop={handleDrop}
-          isDragging={isDragging}
-          handleDragEnd={handleDragEnd}
-          handleDragLeave={handleDragLeave}
-          draggedLecture={draggedLecture}
-          dragTarget={dragTarget}
-          allSections={allSections}
-        />
-      );
-}
-
+        }}
+      />
+    );
+  };
+  const renderPractice = (
+    lecture: CourseSectionAssignnments,
+    typeSpecificIndex: number
+  ) => {
+    return (
+      <PracticeItem
+        key={lecture.id}
+        lecture={lecture}
+        lectureIndex={typeSpecificIndex} // Use practice-specific index
+        totalLectures={section?.practiceSet?.length}
+        sectionId={section.id}
+        editingLectureId={editingLectureId}
+        setEditingLectureId={setEditingLectureId}
+        updateLectureName={updateLectureName}
+        deleteLecture={deleteLecture}
+        moveLecture={moveLecture}
+        savePracticeCode={savePracticeCode}
+        handleDragStart={handleDragStart}
+        handleDragOver={handleDragOver}
+        handleDrop={handleDrop}
+        isDragging={isDragging}
+        handleDragEnd={handleDragEnd}
+        handleDragLeave={handleDragLeave}
+        draggedLecture={draggedLecture}
+        dragTarget={dragTarget}
+        allSections={allSections}
+      />
+    );
+  };
 
   return (
     <div
@@ -935,7 +942,6 @@ const renderPractice = (lecture: CourseSectionAssignnments, typeSpecificIndex: n
                   <AlignJustify className="w-5 h-5 text-gray-500 cursor-move" />
                 </div>
               )}
-
             </div>
           )}
         </div>
@@ -944,24 +950,36 @@ const renderPractice = (lecture: CourseSectionAssignnments, typeSpecificIndex: n
           <div className="p-2 bg-gray-100 relative">
             {/* Render lectures and assignments */}
 
-            
-            {section?.lectures?.map((lecture: CourseSectionLecture, lectureIndex: number) => {
-              return renderLectureItem(lecture, lectureIndex);
-            })}
+            {section?.lectures?.map(
+              (lecture: CourseSectionLecture, lectureIndex: number) => {
+                return renderLectureItem(lecture, lectureIndex);
+              }
+            )}
 
-            {section?.assignment?.map((assignment: CourseSectionAssignnments, assignmentIndex: number) => {
-              return renderAssignmentItem(assignment, assignmentIndex);
-            })}
-            {section?.quiz?.map((quiz: CourseSectionQuiz, quizIndex: number) => {
-              return renderQuizItem(quiz, quizIndex);
-            })}
+            {section?.assignment?.map(
+              (
+                assignment: CourseSectionAssignnments,
+                assignmentIndex: number
+              ) => {
+                return renderAssignmentItem(assignment, assignmentIndex);
+              }
+            )}
+            {section?.quiz?.map(
+              (quiz: CourseSectionQuiz, quizIndex: number) => {
+                return renderQuizItem(quiz, quizIndex);
+              }
+            )}
 
-            {section?.codingExercises?.map((code: CourseSectionAssignnments, codeIndex: number) => {
-              return renderCodingItem(code, codeIndex);
-            })}
-            {section?.practiceSet?.map((practice: CourseSectionAssignnments, practiceIndex: number) => {
-              return renderPractice(practice, practiceIndex);
-            })}
+            {section?.codingExercises?.map(
+              (code: CourseSectionAssignnments, codeIndex: number) => {
+                return renderCodingItem(code, codeIndex);
+              }
+            )}
+            {section?.practiceSet?.map(
+              (practice: CourseSectionAssignnments, practiceIndex: number) => {
+                return renderPractice(practice, practiceIndex);
+              }
+            )}
             {/* Assignment Form */}
             {showAssignmentForm && (
               <AssignmentForm

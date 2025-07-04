@@ -43,6 +43,7 @@ const InstructionsTab: React.FC<{
   toggleSortByName,
   toggleSortByDate,
 }) => {
+  console.log(data);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [activeVideoTab, setActiveVideoTab] = useState<
     "upload" | "library" | null
@@ -121,7 +122,10 @@ const InstructionsTab: React.FC<{
 
       const updateVariables: UpdateAssignmentVariables = {
         assignmentId: Number(id),
-        resourceUrl: baseUrl,
+        instructionDownloadableResource: {
+          fileName: file.name,
+          url: baseUrl,
+        },
       };
 
       await updateAssignment(updateVariables);
@@ -175,14 +179,39 @@ const InstructionsTab: React.FC<{
     }
   };
 
-  const handleVideoSelect = (video: any) => {
-    onChange("instructionalVideo", {
-      file: null,
-      url: video.url,
-      name: video.filename,
-    });
-    setShowVideoUploaded(true);
-    setActiveVideoTab(null); // Hide tabs after selection
+  // const handleVideoSelect = (video: any) => {};
+
+  const [isSelectingVideo, setIsSelectingVideo] = useState(false);
+
+  const handleVideoSelect = async (video: any) => {
+    // Begin loading state
+    setIsSelectingVideo(true);
+
+    const updateVariables: UpdateAssignmentVariables = {
+      assignmentId: Number(id),
+      solutionVideo: {
+        fileName: video.filename || "",
+        url: video.url || "",
+      },
+    };
+
+    try {
+      await updateAssignment(updateVariables);
+      onChange("instructionalVideo", {
+        file: null,
+        url: video.url,
+        file_name: video.filename,
+      });
+      setShowVideoUploaded(true);
+      setActiveVideoTab(null);
+      toast.success("Video selected successfully");
+      await fetchAssignment();
+    } catch (error) {
+      console.error("Failed to update solution video:", error);
+      toast.error("Could not select video");
+    } finally {
+      setIsSelectingVideo(false);
+    }
   };
 
   const handleChangeVideo = () => {
@@ -218,15 +247,12 @@ const InstructionsTab: React.FC<{
     setIsSubmitting(true);
 
     try {
-      if (
-        !data.assignmentInstructions ||
-        data.assignmentInstructions.trim() === ""
-      ) {
+      if (!data.instructions || data.instructions.trim() === "") {
         toast.error("Please enter assignment instructions.");
         return;
       }
 
-      const cleanedInstructions = data.assignmentInstructions
+      const cleanedInstructions = data.instructions
         .replace(/<p><br><\/p>/g, "") // remove <p><br></p>
         .replace(/<[^>]*>/g, "") // remove all HTML tags
         .trim(); // trim whitespace
@@ -283,7 +309,10 @@ const InstructionsTab: React.FC<{
     try {
       const updateVariables: UpdateAssignmentVariables = {
         assignmentId: Number(id),
-        videoUrl: "",
+        instructionVideo: {
+          fileName: "",
+          url: "",
+        },
       };
       await updateAssignment(updateVariables);
       toast.success("Video removed successfully");
@@ -315,9 +344,14 @@ const InstructionsTab: React.FC<{
     try {
       const updateVariables: UpdateAssignmentVariables = {
         assignmentId: Number(id),
-        resourceUrl: "",
+        instructionDownloadableResource: {
+          fileName: "",
+          url: "",
+        },
       };
-      await updateAssignment(updateVariables);
+      const data = await updateAssignment(updateVariables);
+
+      console.log(data);
       toast.success("Resource removed successfully");
       await fetchAssignment();
       onChange("instructionalResource", null);
@@ -417,7 +451,10 @@ const InstructionsTab: React.FC<{
       // 3. Update the assignment with the new video URL
       const updateVariables: UpdateAssignmentVariables = {
         assignmentId: Number(id),
-        videoUrl: baseUrl, // Make sure your API accepts this field
+        instructionVideo: {
+          fileName: file.name,
+          url: baseUrl,
+        }, // Make sure your API accepts this field
       };
 
       await updateAssignment(updateVariables);
@@ -544,9 +581,9 @@ const InstructionsTab: React.FC<{
   // Clean up on unmount
   useEffect(() => {
     console.log(data.solutionResource);
-    if (data.videoUrl) setShowVideoUploaded(true);
-    if (data.instructionalResource) setShowResourceUploaded(true);
-    if (data.assignmentInstructions) setIsEditingInstructions(false);
+    if (data.instructionalVideo?.file_name) setShowVideoUploaded(true);
+    if (data.instructionalResource?.file_name) setShowResourceUploaded(true);
+    if (data.instructions) setIsEditingInstructions(false);
 
     return () => {
       if (abortControllerRef.current) {
@@ -665,9 +702,10 @@ const InstructionsTab: React.FC<{
                   <>
                     <div className="flex items-center gap-2">
                       <span className="text-zinc-700 max-w-lg font-semibold text-sm w-full border border-zinc-700 py-3 px-4 rounded">
-                        {data.instructionalVideo?.file
+                        {/* {data.instructionalVideo?.file
                           ? data.instructionalVideo.file.name
-                          : "No file selected"}
+                          : "No file selected"} */}
+                        No file selected
                       </span>
                       <button
                         onClick={() => fileInputRef.current?.click()}
@@ -811,11 +849,14 @@ const InstructionsTab: React.FC<{
                                 <div className="flex items-center gap-2">
                                   {video.status === "success" && (
                                     <button
-                                      onClick={() => {
-                                        handleVideoSelect(video);
+                                      disabled={isSelectingVideo}
+                                      onClick={async () => {
+                                        await handleVideoSelect(video);
                                         handleLibraryVideoDelete(video.id);
                                       }}
-                                      className="text-[#6D28D9] hover:text-purple-800 hover:bg-purple-100 font-semibold ml-auto cursor-pointer text-sm"
+                                      className={`text-[#6D28D9] hover:text-purple-800 hover:bg-purple-100 font-semibold ml-auto cursor-pointer an text-sm transition ${
+                                        isSelectingVideo ? "" : ""
+                                      }`}
                                     >
                                       Select
                                     </button>
@@ -848,7 +889,7 @@ const InstructionsTab: React.FC<{
               <div className="flex justify-between items-center font-semibold">
                 <span className="text-zincborder-zinc-700">
                   {data.instructionalVideo?.file?.name ||
-                    data.instructionalVideo?.name ||
+                    data.instructionalVideo?.file_name ||
                     "No video selected"}
                 </span>
               </div>
@@ -893,7 +934,7 @@ const InstructionsTab: React.FC<{
                 disabled={isDeletingVideo}
                 className="px-4 py-2 border font-bold text-sm border-[#6d28d2] text-[#6d28d2] rounded hover:bg-[rgba(108,40,210,0.125)] cursor-pointer transition"
               >
-                {isDeletingVideo ? "...Deleting" : "Delete"}
+                {isDeletingVideo ? "Deleting..." : "Delete"}
               </button>
             </div>
           </div>
@@ -908,8 +949,8 @@ const InstructionsTab: React.FC<{
         {showEditor ? (
           <>
             <RichTextEditor
-              value={data.assignmentInstructions || ""}
-              onChange={(value) => onChange("assignmentInstructions", value)}
+              value={data.instructions || ""}
+              onChange={(value) => onChange("instructions", value)}
               placeholder="Enter assignment instructions..."
             />
             <div className="flex gap-2 mt-4">
@@ -918,7 +959,7 @@ const InstructionsTab: React.FC<{
                 onClick={handleSubmitInstructions}
                 className="px-4 py-2 bg-[#6d28d2] text-white rounded hover:bg-purple-600 cursor-pointer disabled:bg-[rgba(108,40,210,0.3)] disabled:cursor-not-allowed transition"
               >
-                {isSubmitting ? "...Submitting" : "Submit"}
+                {isSubmitting ? "Submitting..." : "Submit"}
               </button>
               <button
                 onClick={() => {
@@ -935,7 +976,7 @@ const InstructionsTab: React.FC<{
             <div
               className="prose max-w-none"
               dangerouslySetInnerHTML={{
-                __html: data.assignmentInstructions || "",
+                __html: data.instructions || "",
               }}
             />
             <button
@@ -1029,9 +1070,10 @@ const InstructionsTab: React.FC<{
               <>
                 <div className="flex items-center gap-2">
                   <span className="text-zinc-700 max-w-lg font-semibold text-sm w-full border border-zinc-700 py-3 px-4 rounded">
-                    {data.instructionalResource?.file
+                    {/* {data.instructionalResource?.file
                       ? data.instructionalResource.file.name
-                      : "No file selected"}
+                      : "No file selected"} */}
+                    No file selected
                   </span>
                   <button
                     onClick={() => {
@@ -1074,7 +1116,9 @@ const InstructionsTab: React.FC<{
             <FiDownload />
             {/* File Name */}
             <span className="text-sm font-medium text-gray-900 truncate">
-              {data.instructionalResource?.name || "name here"}
+              {data.instructionalResource?.file?.name ||
+                data.instructionalResource?.file_name ||
+                "File uploaded"}
             </span>
 
             {/* Change Button */}
@@ -1091,7 +1135,7 @@ const InstructionsTab: React.FC<{
               disabled={isDeletingResource}
               className="px-4 py-2 border font-bold text-sm border-[#6d28d2] text-[#6d28d2] rounded hover:bg-[rgba(108,40,210,0.125)] cursor-pointer transition"
             >
-              {isDeletingResource ? "...Deleting" : "Delete"}
+              {isDeletingResource ? "Deleting..." : "Delete"}
             </button>
           </div>
         )}

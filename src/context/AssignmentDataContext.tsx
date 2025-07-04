@@ -41,9 +41,8 @@ export const AssignmentProvider = ({
     assignmentDescription: "",
     estimatedDuration: 0,
     durationUnit: "minutes",
-    assignmentInstructions: "",
+    instructions: "",
     assignmentQuestions: [],
-    // isPublished: false,
     ...initialData,
     isPublished:
       initialData?.isPublished !== undefined ? initialData.isPublished : false,

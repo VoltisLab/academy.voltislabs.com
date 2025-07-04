@@ -24,7 +24,7 @@ const page = () => {
             assignmentDescription: "",
             estimatedDuration: 0,
             durationUnit: "minutes",
-            assignmentInstructions: "",
+            instructions: "",
             assignmentQuestions: [],
             isPublished: false,
           }}

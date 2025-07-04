@@ -12,6 +12,7 @@ import { UpdateAssignmentVariables } from "@/api/assignment/mutation";
 import { useAssignmentService } from "@/services/useAssignmentService";
 import { useParams, useRouter } from "next/navigation";
 import { FiMenu } from "react-icons/fi";
+import { GetAssignmentQuery } from "@/api/assignment/query";
 
 export interface AssignmentQuestion {
   id: string;
@@ -103,7 +104,7 @@ const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
   const [showTab, setShowTab] = useState(false);
 
   const { assignmentData, setAssignmentData } = useAssignment();
-  const { updateAssignment, getAssignment } = useAssignmentService();
+  const { getAssignment } = useAssignmentService();
 
   const toggleSortByName = () => {
     setSortByNameAsc((prev) => !prev);
@@ -117,9 +118,8 @@ const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
 
   const validateAssignment = () => {
     const errors: string[] = [];
-    if (!assignmentData.assignmentTitle?.trim()) errors.push("title");
-    if (!assignmentData.assignmentDescription?.trim())
-      errors.push("description");
+    if (!assignmentData.title?.trim()) errors.push("title");
+    if (!assignmentData.description?.trim()) errors.push("description");
     if (
       !assignmentData.estimatedDuration ||
       assignmentData.estimatedDuration <= 0
@@ -145,8 +145,7 @@ const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
 
       if (hasInvalidAnswers) errors.push("answers");
     }
-    if (!assignmentData.assignmentInstructions?.trim())
-      errors.push("instructions");
+    if (!assignmentData.instructions?.trim()) errors.push("instructions");
 
     setValidationErrors(errors);
     return errors.length === 0;
@@ -164,24 +163,23 @@ const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
       console.log(data);
       setAssignmentData({
         id: data?.id,
-        name: "",
-        description: "",
-        captions: "",
-        lectureNotes: "",
         attachedFiles: [],
-        videos: [],
         contentType: "assignment",
         isExpanded: false,
-        assignmentTitle: data?.title,
-        assignmentDescription: data?.description,
+        title: data?.title,
+        description: data?.description,
         estimatedDuration: data?.estimatedDurationMinutes,
         durationUnit: "minutes",
-        videoUrl: data.videoUrl,
-        instructionalResource: data.downloadableResourceUrl,
-        assignmentInstructions: data?.instructions,
+        instructionalVideo: data?.instructionVideo,
+        instructionalResource: data?.instructionDownloadableResource,
+        instructions: data?.instructions,
         assignmentQuestions: data?.questions,
+        maxPoints: data?.maxPoints,
+        solutionVideo: data?.solutionVideo,
+        solutionResource: data?.solutionDownloadableResource,
+        dueDate: data?.dueDate,
+        createdAt: data?.createdAt,
         isPublished: false,
-        solution: data?.questionSolutions,
       });
     } catch (err) {}
   }, [getAssignment, id, setAssignmentData]);
@@ -310,7 +308,7 @@ const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
             fetchAssignment={fetchAssignment}
             data={assignmentData}
             onChange={handleDataChange}
-            hasSubmitted={!!assignmentData.assignmentInstructions}
+            hasSubmitted={!!assignmentData.instructions}
             libraryVideos={libraryVideos}
             setLibraryVideos={setLibraryVideos}
             sortByNameAsc={sortByNameAsc}
