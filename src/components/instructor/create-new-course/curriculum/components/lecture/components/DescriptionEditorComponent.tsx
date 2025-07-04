@@ -1,14 +1,14 @@
-import React from 'react';
-import dynamic from 'next/dynamic';
+import React, { useState } from "react";
+import dynamic from "next/dynamic";
 
 // Dynamic import ReactQuill to avoid SSR issues
-const ReactQuill = dynamic(() => import('react-quill-new'), {
+const ReactQuill = dynamic(() => import("react-quill-new"), {
   ssr: false,
-  loading: () => <p>Loading editor...</p>
+  loading: () => <p>Loading editor...</p>,
 });
 
 // Import ReactQuill styles
-import 'react-quill-new/dist/quill.snow.css';
+import "react-quill-new/dist/quill.snow.css";
 
 // Custom styles to override default Quill styles
 const customStyles = `
@@ -57,25 +57,22 @@ const customStyles = `
 
 const quillModules = {
   toolbar: [
-    ['bold', 'italic'],
-    [{ 'list': 'ordered' }, { 'list': 'bullet' }]
+    ["bold", "italic"],
+    [{ list: "ordered" }, { list: "bullet" }],
   ],
   clipboard: {
-    matchVisual: false
-  }
+    matchVisual: false,
+  },
 };
 
-const quillFormats = [
-  'bold', 'italic',
-  'list', 'bullet'
-];
+const quillFormats = ["bold", "italic", "list", "bullet"];
 
 interface DescriptionEditorComponentProps {
-  activeDescriptionSection: { sectionId: string, lectureId: string } | null;
+  activeDescriptionSection: { sectionId: string; lectureId: string } | null;
   onClose: () => void;
   currentDescription: string;
   setCurrentDescription: (description: string) => void;
-  saveDescription: () => void;
+  saveDescription: () => Promise<void>;
 }
 
 export default function DescriptionEditorComponent({
@@ -83,24 +80,28 @@ export default function DescriptionEditorComponent({
   onClose,
   currentDescription,
   setCurrentDescription,
-  saveDescription
+  saveDescription,
 }: DescriptionEditorComponentProps) {
   if (!activeDescriptionSection) return null;
-    
+
   // This function handles saving the description and closing the editor
-  const handleSaveDescription = () => {
+  const [isSaving, setIsSaving] = useState(false);
+  const handleSaveDescription = async () => {
+    setIsSaving(true);
     // Call the parent component's save function
-    saveDescription();
-        
+    await saveDescription();
+    setIsSaving(false);
     // No need to manually call onClose as the parent component will update state
   };
-  
+
   return (
     <div className="w-full border-t border-gray-400 overflow-hidden bg-white">
       {/* Inject custom styles */}
       <style dangerouslySetInnerHTML={{ __html: customStyles }} />
       <div className="px-4 py-2">
-        <h3 className="text-sm font-medium text-gray-700">Lecture Description</h3>
+        <h3 className="text-sm font-medium text-gray-700">
+          Lecture Description
+        </h3>
       </div>
       <div className="px-4">
         <div className="focus-within:outline focus-within:outline-[#6D28D2] rounded-lg">
@@ -122,10 +123,11 @@ export default function DescriptionEditorComponent({
           Cancel
         </button>
         <button
+          disabled={isSaving}
           onClick={handleSaveDescription}
           className="px-4 py-1.5 bg-[#6D28D2] border border-transparent rounded-md text-sm font-medium text-white hover:bg-[#6D28D2]"
         >
-          Save
+          {isSaving ? "Saving..." : "Save"}
         </button>
       </div>
     </div>

@@ -94,7 +94,7 @@ interface UpdatedLectureItemProps {
   dragTarget?: { sectionId: string | null; lectureId: string | null };
   sections?: any[];
   updateCurrentDescription?: (description: string) => void;
-  saveDescription?: () => void;
+  saveDescription?: () => Promise<void>;
   currentDescription?: string;
   children?: React.ReactNode;
   allSections: any[];
@@ -132,7 +132,7 @@ interface UpdatedLectureItemProps {
   videoUploading?: boolean;
   videoUploadProgres?: number;
   uploadFileToBackend?: FileUploadFunction;
-  courseId?: number
+  courseId?: number;
 }
 
 export default function LectureItem(props: UpdatedLectureItemProps) {
@@ -179,7 +179,7 @@ export default function LectureItem(props: UpdatedLectureItemProps) {
     videoUploading = false,
     videoUploadProgres = 0,
     uploadFileToBackend,
-    courseId
+    courseId,
   } = props;
 
   const lectureNameInputRef = useRef<HTMLInputElement>(null);
@@ -784,13 +784,6 @@ export default function LectureItem(props: UpdatedLectureItemProps) {
     }
   };
 
-  // Save description handler
-  const handleSaveDescription = () => {
-    if (saveDescription) {
-      saveDescription();
-    }
-  };
-
   // Trigger file upload simulation
   const triggerFileUpload = (contentType: ContentType) => {
     setIsUploading(true);
@@ -1079,7 +1072,6 @@ export default function LectureItem(props: UpdatedLectureItemProps) {
                   <span className="truncate overflow-hidden ml-1">
                     {lecture.title}
                   </span>
-                  
                   {isHovering && !isLoading && (
                     <div>
                       <button
@@ -1215,15 +1207,14 @@ export default function LectureItem(props: UpdatedLectureItemProps) {
                 className="p-1 text-gray-400 hover:text-gray-600 ml-1"
                 onClick={(e) => {
                   e.stopPropagation();
-                 
+
                   if (toggleContentSection) {
                     toggleContentSection(sectionId, lecture.id);
-                    
+
                     if (isExpanded) {
                       setShowContentTypeSelector(false);
                       setActiveContentType(null);
-                      
-                    } 
+                    }
                   }
                 }}
                 aria-label={isExpanded ? "Collapse" : "Expand"}
@@ -1291,7 +1282,7 @@ export default function LectureItem(props: UpdatedLectureItemProps) {
                     }}
                     currentDescription={currentDescription || ""}
                     setCurrentDescription={updateCurrentDescription}
-                    saveDescription={handleSaveDescription}
+                    saveDescription={saveDescription}
                   />
                 )}
 

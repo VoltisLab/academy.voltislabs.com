@@ -93,7 +93,7 @@ interface SectionItemProps {
     sectionId: string,
     lectureId: number,
     description: string
-  ) => void;
+  ) => Promise<void>;
   activeContentSection: { sectionId: string; lectureId: string } | null;
   isDragging: boolean;
   handleDragStart: (
@@ -486,10 +486,10 @@ export default function SectionItem({
     setShowActionButtons(false);
   };
 
-  const handleSaveDescription = () => {
+  const handleSaveDescription = async () => {
     if (!activeDescriptionSection || !saveDescription) return;
 
-    saveDescription(
+    await saveDescription(
       activeDescriptionSection.sectionId,
       Number(activeDescriptionSection.lectureId),
       currentDescription

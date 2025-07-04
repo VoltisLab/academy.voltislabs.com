@@ -62,7 +62,6 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
     undefined
   );
   const [newQuizId, setNewQuizId] = useState<number | undefined>(undefined);
-  const [mainSectionData, setMainSectionData] = useState<any>(null);
 
   const [dragTarget, setDragTarget] = useState<{
     sectionId: string | null;
@@ -176,6 +175,7 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
   } = useLectureService();
 
   const {
+    fetchSectionData,
     sections,
     setSections,
     addSection: addLocalSection,
@@ -199,7 +199,9 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
     saveArticleToBackend,
     videoUploading,
     videoUploadProgress,
-  } = useSections([]);
+    mainSectionData,
+    setMainSectionData,
+  } = useSections([], courseId);
 
   const contentSectionModal = useModal();
 
@@ -325,11 +327,27 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
     sectionId: string;
     lectureId: string;
   } | null>(null);
-  const fetchSectionData = async () => {
-    const data = await getCourseSections({ id: Number(courseId) });
-    setMainSectionData(data?.courseSections);
-    return data;
-  };
+  // Function to fetch section data and update state
+  // const fetchSectionData = async () => {
+  //   try {
+  //     const data = await dataFromSection();
+  //     setMainSectionData(data?.courseSections);
+  //     return data;
+  //   } catch (error) {
+  //     console.error("Error fetching section data:", error);
+  //     return null;
+  //   }
+  // };
+
+  // useEffect to refetch when `dataFromSection` changes
+  // useEffect(() => {
+  //   console.log("This is a sign");
+  //   const fetchData = async () => {
+  //     await fetchSectionData();
+  //   };
+  //   fetchData();
+  // }, [dataFromSection]);
+
   // NEW: Backend-integrated section creation
   const handleAddSection = async (title: string, objective: string) => {
     try {
@@ -378,7 +396,11 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
     const createIntroduction = async () => {
       const data = await fetchSectionData();
 
-      if (!courseId || data?.courseSections?.length > 0 || hasCreatedIntro)
+      if (
+        !courseId ||
+        (data?.courseSections?.length as number) > 0 ||
+        hasCreatedIntro
+      )
         return;
 
       try {
