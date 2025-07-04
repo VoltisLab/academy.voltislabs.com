@@ -77,10 +77,11 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
   };
 
   useEffect(() => {
+    if (!initialQuestion || lecturesLoading) return;
     // Reset all form state when initialQuestion changes
-    if (initialQuestion || !lecturesLoading) {
-      setQuestionText(initialQuestion.text || "");
-      const choices = initialQuestion.answerChoices || [];
+    if (initialQuestion) {
+      setQuestionText(initialQuestion?.text || "");
+      const choices = initialQuestion?.answerChoices || [];
       // Always add one extra empty answer when editing
       setAnswers([...choices, { text: "", explanation: "" }]);
       const correctIndex = choices.findIndex(
@@ -90,7 +91,7 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
 
       // console.log(lectures);
       const selectedLecture = lectures.find(
-        (lecture) => lecture.title === initialQuestion.relatedLecture.title
+        (lecture) => lecture.title === initialQuestion?.relatedLecture?.title
       );
       setRelatedLecture(selectedLecture || "");
       // setRelatedLecture(initialQuestion.relatedLecture || "");

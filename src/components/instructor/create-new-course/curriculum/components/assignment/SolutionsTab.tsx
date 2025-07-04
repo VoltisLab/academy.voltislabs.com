@@ -606,6 +606,8 @@ const SolutionsTab: React.FC<{
     };
   }, []);
 
+  console.log(data);
+
   return (
     <div className="px-2 py-4 md:p-6 space-y-10 lg:space-y-20">
       {/* Video Section */}
@@ -977,9 +979,7 @@ const SolutionsTab: React.FC<{
               <h3 className="text-sm font-bold text-gray-900">
                 Question {question.order}
               </h3>
-              <div className="prose max-w-none mt-2">
-                {question?.text || question.content}
-              </div>
+              <div className="prose max-w-none mt-2">{question?.text}</div>
 
               {/* Answer Section */}
               <div className="mt-6">
@@ -1020,13 +1020,13 @@ const SolutionsTab: React.FC<{
                   </>
                 ) : (
                   <>
-                    {question.questionSolutions?.[idx].text !== " " ? (
+                    {question.questionSolutions?.[0]?.text.trim() ? (
                       <div className="space-y-2">
                         <div
                           className="prose max-w-none"
                           dangerouslySetInnerHTML={{
                             __html:
-                              question?.questionSolutions?.[idx].text ?? "",
+                              question?.questionSolutions?.[0]?.text ?? "",
                           }}
                         />
                         <div className="flex gap-2 mt-2">

@@ -11,10 +11,7 @@ interface CurriculumProps {
 
 const handleCurriculm = () => {};
 
-export const Curriculum = ({
-  onSaveNext,
-  courseId,
-}: CurriculumProps) => {
+export const Curriculum = ({ onSaveNext, courseId }: CurriculumProps) => {
   const [loading, setLoading] = useState<boolean>(false);
   const [currentAssignment, setCurrentAssignment] = useState<{
     sectionId: string;
@@ -23,7 +20,7 @@ export const Curriculum = ({
   } | null>(null);
   return (
     <AssignmentProvider initialData={currentAssignment?.data}>
-      <section className="space-y-10">
+      <section className="space-y-10 pb-6">
         <FormHeader
           title="Curriculum"
           loading={loading}
