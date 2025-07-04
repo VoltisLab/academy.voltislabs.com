@@ -7,7 +7,7 @@ import RichTextEditor from "../../RichTextEditor";
 import { useLectureData } from "@/services/fetchLectureService";
 
 interface QuestionFormProps {
-  onSubmit: (question: any) => void;
+  onSubmit: (question: any) => Promise<void>;
   onCancel: () => void;
   initialQuestion?: any;
   isEditedForm?: boolean;
@@ -33,6 +33,7 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
   quizId,
   sectionId,
 }) => {
+  console.log(initialQuestion);
   const [questionText, setQuestionText] = useState("");
   const [answers, setAnswers] = useState<
     Array<{ text: string; explanation: string; id?: number }>
@@ -60,6 +61,8 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
     parseInt(sectionId as string)
   );
 
+  console.log(lectures);
+
   // Update the select handler
   const handleLectureChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const lectureId = e.target.value;
@@ -68,22 +71,29 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
       return;
     }
     const selectedLecture = lectures.find(
-      (lecture) => lecture.id.toString() === lectureId
+      (lecture) => lecture.toString() === lectureId
     );
     setRelatedLecture(selectedLecture || null);
   };
 
   useEffect(() => {
     // Reset all form state when initialQuestion changes
-    if (initialQuestion) {
+    if (initialQuestion || !lecturesLoading) {
       setQuestionText(initialQuestion.text || "");
+      const choices = initialQuestion.answerChoices || [];
       // Always add one extra empty answer when editing
-      setAnswers([
-        ...(initialQuestion.answers || []),
-        { text: "", explanation: "" },
-      ]);
-      setCorrectAnswerIndex(initialQuestion.correctAnswerIndex ?? null);
-      setRelatedLecture(initialQuestion.relatedLecture || "");
+      setAnswers([...choices, { text: "", explanation: "" }]);
+      const correctIndex = choices.findIndex(
+        (choice: any) => choice.isCorrect === true
+      );
+      setCorrectAnswerIndex(correctIndex !== -1 ? correctIndex : null);
+
+      // console.log(lectures);
+      const selectedLecture = lectures.find(
+        (lecture) => lecture.title === initialQuestion.relatedLecture.title
+      );
+      setRelatedLecture(selectedLecture || "");
+      // setRelatedLecture(initialQuestion.relatedLecture || "");
     } else {
       // Reset to default state when no initial question
       setQuestionText("");
@@ -97,7 +107,7 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
       setRelatedLecture(null);
     }
     setError("");
-  }, [initialQuestion]);
+  }, [initialQuestion, lectures, lecturesLoading]);
 
   const addAnswer = () => {
     if (answers.length < 15) {
@@ -146,7 +156,9 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
     setAnswers(newAnswers);
   };
 
-  const handleSubmit = () => {
+  const [loader, setLoader] = useState(false);
+
+  const handleSubmit = async () => {
     // Validate inputs
     if (!questionText.trim()) {
       setError("Question text is required");
@@ -182,7 +194,7 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
       text: answer.text,
       isCorrect: index === correctAnswerIndex,
       order: index + 1,
-      id: initialQuestion?.choices?.[index]?.id, // Preserve existing IDs for updates
+      id: initialQuestion?.answerChoices?.[index]?.id, // Preserve existing IDs for updates
     }));
 
     // Create the question object
@@ -203,8 +215,9 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
       questionType: "multiple-choice",
       order: initialQuestion?.order || 1,
     };
-
-    onSubmit(question);
+    setLoader(true);
+    await onSubmit(question);
+    setLoader(false);
   };
 
   return (
@@ -323,10 +336,10 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
         <button
           type="button"
           onClick={handleSubmit}
-          disabled={onLoad}
+          disabled={loader}
           className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 cursor-pointer disabled:cursor-not-allowed disabled:bg-purple-300"
         >
-          {onLoad ? "Saving.." : "Save"}
+          {loader ? "Saving.." : "Save"}
         </button>
       </div>
     </div>
