@@ -189,7 +189,7 @@ const InstructionsTab: React.FC<{
 
     const updateVariables: UpdateAssignmentVariables = {
       assignmentId: Number(id),
-      solutionVideo: {
+      instructionVideo: {
         fileName: video.filename || "",
         url: video.url || "",
       },
