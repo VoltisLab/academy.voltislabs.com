@@ -371,7 +371,7 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
         // Add to local state with backend ID
         await fetchSectionData();
         const backendSectionId = response.createSection.section.id;
-        addLocalSection(title, objective);
+        // addLocalSection(title, objective);
 
         // Update the local section with the backend ID
         setSections((prevSections) =>
@@ -390,33 +390,88 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
       // Error is already handled in the service with toast
     }
   };
+
+  // NEW: Backend-integrated lecture creation
+  const handleAddLecture = async (
+    sectionId: string,
+    contentType: ContentItemType,
+    title?: string
+  ): Promise<string> => {
+    try {
+      console.log("Yepppp yep", sectionId);
+      // Create lecture on backend
+      const response = await createLecture({
+        sectionId: Number(sectionId),
+        title: title || "New Lecture",
+      });
+
+      if (response.createLecture.success) {
+        // Add to local state with backend ID
+        await fetchSectionData();
+        const backendLectureId = response.createLecture.lecture.id;
+        // const localLectureId = addLocalLecture(sectionId, contentType, title);
+
+        // Update the local lecture with the backend ID
+        // setSections((prevSections) =>
+        //   prevSections.map((section) => {
+        //     if (section.id === sectionId) {
+        //       return {
+        //         ...section,
+        //         lectures: section.lectures.map((lecture) =>
+        //           lecture.id === localLectureId
+        //             ? { ...lecture, id: backendLectureId }
+        //             : lecture
+        //         ),
+        //       };
+        //     }
+        //     return section;
+        //   })
+        // );
+
+        console.log("Heerrrrrsaarrrrrrrrrrr", backendLectureId);
+
+        return backendLectureId;
+      }
+
+      return "";
+    } catch (error) {
+      console.error("Failed to create lecture:", error);
+      // Error is already handled in the service with toast
+      return "";
+    }
+  };
+
   const [hasCreatedIntro, setHasCreatedIntro] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(true);
 
   useEffect(() => {
-    const createIntroduction = async () => {
-      const data = await fetchSectionData();
-
-      if (
-        !courseId ||
-        (data?.courseSections?.length as number) > 0 ||
-        hasCreatedIntro
-      )
-        return;
+    const initializeCourse = async () => {
+      if (!courseId || !isInitializing) return;
 
       try {
-        const sectionId = await handleAddSection("Introduction", "");
+        const data = await fetchSectionData();
 
+        // If sections already exist or we've already created intro, skip
+        if ((data?.courseSections?.length as number) > 0 || hasCreatedIntro) {
+          setIsInitializing(false);
+          return;
+        }
+
+        // Create introduction section and lecture
+        const sectionId = await handleAddSection("Introduction", "");
         await handleAddLecture(sectionId as string, "video", "Introduction");
-        setHasCreatedIntro(true); // Mark as created
+
+        // Mark as completed
+        setHasCreatedIntro(true);
+        setIsInitializing(false);
       } catch (error) {
-        console.error("Error creating introduction:", error);
+        console.error("Initialization error:", error);
+        setIsInitializing(false);
       }
     };
 
-    // Add a small delay to avoid race conditions with other initializations
-    const timer = setTimeout(createIntroduction, 500);
-    return () => clearTimeout(timer);
-  }, [courseId, sections.length, hasCreatedIntro]);
+    initializeCourse();
+  }, []);
 
   console.log("sectionmain===", mainSectionData);
 
@@ -467,56 +522,6 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
     } catch (error) {
       console.error("Failed to delete section:", error);
       // Error is already handled in the service with toast
-    }
-  };
-
-  // NEW: Backend-integrated lecture creation
-  const handleAddLecture = async (
-    sectionId: string,
-    contentType: ContentItemType,
-    title?: string
-  ): Promise<string> => {
-    try {
-      console.log("Yepppp yep", sectionId);
-      // Create lecture on backend
-      const response = await createLecture({
-        sectionId: Number(sectionId),
-        title: title || "New Lecture",
-      });
-
-      if (response.createLecture.success) {
-        // Add to local state with backend ID
-        await fetchSectionData();
-        const backendLectureId = response.createLecture.lecture.id;
-        const localLectureId = addLocalLecture(sectionId, contentType, title);
-
-        // Update the local lecture with the backend ID
-        setSections((prevSections) =>
-          prevSections.map((section) => {
-            if (section.id === sectionId) {
-              return {
-                ...section,
-                lectures: section.lectures.map((lecture) =>
-                  lecture.id === localLectureId
-                    ? { ...lecture, id: backendLectureId }
-                    : lecture
-                ),
-              };
-            }
-            return section;
-          })
-        );
-
-        console.log("Heerrrrrsaarrrrrrrrrrr", backendLectureId);
-
-        return backendLectureId;
-      }
-
-      return "";
-    } catch (error) {
-      console.error("Failed to create lecture:", error);
-      // Error is already handled in the service with toast
-      return "";
     }
   };
 
@@ -913,7 +918,7 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
           Bulk Uploader
         </button>
       </div>
-      <div className="p-4 pb-0 shadow-xl px-10">
+      <div className="p-4 pb-4 shadow-xl px-10">
         <div className="mt-8">
           {showInfoBox && <InfoBox onDismiss={() => setShowInfoBox(false)} />}
 

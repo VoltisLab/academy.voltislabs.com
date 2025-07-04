@@ -31,7 +31,8 @@ export const AdvanceInformationForm = ({
     targetAudience: ["", "", "", ""],
     courseRequirements: ["", "", "", ""],
   });
-  const [isUploading, setIsUploading] = useState<boolean>(false);
+  const [isUploading1, setIsUploading1] = useState<boolean>(false);
+  const [isUploading2, setIsUploading2] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const [errors, setErrors] = useState({
     courseThumbnail: "",
@@ -74,7 +75,7 @@ export const AdvanceInformationForm = ({
   // Handler for primary thumbnail
   const handlePrimaryThumbnailUpload = async (file: File) => {
     try {
-      setIsUploading(true);
+      setIsUploading1(true);
       const url = await uploadFile(file, "RESOURCE");
 
       if (url) {
@@ -82,20 +83,20 @@ export const AdvanceInformationForm = ({
         setErrors((prev) => ({ ...prev, courseThumbnail: "" }));
       }
     } finally {
-      setIsUploading(false);
+      setIsUploading1(false);
     }
   };
 
   // Handler for secondary thumbnail
   const handleSecondaryThumbnailUpload = async (file: File) => {
     try {
-      setIsUploading(true);
+      setIsUploading2(true);
       const url = await uploadFile(file, "RESOURCE");
       if (url) {
         setCourseInfo((prev) => ({ ...prev, secondaryThumbnail: url }));
       }
     } finally {
-      setIsUploading(false);
+      setIsUploading2(false);
     }
   };
 
@@ -192,7 +193,7 @@ export const AdvanceInformationForm = ({
         <div>
           <CourseThumbnailUploader
             onFileSelect={handlePrimaryThumbnailUpload}
-            isUploading={isUploading}
+            isUploading={isUploading1}
             imageUrl={courseInfo.courseThumbnail}
             required
           />
@@ -204,7 +205,7 @@ export const AdvanceInformationForm = ({
         </div>
         <CourseThumbnailUploader
           onFileSelect={handleSecondaryThumbnailUpload}
-          isUploading={isUploading}
+          isUploading={isUploading2}
           imageUrl={courseInfo.secondaryThumbnail}
         />
       </div>

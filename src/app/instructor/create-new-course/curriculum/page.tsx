@@ -10,9 +10,8 @@ export default function CurriculumPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const courseId = searchParams!.get("courseId");
-  
-  //main section data
 
+  //main section data
 
   // When the curriculum is saved, redirect to publish step with courseId
   const handleSaveNext = useCallback(() => {
@@ -21,11 +20,16 @@ export default function CurriculumPage() {
     }
   }, [router, courseId]);
 
-
   return (
-    <div className="bg-white w-full xl:max-w-[90rem] p-1 mx-auto min-h-screen">
+    <div className="bg-white w-full xl:max-w-[90rem] mx-auto min-h-screen">
       <CourseCreationTabs />
-      <Curriculum onSaveNext={handleSaveNext} courseId={courseId ? Number(courseId) : undefined} />
+
+      <div className="px-4">
+        <Curriculum
+          onSaveNext={handleSaveNext}
+          courseId={courseId ? Number(courseId) : undefined}
+        />
+      </div>
     </div>
   );
-} 
+}

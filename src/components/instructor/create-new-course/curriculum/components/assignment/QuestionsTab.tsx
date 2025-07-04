@@ -181,7 +181,7 @@ const QuestionsTab: React.FC<{
           disabled={isSubmitting}
           className="px-4 py-2 bg-[#6d28d2] text-white rounded hover:bg-purple-600 cursor-pointer disabled:bg-[rgba(108,40,210,0.3)] disabled:cursor-not-allowed transition"
         >
-          {isSubmitting ? "...Submitting" : "Submit"}
+          {isSubmitting ? "Submitting..." : "Submit"}
         </button>
         <button
           onClick={cancelEditing}
