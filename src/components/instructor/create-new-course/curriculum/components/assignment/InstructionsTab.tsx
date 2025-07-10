@@ -200,12 +200,12 @@ const InstructionsTab: React.FC<{
       onChange("instructionalVideo", {
         file: null,
         url: video.url,
-        file_name: video.filename,
+        name: video.filename,
       });
       setShowVideoUploaded(true);
       setActiveVideoTab(null);
-      toast.success("Video selected successfully");
       await fetchAssignment();
+      toast.success("Video selected successfully");
     } catch (error) {
       console.error("Failed to update solution video:", error);
       toast.error("Could not select video");
@@ -896,8 +896,8 @@ const InstructionsTab: React.FC<{
             </div>
 
             <div className="h-80">
-              {data.instructionalVideo?.url || data.videoUrl ? (
-                data.instructionalVideo?.file ? (
+              {data.instructionalVideo?.url ? (
+                data.instructionalVideo.file ? (
                   <video
                     controls
                     src={
@@ -908,11 +908,7 @@ const InstructionsTab: React.FC<{
                     className="w-full h-full rounded object-contain"
                   />
                 ) : (
-                  <HLSVideoPlayer
-                    src={
-                      data.instructionalVideo?.url || (data.videoUrl as string)
-                    }
-                  />
+                  <HLSVideoPlayer src={data.instructionalVideo.url} />
                 )
               ) : (
                 <div className="flex items-center justify-center h-full text-center text-gray-500">
