@@ -204,8 +204,8 @@ const SolutionsTab: React.FC<{
       });
       setShowVideoUploaded(true);
       setActiveVideoTab(null);
-      toast.success("Video selected successfully");
       await fetchAssignment();
+      toast.success("Video selected successfully");
     } catch (error) {
       console.error("Failed to update solution video:", error);
       toast.error("Could not select video");
@@ -434,7 +434,7 @@ const SolutionsTab: React.FC<{
 
     abortControllerRef.current = new AbortController();
 
-    if (data.assignmentQuestions?.[0].questionSolutions?.length === 0) {
+    if (data.assignmentQuestions?.[0]?.questionSolutions?.length === 0) {
       toast.error("A mininmum of a question and an answer is requied");
       return;
     }
@@ -974,7 +974,7 @@ const SolutionsTab: React.FC<{
       {/* Questions and Answers Section */}
       {hasQuestions && (
         <div className="space-y-8">
-          {data.assignmentQuestions?.map((question, idx) => (
+          {data.assignmentQuestions?.map((question) => (
             <div key={question.id} className="border-b pb-6 last:border-b-0">
               <h3 className="text-sm font-bold text-gray-900">
                 Question {question.order}
@@ -1020,7 +1020,7 @@ const SolutionsTab: React.FC<{
                   </>
                 ) : (
                   <>
-                    {question.questionSolutions?.[0]?.text.trim() ? (
+                    {question?.questionSolutions?.[0]?.text.trim() ? (
                       <div className="space-y-2">
                         <div
                           className="prose max-w-none"
