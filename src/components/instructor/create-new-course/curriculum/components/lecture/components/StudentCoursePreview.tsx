@@ -1326,7 +1326,7 @@ const StudentCoursePreview = ({
 
   // Main render
   return (
-    <div className="fixed inset-0 z-[9999] bg-white flex flex-col">
+    <div className=" bg-white flex flex-col">
       <div className="flex flex-1 h-full">
         {/* Main scrollable container */}
         <div

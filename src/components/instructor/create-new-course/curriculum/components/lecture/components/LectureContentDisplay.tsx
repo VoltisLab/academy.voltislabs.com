@@ -405,14 +405,44 @@ const LectureContentDisplay: React.FC<LectureContentDisplayProps> = ({
                           As Instructor
                         </button>
                       </li>
-                      <Link href={`/preview/${courseId}/${lecture.id}`}>
+                      <Link href={`/preview/lecture/${courseId}/${sectionId}/${lecture.id}`}>
                         <li>
                           <button
                             // onClick={() => handlePreviewSelection("student")}
                             className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                             type="button"
                           >
-                            As Student
+                            Preview Lecture
+                          </button>
+                        </li>
+                      </Link>
+                      <Link href={`/preview/assignment/${courseId}/${sectionId}/${lecture.id}`}>
+                        <li>
+                          <button
+                            className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                            type="button"
+                          >
+                            Preview Assignment
+                          </button>
+                        </li>
+                      </Link>
+                      <Link href={`/preview/quiz/${courseId}/${sectionId}/${lecture.id}`}>
+                        <li>
+                          <button
+                            className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                            type="button"
+                          >
+                            Preview Quiz
+                          </button>
+                        </li>
+                      </Link>
+                      <Link href={`/preview/coding-excercise/${courseId}/${sectionId}/${lecture.id}`}>
+                        <li>
+                          <button
+                            className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                            type="button"
+                          >
+                            Preview Coding Exercise
                           </button>
                         </li>
                       </Link>
@@ -514,16 +544,11 @@ const LectureContentDisplay: React.FC<LectureContentDisplayProps> = ({
                     <div className="absolute mt-1 right-0 w-40 bg-white border border-gray-200 rounded-md shadow-lg z-50">
                       <ul>
                         <li>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handlePreviewSelection("instructor");
-                            }}
-                            className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                            type="button"
-                          >
-                            As Instructor
-                          </button>
+                          <Link href={`/preview/lecture/${courseId}/${sectionId}/${lecture.id}`}>
+                            <button className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" type="button">
+                              Preview as Student
+                            </button>
+                          </Link>
                         </li>
                         <li>
                           <button

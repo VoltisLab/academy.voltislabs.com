@@ -39,21 +39,6 @@ export const GET_COURSE_SECTIONS = gql`
         description
         id
         title
-        questions {
-          id
-          text
-          order
-          answerChoices {
-            explanation
-            id
-            isCorrect
-            order
-            text
-          }
-          relatedLecture {
-            title
-          }
-        }
       }
     }
   }

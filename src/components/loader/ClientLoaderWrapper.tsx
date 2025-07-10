@@ -28,10 +28,13 @@ function LoaderLogic({ children }: { children: React.ReactNode }) {
   const hideLayout =
     pathname.startsWith("/dashboard") ||
     pathname.startsWith("/instructor") ||
-    pathname.startsWith("/assignment");
+    pathname.startsWith("/assignment") ||
+    pathname.startsWith("/preview");
 
   const hideLayout2 =
-    pathname.startsWith("/dashboard") || pathname.startsWith("/instructor");
+    pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/instructor") ||
+    pathname.startsWith("/preview");
 
   return (
     <>
