@@ -25,6 +25,9 @@ import { PiCheckThin } from "react-icons/pi";
 
 // Define interfaces for quiz data
 export interface Answer {
+  id: number;
+  order?: number; // Optional, if you want to allow custom order
+  isCorrect: boolean;
   text: string;
   explanation: string;
 }
@@ -40,15 +43,16 @@ export interface LectureType {
 export interface Question {
   id: string;
   text: string;
-  answers: Answer[];
-  correctAnswerIndex: number;
+  answerChoices: Answer[];
+  orders?: number[]; // Optional, if you want to allow custom order
+  // correctAnswerIndex: number;
   relatedLecture?: LectureType;
   type: string;
 }
 
 export interface Quiz {
   id: string;
-  name: string;
+  title: string;
   description?: string;
   questions: Question[];
 }
@@ -118,9 +122,13 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({ quiz, onClose }) => {
   };
 
   const totalQuestions = quiz?.questions?.length || 0;
+  console.log("Total questions:", totalQuestions);
   const currentQuestion = quiz?.questions?.[currentQuestionIndex] || null;
-  const quizDescription = quiz.description;
-  const correctAnswerIndex = currentQuestion?.correctAnswerIndex;
+  console.log("Current question:", currentQuestion);
+  // const quizDescription = quiz.description;
+  const correctAnswerIndex = currentQuestion?.answerChoices?.findIndex(
+    (answer) => answer.isCorrect
+  );
   const isLastQuestion = currentQuestionIndex === totalQuestions - 1;
   const isAnswerSelected = selectedAnswers[currentQuestionIndex] !== undefined;
   const isCorrectAnswer =
@@ -128,7 +136,7 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({ quiz, onClose }) => {
   const selectedAnswerIndex = selectedAnswers[currentQuestionIndex];
   const selectedAnswerExplanation =
     selectedAnswerIndex !== undefined
-      ? currentQuestion?.answers?.[selectedAnswerIndex]?.explanation || ""
+      ? currentQuestion?.answerChoices?.[selectedAnswerIndex]?.explanation || ""
       : "";
   const isRelatedLecture =
     quiz?.questions?.[currentQuestionIndex].relatedLecture || null;
@@ -152,7 +160,7 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({ quiz, onClose }) => {
 
       if (e.key >= "1" && e.key <= "9") {
         const answerIndex = parseInt(e.key) - 1;
-        if (answerIndex < currentQuestion.answers.length) {
+        if (answerIndex < currentQuestion.answerChoices.length) {
           handleAnswerSelection(answerIndex);
         }
         return;
@@ -185,7 +193,7 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({ quiz, onClose }) => {
   }, [
     quizStatus,
     currentQuestionIndex,
-    currentQuestion?.answers?.length,
+    currentQuestion?.answerChoices?.length,
     isAnswerChecked,
     isCorrectAnswer,
     isAnswerSelected,
@@ -199,21 +207,28 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({ quiz, onClose }) => {
       [currentQuestionIndex]: index,
     });
     // Reset feedback state when selecting a new answer
-    setHasShownFeedback(false);
+    setShowFeedback(false);
+    // setHasShownFeedback(false);
   };
 
   const checkAnswer = (): void => {
     if (!isAnswerSelected) return;
 
-    setIsAnswerChecked(true);
     setShowFeedback(true);
-    setHasShownFeedback(true);
+    setSkippedQuestions(
+      skippedQuestions.filter((index) => index !== currentQuestionIndex)
+    );
 
     if (isCorrectAnswer) {
-      setAnsweredCorrectly({
-        ...answeredCorrectly,
-        [currentQuestionIndex]: true,
-      });
+      setIsAnswerChecked(true);
+
+      if (!needsReviewQuestions.includes(currentQuestionIndex)) {
+        // setIsAnswerChecked(true);
+        setAnsweredCorrectly({
+          ...answeredCorrectly,
+          [currentQuestionIndex]: true,
+        });
+      }
     } else {
       // Add the wrong answer to disabled answers
       setDisabledAnswers((prev) => {
@@ -257,7 +272,13 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({ quiz, onClose }) => {
   };
 
   const skipQuestion = (): void => {
-    setSkippedQuestions([...skippedQuestions, currentQuestionIndex]);
+    if (
+      !needsReviewQuestions.includes(currentQuestionIndex) &&
+      !answeredCorrectly[currentQuestionIndex]
+    ) {
+      setSkippedQuestions([...skippedQuestions, currentQuestionIndex]);
+    }
+
     setIsAnswerChecked(false);
     setShowFeedback(false);
 
@@ -308,7 +329,7 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({ quiz, onClose }) => {
               {/* Details */}
               <div className="space-y-3.5">
                 <h2 className="text-3xl font-bold">
-                  {quiz?.name || "New quiz"}
+                  {quiz?.title || "New quiz"}
                 </h2>
                 <div className=" space-x-4">
                   <span>Quiz 1</span>
@@ -347,7 +368,7 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({ quiz, onClose }) => {
                 {!fromResult && showFeedback && isCorrectAnswer && (
                   <div
                     className={`rounded-2xl w-full px-6 py-3 border border-green-700 flex gap-4 mb-6 ${
-                      !currentQuestion?.answers?.[correctAnswerIndex || 0]
+                      !currentQuestion?.answerChoices?.[correctAnswerIndex || 0]
                         ?.explanation
                         ? "items-center"
                         : ""
@@ -356,12 +377,13 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({ quiz, onClose }) => {
                     <CheckCircle2Icon size={30} className="text-green-700" />
                     <div>
                       <p className="font-bold">Good job!</p>
-                      {currentQuestion?.answers?.[correctAnswerIndex || 0]
+                      {currentQuestion?.answerChoices?.[correctAnswerIndex || 0]
                         ?.explanation && (
                         <p>
                           {
-                            currentQuestion.answers[correctAnswerIndex || 0]
-                              .explanation
+                            currentQuestion.answerChoices[
+                              correctAnswerIndex || 0
+                            ].explanation
                           }
                         </p>
                       )}
@@ -465,7 +487,7 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({ quiz, onClose }) => {
                     </p>
                   </h2>
                   <div className="space-y-3 font-medium">
-                    {currentQuestion?.answers?.map((answer, index) => (
+                    {currentQuestion?.answerChoices?.map((answer, index) => (
                       <div
                         key={index}
                         onClick={() => handleAnswerSelection(index)}
@@ -624,24 +646,27 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({ quiz, onClose }) => {
                     </button>
                   ) : (
                     <>
-                      {!isLastQuestion && !isAnswerChecked && (
-                        <button
-                          onClick={skipQuestion}
-                          className="transition px-4 py-2 rounded hover:bg-neutral-200 cursor-pointer"
-                        >
-                          Skip question
-                        </button>
-                      )}
+                      {/* {isLastQuestion && (
+                       
+                      )} */}
 
                       {/* Always show Check button if answer isn't correct */}
                       {!isAnswerChecked || !isCorrectAnswer ? (
-                        <button
-                          disabled={!isAnswerSelected}
-                          onClick={checkAnswer}
-                          className="transition px-4 py-2 rounded bg-purple-600 text-white hover:bg-purple-700 cursor-pointer disabled:cursor-not-allowed disabled:bg-purple-200"
-                        >
-                          Check answer
-                        </button>
+                        <>
+                          <button
+                            onClick={skipQuestion}
+                            className="transition px-4 py-2 rounded hover:bg-neutral-200 cursor-pointer"
+                          >
+                            Skip question
+                          </button>
+                          <button
+                            disabled={!isAnswerSelected}
+                            onClick={checkAnswer}
+                            className="transition px-4 py-2 rounded bg-purple-600 text-white hover:bg-purple-700 cursor-pointer disabled:cursor-not-allowed disabled:bg-purple-200"
+                          >
+                            Check answer
+                          </button>
+                        </>
                       ) : (
                         <button
                           onClick={goToNextQuestion}

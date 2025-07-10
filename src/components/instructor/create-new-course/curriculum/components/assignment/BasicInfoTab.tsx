@@ -24,22 +24,18 @@ const BasicInfoTab: React.FC<{
   // Validate form whenever data changes
   useEffect(() => {
     setValidation({
-      title: (data.assignmentTitle || "").trim().length > 0,
-      description: (data.assignmentDescription || "").trim().length > 0,
+      title: (data.title || "").trim().length > 0,
+      description: (data.description || "").trim().length > 0,
       duration: (data.estimatedDuration || 0) > 0,
     });
-  }, [
-    data.assignmentTitle,
-    data.assignmentDescription,
-    data.estimatedDuration,
-  ]);
+  }, [data.assignmentTitle, data.description, data.estimatedDuration]);
 
   const isFormValid =
     validation.title && validation.description && validation.duration;
 
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.slice(0, 20);
-    onChange("assignmentTitle", value);
+    onChange("title", value);
     setValidation((prev) => ({ ...prev, title: value.trim().length > 0 }));
   };
 
@@ -47,7 +43,7 @@ const BasicInfoTab: React.FC<{
     e: React.ChangeEvent<HTMLTextAreaElement>
   ) => {
     const value = e.target.value.slice(0, 300);
-    onChange("assignmentDescription", value);
+    onChange("description", value);
     setValidation((prev) => ({
       ...prev,
       description: value.trim().length > 0,
@@ -79,12 +75,9 @@ const BasicInfoTab: React.FC<{
       const publishedData = { ...assignmentData, isPublished: true };
       const variables: UpdateAssignmentVariables = {
         assignmentId: Number(id),
-        title: publishedData.assignmentTitle,
-        description: publishedData.assignmentDescription,
+        title: publishedData.title,
+        description: publishedData.description,
         estimatedDurationMinutes: publishedData.estimatedDuration,
-        instructions: publishedData.assignmentInstructions,
-        resourceUrl: publishedData.instructionalResource?.url,
-        videoUrl: publishedData.instructionalVideo?.url,
       };
 
       await updateAssignment(variables);
@@ -111,7 +104,7 @@ const BasicInfoTab: React.FC<{
         <div className="relative">
           <input
             type="text"
-            value={data.assignmentTitle || ""}
+            value={data.title || ""}
             onChange={handleTitleChange}
             className={`w-full px-3 py-2.5 rounded focus:outline-none focus:ring-1 focus:ring-[#6d28d2] ${
               validation.title
@@ -122,7 +115,7 @@ const BasicInfoTab: React.FC<{
             maxLength={20}
           />
           <span className="absolute right-3 top-3 text-sm text-gray-400">
-            {80 - (data.assignmentTitle || "").length}
+            {80 - (data.title || "").length}
           </span>
         </div>
       </div>
@@ -138,7 +131,7 @@ const BasicInfoTab: React.FC<{
         </label>
         <div className="relative">
           <textarea
-            value={data.assignmentDescription || ""}
+            value={data.description || ""}
             onChange={handleDescriptionChange}
             className={`w-full h-18 px-3 py-2.5 rounded focus:outline-none focus:ring-1 focus:ring-[#6d28d2] ${
               validation.description
@@ -149,7 +142,7 @@ const BasicInfoTab: React.FC<{
             maxLength={300}
           />
           <span className="absolute right-3 bottom-3 text-sm text-gray-400">
-            {300 - (data.assignmentDescription || "").length}
+            {300 - (data.description || "").length}
           </span>
         </div>
       </div>

@@ -20,7 +20,10 @@ import toast, { LoaderIcon } from "react-hot-toast";
 import { LectureType } from "./QuizPreview";
 import { DeleteItemFn } from "../section/SectionItem";
 import { ConfirmQuizDeleteModal } from "@/components/modals/DeleteConfirmationModal";
-import { CourseSectionQuiz, CourseSectionQuizQuestion } from "@/api/course/section/queries";
+import {
+  CourseSectionQuiz,
+  CourseSectionQuizQuestion,
+} from "@/api/course/section/queries";
 
 interface QuizItemProps {
   fetchSectionData?: any;
@@ -73,7 +76,7 @@ interface QuizItemProps {
   uploadedFiles?: Array<{ name: string; size: string; lectureId: string }>;
   sourceCodeFiles?: SourceCodeFile[];
   externalResources?: ExternalResourceItem[];
-  courseId?: number
+  courseId?: number;
 }
 
 interface Question {
@@ -116,7 +119,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
   uploadedFiles = [],
   sourceCodeFiles = [],
   externalResources = [],
-  courseId
+  courseId,
 }) => {
   const lectureNameInputRef = useRef<HTMLInputElement>(null);
   const [expanded, setExpanded] = useState(false);
@@ -169,7 +172,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
 
       if (result?.deleteQuiz?.success) {
         toast.success("Quiz deleted successfully!");
-        await fetchSectionData()
+        await fetchSectionData();
         deleteLocalQuiz(sectionId, lecture.id);
         setShowConfirmModal(false);
       }
@@ -354,6 +357,8 @@ const QuizItem: React.FC<QuizItemProps> = ({
     try {
       if (onEditQuiz) {
         await onEditQuiz(sectionId, lecture.id, title, description);
+        await fetchSectionData();
+        setExpanded(false);
       }
     } catch (error) {
       throw error;
@@ -435,7 +440,6 @@ const QuizItem: React.FC<QuizItemProps> = ({
     }
   };
 
-  
   const handleAddQuestion = async (question: Question) => {
     try {
       // Convert answers to backend-compatible format
@@ -456,13 +460,15 @@ const QuizItem: React.FC<QuizItemProps> = ({
         order: questions.length + 1,
         choices,
         questionType: "MC",
+        relatedLectureId: Number(question.relatedLecture?.id),
       });
+
+      await fetchSectionData();
 
       const newQuestionId = result?.addQuestionToQuiz?.question?.id;
       const newQuestionChoices =
         result?.addQuestionToQuiz?.question?.answerChoices;
 
-      
       if (!newQuestionId || !newQuestionChoices)
         throw new Error("No question ID or choices returned from backend");
 
@@ -504,11 +510,12 @@ const QuizItem: React.FC<QuizItemProps> = ({
       });
 
       if (result?.deleteQuestion?.success) {
-        const newQuestions = questions.filter((_, idx) => idx !== index);
-        setQuestions(newQuestions);
-        if (updateQuizQuestions) {
-          updateQuizQuestions(sectionId, newQuizId as number, newQuestions);
-        }
+        await fetchSectionData();
+        // const newQuestions = questions.filter((_, idx) => idx !== index);
+        // setQuestions(newQuestions);
+        // if (updateQuizQuestions) {
+        //   updateQuizQuestions(sectionId, newQuizId as number, newQuestions);
+        // }
 
         toast.success("Question deleted successfully!");
       }
@@ -520,14 +527,11 @@ const QuizItem: React.FC<QuizItemProps> = ({
     }
   };
 
-  
   const handleUpdateQuestion = async (question: any, index: number) => {
     try {
-
       if (!question.id || isNaN(parseInt(question.id))) {
         throw new Error("Question ID is missing or invalid");
       }
-
 
       // Convert answers to choices format
       const choices = question.answers.map((answer: any, idx: number) => {
@@ -546,6 +550,8 @@ const QuizItem: React.FC<QuizItemProps> = ({
         text: question.text,
         choices,
       });
+
+      await fetchSectionData();
 
       if (result?.updateQuestion?.success) {
         const newQuestions = [...questions];
@@ -567,6 +573,8 @@ const QuizItem: React.FC<QuizItemProps> = ({
     setEditingQuestionIndex(null);
   };
 
+  console.log(lecture);
+
   const handleEditQuestion = (index: number) => {
     setEditingQuestionIndex(index);
     setShowQuestionForm(true);
@@ -574,12 +582,12 @@ const QuizItem: React.FC<QuizItemProps> = ({
     setExpanded(true);
   };
 
-  const handleQuestionSubmit = (question: any) => {
+  const handleQuestionSubmit = async (question: any) => {
     if (editingQuestionIndex !== null) {
       console.log(question.id);
-      handleUpdateQuestion(question, editingQuestionIndex);
+      await handleUpdateQuestion(question, editingQuestionIndex);
     } else {
-      handleAddQuestion(question);
+      await handleAddQuestion(question);
     }
   };
 
@@ -946,7 +954,10 @@ const QuizItem: React.FC<QuizItemProps> = ({
             <QuizForm
               sectionId={sectionId}
               onEditQuiz={handleQuizEditSubmit}
-              onCancel={() => setShowEditQuizForm(false)}
+              onCancel={() => {
+                setShowEditQuizForm(false);
+                setExpanded(false);
+              }}
               isEdit={true}
               initialTitle={lecture.title || ""}
               initialDescription={lecture.description || ""}

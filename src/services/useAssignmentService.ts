@@ -32,6 +32,7 @@ import {
 import {
   GET_ASSIGNMENT,
   GetAssignmentData,
+  GetAssignmentQuery,
   GetAssignmentVariables,
 } from "@/api/assignment/query";
 
@@ -473,7 +474,7 @@ export const useAssignmentService = () => {
       setError(null);
 
       const { data, errors } = await apolloClient.query<
-        GetAssignmentData,
+        GetAssignmentQuery,
         GetAssignmentVariables
       >({
         query: GET_ASSIGNMENT,

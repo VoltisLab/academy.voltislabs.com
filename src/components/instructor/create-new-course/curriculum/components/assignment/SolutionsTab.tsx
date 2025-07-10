@@ -16,6 +16,7 @@ import { HLSVideoPlayer } from "./HLSVideoPlayer";
 import { BiErrorAlt } from "react-icons/bi";
 import { Video } from "./AssignmentEditor";
 import { FiDownload } from "react-icons/fi";
+import { useParams } from "next/navigation";
 
 const SolutionsTab: React.FC<{
   data: ExtendedLecture;
@@ -45,6 +46,8 @@ const SolutionsTab: React.FC<{
   const [activeVideoTab, setActiveVideoTab] = useState<
     "upload" | "library" | null
   >("upload");
+  const params = useParams();
+  const id = params?.id;
   const [searchQuery, setSearchQuery] = useState("");
   const [showVideoUploaded, setShowVideoUploaded] = useState(false);
   const [showResourceUploaded, setShowResourceUploaded] = useState(false);
@@ -79,16 +82,6 @@ const SolutionsTab: React.FC<{
 
   const handleResourceUpload = async (file: File) => {
     if (!file) return;
-
-    if (
-      !Array.isArray(data.assignmentQuestions) ||
-      data.assignmentQuestions.length === 0 ||
-      !Array.isArray(data.assignmentQuestions[0].questionSolutions) ||
-      data.assignmentQuestions[0].questionSolutions.length === 0
-    ) {
-      toast.error("A mininmum of a question and an answer is requied");
-      return;
-    }
 
     abortControllerRef.current = new AbortController();
 
@@ -129,14 +122,15 @@ const SolutionsTab: React.FC<{
       clearInterval(progressInterval);
       setResourceUploadState((prev) => ({ ...prev, progress: 100 }));
 
-      const updateVariables: UpdateAssignmentQuestionSolutionVariables = {
-        questionSolutionId: Number(
-          data.assignmentQuestions?.[0].questionSolutions?.[0]?.id
-        ),
-        downloadableResourceUrl: baseUrl,
+      const updateVariables: UpdateAssignmentVariables = {
+        assignmentId: Number(id),
+        solutionDownloadableResource: {
+          fileName: file.name,
+          url: baseUrl,
+        },
       };
 
-      await updateAssignmentQuestionSolution(updateVariables);
+      await updateAssignment(updateVariables);
 
       onChange("solutionResource", {
         file,
@@ -185,14 +179,39 @@ const SolutionsTab: React.FC<{
     }
   };
 
-  const handleVideoSelect = (video: any) => {
-    onChange("solutionVideo", {
-      file: null,
-      url: video.url,
-      name: video.filename,
-    });
-    setShowVideoUploaded(true);
-    setActiveVideoTab(null);
+  // const handleVideoSelect = (video: any) => {};
+
+  const [isSelectingVideo, setIsSelectingVideo] = useState(false);
+
+  const handleVideoSelect = async (video: any) => {
+    // Begin loading state
+    setIsSelectingVideo(true);
+
+    const updateVariables: UpdateAssignmentVariables = {
+      assignmentId: Number(id),
+      solutionVideo: {
+        fileName: video.filename || "",
+        url: video.url || "",
+      },
+    };
+
+    try {
+      await updateAssignment(updateVariables);
+      onChange("solutionVideo", {
+        file: null,
+        url: video.url,
+        name: video.filename,
+      });
+      setShowVideoUploaded(true);
+      setActiveVideoTab(null);
+      toast.success("Video selected successfully");
+      await fetchAssignment();
+    } catch (error) {
+      console.error("Failed to update solution video:", error);
+      toast.error("Could not select video");
+    } finally {
+      setIsSelectingVideo(false);
+    }
   };
 
   const handleChangeVideo = () => {
@@ -217,10 +236,11 @@ const SolutionsTab: React.FC<{
     setShowResourceUploaded(true);
   };
 
-  const { createAssignmentQuestionSolution, updateAssignmentQuestionSolution } =
-    useAssignmentService();
-
-  console.log(data.assignmentQuestions);
+  const {
+    createAssignmentQuestionSolution,
+    updateAssignmentQuestionSolution,
+    updateAssignment,
+  } = useAssignmentService();
 
   const startEditingAnswer = (questionId: string) => {
     setEditingAnswers((prev) => ({ ...prev, [questionId]: true }));
@@ -350,24 +370,16 @@ const SolutionsTab: React.FC<{
   const [isDeletingVideo, setIsDeletingVideo] = useState(false);
 
   const handleVideoDelete = async () => {
-    if (
-      !Array.isArray(data.assignmentQuestions) ||
-      data.assignmentQuestions.length === 0 ||
-      !Array.isArray(data.assignmentQuestions[0].questionSolutions) ||
-      data.assignmentQuestions[0].questionSolutions.length === 0
-    ) {
-      toast.error("A mininmum of a question and an answer is requied");
-      return;
-    }
     setIsDeletingVideo(true);
     try {
-      const updateVariables: UpdateAssignmentQuestionSolutionVariables = {
-        questionSolutionId: Number(
-          data.assignmentQuestions?.[0].questionSolutions?.[0]?.id
-        ),
-        videoUrl: "",
+      const updateVariables: UpdateAssignmentVariables = {
+        assignmentId: Number(id),
+        solutionVideo: {
+          fileName: "",
+          url: "",
+        },
       };
-      await updateAssignmentQuestionSolution(updateVariables);
+      await updateAssignment(updateVariables);
       toast.success("Video removed successfully");
 
       onChange("solutionVideo", null);
@@ -388,24 +400,16 @@ const SolutionsTab: React.FC<{
   const [isDeletingResource, setIsDeletingResource] = useState(false);
 
   const handleResourceDelete = async () => {
-    if (
-      !Array.isArray(data.assignmentQuestions) ||
-      data.assignmentQuestions.length === 0 ||
-      !Array.isArray(data.assignmentQuestions[0].questionSolutions) ||
-      data.assignmentQuestions[0].questionSolutions.length === 0
-    ) {
-      toast.error("A mininmum of a question and an answer is requied");
-      return;
-    }
     setIsDeletingResource(true);
     try {
-      const updateVariables: UpdateAssignmentQuestionSolutionVariables = {
-        questionSolutionId: Number(
-          data.assignmentQuestions?.[0].questionSolutions?.[0]?.id
-        ),
-        downloadableResourceUrl: "",
+      const updateVariables: UpdateAssignmentVariables = {
+        assignmentId: Number(id),
+        solutionDownloadableResource: {
+          fileName: "",
+          url: "",
+        },
       };
-      await updateAssignmentQuestionSolution(updateVariables);
+      await updateAssignment(updateVariables);
       toast.success("Resource removed successfully");
       await fetchAssignment();
       onChange("solutionResource", null);
@@ -481,14 +485,15 @@ const SolutionsTab: React.FC<{
       clearInterval(progressInterval);
       setUploadState((prev) => ({ ...prev, progress: 100 }));
 
-      const updateVariables: UpdateAssignmentQuestionSolutionVariables = {
-        questionSolutionId: Number(
-          data.assignmentQuestions?.[0].questionSolutions?.[0]?.id
-        ),
-        videoUrl: baseUrl,
+      const updateVariables: UpdateAssignmentVariables = {
+        assignmentId: Number(id),
+        solutionVideo: {
+          fileName: file.name,
+          url: baseUrl,
+        },
       };
 
-      await updateAssignmentQuestionSolution(updateVariables);
+      await updateAssignment(updateVariables);
 
       onChange("solutionVideo", {
         file,
@@ -590,8 +595,9 @@ const SolutionsTab: React.FC<{
   };
 
   useEffect(() => {
-    // if (data.solutionVideo) setShowResourceUploaded(true);
-    // if (data.solutionVideo) setShowVideoUploaded(true);
+    console.log(data);
+    if (data.solutionResource?.url) setShowResourceUploaded(true);
+    if (data.solutionVideo?.url) setShowVideoUploaded(true);
 
     return () => {
       if (abortControllerRef.current) {
@@ -599,6 +605,8 @@ const SolutionsTab: React.FC<{
       }
     };
   }, []);
+
+  console.log(data);
 
   return (
     <div className="px-2 py-4 md:p-6 space-y-10 lg:space-y-20">
@@ -710,9 +718,10 @@ const SolutionsTab: React.FC<{
                   <>
                     <div className="flex items-center gap-2">
                       <span className="text-zinc-700 max-w-lg font-semibold text-sm w-full border border-zinc-700 py-3 px-4 rounded">
-                        {data.solutionVideo?.file
+                        {/* {data.solutionVideo?.file
                           ? data.solutionVideo.file.name
-                          : "No file selected"}
+                          : "No file selected"} */}
+                        No file selected
                       </span>
                       <button
                         onClick={() => fileInputRef.current?.click()}
@@ -856,11 +865,14 @@ const SolutionsTab: React.FC<{
                                 <div className="flex items-center gap-2">
                                   {video.status === "success" && (
                                     <button
-                                      onClick={() => {
-                                        handleVideoSelect(video);
+                                      disabled={isSelectingVideo}
+                                      onClick={async () => {
+                                        await handleVideoSelect(video);
                                         handleLibraryVideoDelete(video.id);
                                       }}
-                                      className="text-[#6D28D9] hover:text-purple-800 hover:bg-purple-100 font-semibold ml-auto cursor-pointer text-sm"
+                                      className={`text-[#6D28D9] hover:text-purple-800 hover:bg-purple-100 font-semibold ml-auto cursor-pointer an text-sm transition ${
+                                        isSelectingVideo ? "" : ""
+                                      }`}
                                     >
                                       Select
                                     </button>
@@ -893,7 +905,7 @@ const SolutionsTab: React.FC<{
               <div className="flex justify-between items-center font-semibold">
                 <span className="text-zincborder-zinc-700">
                   {data.solutionVideo?.file?.name ||
-                    data.solutionVideo?.name ||
+                    data.solutionVideo?.file_name ||
                     "No video selected"}
                 </span>
               </div>
@@ -934,7 +946,7 @@ const SolutionsTab: React.FC<{
                 disabled={isDeletingVideo}
                 className="px-4 py-2 border font-bold text-sm border-[#6d28d2] text-[#6d28d2] rounded hover:bg-[rgba(108,40,210,0.125)] cursor-pointer transition"
               >
-                {isDeletingVideo ? "...Deleting" : "Delete"}
+                {isDeletingVideo ? "Deleting..." : "Delete"}
               </button>
             </div>
           </div>
@@ -967,9 +979,7 @@ const SolutionsTab: React.FC<{
               <h3 className="text-sm font-bold text-gray-900">
                 Question {question.order}
               </h3>
-              <div className="prose max-w-none mt-2">
-                {question?.text || question.content}
-              </div>
+              <div className="prose max-w-none mt-2">{question?.text}</div>
 
               {/* Answer Section */}
               <div className="mt-6">
@@ -997,7 +1007,7 @@ const SolutionsTab: React.FC<{
                         disabled={isSubmitting}
                         className="px-4 py-2 bg-[#6d28d2] text-white rounded hover:bg-purple-600 cursor-pointer disabled:bg-[rgba(108,40,210,0.3)] disabled:cursor-not-allowed transition"
                       >
-                        {isSubmitting ? "...Submitting" : "Submit"}
+                        {isSubmitting ? "Submitting..." : "Submit"}
                       </button>
 
                       <button
@@ -1010,13 +1020,13 @@ const SolutionsTab: React.FC<{
                   </>
                 ) : (
                   <>
-                    {question.questionSolutions?.[idx].text !== " " ? (
+                    {question.questionSolutions?.[0]?.text.trim() ? (
                       <div className="space-y-2">
                         <div
                           className="prose max-w-none"
                           dangerouslySetInnerHTML={{
                             __html:
-                              question?.questionSolutions?.[idx].text ?? "",
+                              question?.questionSolutions?.[0]?.text ?? "",
                           }}
                         />
                         <div className="flex gap-2 mt-2">
@@ -1131,9 +1141,10 @@ const SolutionsTab: React.FC<{
               <>
                 <div className="flex items-center gap-2">
                   <span className="text-zinc-700 max-w-lg font-semibold text-sm w-full border border-zinc-700 py-3 px-4 rounded">
-                    {data.solutionResource?.file
+                    {/* {data.solutionResource?.file
                       ? data.solutionResource.file.name
-                      : "No file selected"}
+                      : "No file selected"} */}
+                    No file selected
                   </span>
                   <button
                     onClick={() => {
@@ -1176,7 +1187,9 @@ const SolutionsTab: React.FC<{
             <FiDownload />
             {/* File Name */}
             <span className="text-sm font-medium text-gray-900 truncate">
-              {data.solutionResource?.name}
+              {data.solutionResource?.file?.name ||
+                data.solutionResource?.file_name ||
+                "Uploaded file"}
             </span>
 
             {/* Change Button */}
@@ -1193,7 +1206,7 @@ const SolutionsTab: React.FC<{
               disabled={isDeletingResource}
               className="px-4 py-2 border font-bold text-sm border-[#6d28d2] text-[#6d28d2] rounded hover:bg-[rgba(108,40,210,0.125)] cursor-pointer transition"
             >
-              {isDeletingResource ? "...Deleting" : "Delete"}
+              {isDeletingResource ? "Deleting..." : "Delete"}
             </button>
           </div>
         )}

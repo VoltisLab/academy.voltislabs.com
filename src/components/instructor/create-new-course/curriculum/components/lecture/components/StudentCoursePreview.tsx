@@ -49,21 +49,28 @@ import { useAssignment } from "@/context/AssignmentDataContext";
 import { CourseSectionQuiz } from "@/api/course/section/queries";
 
 // Add QuizData interface
+export interface Answer {
+  id: number;
+  order?: number; // Optional, if you want to allow custom order
+  isCorrect: boolean;
+  text: string;
+  explanation: string;
+}
+
+export interface Question {
+  id: string;
+  text: string;
+  answerChoices: Answer[];
+  orders?: number[]; // Optional, if you want to allow custom order
+  relatedLecture?: LectureType;
+  type: string;
+}
+
 export interface QuizData {
   id: string;
-  name: string;
+  title: string;
   description?: string;
-  questions: Array<{
-    id: string;
-    text: string;
-    answers: Array<{
-      text: string;
-      explanation: string;
-    }>;
-    correctAnswerIndex: number;
-    relatedLecture?: LectureType;
-    type: string;
-  }>;
+  questions: Question[];
 }
 
 type ChildProps = {
@@ -776,7 +783,7 @@ const StudentCoursePreview = ({
     if (activeItemType === "quiz") {
       const currentQuizData =
         selectedItemData && "questions" in selectedItemData
-          ? (selectedItemData as QuizData)
+          ? (selectedItemData as unknown)
           : quizData;
       return { type: "quiz", data: currentQuizData };
     } else if (activeItemType === "article") {

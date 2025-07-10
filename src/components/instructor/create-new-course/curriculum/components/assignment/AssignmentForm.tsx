@@ -1,26 +1,29 @@
 "use client";
-import React, { useState, useRef, useEffect } from 'react';
-import { X } from 'lucide-react';
+import React, { useState, useRef, useEffect } from "react";
+import { X } from "lucide-react";
+import toast from "react-hot-toast";
 
 interface AssignmentFormProps {
   sectionId: string;
-  onAddAssignment: (sectionId: string, title: string) => void;
+  onAddAssignment: (
+    sectionId: string,
+    title: string
+  ) => Promise<string | undefined>;
   onCancel: () => void;
-  setNewassignment?: React.Dispatch<React.SetStateAction<number>>
+  setNewassignment?: React.Dispatch<React.SetStateAction<number>>;
 }
 
 export default function AssignmentForm({
   sectionId,
   onAddAssignment,
   onCancel,
-  setNewassignment
+  setNewassignment,
 }: AssignmentFormProps) {
-  const [title, setTitle] = useState('');
+  const [title, setTitle] = useState("");
   const maxChars = 80;
   const [charCount, setCharCount] = useState(maxChars);
   const inputRef = useRef<HTMLInputElement>(null);
-  
-  
+
   useEffect(() => {
     // Focus the input when component mounts
     if (inputRef.current) {
@@ -33,10 +36,24 @@ export default function AssignmentForm({
     setCharCount(maxChars - title.length);
   }, [title]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (title.trim()) {
-      onAddAssignment(sectionId, title.trim());
+
+    setIsLoading(true);
+
+    try {
+      if (title.trim()) {
+        await onAddAssignment(sectionId, title.trim());
+      }
+
+      // toast.success("Failed to add assignment");
+    } catch (error) {
+      console.error("Failed to add assignment:", error);
+      toast.error("Failed to add assignment");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -50,13 +67,13 @@ export default function AssignmentForm({
 
   return (
     <div className="mb-3 ml-10 mt-6 bg-white border border-gray-500 relative">
-      <button 
+      <button
         onClick={onCancel}
         className="absolute -left-6 -top-4 text-gray-400 hover:text-gray-600"
       >
         <X className="w-4 h-4 text-gray-700" />
       </button>
-      
+
       <form onSubmit={handleSubmit} className="pt-3 pb-3 px-4">
         <div className="mb-4 relative">
           <input
@@ -72,7 +89,7 @@ export default function AssignmentForm({
             {charCount}
           </div>
         </div>
-        
+
         <div className="flex justify-end space-x-2">
           <button
             type="button"
@@ -84,9 +101,9 @@ export default function AssignmentForm({
           <button
             type="submit"
             className=" p-2 font-medium text-xs bg-[#6D28D2] text-white rounded-md hover:bg-[#7D28D2] disabled:bg-indigo-300"
-            disabled={!title.trim()}
+            disabled={!title.trim() || isLoading}
           >
-            Add Assignment
+            {isLoading ? "Adding..." : "Add Assignment"}
           </button>
         </div>
       </form>
