@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Search, ChevronDown, Trash2, X } from "lucide-react";
 import { VideoContent, TabInterface, StoredVideo, SelectedVideoDetails } from "@/lib/types";
 
@@ -14,6 +14,8 @@ interface VideoContentManagerProps {
   onDeleteVideo: (videoId: string) => void;
   videoUploading?: boolean;
   onClose: () => void;
+  uploadedVideoUrl?: string;
+  setUploadedVideoUrl?: (url: string) => void;
 }
 
 const VideoContentManager: React.FC<VideoContentManagerProps> = ({
@@ -27,7 +29,9 @@ const VideoContentManager: React.FC<VideoContentManagerProps> = ({
   onVideoSelect,
   onDeleteVideo,
   videoUploading = false,
-  onClose
+  onClose,
+  uploadedVideoUrl: propUploadedVideoUrl,
+  setUploadedVideoUrl: propSetUploadedVideoUrl
 }) => {
   // Video tab options
   const videoTabs: TabInterface[] = [
@@ -71,6 +75,8 @@ const VideoContentManager: React.FC<VideoContentManagerProps> = ({
                       setVideoContent({
                         ...videoContent,
                         uploadTab: { selectedFile: null },
+                        // Clear selectedVideoDetails if replacing
+                        selectedVideoDetails: null,
                       });
                     }}
                   >
@@ -129,7 +135,7 @@ const VideoContentManager: React.FC<VideoContentManagerProps> = ({
                 <input
                   type="file"
                   accept="video/*"
-                  onChange={onVideoFileUpload}
+                  onChange={handleVideoFileUpload}
                   className="hidden"
                   disabled={videoUploading || isVideoUploading}
                 />
@@ -236,6 +242,39 @@ const VideoContentManager: React.FC<VideoContentManagerProps> = ({
       </div>
     );
   };
+
+  // Local state to store the uploaded video URL after upload
+  const [uploadedVideoUrl, setUploadedVideoUrl] = useState<string>("");
+
+  // Wrap the original onVideoFileUpload to capture the uploaded URL
+  const handleVideoFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (onVideoFileUpload) {
+      const result = await onVideoFileUpload(event);
+      // If your upload handler returns the URL, set it here
+      // setUploadedVideoUrl(result);
+      // If not, you need to set it in the upload handler and pass it here
+    }
+  };
+
+  useEffect(() => {
+    if (
+      videoUploadComplete &&
+      videoContent.uploadTab.selectedFile &&
+      uploadedVideoUrl
+    ) {
+      setVideoContent({
+        ...videoContent,
+        selectedVideoDetails: {
+          id: Date.now().toString(),
+          url: uploadedVideoUrl,
+          filename: videoContent.uploadTab.selectedFile.name,
+          thumbnailUrl: "",
+          isDownloadable: false,
+        },
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [videoUploadComplete, videoContent.uploadTab.selectedFile, uploadedVideoUrl]);
 
   return (
     <div className="border border-gray-300 rounded-md">
