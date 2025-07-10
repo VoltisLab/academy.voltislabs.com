@@ -43,26 +43,33 @@ import AssignmentPreview from "../../assignment/AssignmentPreview";
 import VideoControls from "./VideoControls";
 import LearningReminderModal from "../modals/LearningReminderModal";
 import BottomTabsContainer from "./BottomTabsContainer";
-import { useRouter } from 'next/navigation'; 
-import ContentInformationDisplay from './ContentInformationDisplay';
+import { useRouter } from "next/navigation";
+import ContentInformationDisplay from "./ContentInformationDisplay";
 import { useAssignment } from "@/context/AssignmentDataContext";
 
 // Add QuizData interface
-interface QuizData {
+export interface Answer {
+  id: number;
+  order?: number; // Optional, if you want to allow custom order
+  isCorrect: boolean;
+  text: string;
+  explanation: string;
+}
+
+export interface Question {
   id: string;
-  name: string;
+  text: string;
+  answerChoices: Answer[];
+  orders?: number[]; // Optional, if you want to allow custom order
+  relatedLecture?: LectureType;
+  type: string;
+}
+
+export interface QuizData {
+  id: string;
+  title: string;
   description?: string;
-  questions: Array<{
-    id: string;
-    text: string;
-    answers: Array<{
-      text: string;
-      explanation: string;
-    }>;
-    correctAnswerIndex: number;
-    relatedLecture?: LectureType;
-    type: string;
-  }>;
+  questions: Question[];
 }
 
 type ChildProps = {
@@ -145,16 +152,21 @@ const InstructorCoursePreview = ({
   const [showLearningModal, setShowLearningModal] = useState<boolean>(false);
   const [activeItemId, setActiveItemId] = useState<string>(lecture.id);
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
-  const [showSettingsDropdown, setShowSettingsDropdown] = useState<boolean>(false);
+  const [showSettingsDropdown, setShowSettingsDropdown] =
+    useState<boolean>(false);
   const [showReportModal, setShowReportModal] = useState<boolean>(false);
-  const [isContentFullscreen, setIsContentFullscreen] = useState<boolean>(false);
+  const [isContentFullscreen, setIsContentFullscreen] =
+    useState<boolean>(false);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
 
-  const [selectedItemData, setSelectedItemData] = useState<SelectedItemType | null>(lecture);
-  const [showQuizKeyboardShortcuts, setShowQuizKeyboardShortcuts] = useState<boolean>(false);
-  const [showVideoKeyboardShortcuts, setShowVideoKeyboardShortcuts] = useState<boolean>(false);
+  const [selectedItemData, setSelectedItemData] =
+    useState<SelectedItemType | null>(lecture);
+  const [showQuizKeyboardShortcuts, setShowQuizKeyboardShortcuts] =
+    useState<boolean>(false);
+  const [showVideoKeyboardShortcuts, setShowVideoKeyboardShortcuts] =
+    useState<boolean>(false);
   const [showCaptions, setShowCaptions] = useState<boolean>(false);
-  
+
   // Add state for content information modal
   const [showContentInformation, setShowContentInformation] =
     useState<boolean>(false);
@@ -168,10 +180,14 @@ const InstructorCoursePreview = ({
   const [isAddingNote, setIsAddingNote] = useState<boolean>(false);
   const [currentNoteContent, setCurrentNoteContent] = useState<string>("");
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
-  const [allLecturesDropdownOpen, setAllLecturesDropdownOpen] = useState<boolean>(false);
+  const [allLecturesDropdownOpen, setAllLecturesDropdownOpen] =
+    useState<boolean>(false);
   const [sortByDropdownOpen, setSortByDropdownOpen] = useState<boolean>(false);
-  const [selectedLectureFilter, setSelectedLectureFilter] = useState<string>("All lectures");
-  const [selectedSortOption, setSelectedSortOption] = useState<string>("Sort by most recent");
+  const [selectedLectureFilter, setSelectedLectureFilter] =
+    useState<string>("All lectures");
+  const [selectedSortOption, setSelectedSortOption] = useState<string>(
+    "Sort by most recent"
+  );
   const [startAssignment, setStartAssignment] = useState<boolean>(false);
   const [assignmentStatus, setAssignmentStatus] = useState<
     "overview" | "assignment" | "summary/feedback"
@@ -196,7 +212,7 @@ const InstructorCoursePreview = ({
   const handleMute = (): void => {
     const newMuted = !muted;
     setMuted(newMuted);
-    
+
     // Force update ReactPlayer mute state
     if (playerRef.current) {
       setTimeout(() => {
@@ -218,7 +234,7 @@ const InstructorCoursePreview = ({
     if (muted) {
       setMuted(false); // Unmute if muted when increasing volume
     }
-    setVolume(prevVolume => {
+    setVolume((prevVolume) => {
       const newVolume = Math.min(1, prevVolume + 0.1);
       // Multiple approaches to ensure volume change works
       if (playerRef.current) {
@@ -233,46 +249,55 @@ const InstructorCoursePreview = ({
             }
             player.unMute?.();
           }
-          
+
           // Approach 2: Direct HTML5 video element access
-          const videoElement = playerRef.current?.getInternalPlayer('video') as HTMLVideoElement;
-          if (videoElement && videoElement.tagName === 'VIDEO') {
+          const videoElement = playerRef.current?.getInternalPlayer(
+            "video"
+          ) as HTMLVideoElement;
+          if (videoElement && videoElement.tagName === "VIDEO") {
             videoElement.volume = newVolume;
             videoElement.muted = false;
           }
-          
+
           // Approach 3: Query for video elements in the container
           const container = playerContainerRef.current;
           if (container) {
-            const videos = container.querySelectorAll('video');
-            videos.forEach(video => {
+            const videos = container.querySelectorAll("video");
+            videos.forEach((video) => {
               video.volume = newVolume;
               video.muted = false;
             });
           }
         }, 100);
       }
-      
+
       return newVolume;
     });
   };
 
   const handleVolumeDown = (): void => {
-    setVolume(prevVolume => {
+    setVolume((prevVolume) => {
       const newVolume = Math.max(0, prevVolume - 0.1);
-      console.log('Volume down - Previous:', prevVolume, 'New:', newVolume, 'Muted:', muted);
-      
+      console.log(
+        "Volume down - Previous:",
+        prevVolume,
+        "New:",
+        newVolume,
+        "Muted:",
+        muted
+      );
+
       // Auto-mute if volume reaches 0
       if (newVolume === 0) {
         setMuted(true);
       }
-      
+
       // Multiple approaches to ensure volume change works
       if (playerRef.current) {
         setTimeout(() => {
           const player = playerRef.current?.getInternalPlayer();
           if (player && newVolume > 0) {
-            console.log('Setting volume via internal player:', newVolume);
+            console.log("Setting volume via internal player:", newVolume);
             if (player.setVolume) {
               player.setVolume(newVolume * 100); // YouTube scale
               player.setVolume(newVolume); // HTML5 scale
@@ -281,66 +306,71 @@ const InstructorCoursePreview = ({
           } else if (player && newVolume === 0) {
             player.mute?.();
           }
-          
+
           // Direct HTML5 video element access
-          const videoElement = playerRef.current?.getInternalPlayer('video') as HTMLVideoElement;
-          if (videoElement && videoElement.tagName === 'VIDEO') {
-            console.log('Setting volume via HTML5 video element:', newVolume);
+          const videoElement = playerRef.current?.getInternalPlayer(
+            "video"
+          ) as HTMLVideoElement;
+          if (videoElement && videoElement.tagName === "VIDEO") {
+            console.log("Setting volume via HTML5 video element:", newVolume);
             videoElement.volume = newVolume;
             videoElement.muted = newVolume === 0;
           }
-          
+
           // Query for video elements in the container
           const container = playerContainerRef.current;
           if (container) {
-            const videos = container.querySelectorAll('video');
-            videos.forEach(video => {
-              console.log('Setting volume via queried video element:', newVolume);
+            const videos = container.querySelectorAll("video");
+            videos.forEach((video) => {
+              console.log(
+                "Setting volume via queried video element:",
+                newVolume
+              );
               video.volume = newVolume;
               video.muted = newVolume === 0;
             });
           }
         }, 100);
       }
-      
+
       return newVolume;
     });
   };
 
   const handleSpeedSlower = (): void => {
-    setPlaybackRate(prevRate => {
+    setPlaybackRate((prevRate) => {
       const newRate = Math.max(0.25, prevRate - 0.25);
-      console.log('Speed slower:', newRate);
+      console.log("Speed slower:", newRate);
       return newRate;
     });
   };
 
   const handleSpeedFaster = (): void => {
-    setPlaybackRate(prevRate => {
+    setPlaybackRate((prevRate) => {
       const newRate = Math.min(2, prevRate + 0.25);
-      console.log('Speed faster:', newRate);
+      console.log("Speed faster:", newRate);
       return newRate;
     });
   };
 
   const handleToggleCaptions = (): void => {
     setShowCaptions(!showCaptions);
-    console.log('Captions toggled:', !showCaptions);
+    console.log("Captions toggled:", !showCaptions);
   };
 
   const handleSeekBackward = (): void => {
     if (playerRef.current) {
       const newTime = Math.max(0, progress - 5);
-      console.log('Seeking backward to:', newTime);
-      playerRef.current.seekTo(newTime, 'seconds');
+      console.log("Seeking backward to:", newTime);
+      playerRef.current.seekTo(newTime, "seconds");
     }
   };
 
   const handleSeekForward = (): void => {
     if (playerRef.current) {
       const newTime = Math.min(duration, progress + 5);
-      console.log('Seeking forward to:', newTime);
-      playerRef.current.seekTo(newTime, 'seconds');
+      console.log("Seeking forward to:", newTime);
+      playerRef.current.seekTo(newTime, "seconds");
     }
   };
 
@@ -447,7 +477,8 @@ const InstructorCoursePreview = ({
 
   // Get all items in order for navigation
   const getAllItemsInOrder = () => {
-    const items: { id: string; type: string; sectionId: string; item: any }[] = [];
+    const items: { id: string; type: string; sectionId: string; item: any }[] =
+      [];
 
     processedSections.forEach((section) => {
       section.lectures?.forEach((lecture) => {
@@ -510,7 +541,8 @@ const InstructorCoursePreview = ({
 
     if (currentIndex === -1) return;
 
-    let targetIndex = direction === "next" ? currentIndex + 1 : currentIndex - 1;
+    let targetIndex =
+      direction === "next" ? currentIndex + 1 : currentIndex - 1;
 
     if (targetIndex >= 0 && targetIndex < allItems.length) {
       const targetItem = allItems[targetIndex];
@@ -734,7 +766,7 @@ const InstructorCoursePreview = ({
     if (activeItemType === "quiz") {
       const currentQuizData =
         selectedItemData && "questions" in selectedItemData
-          ? (selectedItemData as QuizData)
+          ? (selectedItemData as unknown)
           : quizData;
       return { type: "quiz", data: currentQuizData };
     } else if (activeItemType === "article") {
@@ -908,8 +940,8 @@ const InstructorCoursePreview = ({
     if (playerRef.current) {
       const player = playerRef.current.getInternalPlayer();
       if (player) {
-        console.log('Applying volume change:', volume, 'Muted:', muted);
-        
+        console.log("Applying volume change:", volume, "Muted:", muted);
+
         // Handle different player types
         if (muted) {
           player.mute?.();
@@ -919,7 +951,9 @@ const InstructorCoursePreview = ({
           // Different players use different volume scales
           if (player.setVolume) {
             // YouTube uses 0-100, others might use 0-1
-            const volumeValue = player.getVideoUrl?.()?.includes('youtube') ? volume * 100 : volume;
+            const volumeValue = player.getVideoUrl?.()?.includes("youtube")
+              ? volume * 100
+              : volume;
             player.setVolume(volumeValue);
           }
         }
@@ -945,8 +979,9 @@ const InstructorCoursePreview = ({
       }
 
       // Only handle video shortcuts when video is active and notes tab is not active
-      const shouldHandleVideoShortcuts = activeItemType === "video" && activeTab !== "notes";
-      
+      const shouldHandleVideoShortcuts =
+        activeItemType === "video" && activeTab !== "notes";
+
       // Only handle note shortcut when notes tab is active and not adding a note
       const shouldHandleNoteShortcut = activeTab === "notes" && !isAddingNote;
 
@@ -956,7 +991,7 @@ const InstructorCoursePreview = ({
             e.preventDefault();
             handlePlayPause();
             break;
-            
+
           case "ArrowLeft": // Go back 5s or speed slower
             if (e.shiftKey) {
               // Speed slower (Shift + ←)
@@ -968,7 +1003,7 @@ const InstructorCoursePreview = ({
               handleSeekBackward();
             }
             break;
-            
+
           case "ArrowRight": // Go forward 5s or speed faster
             if (e.shiftKey) {
               // Speed faster (Shift + →)
@@ -980,49 +1015,49 @@ const InstructorCoursePreview = ({
               handleSeekForward();
             }
             break;
-            
+
           case "ArrowUp": // Volume up
             e.preventDefault();
-            console.log('Arrow Up pressed for volume up');
+            console.log("Arrow Up pressed for volume up");
             handleVolumeUp();
             break;
-            
+
           case "ArrowDown": // Volume down
             e.preventDefault();
-            console.log('Arrow Down pressed for volume down');
+            console.log("Arrow Down pressed for volume down");
             handleVolumeDown();
             break;
-            
+
           case "KeyM": // Mute
             e.preventDefault();
             handleMute();
             break;
-            
+
           case "KeyF": // Content Fullscreen (not browser fullscreen)
             e.preventDefault();
-            console.log('F key pressed - entering content fullscreen');
+            console.log("F key pressed - entering content fullscreen");
             handleContentFullscreen();
             break;
-            
+
           case "Escape": // Exit content fullscreen
             e.preventDefault();
             if (isContentFullscreen) {
-              console.log('ESC key pressed - exiting content fullscreen');
+              console.log("ESC key pressed - exiting content fullscreen");
               handleContentFullscreen(); // Toggle off content fullscreen
             }
             break;
-            
+
           case "KeyC": // Toggle captions
             e.preventDefault();
             handleToggleCaptions();
             break;
-            
+
           case "KeyI": // Content information - use existing functionality
             e.preventDefault();
-            console.log('I key pressed - toggling content info');
+            console.log("I key pressed - toggling content info");
             setShowContentInformation(!showContentInformation);
             break;
-            
+
           default:
             // No action for other keys
             break;
@@ -1048,18 +1083,18 @@ const InstructorCoursePreview = ({
       document.removeEventListener("fullscreenchange", handleFullscreenChange);
     };
   }, [
-    playing, 
-    activeTab, 
-    isAddingNote, 
-    activeItemType, 
-    volume, 
-    muted, 
+    playing,
+    activeTab,
+    isAddingNote,
+    activeItemType,
+    volume,
+    muted,
     playbackRate,
     showCaptions,
     showContentInformation,
     isContentFullscreen,
     progress,
-    duration
+    duration,
   ]);
 
   const shouldShowPreview =
@@ -1591,13 +1626,13 @@ const InstructorCoursePreview = ({
                             rel: 0,
                             showinfo: 0,
                             disablekb: 1, // Disable YouTube's keyboard controls
-                          }
+                          },
                         },
                         vimeo: {
                           playerOptions: {
                             controls: false,
                             keyboard: false,
-                          }
+                          },
                         },
                         file: {
                           attributes: {
@@ -1607,7 +1642,10 @@ const InstructorCoursePreview = ({
                         },
                       }}
                       onReady={() => {
-                        console.log('ReactPlayer ready, setting initial volume:', volume);
+                        console.log(
+                          "ReactPlayer ready, setting initial volume:",
+                          volume
+                        );
                         if (playerRef.current) {
                           const player = playerRef.current.getInternalPlayer();
                           if (player && player.setVolume) {
@@ -1647,7 +1685,10 @@ const InstructorCoursePreview = ({
                           onRewind={handleRewind}
                           onForward={handleForward}
                           onVolumeChange={(newVolume: number) => {
-                            console.log('Volume changed via controls:', newVolume);
+                            console.log(
+                              "Volume changed via controls:",
+                              newVolume
+                            );
                             setVolume(newVolume);
                             setMuted(newVolume === 0);
                           }}
@@ -1782,5 +1823,4 @@ const InstructorCoursePreview = ({
   );
 };
 
-export default InstructorCoursePreview 
-;
+export default InstructorCoursePreview;

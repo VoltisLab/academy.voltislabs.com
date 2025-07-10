@@ -470,7 +470,12 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
       }
     };
 
-    initializeCourse();
+    // Add initial delay before starting initialization
+    const initTimeout = setTimeout(initializeCourse, 50);
+
+    // Cleanup timeout if component unmounts
+    return () => clearTimeout(initTimeout);
+    // initializeCourse();
   }, []);
 
   console.log("sectionmain===", mainSectionData);
