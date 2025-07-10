@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Trash2, Edit3, ChevronDown, ChevronUp, X, Plus } from "lucide-react";
+
+import Link from "next/link";
 import {
   Lecture,
   EnhancedLecture,
@@ -499,6 +501,8 @@ const QuizItem: React.FC<QuizItemProps> = ({
       console.error("Error adding question:", error);
     }
   };
+
+  // console.log("QuizItem questions:", lecture, sectionId);
 
   const handleDeleteQuestion = async (index: number) => {
     const questionId = questions[index]?.id;
@@ -1087,13 +1091,16 @@ const QuizItem: React.FC<QuizItemProps> = ({
                     <div className="absolute mt-1 right-0 w-40 bg-white border border-gray-200 rounded-md shadow-lg z-50">
                       <ul>
                         <li>
-                          <button
-                            onClick={() => handlePreviewSelection("instructor")}
+                          {/* <Link> */}
+                          <Link
+                            // onClick={() => handlePreviewSelection("instructor")}
+                            href={`/preview/lecture/${courseId}/${sectionId}/${lecture.id}`}
                             className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                             type="button"
                           >
                             As Instructor
-                          </button>
+                          </Link>
+                          {/* </Link> */}
                         </li>
                         <li>
                           <button

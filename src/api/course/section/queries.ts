@@ -1,4 +1,4 @@
-import { gql } from '@apollo/client';
+import { gql } from "@apollo/client";
 
 export const GET_COURSE_SECTIONS = gql`
   query GetCourseSections($id: Int!) {
@@ -14,7 +14,7 @@ export const GET_COURSE_SECTIONS = gql`
         notes
         duration
         description
-        
+
         resources {
           id
           type
@@ -28,8 +28,8 @@ export const GET_COURSE_SECTIONS = gql`
         id
       }
       practiceSet {
-      id
-      title
+        id
+        title
       }
       codingExercises {
         id
@@ -39,6 +39,21 @@ export const GET_COURSE_SECTIONS = gql`
         description
         id
         title
+        questions {
+          id
+          text
+          order
+          answerChoices {
+            explanation
+            id
+            isCorrect
+            order
+            text
+          }
+          relatedLecture {
+            title
+          }
+        }
       }
     }
   }
@@ -48,7 +63,7 @@ export interface CourseSectionsVariables {
   id: number;
 }
 
-export interface CourseSectionAssignnments{
+export interface CourseSectionAssignnments {
   id: string;
   title: string;
 }
@@ -100,11 +115,10 @@ export interface CourseSection {
   title: string;
   quiz: CourseSectionQuiz[];
   lectures: CourseSectionLecture[];
-  assignment: CourseSectionAssignnments[]
+  assignment: CourseSectionAssignnments[];
   description: string;
-  codingExercises: CourseSectionAssignnments[]
-  practiceSet: CourseSectionAssignnments[]
-
+  codingExercises: CourseSectionAssignnments[];
+  practiceSet: CourseSectionAssignnments[];
 }
 
 export interface CourseSectionsResponse {

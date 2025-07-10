@@ -458,6 +458,8 @@ const StudentCoursePreview = ({
     return detectedType;
   };
 
+  console.log(lecture);
+
   const [activeItemType, setActiveItemType] = useState<string>(
     determineInitialContentType()
   );
