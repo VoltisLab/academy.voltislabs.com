@@ -204,6 +204,8 @@ export default function LectureItem(props: UpdatedLectureItemProps) {
   );
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  // Add state for uploadedVideoUrl
+  const [uploadedVideoUrl, setUploadedVideoUrl] = useState<string>("");
 
   // Content state
   const [videoContent, setVideoContent] = useState<VideoContent>({
@@ -545,7 +547,8 @@ export default function LectureItem(props: UpdatedLectureItemProps) {
 
   // Handle video file upload
   const handleVideoFileUpload = async (
-    event: React.ChangeEvent<HTMLInputElement>
+    event: React.ChangeEvent<HTMLInputElement>,
+    setUploadedVideoUrl?: (url: string) => void
   ) => {
     if (event.target.files && event.target.files.length > 0) {
       const file = event.target.files[0];
@@ -601,6 +604,19 @@ export default function LectureItem(props: UpdatedLectureItemProps) {
               }));
             }
 
+            // Set as the selected video for preview
+            setVideoContent((prev) => ({
+              ...prev,
+              selectedVideoDetails: {
+                id: videoId,
+                url: backendVideoUrl,
+                filename: file.name,
+                thumbnailUrl: "",
+                isDownloadable: false,
+                duration: "00:05", // Set if you have it, or leave as empty string
+              },
+            }));
+
             setVideoUploadComplete(true);
             setIsVideoUploading(false);
 
@@ -609,7 +625,15 @@ export default function LectureItem(props: UpdatedLectureItemProps) {
               activeTab: "addFromLibrary",
             }));
 
+            // Call the callback to set the uploaded video URL for preview
+            if (setUploadedVideoUrl) {
+              setUploadedVideoUrl(backendVideoUrl);
+            }
+
             toast.success("Video uploaded successfully!");
+            // After setting selectedVideoDetails, close the upload video/add from library window
+            setShowContentTypeSelector(false);
+            setActiveContentType(null);
           }
         } else {
           // Fallback simulation
@@ -653,10 +677,28 @@ export default function LectureItem(props: UpdatedLectureItemProps) {
                     }));
                   }
 
+                  // Set as the selected video for preview
+                  setVideoContent((prev) => ({
+                    ...prev,
+                    selectedVideoDetails: {
+                      id: videoId,
+                      url: videoUrl,
+                      filename: file.name,
+                      thumbnailUrl: "",
+                      isDownloadable: false,
+                      duration: "00:05", // Set if you have it, or leave as empty string
+                    },
+                  }));
+
                   setVideoContent((prev) => ({
                     ...prev,
                     activeTab: "addFromLibrary",
                   }));
+
+                  // Call the callback to set the uploaded video URL for preview
+                  if (setUploadedVideoUrl) {
+                    setUploadedVideoUrl(videoUrl);
+                  }
                 }, 500);
                 return 100;
               }
@@ -923,7 +965,7 @@ export default function LectureItem(props: UpdatedLectureItemProps) {
             videoUploadProgress={videoUploadProgress}
             videoUploadComplete={videoUploadComplete}
             setVideoUploadComplete={setVideoUploadComplete}
-            onVideoFileUpload={handleVideoFileUpload}
+            onVideoFileUpload={(e) => handleVideoFileUpload(e, setUploadedVideoUrl)}
             onVideoSelect={selectVideo}
             onDeleteVideo={deleteVideo}
             videoUploading={videoUploading}
@@ -933,6 +975,8 @@ export default function LectureItem(props: UpdatedLectureItemProps) {
                 toggleContentSection(sectionId, lecture.id);
               }
             }}
+            uploadedVideoUrl={uploadedVideoUrl}
+            setUploadedVideoUrl={setUploadedVideoUrl}
           />
         );
       case "video-slide":
@@ -958,6 +1002,22 @@ export default function LectureItem(props: UpdatedLectureItemProps) {
         return null;
     }
   };
+
+  useEffect(() => {
+    if (lecture.videoUrl) {
+      setVideoContent((prev) => ({
+        ...prev,
+        selectedVideoDetails: {
+          id: lecture.id,
+          url: lecture.videoUrl,
+          filename: lecture.title || "Lecture Video",
+          thumbnailUrl: "", // Set if you have it
+          isDownloadable: false,
+          duration: lecture.duration ? String(lecture.duration) : "", // Always a string
+        },
+      }));
+    }
+  }, [lecture.videoUrl, lecture.id, lecture.title, lecture.duration]);
 
   return (
     <div

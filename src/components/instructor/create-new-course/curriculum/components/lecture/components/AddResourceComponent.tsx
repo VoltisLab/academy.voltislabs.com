@@ -214,7 +214,7 @@ console.log("recources===", resources?.getLecture?.resources)
         resources: [
           {
             url: externalForm.url,
-            title: `EXTERNAL_RESOURCES: ${externalForm.url}`,
+            title: ` ${externalForm.url}`,
             type: 'EXTERNAL_RESOURCES',
             action: 'ADD',
           },
@@ -270,7 +270,7 @@ console.log("recources===", resources?.getLecture?.resources)
         resources: [
           {
             url: externalUrl,
-            title: `EXTERNAL_RESOURCE: ${externalUrl}`,
+            title: ` ${externalUrl}`,
             type: 'DOWNLOADABLE_FILES',
             action: 'ADD',
           },
@@ -377,7 +377,7 @@ console.log("recources===", resources?.getLecture?.resources)
         resources: [
           {
             url: uploadedUrl,
-            title: `SOURCE_CODE: ${sourceFile.name}`,
+            title: ` ${sourceFile.name}`,
             type: 'SOURCE_CODE',
             action: 'ADD',
           },

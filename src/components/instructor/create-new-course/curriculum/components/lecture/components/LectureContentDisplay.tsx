@@ -396,16 +396,19 @@ const LectureContentDisplay: React.FC<LectureContentDisplayProps> = ({
                 {showPreviewDropdown && (
                   <div className="absolute mt-1 right-0 w-40 bg-white border border-gray-200 rounded-md shadow-lg z-50">
                     <ul>
-                      <li>
-                        <button
-                          onClick={() => handlePreviewSelection("instructor")}
-                          className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                          type="button"
-                        >
-                          As Instructor
-                        </button>
-                      </li>
-                      <Link href={`/preview/${courseId}/${lecture.id}`}>
+                      <Link href={`/preview/lecture/${courseId}/${sectionId}/${lecture.id}`}>
+                        <li>
+                          <button
+                            // onClick={() => handlePreviewSelection("student")}
+                            className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                            type="button"
+                          >
+                            As Instructor
+                          </button>
+                        </li>
+                      </Link> 
+
+                        <Link href={`/preview/lecture/${courseId}/${sectionId}/${lecture.id}`}>
                         <li>
                           <button
                             // onClick={() => handlePreviewSelection("student")}
@@ -415,7 +418,7 @@ const LectureContentDisplay: React.FC<LectureContentDisplayProps> = ({
                             As Student
                           </button>
                         </li>
-                      </Link>
+                      </Link>                   
                     </ul>
                   </div>
                 )}
@@ -514,28 +517,18 @@ const LectureContentDisplay: React.FC<LectureContentDisplayProps> = ({
                     <div className="absolute mt-1 right-0 w-40 bg-white border border-gray-200 rounded-md shadow-lg z-50">
                       <ul>
                         <li>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handlePreviewSelection("instructor");
-                            }}
-                            className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                            type="button"
-                          >
-                            As Instructor
-                          </button>
+                          <Link href={`/preview/lecture/${courseId}/${sectionId}/${lecture.id}`}>
+                            <button className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" type="button">
+                              As Instructor
+                            </button>
+                          </Link>
                         </li>
                         <li>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handlePreviewSelection("student");
-                            }}
-                            className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                            type="button"
-                          >
-                            As Student
-                          </button>
+                        <Link href={`/preview/lecture/${courseId}/${sectionId}/${lecture.id}`}>
+                            <button className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" type="button">
+                              As Student
+                            </button>
+                          </Link>
                         </li>
                       </ul>
                     </div>
