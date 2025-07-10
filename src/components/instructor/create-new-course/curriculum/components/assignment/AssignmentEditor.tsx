@@ -13,6 +13,7 @@ import { useAssignmentService } from "@/services/useAssignmentService";
 import { useParams, useRouter } from "next/navigation";
 import { FiMenu } from "react-icons/fi";
 import { GetAssignmentQuery } from "@/api/assignment/query";
+import AssignmentPreview from "./AssignmentPreview";
 
 export interface AssignmentQuestion {
   id: string;
@@ -451,6 +452,12 @@ const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {publishSuccess && (
+        <div className="fixed top-0 left-0 right-0 bg-white p-4 shadow-md size-full">
+          <AssignmentPreview assignmentData={assignmentData} />
         </div>
       )}
     </div>
