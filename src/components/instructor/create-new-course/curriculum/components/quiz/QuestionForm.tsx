@@ -71,8 +71,17 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
       return;
     }
     const selectedLecture = lectures.find(
-      (lecture) => lecture.toString() === lectureId
+      (lecture) => lecture.id === lectureId
     );
+    console.log(
+      "Selected Lecture:",
+      selectedLecture,
+      "ID:",
+      lectureId,
+      "Lectures:",
+      lectures
+    );
+
     setRelatedLecture(selectedLecture || null);
   };
 
@@ -91,7 +100,7 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
 
       // console.log(lectures);
       const selectedLecture = lectures.find(
-        (lecture) => lecture.title === initialQuestion?.relatedLecture?.title
+        (lecture) => lecture.id === initialQuestion?.relatedLecture?.id
       );
       setRelatedLecture(selectedLecture || "");
       // setRelatedLecture(initialQuestion.relatedLecture || "");

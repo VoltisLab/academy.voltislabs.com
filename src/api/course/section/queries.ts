@@ -52,6 +52,8 @@ export const GET_COURSE_SECTIONS = gql`
           }
           relatedLecture {
             title
+            id
+            videoUrl
           }
         }
       }
@@ -79,9 +81,7 @@ export interface CourseSectionQuizQuestion {
   text: string;
   order: number;
   answerChoices: CourseSectionAnswerChoice[];
-  relatedLecture: {
-    title: string;
-  };
+  relatedLectureId: number;
 }
 
 export interface CourseSectionAnswerChoice {
