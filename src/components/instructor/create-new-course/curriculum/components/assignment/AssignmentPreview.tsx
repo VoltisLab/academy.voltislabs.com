@@ -146,7 +146,7 @@ export default function AssignmentPreview({
   };
 
   return (
-    <div className=" w-full h-full relative ">
+    <div className="flex flex-col h-full relative w-[79.5vw]" style={{ maxHeight: '70vh', height: '70vh' }}>
       {/* <div className="h-full flex-1 overflow-y-auto "> */}
       <main className="flex-1 overflow-y-auto h-full w-full pb-20 px-2">
         {assignmentStatus === "overview" && (

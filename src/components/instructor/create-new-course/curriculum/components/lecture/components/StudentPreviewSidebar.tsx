@@ -410,8 +410,10 @@ const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
 
   // FIXED: Handle selecting an item with proper content type detection
   const handleSelectItem = (itemId: string, itemType?: string) => {
+    // Always use 'lecture' for both video and article lectures
+    const forcedType = (itemType === 'video' || itemType === 'article') ? 'lecture' : itemType;
     if (onSelectItem) {
-      onSelectItem(itemId, itemType || "lecture");
+      onSelectItem(itemId, forcedType || "lecture");
     }
   };
 

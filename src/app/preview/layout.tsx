@@ -38,48 +38,13 @@ export default function PreviewLayout({ children }: { children: React.ReactNode 
 
   // Prepare sidebar sections structure with isExpanded: true by default
   const sidebarSections = useMemo(() => sections.map((section) => {
-    // Map lectures, quizzes, assignments, codingExercises to unified contentItems array
-    const lectures = (section.lectures || []).map((l: any) => ({
-      id: l.id,
-      name: l.title || l.name || "Lecture",
-      type: "lecture",
-      duration: l.duration,
-      isCompleted: l.isCompleted,
-      isActive: false,
-    }));
-    const quizzes = (section.quiz || []).map((q: any) => ({
-      id: q.id,
-      name: q.title || q.name || "Quiz",
-      type: "quiz",
-      duration: q.duration,
-      isCompleted: q.isCompleted,
-      isActive: false,
-    }));
-    const assignments = (section.assignment || []).map((a: any) => ({
-      id: a.id,
-      name: a.title || a.name || "Assignment",
-      type: "assignment",
-      duration: a.duration,
-      isCompleted: a.isCompleted,
-      isActive: false,
-    }));
-    const codingExercises = (section.codingExercises || []).map((c: any) => ({
-      id: c.id,
-      name: c.title || c.name || "Coding Exercise",
-      type: "coding-exercise",
-      duration: c.duration,
-      isCompleted: c.isCompleted,
-      isActive: false,
-    }));
     return {
       id: section.id || "",
       name: section.title || "",
-      contentItems: [
-        ...lectures,
-        ...quizzes,
-        ...assignments,
-        ...codingExercises,
-      ],
+      lectures: section.lectures || [],
+      quizzes: section.quiz || [],
+      assignments: section.assignment || [],
+      codingExercises: section.codingExercises || [],
       isExpanded: true,
     };
   }), [sections]);
@@ -103,14 +68,14 @@ export default function PreviewLayout({ children }: { children: React.ReactNode 
       }
     }
     if (courseId && foundSectionId && itemId && itemType) {
-      router.push(`/preview/${itemType}/${courseId}/${foundSectionId}/${itemId}`);
+      window.location.href = `/preview/${itemType}/${courseId}/${foundSectionId}/${itemId}`;
     }
   };
 
   return (
     <div className="flex flex-row bg-white">
       {/* Main preview window and bottom tabs (scrollable as a unit) */}
-      <div className="flex-1 flex flex-col  overflow-hidden">
+
         <div className="flex-1 flex flex-col overflow-y-auto" >
           {children}
           {/* Bottom tabs always visible */}
@@ -142,7 +107,7 @@ export default function PreviewLayout({ children }: { children: React.ReactNode 
             activeItemId={itemId}
           />
         </div>
-      </div>
+     
       {/* Sidebar on the right, fixed width, scrollable */}
       <div className="w-[24vw] border-l border-gray-200 overflow-y-auto flex-shrink-0">
         <StudentPreviewSidebar

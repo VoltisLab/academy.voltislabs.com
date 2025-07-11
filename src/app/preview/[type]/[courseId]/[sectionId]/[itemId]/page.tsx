@@ -73,8 +73,9 @@ const Preview = () => {
     const uploadedFiles = (currentItem?.resources || []).filter((r: any) => r.type === "DOWNLOADABLE_FILES").map((r: any) => ({ name: r.title, size: "", lectureId: currentItem.id || "" }));
     const sourceCodeFiles = (currentItem?.resources || []).filter((r: any) => r.type === "SOURCE_CODE").map((r: any) => ({ name: r.title, url: r.url, lectureId: currentItem.id || "" }));
     const externalResources = (currentItem?.resources || []).filter((r: any) => r.type === "EXTERNAL_RESOURCES").map((r: any) => ({ title: r.title, name: r.title, url: r.url, lectureId: currentItem.id || "" }));
+    const isVideoLecture = !!currentItem?.videoUrl && currentItem.videoUrl.trim() !== "";
     const videoContent = {
-      selectedVideoDetails: currentItem?.videoUrl ? {
+      selectedVideoDetails: isVideoLecture ? {
         id: currentItem.id || "",
         url: currentItem.videoUrl,
         filename: currentItem.title || "Lecture Video",
@@ -89,7 +90,7 @@ const Preview = () => {
     const extendedLecture = {
       attachedFiles: [],
       videos: [],
-      contentType: "assignment" as "assignment",
+      contentType: isVideoLecture ? "video" : "article",
       isExpanded: false,
       assignmentTitle: "",
       assignmentDescription: "",
@@ -103,7 +104,6 @@ const Preview = () => {
     };
     // Type guard for notes
     const hasNotes = (lecture: any): lecture is { notes: string } => typeof lecture?.notes === "string";
-    const isVideoLecture = !!currentItem?.videoUrl && currentItem.videoUrl.trim() !== "";
     const articleText = !isVideoLecture ? (hasNotes(currentItem) ? currentItem.notes : currentItem?.description || "") : "";
     previewComponent = (
       <AssignmentProvider initialData={extendedLecture}>
@@ -111,7 +111,7 @@ const Preview = () => {
           videoContent={isVideoLecture ? videoContent : { ...videoContent, selectedVideoDetails: null }}
           setShowVideoPreview={() => {}}
           lecture={currentItem}
-          quizData={null}
+          // quizData={null}
           uploadedFiles={uploadedFiles}
           sourceCodeFiles={sourceCodeFiles}
           externalResources={externalResources}
@@ -129,13 +129,31 @@ const Preview = () => {
       </AssignmentProvider>
     );
   } else if (type === "quiz") {
-    currentItem = currentSection.quiz?.find((q: any) => String(q.id) === String(itemId));
+    let quizItem = currentSection.quiz?.find((q: any) => String(q.id) === String(itemId));
+    // Ensure the quiz object has the correct structure and fallback for missing questions
+    let quizForPreview = undefined;
+    if (quizItem) {
+      quizForPreview = {
+        id: quizItem.id || "",
+        title: quizItem.title || "Quiz",
+        description: quizItem.description || "",
+        questions: Array.isArray(quizItem.questions)
+          ? quizItem.questions.map((q: any) => ({
+              id: q.id || "",
+              text: q.text || "",
+              answerChoices: Array.isArray(q.answerChoices) ? q.answerChoices : [],
+              orders: q.orders || [],
+              relatedLecture: q.relatedLecture || null,
+              type: q.type || "multiple-choice",
+            }))
+          : [],
+      };
+    } else {
+      quizForPreview = { id: "", title: "Quiz", description: "", questions: [] };
+    }
     previewComponent = (
       <QuizPreview
-        quiz={currentItem}
-        section={currentSection}
-        sidebarSections={sidebarSections}
-        onSidebarClick={handleSidebarClick}
+        quiz={quizForPreview}
       />
     );
   } else if (type === "assignment") {
@@ -153,19 +171,52 @@ const Preview = () => {
     previewComponent = (
       <AssignmentPreview
         assignmentData={safeAssignment}
-        section={currentSection}
-        sidebarSections={sidebarSections}
-        onSidebarClick={handleSidebarClick}
       />
     );
   } else if (type === "coding-exercise") {
     currentItem = currentSection.codingExercises?.find((c: any) => String(c.id) === String(itemId));
+    // Map currentItem to CodingExercisePreviewData structure
+    const codingExercisePreviewData = currentItem ? {
+      exercise: {
+        id: currentItem.id || "",
+        title: currentItem.title || "Coding Exercise",
+        language: currentItem.language || "javascript",
+        version: currentItem.version || "",
+        learningObjective: currentItem.learningObjective || "",
+        contentType: "coding-exercise" as const,
+      },
+      content: {
+        instructions: currentItem.instructions || "",
+        hints: currentItem.hints || "",
+        solutionExplanation: currentItem.solutionExplanation || "",
+        files: currentItem.files || [],
+        solutionCode: currentItem.solutionCode || "",
+        testCode: currentItem.testCode || "",
+      },
+      testResults: currentItem.testResults || null,
+    } : {
+      exercise: {
+        id: "",
+        title: "Coding Exercise",
+        language: "javascript",
+        version: "",
+        learningObjective: "",
+        contentType: "coding-exercise" as const,
+      },
+      content: {
+        instructions: "",
+        hints: "",
+        solutionExplanation: "",
+        files: [],
+        solutionCode: "",
+        testCode: "",
+      },
+      testResults: null,
+    };
     previewComponent = (
       <CodingExercisePreview
-        exercise={currentItem}
-        section={currentSection}
-        sidebarSections={sidebarSections}
-        onSidebarClick={handleSidebarClick}
+        data={codingExercisePreviewData}
+        onClose={() => {}}
       />
     );
   } else {
