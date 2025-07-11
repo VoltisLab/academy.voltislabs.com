@@ -26,6 +26,7 @@ export const GET_COURSE_SECTIONS = gql`
       assignment {
         title
         id
+        isPublished
       }
       practiceSet {
         id
@@ -52,6 +53,8 @@ export const GET_COURSE_SECTIONS = gql`
           }
           relatedLecture {
             title
+            id
+            videoUrl
           }
         }
       }
@@ -66,6 +69,7 @@ export interface CourseSectionsVariables {
 export interface CourseSectionAssignnments {
   id: string;
   title: string;
+  isPublished: boolean;
 }
 export interface CourseSectionQuiz {
   id: string;
@@ -79,9 +83,7 @@ export interface CourseSectionQuizQuestion {
   text: string;
   order: number;
   answerChoices: CourseSectionAnswerChoice[];
-  relatedLecture: {
-    title: string;
-  };
+  relatedLectureId: number;
 }
 
 export interface CourseSectionAnswerChoice {

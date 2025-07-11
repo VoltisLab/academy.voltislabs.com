@@ -94,18 +94,22 @@ const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
   const params = useParams();
   const id = params?.id;
 
+  const { assignmentData, setAssignmentData } = useAssignment();
+  const { getAssignment } = useAssignmentService();
+
   const [showPublishModal, setShowPublishModal] = useState(false);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [hasAttemptedPublish, setHasAttemptedPublish] = useState(false);
-  const [publishSuccess, setPublishSuccess] = useState(false);
+  const [publishSuccess, setPublishSuccess] = useState(
+    assignmentData?.isPublished
+  );
+
+  console.log("Assignment Data:", assignmentData.isPublished);
   const [libraryVideos, setLibraryVideos] =
     useState<Video[]>(initialLibraryVideos);
   const [sortByNameAsc, setSortByNameAsc] = useState(false);
   const [sortByDateAsc, setSortByDateAsc] = useState(false);
   const [showTab, setShowTab] = useState(false);
-
-  const { assignmentData, setAssignmentData } = useAssignment();
-  const { getAssignment } = useAssignmentService();
 
   const toggleSortByName = () => {
     setSortByNameAsc((prev) => !prev);
@@ -180,7 +184,7 @@ const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
         solutionResource: data?.solutionDownloadableResource,
         dueDate: data?.dueDate,
         createdAt: data?.createdAt,
-        isPublished: false,
+        isPublished: data?.isPublished,
       });
     } catch (err) {}
   }, [getAssignment, id, setAssignmentData]);
@@ -188,27 +192,33 @@ const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
   useEffect(() => {
     if (id) fetchAssignment();
   }, [id]);
+  const [isPublishing, setIsPublishing] = useState(false);
+  const { updateAssignment } = useAssignmentService();
 
-  const handleConfirmPublish = () => {
+  const handleConfirmPublish = async () => {
     if (!validateAssignment()) {
       setShowPublishModal(false);
       return;
     }
 
-    const publishedData = { ...assignmentData, isPublished: true };
-    // const variables: UpdateAssignmentVariables = {
-    //   assignmentId: Number(newAssinment),
-    //   title: publishedData.assignmentTitle,
-    //   description: publishedData.assignmentDescription,
-    //   estimatedDurationMinutes: publishedData.estimatedDuration,
-    //   instructions: publishedData.assignmentInstructions,
-    //   resourceUrl: publishedData.instructionalResource?.url,
-    //   videoUrl: publishedData.instructionalVideo?.url,
-    // };
-    // await updateAssignment(variables);
-    onSave(publishedData);
-    setShowPublishModal(false);
-    setPublishSuccess(true);
+    setIsPublishing(true);
+    try {
+      // const publishedData = { ...assignmentData, isPublished: true };
+      const variables: UpdateAssignmentVariables = {
+        assignmentId: Number(id),
+        isPublished: true,
+      };
+
+      await updateAssignment(variables);
+      await fetchAssignment();
+      setPublishSuccess(true);
+      toast.success("Assignment published successfully");
+    } catch (error) {
+      toast.error("Failed to publish assignment");
+    } finally {
+      setIsPublishing(false);
+      setShowPublishModal(false);
+    }
   };
 
   const handleErrorClick = (errorType: string) => {
@@ -384,13 +394,7 @@ const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
       </div>
 
       {/* Validation Errors */}
-      {hasAttemptedPublish && (
-        <div className="px-2 md:px-6 py-2">
-          {validationErrors.length > 0
-            ? showValidationErrors()
-            : publishSuccess && <SuccessAlert />}
-        </div>
-      )}
+      {assignmentData.isPublished && <SuccessAlert />}
 
       <button
         onClick={() => setShowTab(!showTab)}
@@ -440,22 +444,23 @@ const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => setShowPublishModal(false)}
-                className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                className="px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-md transition"
               >
                 Cancel
               </button>
               <button
+                disabled={isPublishing}
                 onClick={handleConfirmPublish}
-                className="px-4 py-2 bg-[#6d28d2] text-white rounded-md hover:bg-purple-700"
+                className="px-4 py-2 bg-[#6d28d2] text-white rounded-md hover:bg-purple-700 disabled:bg-purple-300 disabled:cursor-not-allowed transition cursor-pointer"
               >
-                Publish
+                {isPublishing ? "Publishing..." : "Publish"}
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {publishSuccess && (
+      {assignmentData.isPublished && (
         <div className="fixed top-0 left-0 right-0 bg-white p-4 shadow-md size-full">
           <AssignmentPreview assignmentData={assignmentData} />
         </div>
