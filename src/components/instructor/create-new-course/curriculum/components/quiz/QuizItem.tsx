@@ -1103,13 +1103,14 @@ const QuizItem: React.FC<QuizItemProps> = ({
                           {/* </Link> */}
                         </li>
                         <li>
-                          <button
-                            onClick={() => handlePreviewSelection("student")}
+                        <Link
+                            // onClick={() => handlePreviewSelection("instructor")}
+                            href={`/preview/lecture/${courseId}/${sectionId}/${lecture.id}`}
                             className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                             type="button"
                           >
                             As Student
-                          </button>
+                          </Link>
                         </li>
                       </ul>
                     </div>

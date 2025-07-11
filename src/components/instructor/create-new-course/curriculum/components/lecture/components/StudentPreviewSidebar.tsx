@@ -236,9 +236,8 @@ const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
     return resourcesByLectureId;
   };
 
-  // Update the useEffect that processes sections
+  // Remove any reliance on pre-processed contentItems from the layout. Always process the raw backend data here.
   useEffect(() => {
-    
     if (!sections || sections.length === 0) {
       setProcessedSections([]);
       return;
@@ -410,21 +409,9 @@ const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
   };
 
   // FIXED: Handle selecting an item with proper content type detection
-  const handleSelectItem = (itemId: string) => {
-    const selectedItem = processedSections
-      .flatMap(section => section.contentItems)
-      .find(item => item.id === itemId);
-    
-    if (selectedItem) {
-      // FIXED: Use actualContentType for accurate content type
-      const contentType = selectedItem.actualContentType || selectedItem.type;
-      
-      if (onSelectItem) {
-        onSelectItem(itemId, contentType);
-      }
-    } else {
-      console.error('❌ Item not found:', itemId);
-      setShowVideoPreview(false);
+  const handleSelectItem = (itemId: string, itemType?: string) => {
+    if (onSelectItem) {
+      onSelectItem(itemId, itemType || "lecture");
     }
   };
 
@@ -554,7 +541,7 @@ const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
   
 
   return (
-    <div className="w-[25.5vw] bg-white border-l border-gray-200 flex flex-col h-full text-gray-700">
+    <div className="w-[24vw] bg-white border-l border-gray-200 flex flex-col h-full text-gray-700">
       {/* Header */}
       <div className="flex justify-between items-center border-b border-gray-200 px-4 py-2">
         <h2 className="font-bold text-gray-700 text-sm">Course content</h2>
@@ -590,7 +577,7 @@ const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
             </div>
             
             {/* Section content items - only show if expanded */}
-            {expandedSections[section.id] && section.contentItems.length > 0 && (
+            {expandedSections[section.id] && section.contentItems && section.contentItems.length > 0 && (
               <div className="">
                 {section.contentItems.map((item, itemIndex) => (
                   <div 
@@ -600,7 +587,7 @@ const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
                         ? 'bg-gray-200 ' 
                         : 'hover:bg-gray-50 bg-white'
                     } cursor-pointer hover:bg-gray-200`}
-                    onClick={() => handleSelectItem(item.id)}
+                    onClick={() => handleSelectItem(item.id, item.type)}
                   >
                     <div className="flex items-start">
                       <input 
