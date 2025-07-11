@@ -42,7 +42,6 @@ import QuizPreview, { LectureType } from "../../quiz/QuizPreview";
 import AssignmentPreview from "../../assignment/AssignmentPreview";
 import VideoControls from "./VideoControls";
 import LearningReminderModal from "../modals/LearningReminderModal";
-import BottomTabsContainer from "./BottomTabsContainer";
 import { useRouter } from "next/navigation";
 import ContentInformationDisplay from "./ContentInformationDisplay";
 import { useAssignment } from "@/context/AssignmentDataContext";
@@ -1721,37 +1720,6 @@ const InstructorCoursePreview = ({
 
           {/* Bottom bar for non-video content */}
           {renderBottomBar()}
-
-          {/* Bottom content tabs */}
-          {!isContentFullscreen && (
-            <BottomTabsContainer
-              activeTab={activeTab}
-              setActiveTab={setActiveTab}
-              showSearch={showSearch}
-              setShowSearch={setShowSearch}
-              isExpanded={isExpanded}
-              selectedItemData={selectedItemData}
-              activeItemType={activeItemType}
-              progress={progress}
-              formatTime={formatTime}
-              notes={notes}
-              onCreateNote={handleCreateNote}
-              onSaveNote={handleSaveNote}
-              onCancelNote={handleCancelNote}
-              onEditNote={handleEditNote}
-              onDeleteNote={handleDeleteNote}
-              isAddingNote={isAddingNote}
-              currentNoteContent={currentNoteContent}
-              setCurrentNoteContent={setCurrentNoteContent}
-              selectedLectureFilter={selectedLectureFilter}
-              setSelectedLectureFilter={setSelectedLectureFilter}
-              selectedSortOption={selectedSortOption}
-              setSelectedSortOption={setSelectedSortOption}
-              getSortedNotes={getSortedNotes}
-              onOpenLearningModal={() => setShowLearningModal(true)}
-              activeItemId={activeItemId}
-            />
-          )}
         </div>
 
         {/* Course Content Button - only shows when sidebar is collapsed */}

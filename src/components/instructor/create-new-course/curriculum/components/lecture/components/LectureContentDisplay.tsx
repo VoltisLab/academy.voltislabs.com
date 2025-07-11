@@ -199,7 +199,15 @@ const LectureContentDisplay: React.FC<LectureContentDisplayProps> = ({
               let hasVideoContent = false;
               let hasArticleContent = false;
               let actualContentType = lec.contentType || "video";
-
+              // Robustly extract article content from lec
+              const articleContent =
+                (lec as any).articleContent ||
+                ((lec as any).lectureNotes ? { text: (lec as any).lectureNotes } : undefined) ||
+                (lec.description ? { text: lec.description } : undefined);
+              if (articleContent && typeof articleContent.text === "string" && articleContent.text.trim() !== "") {
+                hasArticleContent = true;
+                actualContentType = "article";
+              }
               if (lec.contentType === "article") {
                 hasArticleContent = true;
                 actualContentType = "article";
@@ -215,6 +223,7 @@ const LectureContentDisplay: React.FC<LectureContentDisplayProps> = ({
                 actualContentType: actualContentType as any,
                 hasVideoContent,
                 hasArticleContent,
+                articleContent,
                 contentMetadata: {
                   createdAt: new Date(),
                   lastModified: new Date(),

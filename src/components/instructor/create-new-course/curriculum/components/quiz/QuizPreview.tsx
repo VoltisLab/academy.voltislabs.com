@@ -139,7 +139,9 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({ quiz, onClose }) => {
       ? currentQuestion?.answerChoices?.[selectedAnswerIndex]?.explanation || ""
       : "";
   const isRelatedLecture =
-    quiz?.questions?.[currentQuestionIndex].relatedLecture || null;
+    quiz?.questions && quiz.questions[currentQuestionIndex]
+      ? quiz.questions[currentQuestionIndex].relatedLecture || null
+      : null;
 
   const toggleLectureVideo = () => {
     setShowRelatedLectureVideo(!showRelatedLectureVideo);
@@ -320,7 +322,7 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({ quiz, onClose }) => {
   const needsReviewCount = needsReviewQuestions.length;
 
   return (
-    <div className="flex flex-col h-full relative w-[79.5vw]">
+    <div className="flex flex-col h-full relative w-[79.5vw]" style={{ maxHeight: '70vh', height: '70vh' }}>
       {/* Main content */}
       {(quizStatus === "Overview" || quizStatus === "Questions") && (
         <main className="flex-1 overflow-y-auto p-4 sm:p-8 sm:pt-15 w-full">
