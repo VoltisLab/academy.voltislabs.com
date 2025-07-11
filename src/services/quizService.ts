@@ -78,6 +78,7 @@ export const useQuizOperations = () => {
     text?: string;
     choices?: ChoiceInputType[];
     relatedLectureId?: number;
+    removeRelatedLecture?: boolean;
   }) => {
     console.log("🚨 updateQuestion payload:", variables.questionId);
     return executeMutation(UPDATE_QUESTION, variables);

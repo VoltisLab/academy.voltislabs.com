@@ -172,12 +172,14 @@ export const UPDATE_QUESTION = gql`
     $text: String
     $choices: [AnswerChoiceInputType]!
     $relatedLectureId: Int
+    $removeRelatedLecture: Boolean
   ) {
     updateQuestion(
       questionId: $questionId
       text: $text
       choices: $choices
       relatedLectureId: $relatedLectureId
+      removeRelatedLecture: $removeRelatedLecture
     ) {
       success
       question {

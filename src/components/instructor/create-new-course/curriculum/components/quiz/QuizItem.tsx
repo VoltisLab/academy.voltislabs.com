@@ -556,6 +556,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
         relatedLectureId: question.relatedLecture?.id
           ? Number(question.relatedLecture.id)
           : undefined,
+        removeRelatedLecture: !question.relatedLecture?.id,
       });
 
       await fetchSectionData();
@@ -1096,19 +1097,16 @@ const QuizItem: React.FC<QuizItemProps> = ({
                         <li>
                           {/* <Link> */}
                           <Link
-                            // onClick={() => handlePreviewSelection("instructor")}
-                            href={`/preview/lecture/${courseId}/${sectionId}/${lecture.id}`}
+                            href={`/preview/quiz/${courseId}/${sectionId}/${lecture.id}`}
                             className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                             type="button"
                           >
                             As Instructor
                           </Link>
-                          {/* </Link> */}
                         </li>
                         <li>
-                        <Link
-                            // onClick={() => handlePreviewSelection("instructor")}
-                            href={`/preview/lecture/${courseId}/${sectionId}/${lecture.id}`}
+                          <Link
+                            href={`/preview/quiz/${courseId}/${sectionId}/${lecture.id}`}
                             className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                             type="button"
                           >
