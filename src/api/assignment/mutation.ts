@@ -22,6 +22,7 @@ export const UPDATE_ASSIGNMENT_MUTATION = gql`
     $instructionVideo: MediaInputType
     $solutionDownloadableResource: MediaInputType
     $solutionVideo: MediaInputType
+    $isPublished: Boolean
   ) {
     updateAssignment(
       assignmentId: $assignmentId
@@ -33,12 +34,14 @@ export const UPDATE_ASSIGNMENT_MUTATION = gql`
       instructionVideo: $instructionVideo
       solutionDownloadableResource: $solutionDownloadableResource
       solutionVideo: $solutionVideo
+      isPublished: $isPublished
     ) {
       success
       assignment {
         id
         title
         description
+        isPublished
       }
     }
   }
@@ -192,6 +195,7 @@ export interface UpdateAssignmentVariables {
   instructionVideo?: MediaInputType;
   solutionDownloadableResource?: MediaInputType;
   solutionVideo?: MediaInputType;
+  isPublished?: boolean;
 }
 
 export interface UpdateAssignmentResponse {

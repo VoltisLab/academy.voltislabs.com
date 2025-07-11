@@ -26,6 +26,7 @@ export const GET_COURSE_SECTIONS = gql`
       assignment {
         title
         id
+        isPublished
       }
       practiceSet {
         id
@@ -68,6 +69,7 @@ export interface CourseSectionsVariables {
 export interface CourseSectionAssignnments {
   id: string;
   title: string;
+  isPublished: boolean;
 }
 export interface CourseSectionQuiz {
   id: string;

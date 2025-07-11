@@ -15,6 +15,7 @@ export const GET_ASSIGNMENT = gql`
       instructionVideo
       solutionDownloadableResource
       solutionVideo
+      isPublished
       questions {
         id
         order
@@ -51,6 +52,7 @@ export interface GetAssignmentQuery {
     instructionVideo: string | null;
     solutionDownloadableResource: string | null;
     solutionVideo: string | null;
+    isPublished: boolean;
     questions: {
       id: number;
       order: number;

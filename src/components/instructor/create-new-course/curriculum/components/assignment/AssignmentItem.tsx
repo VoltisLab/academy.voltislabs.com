@@ -75,7 +75,7 @@ const AssignmentItem: React.FC<AssignmentItemProps> = ({
   dragTarget,
   onEditAssignment, // Now properly typed
 }) => {
-    const router = useRouter();
+  const router = useRouter();
   const nameInputRef = useRef<HTMLInputElement>(null);
   const [isHovering, setIsHovering] = useState(false);
 
@@ -90,12 +90,11 @@ const AssignmentItem: React.FC<AssignmentItemProps> = ({
     setEditingLectureId(lecture.id);
   };
 
-console.log("assignment===", lecture)
+  console.log("assignment===", lecture);
   const handleEditClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     router.push(`/assignment/edit-assignment/${lecture.id}`); // adjust the URL path as needed
   };
-
 
   // const handleEditClick = (e: React.MouseEvent) => {
   //   e.stopPropagation();
@@ -164,7 +163,7 @@ console.log("assignment===", lecture)
           ) : (
             <div className="flex flex-row items-center gap-2">
               <h3 className=" text-xs text-gray-800 whitespace-nowrap overflow-hidden text-ellipsis flex items-center gap-1">
-                {false ? (
+                {lecture?.isPublished ? (
                   <>
                     <div className="w-max shrink-0 flex items-center gap-3">
                       <FaCircleCheck size={16} className="shrink-0" />
@@ -180,27 +179,26 @@ console.log("assignment===", lecture)
                 <FileText size={16} className="shrink-0 ml-1" />{" "}
                 {lecture?.title || lecture?.title || "Assignment"}
               </h3>
-              {
-                isHovering && 
-             <div className="flex flex-row gap-1">
-                <button
-                  onClick={handleEditClick}
-                  className="p-1 text-gray-400 hover:text-gray-600"
-                  title="Edit Assignment"
-                >
-                  <Edit3 className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    deleteLecture(sectionId, lecture.id);
-                  }}
-                  className="p-1 text-gray-400 hover:text-red-600"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-              }
+              {isHovering && (
+                <div className="flex flex-row gap-1">
+                  <button
+                    onClick={handleEditClick}
+                    className="p-1 text-gray-400 hover:text-gray-600"
+                    title="Edit Assignment"
+                  >
+                    <Edit3 className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      deleteLecture(sectionId, lecture.id);
+                    }}
+                    className="p-1 text-gray-400 hover:text-red-600"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>
