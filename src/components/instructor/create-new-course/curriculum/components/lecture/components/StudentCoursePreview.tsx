@@ -42,7 +42,6 @@ import QuizPreview, { LectureType } from "../../quiz/QuizPreview";
 import AssignmentPreview from "../../assignment/AssignmentPreview";
 import VideoControls from "./VideoControls";
 import LearningReminderModal from "../modals/LearningReminderModal";
-import BottomTabsContainer from "./BottomTabsContainer";
 import { useRouter } from "next/navigation";
 import ContentInformationDisplay from "./ContentInformationDisplay";
 import { useAssignment } from "@/context/AssignmentDataContext";
@@ -140,6 +139,15 @@ const StudentCoursePreview = ({
   articleContent = { text: "" },
   quizData,
 }: ChildProps) => {
+  // Guard: If lecture is undefined, show error and return early
+  if (!lecture) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full p-8 text-red-600">
+        <h2 className="text-2xl font-bold mb-4">Lecture Not Found</h2>
+        <p>The requested lecture could not be found or is missing required data.</p>
+      </div>
+    );
+  }
   // State management
   const [playing, setPlaying] = useState<boolean>(false);
   const [progress, setProgress] = useState<number>(0);
@@ -1335,443 +1343,412 @@ const StudentCoursePreview = ({
 
   // Main render
   return (
-    <div className=" bg-white flex flex-col">
-      <div className="flex flex-1 h-full">
-        {/* Main scrollable container */}
+    <div className="flex flex-col flex-1 relative w-[75.5vw]" style={{ minHeight: 0 }}>
+      {/* Main content and all other elements wrapped in this parent div */}
+      <div
+        ref={mainContentRef}
+        className="flex flex-col flex-1 overflow-hidden"
+        style={{
+          width: isExpanded ? "100%" : "75vw",
+          transition: "width 0.3s ease-in-out",
+          minHeight: 0,
+        }}
+      >
+        {/* Content area */}
         <div
-          ref={mainContentRef}
-          className="flex flex-col overflow-y-auto"
+          className="flex-1 flex flex-col items-center justify-center bg-black"
           style={{
-            width: isExpanded ? "100%" : "75.5vw",
-            transition: "width 0.3s ease-in-out",
+
+            minHeight: 0,
+            maxHeight: '70vh',
           }}
         >
-          {/* Content area */}
-          <div
-            className="flex-shrink-0"
-            style={{
-              height: isContentFullscreen ? "100vh" : "calc(100vh - 170px)",
-            }}
-          >
-            {showQuizKeyboardShortcuts ? (
-              <div className="bg-black h-full flex items-center justify-center p-8">
-                <button
-                  onClick={() => setShowQuizKeyboardShortcuts(false)}
-                  className="absolute top-8 right-[500px] text-white hover:text-white focus:outline-none"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-                <div className="bg-black text-white rounded-lg p-5 h-full max-w-2xl relative text-center justify-center items-center flex flex-col gap-20">
-                  <div className="flex items-center mb-6 text-center">
-                    <h2 className="text-2xl font-bold text-center">
-                      Keyboard shortcuts
-                    </h2>
-                    <span className="ml-2 text-white bg-gray-700 px-2">?</span>
+          {showQuizKeyboardShortcuts ? (
+            <div className="bg-black flex items-center justify-center p-8">
+              <button
+                onClick={() => setShowQuizKeyboardShortcuts(false)}
+                className="absolute top-8 right-[500px] text-white hover:text-white focus:outline-none"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              <div className="bg-black text-white rounded-lg p-5 h-full max-w-2xl relative text-center justify-center items-center flex flex-col gap-20">
+                <div className="flex items-center mb-6 text-center">
+                  <h2 className="text-2xl font-bold text-center">
+                    Keyboard shortcuts
+                  </h2>
+                  <span className="ml-2 text-white bg-gray-700 px-2">?</span>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between gap-10">
+                    <span>Select answer 1-9</span>
+                    <div className="flex space-x-1">
+                      <kbd className="bg-gray-700 text-white px-2 py-1 rounded text-sm font-mono min-w-[24px] text-center">
+                        1-9
+                      </kbd>
+                    </div>
                   </div>
 
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between gap-10">
-                      <span>Select answer 1-9</span>
-                      <div className="flex space-x-1">
-                        <kbd className="bg-gray-700 text-white px-2 py-1 rounded text-sm font-mono min-w-[24px] text-center">
-                          1-9
-                        </kbd>
-                      </div>
-                    </div>
+                  <div className="flex items-center justify-between gap-10">
+                    <span>Check answer / Next question</span>
+                    <kbd className="bg-gray-700 text-white px-2 py-1 rounded text-sm font-mono">
+                      →
+                    </kbd>
+                  </div>
 
-                    <div className="flex items-center justify-between gap-10">
-                      <span>Check answer / Next question</span>
+                  <div className="flex items-center justify-between gap-10">
+                    <span>Skip question</span>
+                    <div className="flex items-center space-x-1">
+                      <kbd className="bg-gray-700 text-white px-2 py-1 rounded text-sm font-mono">
+                        Shift
+                      </kbd>
+                      <span className="text-gray-400">+</span>
                       <kbd className="bg-gray-700 text-white px-2 py-1 rounded text-sm font-mono">
                         →
                       </kbd>
                     </div>
-
-                    <div className="flex items-center justify-between gap-10">
-                      <span>Skip question</span>
-                      <div className="flex items-center space-x-1">
-                        <kbd className="bg-gray-700 text-white px-2 py-1 rounded text-sm font-mono">
-                          Shift
-                        </kbd>
-                        <span className="text-gray-400">+</span>
-                        <kbd className="bg-gray-700 text-white px-2 py-1 rounded text-sm font-mono">
-                          →
-                        </kbd>
-                      </div>
-                    </div>
                   </div>
                 </div>
               </div>
-            ) : showVideoKeyboardShortcuts ? (
-              <div className="bg-black h-full flex items-center justify-center p-8">
-                <div className="bg-black text-white rounded-lg p-6 max-w-2xl w-full mx-4 relative border border-gray-700">
+            </div>
+          ) : showVideoKeyboardShortcuts ? (
+            <div className="bg-black flex items-center justify-center p-8">
+              <div className="bg-black text-white rounded-lg p-6 max-w-2xl w-full mx-4 relative border border-gray-700">
+                <button
+                  onClick={() => setShowVideoKeyboardShortcuts(false)}
+                  className="absolute top-4 right-4 text-gray-400 hover:text-white focus:outline-none"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+
+                <div className="flex items-center mb-6">
+                  <h2 className="text-xl font-semibold">
+                    Keyboard shortcuts
+                  </h2>
+                  <span className="ml-2 text-gray-400">?</span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-x-8 gap-y-4">
+                  {[
+                    { action: "Play / pause", key: "Space" },
+                    { action: "Go back 5s", key: "←" },
+                    { action: "Go forward 5s", key: "→" },
+                    { action: "Speed slower", key: "Shift + ←" },
+                    { action: "Speed faster", key: "Shift + →" },
+                    { action: "Volume up", key: "↑" },
+                    { action: "Volume down", key: "↓" },
+                    { action: "Mute", key: "M" },
+                    { action: "Fullscreen", key: "F" },
+                    { action: "Exit fullscreen", key: "ESC" },
+                    { action: "Add note", key: "B" },
+                    { action: "Toggle captions", key: "C" },
+                    { action: "Content information", key: "I" },
+                  ].map((shortcut, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center justify-between"
+                    >
+                      <span className="text-gray-300">{shortcut.action}</span>
+                      <kbd className="bg-gray-800 text-white px-2 py-1 rounded text-sm font-mono min-w-[60px] text-center">
+                        {shortcut.key}
+                      </kbd>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ) : activeItemType === "quiz" ? (
+            <div className="bg-white relative">
+              <QuizPreview quiz={currentContent.data as QuizData} />
+            </div>
+          ) : activeItemType === "coding-exercise" ? (
+            <div className="flex w-full ">
+              <div className="w-64 bg-white border-r border-gray-200">
+                <div className="p-4 border-b border-gray-200">
+                  <h2 className="font-semibold">Instructions</h2>
+                </div>
+                <div className="p-4">
+                  <h3 className="font-bold mb-3">
+                    {selectedItemData?.name || "Coding Exercise"}
+                  </h3>
+                  <div className="text-sm text-gray-700 mt-2">
+                    {selectedItemData?.description ||
+                      "Complete the exercise by writing the required code."}
+                  </div>
+                </div>
+              </div>
+              <div className="flex-1 bg-gray-900 flex flex-col">
+                <div className="flex-1 flex items-center justify-center text-white">
+                  <p>Code Editor Interface</p>
+                </div>
+                <div className="p-4 border-t border-gray-700 flex items-center space-x-4">
                   <button
-                    onClick={() => setShowVideoKeyboardShortcuts(false)}
-                    className="absolute top-4 right-4 text-gray-400 hover:text-white focus:outline-none"
+                    className="bg-white text-gray-800 rounded px-4 py-2 text-sm font-medium flex items-center"
+                    type="button"
                   >
-                    <X className="w-6 h-6" />
+                    <span className="mr-2">▶</span> Run tests
                   </button>
-
-                  <div className="flex items-center mb-6">
-                    <h2 className="text-xl font-semibold">
-                      Keyboard shortcuts
-                    </h2>
-                    <span className="ml-2 text-gray-400">?</span>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-x-8 gap-y-4">
-                    {[
-                      { action: "Play / pause", key: "Space" },
-                      { action: "Go back 5s", key: "←" },
-                      { action: "Go forward 5s", key: "→" },
-                      { action: "Speed slower", key: "Shift + ←" },
-                      { action: "Speed faster", key: "Shift + →" },
-                      { action: "Volume up", key: "↑" },
-                      { action: "Volume down", key: "↓" },
-                      { action: "Mute", key: "M" },
-                      { action: "Fullscreen", key: "F" },
-                      { action: "Exit fullscreen", key: "ESC" },
-                      { action: "Add note", key: "B" },
-                      { action: "Toggle captions", key: "C" },
-                      { action: "Content information", key: "I" },
-                    ].map((shortcut, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center justify-between"
-                      >
-                        <span className="text-gray-300">{shortcut.action}</span>
-                        <kbd className="bg-gray-800 text-white px-2 py-1 rounded text-sm font-mono min-w-[60px] text-center">
-                          {shortcut.key}
-                        </kbd>
-                      </div>
-                    ))}
+                  <button
+                    className="text-white text-sm font-medium"
+                    type="button"
+                  >
+                    Reset
+                  </button>
+                  <div className="flex-1"></div>
+                  <div className="text-sm text-gray-400">
+                    All changes saved | Line 1, Column 1
                   </div>
                 </div>
               </div>
-            ) : activeItemType === "quiz" ? (
-              <div className="bg-white relative h-full">
-                <QuizPreview quiz={currentContent.data as QuizData} />
-              </div>
-            ) : activeItemType === "coding-exercise" ? (
-              <div className="flex w-full h-full">
-                <div className="w-64 bg-white border-r border-gray-200">
-                  <div className="p-4 border-b border-gray-200">
-                    <h2 className="font-semibold">Instructions</h2>
-                  </div>
-                  <div className="p-4">
-                    <h3 className="font-bold mb-3">
-                      {selectedItemData?.name || "Coding Exercise"}
-                    </h3>
-                    <div className="text-sm text-gray-700 mt-2">
-                      {selectedItemData?.description ||
-                        "Complete the exercise by writing the required code."}
-                    </div>
-                  </div>
-                </div>
-                <div className="flex-1 bg-gray-900 flex flex-col">
-                  <div className="flex-1 flex items-center justify-center text-white">
-                    <p>Code Editor Interface</p>
-                  </div>
-                  <div className="p-4 border-t border-gray-700 flex items-center space-x-4">
-                    <button
-                      className="bg-white text-gray-800 rounded px-4 py-2 text-sm font-medium flex items-center"
-                      type="button"
-                    >
-                      <span className="mr-2">▶</span> Run tests
-                    </button>
-                    <button
-                      className="text-white text-sm font-medium"
-                      type="button"
-                    >
-                      Reset
-                    </button>
-                    <div className="flex-1"></div>
-                    <div className="text-sm text-gray-400">
-                      All changes saved | Line 1, Column 1
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ) : activeItemType === "assignment" ? (
-              <div className="w-full h-full">
-                <AssignmentPreview
-                  assignmentData={assignmentData as ExtendedLecture}
-                  skipAssignment={() => navigateToItem("next")}
-                  startAssignment={startAssignment}
-                  setAssignmentStatus={setAssignmentStatus}
-                  assignmentStatus={assignmentStatus}
+            </div>
+          ) : activeItemType === "assignment" ? (
+            <div className="w-full h-full">
+              <AssignmentPreview
+                assignmentData={assignmentData as ExtendedLecture}
+                skipAssignment={() => navigateToItem("next")}
+                startAssignment={startAssignment}
+                setAssignmentStatus={setAssignmentStatus}
+                assignmentStatus={assignmentStatus}
+              />
+            </div>
+          ) : activeItemType === "article" ? (
+            <div className="bg-white relative h-full">
+              <div className="relative w-full h-full px-8 py-6 overflow-y-auto">
+                <h1 className="text-2xl font-bold mb-4">
+                  {selectedItemData?.name || "Article"}
+                </h1>
+                <div
+                  className="article-content prose max-w-none"
+                  dangerouslySetInnerHTML={{
+                    __html:
+                      (currentContent.data as ArticleContent)?.text || "",
+                  }}
                 />
+                {/* Resources section */}
+                {(uploadedFiles.filter((f) => f.lectureId === activeItemId)
+                  .length > 0 ||
+                  sourceCodeFiles.filter((f) => f.lectureId === activeItemId)
+                    .length > 0 ||
+                  externalResources.filter(
+                    (r) => r.lectureId === activeItemId
+                  ).length > 0) && (
+                  <div className="pt-6">
+                    <h2 className="text-xl font-semibold mb-4">
+                      Resources for this {activeItemType}
+                    </h2>
+                    <div className="space-y-3">
+                      {uploadedFiles
+                        .filter((f) => f.lectureId === activeItemId)
+                        .map((file, index) => (
+                          <div
+                            key={`uploaded-${index}`}
+                            className="flex items-center"
+                          >
+                            <FileDown className="w-5 h-5 text-gray-600 mr-2" />
+                            <a
+                              href="#"
+                              className="text-blue-600 hover:underline font-medium"
+                              onClick={(e) => e.preventDefault()}
+                            >
+                              {file.name}
+                            </a>
+                          </div>
+                        ))}
+
+                      {sourceCodeFiles
+                        .filter((f) => f.lectureId === activeItemId)
+                        .map((file, index) => (
+                          <div
+                            key={`code-${index}`}
+                            className="flex items-center"
+                          >
+                            <Code className="w-5 h-5 text-gray-600 mr-2" />
+                            <a
+                              href="#"
+                              className="text-blue-600 hover:underline font-medium"
+                              onClick={(e) => e.preventDefault()}
+                            >
+                              {file.name || file.filename}
+                            </a>
+                          </div>
+                        ))}
+
+                      {externalResources
+                        .filter((r) => r.lectureId === activeItemId)
+                        .map((resource, index) => (
+                          <div
+                            key={`external-${index}`}
+                            className="flex items-center"
+                          >
+                            <SquareArrowOutUpRight className="w-5 h-5 text-gray-600 mr-2" />
+                            <a
+                              href={resource.url}
+                              className="text-blue-600 hover:underline font-medium"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              {typeof resource.title === "string"
+                                ? resource.title
+                                : resource.name}
+                            </a>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                )}
               </div>
-            ) : activeItemType === "article" ? (
-              <div className="bg-white relative h-full">
-                <div className="relative w-full h-full px-8 py-6 overflow-y-auto">
-                  <h1 className="text-2xl font-bold mb-4">
-                    {selectedItemData?.name || "Article"}
-                  </h1>
-                  <div
-                    className="article-content prose max-w-none"
-                    dangerouslySetInnerHTML={{
-                      __html:
-                        (currentContent.data as ArticleContent)?.text || "",
+            </div>
+          ) : (
+            // Default: video
+            <div className="bg-black relative w-full h-full flex flex-col justify-center items-center"
+              style={{
+                width: isExpanded ? "100%" : "75.5vw",
+                transition: "width 0.3s ease-in-out",
+                height: '100%',
+                minHeight: 0,
+              }}
+            >
+              {/* Content Information Display - shows over video player */}
+              {showContentInformation && (
+                <ContentInformationDisplay
+                  isOpen={showContentInformation}
+                  onClose={() => setShowContentInformation(false)}
+                  contentData={{
+                    contentType: activeItemType,
+                    isEncrypted: false,
+                    courseHasEncryptedVideos: false,
+                  }}
+                />
+              )}
+
+              <div
+                ref={playerContainerRef}
+                className="relative w-full h-full flex"
+                onMouseEnter={() => setShowControls(true)}
+                onMouseLeave={() => setShowControls(false)}
+              >
+                <div className="relative w-full h-full mx-auto">
+                  <ReactPlayer
+                    ref={playerRef}
+                    url={
+                      (currentContent.data as any)?.selectedVideoDetails
+                        ?.url ||
+                      videoContent.selectedVideoDetails?.url ||
+                      "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+                    }
+                    width="100%"
+                    height="100%"
+                    playing={playing}
+                    volume={muted ? 0 : volume}
+                    muted={muted}
+                    playbackRate={playbackRate}
+                    onProgress={handleProgress}
+                    onDuration={handleDuration}
+                    progressInterval={100}
+                    controls={true}
+                    config={{
+                      youtube: {
+                        playerVars: {
+                          controls: 1,
+                          modestbranding: 1,
+                          rel: 0,
+                          showinfo: 0,
+                          disablekb: 1,
+                        },
+                      },
+                      vimeo: {
+                        playerOptions: {
+                          controls: true,
+                          keyboard: false,
+                        },
+                      },
+                      file: {
+                        attributes: {
+                          controlsList: "nodownload",
+                          disablePictureInPicture: true,
+                        },
+                      },
+                    }}
+                    onReady={() => {
+                      console.log(
+                        "ReactPlayer ready, setting initial volume:",
+                        volume
+                      );
+                      if (playerRef.current) {
+                        const player = playerRef.current.getInternalPlayer();
+                        if (player && player.setVolume) {
+                          player.setVolume(volume * 100);
+                        }
+                      }
                     }}
                   />
 
-                  {/* Resources section */}
-                  {(uploadedFiles.filter((f) => f.lectureId === activeItemId)
-                    .length > 0 ||
-                    sourceCodeFiles.filter((f) => f.lectureId === activeItemId)
-                      .length > 0 ||
-                    externalResources.filter(
-                      (r) => r.lectureId === activeItemId
-                    ).length > 0) && (
-                    <div className="pt-6">
-                      <h2 className="text-xl font-semibold mb-4">
-                        Resources for this {activeItemType}
-                      </h2>
+                  {!playing && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-40">
+                      <button
+                        className="rounded-full bg-black bg-opacity-70 p-4 hover:bg-opacity-90 transition-all"
+                        type="button"
+                        aria-label="Play video"
+                        onClick={() => setPlaying(true)}
+                      >
+                        <Play
+                          size={80}
+                          className="p-3 rounded-full bg-gray-800 text-white"
+                        />
+                      </button>
+                    </div>
+                  )}
 
-                      <div className="space-y-3">
-                        {uploadedFiles
-                          .filter((f) => f.lectureId === activeItemId)
-                          .map((file, index) => (
-                            <div
-                              key={`uploaded-${index}`}
-                              className="flex items-center"
-                            >
-                              <FileDown className="w-5 h-5 text-gray-600 mr-2" />
-                              <a
-                                href="#"
-                                className="text-blue-600 hover:underline font-medium"
-                                onClick={(e) => e.preventDefault()}
-                              >
-                                {file.name}
-                              </a>
-                            </div>
-                          ))}
+                  {/* Video controls for video content */}
+                  {activeItemType === "video" && (
+                    <div className="absolute bottom-0 left-0 right-0">
+                      <VideoControls
+                        playing={playing}
+                        progress={progress}
+                        duration={duration}
+                        volume={volume}
+                        playbackRate={playbackRate}
+                        videoQuality={videoQuality}
+                        onPlayPause={() => setPlaying(!playing)}
+                        onRewind={handleRewind}
+                        onForward={handleForward}
+                        onVolumeChange={(newVolume: number) => {
+                          console.log(
+                            "Volume changed via controls:",
+                            newVolume
+                          );
+                          setVolume(newVolume);
+                          setMuted(newVolume === 0);
+                        }}
+                        onPlaybackRateChange={setPlaybackRate}
+                        onVideoQualityChange={handleVideoQualityChange}
+                        onFullscreen={handleContentFullscreen}
+                        onExpand={handleExpand}
+                        formatTime={formatTime}
+                        currentVideoDetails={
+                          (currentContent.data as any)?.selectedVideoDetails
+                        }
+                        onReportAbuse={handleReportAbuse}
+                        onShowKeyboardShortcuts={handleVideoKeyboardShortcuts}
+                        onShowContentInformation={handleContentInformation}
+                      />
+                    </div>
+                  )}
 
-                        {sourceCodeFiles
-                          .filter((f) => f.lectureId === activeItemId)
-                          .map((file, index) => (
-                            <div
-                              key={`code-${index}`}
-                              className="flex items-center"
-                            >
-                              <Code className="w-5 h-5 text-gray-600 mr-2" />
-                              <a
-                                href="#"
-                                className="text-blue-600 hover:underline font-medium"
-                                onClick={(e) => e.preventDefault()}
-                              >
-                                {file.name || file.filename}
-                              </a>
-                            </div>
-                          ))}
-
-                        {externalResources
-                          .filter((r) => r.lectureId === activeItemId)
-                          .map((resource, index) => (
-                            <div
-                              key={`external-${index}`}
-                              className="flex items-center"
-                            >
-                              <SquareArrowOutUpRight className="w-5 h-5 text-gray-600 mr-2" />
-                              <a
-                                href={resource.url}
-                                className="text-blue-600 hover:underline font-medium"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                              >
-                                {typeof resource.title === "string"
-                                  ? resource.title
-                                  : resource.name}
-                              </a>
-                            </div>
-                          ))}
-                      </div>
+                  {/* Caption indicator */}
+                  {showCaptions && activeItemType === "video" && (
+                    <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-75 text-white px-3 py-1 rounded text-sm">
+                      Captions: ON
                     </div>
                   )}
                 </div>
               </div>
-            ) : (
-              // Video content
-              <div
-                className="bg-black relative h-full"
-                style={{
-                  width: isExpanded ? "100%" : "75.5vw",
-                  transition: "width 0.3s ease-in-out",
-                }}
-              >
-                {/* Content Information Display - shows over video player */}
-                {showContentInformation && (
-                  <ContentInformationDisplay
-                    isOpen={showContentInformation}
-                    onClose={() => setShowContentInformation(false)}
-                    contentData={{
-                      contentType: activeItemType,
-                      isEncrypted: false,
-                      courseHasEncryptedVideos: false,
-                    }}
-                  />
-                )}
-
-                <div
-                  ref={playerContainerRef}
-                  className="relative w-full h-full flex"
-                  onMouseEnter={() => setShowControls(true)}
-                  onMouseLeave={() => setShowControls(false)}
-                >
-                  <div className="relative w-full h-full mx-auto">
-                    <ReactPlayer
-                      ref={playerRef}
-                      url={
-                        (currentContent.data as any)?.selectedVideoDetails
-                          ?.url ||
-                        videoContent.selectedVideoDetails?.url ||
-                        "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
-                      }
-                      width="100%"
-                      height="100%"
-                      playing={playing}
-                      volume={muted ? 0 : volume}
-                      muted={muted}
-                      playbackRate={playbackRate}
-                      onProgress={handleProgress}
-                      onDuration={handleDuration}
-                      progressInterval={100}
-                      controls={false}
-                      config={{
-                        youtube: {
-                          playerVars: {
-                            controls: 0,
-                            modestbranding: 1,
-                            rel: 0,
-                            showinfo: 0,
-                            disablekb: 1, // Disable YouTube's keyboard controls
-                          },
-                        },
-                        vimeo: {
-                          playerOptions: {
-                            controls: false,
-                            keyboard: false,
-                          },
-                        },
-                        file: {
-                          attributes: {
-                            controlsList: "nodownload",
-                            disablePictureInPicture: true,
-                          },
-                        },
-                      }}
-                      onReady={() => {
-                        console.log(
-                          "ReactPlayer ready, setting initial volume:",
-                          volume
-                        );
-                        if (playerRef.current) {
-                          const player = playerRef.current.getInternalPlayer();
-                          if (player && player.setVolume) {
-                            player.setVolume(volume * 100); // YouTube uses 0-100
-                          }
-                        }
-                      }}
-                    />
-
-                    {!playing && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-40">
-                        <button
-                          className="rounded-full bg-black bg-opacity-70 p-4 hover:bg-opacity-90 transition-all"
-                          type="button"
-                          aria-label="Play video"
-                          onClick={() => setPlaying(true)}
-                        >
-                          <Play
-                            size={80}
-                            className="p-3 rounded-full bg-gray-800 text-white"
-                          />
-                        </button>
-                      </div>
-                    )}
-
-                    {/* Video controls for video content */}
-                    {activeItemType === "video" && (
-                      <div className="absolute bottom-0 left-0 right-0">
-                        <VideoControls
-                          playing={playing}
-                          progress={progress}
-                          duration={duration}
-                          volume={volume}
-                          playbackRate={playbackRate}
-                          videoQuality={videoQuality}
-                          onPlayPause={() => setPlaying(!playing)}
-                          onRewind={handleRewind}
-                          onForward={handleForward}
-                          onVolumeChange={(newVolume: number) => {
-                            console.log(
-                              "Volume changed via controls:",
-                              newVolume
-                            );
-                            setVolume(newVolume);
-                            setMuted(newVolume === 0);
-                          }}
-                          onPlaybackRateChange={setPlaybackRate}
-                          onVideoQualityChange={handleVideoQualityChange}
-                          onFullscreen={handleContentFullscreen}
-                          onExpand={handleExpand}
-                          formatTime={formatTime}
-                          currentVideoDetails={
-                            (currentContent.data as any)?.selectedVideoDetails
-                          }
-                          onReportAbuse={handleReportAbuse}
-                          onShowKeyboardShortcuts={handleVideoKeyboardShortcuts}
-                          onShowContentInformation={handleContentInformation}
-                        />
-                      </div>
-                    )}
-
-                    {/* Caption indicator */}
-                    {showCaptions && activeItemType === "video" && (
-                      <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-75 text-white px-3 py-1 rounded text-sm">
-                        Captions: ON
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Bottom bar for non-video content */}
-          {renderBottomBar()}
-
-          {/* Bottom content tabs */}
-          {!isContentFullscreen && (
-            <BottomTabsContainer
-              activeTab={activeTab}
-              setActiveTab={setActiveTab}
-              showSearch={showSearch}
-              setShowSearch={setShowSearch}
-              isExpanded={isExpanded}
-              selectedItemData={selectedItemData}
-              activeItemType={activeItemType}
-              progress={progress}
-              formatTime={formatTime}
-              notes={notes}
-              onCreateNote={handleCreateNote}
-              onSaveNote={handleSaveNote}
-              onCancelNote={handleCancelNote}
-              onEditNote={handleEditNote}
-              onDeleteNote={handleDeleteNote}
-              isAddingNote={isAddingNote}
-              currentNoteContent={currentNoteContent}
-              setCurrentNoteContent={setCurrentNoteContent}
-              selectedLectureFilter={selectedLectureFilter}
-              setSelectedLectureFilter={setSelectedLectureFilter}
-              selectedSortOption={selectedSortOption}
-              setSelectedSortOption={setSelectedSortOption}
-              getSortedNotes={getSortedNotes}
-              onOpenLearningModal={() => setShowLearningModal(true)}
-              activeItemId={activeItemId}
-            />
+            </div>
           )}
         </div>
+
+        {/* Bottom bar for non-video content */}
+        {renderBottomBar()}
 
         {/* Course Content Button - only shows when sidebar is collapsed */}
         {isExpanded && (
@@ -1797,47 +1774,29 @@ const StudentCoursePreview = ({
           </div>
         )}
 
-        {/* Sidebar */}
-        {!isExpanded && (
-          <div
-            className="flex-shrink-0"
-            style={{ width: "calc(100vw - 75.5vw)" }}
+        {/* Exit fullscreen button */}
+        {isContentFullscreen && (
+          <button
+            className="fixed bottom-4 right-4 bg-black bg-opacity-70 text-white px-3 py-1 rounded text-sm hover:bg-opacity-90 focus:outline-none z-50"
+            onClick={handleContentFullscreen}
+            type="button"
           >
-            <StudentPreviewSidebar
-              currentLectureId={activeItemId}
-              setShowVideoPreview={setShowVideoPreview}
-              sections={processedSections}
-              uploadedFiles={uploadedFiles}
-              sourceCodeFiles={sourceCodeFiles}
-              externalResources={externalResources}
-              onSelectItem={handleItemSelect}
-            />
-          </div>
+            Exit fullscreen
+          </button>
         )}
+
+        {/* Other Modals */}
+        <LearningReminderModal
+          isOpen={showLearningModal}
+          onClose={() => setShowLearningModal(false)}
+        />
+
+        <ReportAbuseModal
+          isOpen={showReportModal}
+          onClose={() => setShowReportModal(false)}
+          onSubmit={handleReportSubmit}
+        />
       </div>
-
-      {/* Exit fullscreen button */}
-      {isContentFullscreen && (
-        <button
-          className="fixed bottom-4 right-4 bg-black bg-opacity-70 text-white px-3 py-1 rounded text-sm hover:bg-opacity-90 focus:outline-none z-50"
-          onClick={handleContentFullscreen}
-          type="button"
-        >
-          Exit fullscreen
-        </button>
-      )}
-
-      {/* Other Modals */}
-      <LearningReminderModal
-        isOpen={showLearningModal}
-        onClose={() => setShowLearningModal(false)}
-      />
-
-      <ReportAbuseModal
-        isOpen={showReportModal}
-        onClose={() => setShowReportModal(false)}
-        onSubmit={handleReportSubmit}
-      />
     </div>
   );
 };

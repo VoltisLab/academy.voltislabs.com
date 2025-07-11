@@ -298,7 +298,7 @@ const CodingExercisePreview: React.FC<CodingExercisePreviewProps> = ({
     failedAttempts >= 3 || (testResults?.success ?? false);
 
   return (
-    <div className="fixed left-0 top-0 h-screen w-full bg-white flex z-50 overflow-hidden">
+    <div className="flex flex-col h-full relative w-[79.5vw]" style={{ maxHeight: '70vh', height: '70vh' }}>
       {/* Reset Confirmation Modal */}
       {showResetModal && (
         <div className="fixed inset-0 bg-black/10 flex items-center justify-center z-50">
