@@ -1342,7 +1342,7 @@ const StudentCoursePreview = ({
           ref={mainContentRef}
           className="flex flex-col overflow-y-auto"
           style={{
-            width: isExpanded ? "100%" : "75.5vw",
+            width: isExpanded ? "100%" : "75vw",
             transition: "width 0.3s ease-in-out",
           }}
         >
@@ -1797,47 +1797,29 @@ const StudentCoursePreview = ({
           </div>
         )}
 
-        {/* Sidebar */}
-        {!isExpanded && (
-          <div
-            className="flex-shrink-0"
-            style={{ width: "calc(100vw - 75.5vw)" }}
+        {/* Exit fullscreen button */}
+        {isContentFullscreen && (
+          <button
+            className="fixed bottom-4 right-4 bg-black bg-opacity-70 text-white px-3 py-1 rounded text-sm hover:bg-opacity-90 focus:outline-none z-50"
+            onClick={handleContentFullscreen}
+            type="button"
           >
-            <StudentPreviewSidebar
-              currentLectureId={activeItemId}
-              setShowVideoPreview={setShowVideoPreview}
-              sections={processedSections}
-              uploadedFiles={uploadedFiles}
-              sourceCodeFiles={sourceCodeFiles}
-              externalResources={externalResources}
-              onSelectItem={handleItemSelect}
-            />
-          </div>
+            Exit fullscreen
+          </button>
         )}
+
+        {/* Other Modals */}
+        <LearningReminderModal
+          isOpen={showLearningModal}
+          onClose={() => setShowLearningModal(false)}
+        />
+
+        <ReportAbuseModal
+          isOpen={showReportModal}
+          onClose={() => setShowReportModal(false)}
+          onSubmit={handleReportSubmit}
+        />
       </div>
-
-      {/* Exit fullscreen button */}
-      {isContentFullscreen && (
-        <button
-          className="fixed bottom-4 right-4 bg-black bg-opacity-70 text-white px-3 py-1 rounded text-sm hover:bg-opacity-90 focus:outline-none z-50"
-          onClick={handleContentFullscreen}
-          type="button"
-        >
-          Exit fullscreen
-        </button>
-      )}
-
-      {/* Other Modals */}
-      <LearningReminderModal
-        isOpen={showLearningModal}
-        onClose={() => setShowLearningModal(false)}
-      />
-
-      <ReportAbuseModal
-        isOpen={showReportModal}
-        onClose={() => setShowReportModal(false)}
-        onSubmit={handleReportSubmit}
-      />
     </div>
   );
 };
