@@ -2,14 +2,14 @@
 import { ExtendedLecture } from "@/lib/types";
 import { Clock, User } from "lucide-react";
 import Link from "next/link";
-import React, { useState, useRef, useEffect } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
-import { LiaFileDownloadSolid } from "react-icons/lia";
-import RichTextEditor from "./NewRichTextEditor";
+import toast from "react-hot-toast";
 import { FaCircleCheck } from "react-icons/fa6";
 import { IoIosInformationCircleOutline } from "react-icons/io";
-import toast from "react-hot-toast";
+import { LiaFileDownloadSolid } from "react-icons/lia";
 import { HLSVideoPlayer } from "./HLSVideoPlayer";
+import RichTextEditor from "./NewRichTextEditor";
 
 export default function AssignmentPreview({
   assignmentData,
@@ -22,14 +22,9 @@ export default function AssignmentPreview({
   >;
   assignmentStatus?: "overview" | "assignment" | "summary/feedback";
 }) {
-  console.log("Assignment Data:", assignmentData);
-  const [startAssignment, setStartAssignment] = useState<boolean>(false);
   const [assignmentStatus, setAssignmentStatus] = useState<
     "overview" | "assignment" | "summary/feedback"
   >("overview");
-
-  // const { assignmentData } = useAssignment();
-  // const router = useRouter();
 
   const handleStartAssignment = () => {
     setAssignmentStatus("assignment");
@@ -146,7 +141,10 @@ export default function AssignmentPreview({
   };
 
   return (
-    <div className="flex flex-col h-full relative w-[79.5vw]" style={{ maxHeight: '70vh', height: '70vh' }}>
+    <div
+      className="flex flex-col h-full relative w-[79.5vw]"
+      style={{ maxHeight: "70vh", height: "70vh" }}
+    >
       {/* <div className="h-full flex-1 overflow-y-auto "> */}
       <main className="flex-1 overflow-y-auto h-full w-full pb-20 px-2">
         {assignmentStatus === "overview" && (

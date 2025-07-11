@@ -45,7 +45,6 @@ export interface Question {
   text: string;
   answerChoices: Answer[];
   orders?: number[]; // Optional, if you want to allow custom order
-  // correctAnswerIndex: number;
   relatedLecture?: LectureType;
   type: string;
 }
@@ -322,7 +321,10 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({ quiz, onClose }) => {
   const needsReviewCount = needsReviewQuestions.length;
 
   return (
-    <div className="flex flex-col h-full relative w-[79.5vw]" style={{ maxHeight: '70vh', height: '70vh' }}>
+    <div
+      className="flex flex-col h-full relative w-[79.5vw]"
+      style={{ maxHeight: "70vh", height: "70vh" }}
+    >
       {/* Main content */}
       {(quizStatus === "Overview" || quizStatus === "Questions") && (
         <main className="flex-1 overflow-y-auto p-4 sm:p-8 sm:pt-15 w-full">

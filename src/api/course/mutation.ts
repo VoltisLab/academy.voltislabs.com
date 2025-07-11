@@ -171,9 +171,24 @@ export const UPDATE_QUESTION = gql`
     $questionId: Int!
     $text: String
     $choices: [AnswerChoiceInputType]!
+    $relatedLectureId: Int
+    $removeRelatedLecture: Boolean
   ) {
-    updateQuestion(questionId: $questionId, text: $text, choices: $choices) {
+    updateQuestion(
+      questionId: $questionId
+      text: $text
+      choices: $choices
+      relatedLectureId: $relatedLectureId
+      removeRelatedLecture: $removeRelatedLecture
+    ) {
       success
+      question {
+        relatedLecture {
+          id
+          title
+          videoUrl
+        }
+      }
     }
   }
 `;
