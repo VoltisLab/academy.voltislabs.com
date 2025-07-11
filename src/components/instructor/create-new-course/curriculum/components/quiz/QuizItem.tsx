@@ -553,6 +553,9 @@ const QuizItem: React.FC<QuizItemProps> = ({
         questionId: Number(question.id),
         text: question.text,
         choices,
+        relatedLectureId: question.relatedLecture?.id
+          ? Number(question.relatedLecture.id)
+          : undefined,
       });
 
       await fetchSectionData();

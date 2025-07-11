@@ -171,9 +171,22 @@ export const UPDATE_QUESTION = gql`
     $questionId: Int!
     $text: String
     $choices: [AnswerChoiceInputType]!
+    $relatedLectureId: Int
   ) {
-    updateQuestion(questionId: $questionId, text: $text, choices: $choices) {
+    updateQuestion(
+      questionId: $questionId
+      text: $text
+      choices: $choices
+      relatedLectureId: $relatedLectureId
+    ) {
       success
+      question {
+        relatedLecture {
+          id
+          title
+          videoUrl
+        }
+      }
     }
   }
 `;

@@ -66,10 +66,12 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
   // Update the select handler
   const handleLectureChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const lectureId = e.target.value;
+    console.log("Selected Lecture ID:", lectureId);
     if (!lectureId) {
       setRelatedLecture(null);
       return;
     }
+
     const selectedLecture = lectures.find(
       (lecture) => lecture.id === lectureId
     );
