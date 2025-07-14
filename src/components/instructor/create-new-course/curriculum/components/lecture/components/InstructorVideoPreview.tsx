@@ -1105,6 +1105,8 @@ const InstructorCoursePreview = ({
     activeItemType === "video" ||
     selectedItemData;
 
+    console.log("hello", shouldShowPreview)
+
   if (!shouldShowPreview) {
     return null;
   }
