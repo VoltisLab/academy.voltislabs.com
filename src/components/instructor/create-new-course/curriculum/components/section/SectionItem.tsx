@@ -82,9 +82,9 @@ interface SectionItemProps {
     direction: "up" | "down"
   ) => void;
   toggleSectionExpansion: (sectionId: string) => void;
-  toggleContentSection: (sectionId: string, lectureId: string) => void;
-  toggleAddResourceModal: (sectionId: string, lectureId: string) => void;
-  toggleDescriptionEditor: (
+  toggleContentSection?: (sectionId: string, lectureId: string) => void;
+  toggleAddResourceModal?: (sectionId: string, lectureId: string) => void;
+  toggleDescriptionEditor?: (
     sectionId: string,
     lectureId: string,
     currentText: string
@@ -94,7 +94,7 @@ interface SectionItemProps {
     lectureId: number,
     description: string
   ) => Promise<void>;
-  activeContentSection: { sectionId: string; lectureId: string } | null;
+  activeContentSection?: { sectionId: string; lectureId: string } | null;
   isDragging: boolean;
   handleDragStart: (
     e: React.DragEvent,
@@ -740,7 +740,7 @@ export default function SectionItem({
         handleDragStart={handleDragStart}
         handleDragOver={handleDragOver}
         handleDrop={handleDrop}
-        toggleContentSection={toggleContentSection}
+        // toggleContentSection={toggleContentSection}
         updateQuizQuestions={updateQuizQuestions}
         sections={allSections}
         onEditQuiz={handleEditQuiz}
