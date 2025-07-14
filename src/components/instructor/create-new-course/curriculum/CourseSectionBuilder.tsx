@@ -11,7 +11,6 @@ import {
 } from "@/lib/types";
 import { useSections } from "@/hooks/useSection";
 import { useFileUpload } from "@/hooks/useFileUpload";
-import { useModal } from "@/hooks/useModal";
 import { useSectionService } from "@/services/useSectionService";
 import { useLectureService } from "@/services/useLectureService";
 import { ContentTypeSelector } from "./ContentTypeSelector";
@@ -203,7 +202,7 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
     setMainSectionData,
   } = useSections([], courseId);
 
-  const contentSectionModal = useModal();
+  // const contentSectionModal = useModal();
 
   const {
     isUploading,
@@ -726,6 +725,9 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
       activeDescriptionSection.sectionId === sectionId &&
       activeDescriptionSection.lectureId === lectureId
     ) {
+      console.log(
+        "Closing description editor sdhguciusdouuuuuuuuuuuuuuuuuuuuuuuuuuuuuuusdi"
+      );
       setActiveDescriptionSection(null);
 
       if (description !== undefined && description.trim() !== "") {
@@ -735,17 +737,23 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
           activeContentSection.lectureId !== lectureId
         ) {
           setActiveContentSection({ sectionId, lectureId });
+          console.log(
+            "Closing editor sdhguciusdouuuuuuuuuuuuuuuuuuuuuuuuuuuuuuusdi"
+          );
         }
       }
     } else {
+      console.log(
+        "Opening description editor dhhhhhhhhhhhhhasjkoieadgofihweiofjo;weoj;f[ofewoewojp"
+      );
       setActiveDescriptionSection({ sectionId, lectureId });
       setCurrentDescription(description || "");
     }
   };
 
-  const toggleAddResourceModal = (sectionId: string, lectureId: string) => {
-    contentSectionModal.toggle(sectionId, lectureId);
-  };
+  // const toggleAddResourceModal = (sectionId: string, lectureId: string) => {
+  //   contentSectionModal.toggle(sectionId, lectureId);
+  // };
 
   // Rest of your existing handlers (handleDragStart, handleDragEnd, etc.) remain the same...
   const handleDragStart = (
@@ -994,10 +1002,10 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
                 updateLectureName={updateLectureName}
                 deleteLecture={handleDeleteClick}
                 moveLecture={moveLecture}
-                toggleContentSection={contentSectionModal.toggle}
-                toggleAddResourceModal={toggleAddResourceModal}
+                // toggleContentSection={contentSectionModal.toggle}
+                // toggleAddResourceModal={toggleAddResourceModal}
                 toggleDescriptionEditor={toggleDescriptionEditor}
-                activeContentSection={contentSectionModal.activeSection}
+                // activeContentSection={contentSectionModal.activeSection}
                 addCurriculumItem={() => setShowContentTypeSelector(true)}
                 savePracticeCode={savePracticeCode}
                 draggedSection={draggedSection}
@@ -1091,7 +1099,7 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
         type="file"
         ref={fileInputRef}
         onChange={(e) => {
-          if (!contentSectionModal.activeSection) return;
+          // if (!contentSectionModal.activeSection) return;
 
           const contentType = fileInputRef.current
             ?.getAttribute("accept")
@@ -1101,9 +1109,9 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({
 
           handleFileSelection(
             e,
-            contentType,
-            contentSectionModal.activeSection.sectionId,
-            contentSectionModal.activeSection.lectureId
+            contentType
+            // contentSectionModal.activeSection.sectionId,
+            // contentSectionModal.activeSection.lectureId
           );
         }}
         className="hidden"

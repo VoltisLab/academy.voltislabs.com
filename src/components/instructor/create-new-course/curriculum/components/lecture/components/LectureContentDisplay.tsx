@@ -24,6 +24,13 @@ import InstructorVideoPreview from "./InstructorVideoPreview";
 import Link from "next/link";
 import { CourseSectionLecture } from "@/api/course/section/queries";
 
+export type ExpansionType = {
+  isOpen: boolean;
+  open: () => void;
+  close: () => void;
+  toggle: () => void;
+};
+
 interface LectureContentDisplayProps {
   lecture: CourseSectionLecture;
   sectionId: string;
@@ -63,6 +70,8 @@ interface LectureContentDisplayProps {
   allSections: PreviewSection[];
   children?: React.ReactNode;
   courseId?: number;
+  resourceExpansion?: ExpansionType;
+  descriptionExpansion?: ExpansionType;
 }
 
 const LectureContentDisplay: React.FC<LectureContentDisplayProps> = ({
@@ -91,6 +100,8 @@ const LectureContentDisplay: React.FC<LectureContentDisplayProps> = ({
   allSections,
   children,
   courseId,
+  resourceExpansion,
+  descriptionExpansion,
 }) => {
   const [showPreviewDropdown, setShowPreviewDropdown] = useState(false);
   const [showVideoPreview, setShowVideoPreview] = useState(false);
@@ -98,6 +109,8 @@ const LectureContentDisplay: React.FC<LectureContentDisplayProps> = ({
     "instructor" | "student" | null
   >(null);
   const [previewContentType, setPreviewContentType] = useState<string>("video");
+
+  console.log(currentLectureUploadedFiles);
 
   // Create enhanced lecture for preview
   const createEnhancedLectureForPreview = (): EnhancedLecture => {
@@ -202,9 +215,15 @@ const LectureContentDisplay: React.FC<LectureContentDisplayProps> = ({
               // Robustly extract article content from lec
               const articleContent =
                 (lec as any).articleContent ||
-                ((lec as any).lectureNotes ? { text: (lec as any).lectureNotes } : undefined) ||
+                ((lec as any).lectureNotes
+                  ? { text: (lec as any).lectureNotes }
+                  : undefined) ||
                 (lec.description ? { text: lec.description } : undefined);
-              if (articleContent && typeof articleContent.text === "string" && articleContent.text.trim() !== "") {
+              if (
+                articleContent &&
+                typeof articleContent.text === "string" &&
+                articleContent.text.trim() !== ""
+              ) {
                 hasArticleContent = true;
                 actualContentType = "article";
               }
@@ -405,7 +424,9 @@ const LectureContentDisplay: React.FC<LectureContentDisplayProps> = ({
                 {showPreviewDropdown && (
                   <div className="absolute mt-1 right-0 w-40 bg-white border border-gray-200 rounded-md shadow-lg z-50">
                     <ul>
-                      <Link href={`/preview/lecture/${courseId}/${sectionId}/${lecture.id}`}>
+                      <Link
+                        href={`/preview/lecture/${courseId}/${sectionId}/${lecture.id}`}
+                      >
                         <li>
                           <button
                             // onClick={() => handlePreviewSelection("student")}
@@ -415,9 +436,11 @@ const LectureContentDisplay: React.FC<LectureContentDisplayProps> = ({
                             As Instructor
                           </button>
                         </li>
-                      </Link> 
+                      </Link>
 
-                        <Link href={`/preview/lecture/${courseId}/${sectionId}/${lecture.id}`}>
+                      <Link
+                        href={`/preview/lecture/${courseId}/${sectionId}/${lecture.id}`}
+                      >
                         <li>
                           <button
                             // onClick={() => handlePreviewSelection("student")}
@@ -427,7 +450,7 @@ const LectureContentDisplay: React.FC<LectureContentDisplayProps> = ({
                             As Student
                           </button>
                         </li>
-                      </Link>                   
+                      </Link>
                     </ul>
                   </div>
                 )}
@@ -469,84 +492,87 @@ const LectureContentDisplay: React.FC<LectureContentDisplayProps> = ({
       )}
 
       {/* Article Content Display */}
-      {articleContent.text &&
-        articleContent.text.trim() !== "" &&
-        !videoContent.selectedVideoDetails && (
-          <div className="overflow-hidden border-b border-gray-400 mb-4">
-            <div className="flex flex-row justify-between sm:flex-row items-start">
-              <div className="flex items-center py-3">
-                <div className="w-24 h-20 bg-black rounded overflow-hidden mr-3 flex-shrink-0 flex items-center justify-center">
-                  <FileText size={60} className="text-white" />
-                </div>
-
-                <div>
-                  <h3 className="text-sm font-semibold text-gray-800">
-                    Article
-                  </h3>
-                  <p className="text-xs text-gray-500">
-                    {`${articleContent.text.length} characters`}
-                  </p>
-                  <button
-                    onClick={() => {
-                      onSetActiveContentType("article");
-                      if (!isExpanded && onToggleContentSection) {
-                        onToggleContentSection(sectionId, lecture.id);
-                      }
-                    }}
-                    className="text-[#6D28D2] hover:text-[#7D28D2] text-xs font-medium flex items-center mt-1"
-                  >
-                    <Edit3 className="w-3 h-3 mr-1" /> Edit Content
-                  </button>
-                  <button
-                    onClick={() => {
-                      // This would need to be handled by parent component
-                      console.log("Replace with video clicked");
-                    }}
-                    className="text-[#6D28D2] hover:text-[#7D28D2] text-xs font-medium"
-                  >
-                    Replace With Video
-                  </button>
-                </div>
+      {lecture.notes && !videoContent.selectedVideoDetails && (
+        <div className="overflow-hidden border-b border-gray-400 mb-4">
+          <div className="flex flex-row justify-between sm:flex-row items-start">
+            <div className="flex items-center py-3">
+              <div className="w-24 h-20 bg-black rounded overflow-hidden mr-3 flex-shrink-0 flex items-center justify-center">
+                <FileText size={60} className="text-white" />
               </div>
 
-              <div className="flex flex-col gap-2 justify-end items-start py-3">
-                <div
-                  className="relative inline-flex gap-4"
-                  id="preview-dropdown"
+              <div>
+                <h3 className="text-sm font-semibold text-gray-800">Article</h3>
+                <p className="text-xs text-gray-500">
+                  {`${lecture.notes.length} characters`}
+                </p>
+                <button
+                  onClick={() => {
+                    onSetActiveContentType("article");
+                    if (!isExpanded && onToggleContentSection) {
+                      onToggleContentSection(sectionId, lecture.id);
+                    }
+                  }}
+                  className="text-[#6D28D2] hover:text-[#7D28D2] text-xs font-medium flex items-center mt-1"
                 >
-                  <button
-                    onClick={() => setShowPreviewDropdown(!showPreviewDropdown)}
-                    className="bg-[#6D28D2] text-white text-sm font-medium ml-16 px-4 py-1.5 rounded hover:bg-[#7D28D2] flex items-center"
-                    type="button"
-                  >
-                    Preview <ChevronDown className="ml-1 w-4 h-4" />
-                  </button>
+                  <Edit3 className="w-3 h-3 mr-1" /> Edit Content
+                </button>
+                <button
+                  onClick={() => {
+                    // This would need to be handled by parent component
+                    console.log("Replace with video clicked");
+                  }}
+                  className="text-[#6D28D2] hover:text-[#7D28D2] text-xs font-medium"
+                >
+                  Replace With Video
+                </button>
+              </div>
+            </div>
 
-                  {showPreviewDropdown && (
-                    <div className="absolute mt-1 right-0 w-40 bg-white border border-gray-200 rounded-md shadow-lg z-50">
-                      <ul>
-                        <li>
-                          <Link href={`/preview/lecture/${courseId}/${sectionId}/${lecture.id}`}>
-                            <button className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" type="button">
-                              As Instructor
-                            </button>
-                          </Link>
-                        </li>
-                        <li>
-                        <Link href={`/preview/lecture/${courseId}/${sectionId}/${lecture.id}`}>
-                            <button className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" type="button">
-                              As Student
-                            </button>
-                          </Link>
-                        </li>
-                      </ul>
-                    </div>
-                  )}
-                </div>
+            <div className="flex flex-col gap-2 justify-end items-start py-3">
+              <div className="relative inline-flex gap-4" id="preview-dropdown">
+                <button
+                  onClick={() => setShowPreviewDropdown(!showPreviewDropdown)}
+                  className="bg-[#6D28D2] text-white text-sm font-medium ml-16 px-4 py-1.5 rounded hover:bg-[#7D28D2] flex items-center"
+                  type="button"
+                >
+                  Preview <ChevronDown className="ml-1 w-4 h-4" />
+                </button>
+
+                {showPreviewDropdown && (
+                  <div className="absolute mt-1 right-0 w-40 bg-white border border-gray-200 rounded-md shadow-lg z-50">
+                    <ul>
+                      <li>
+                        <Link
+                          href={`/preview/lecture/${courseId}/${sectionId}/${lecture.id}`}
+                        >
+                          <button
+                            className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                            type="button"
+                          >
+                            As Instructor
+                          </button>
+                        </Link>
+                      </li>
+                      <li>
+                        <Link
+                          href={`/preview/lecture/${courseId}/${sectionId}/${lecture.id}`}
+                        >
+                          <button
+                            className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                            type="button"
+                          >
+                            As Student
+                          </button>
+                        </Link>
+                      </li>
+                    </ul>
+                  </div>
+                )}
               </div>
             </div>
           </div>
-        )}
+        </div>
+      )}
 
       {/* Lecture Description */}
       {lecture.description && (
@@ -561,6 +587,7 @@ const LectureContentDisplay: React.FC<LectureContentDisplayProps> = ({
                   lecture.id,
                   lecture.description || ""
                 );
+                descriptionExpansion?.open();
               }
             }}
             dangerouslySetInnerHTML={{ __html: lecture.description }}
@@ -681,6 +708,7 @@ const LectureContentDisplay: React.FC<LectureContentDisplayProps> = ({
                 lecture.description || ""
               );
             }
+            descriptionExpansion?.open();
           }}
           className="flex items-center gap-2 py-1.5 sm:py-2 px-2 sm:px-4 text-xs sm:text-sm text-[#6D28D2] font-medium border border-[#6D28D2] rounded-sm hover:bg-gray-50"
         >
@@ -697,6 +725,8 @@ const LectureContentDisplay: React.FC<LectureContentDisplayProps> = ({
             if (onToggleAddResourceModal) {
               onToggleAddResourceModal(sectionId, lecture.id);
             }
+            resourceExpansion?.open();
+            console.log("Hey");
           }}
           className={`flex items-center ${
             !lecture.description ? "mt-2" : ""

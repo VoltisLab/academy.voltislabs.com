@@ -167,6 +167,10 @@ export const useSections = (
       }
 
       const a = await saveArticleToLecture(numericLectureId, articleContent);
+
+      await fetchSectionData();
+
+      console.log("Hey yosdhsdsbd", mainSectionData);
       console.log("article", a);
 
       // Update local state after successful backend save
