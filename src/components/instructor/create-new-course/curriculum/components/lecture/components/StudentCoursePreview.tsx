@@ -47,6 +47,8 @@ import ContentInformationDisplay from "./ContentInformationDisplay";
 import { useAssignment } from "@/context/AssignmentDataContext";
 import { CourseSectionQuiz } from "@/api/course/section/queries";
 import VoltisLoader from "@/components/loader/loader";
+import BottomTabsContainer from "./BottomTabsContainer";
+import CodingExercisePreview from "../../code/CodingExercisePreview";
 
 // Add QuizData interface
 export interface Answer {
@@ -483,6 +485,15 @@ const StudentCoursePreview = ({
   const [activeItemType, setActiveItemType] = useState<string>(
     determineInitialContentType()
   );
+
+  // Sync state with lecture prop when it changes
+  useEffect(() => {
+    if (activeItemId !== (lecture?.id ?? "") || selectedItemData !== lecture) {
+      setActiveItemId(lecture?.id ?? "");
+      setSelectedItemData(lecture);
+      setActiveItemType(detectContentType(lecture?.id ?? "", lecture));
+    }
+  }, [lecture, activeItemId, selectedItemData]);
 
   // Process sections
   const processedSections = React.useMemo(() => {
@@ -1162,7 +1173,7 @@ const StudentCoursePreview = ({
   if (!lecture.videoUrl || String(lecture.videoUrl).trim() === "") {
     console.log("Rendering article content");
     return (
-      <div className="relative min-h-full px-8 py-6 overflow-y-auto">
+      <div className="relative h-[70vh] px-8 py-6 overflow-y-auto">
         <h1 className="text-2xl font-bold mb-4">{lecture.title}</h1>
         <div
           className="article-content prose w-full"
@@ -1172,80 +1183,290 @@ const StudentCoursePreview = ({
     );
   }
 
-  // Render video player and controls if videoUrl exists
-  console.log("Rendering video player");
+  // --- NEW: Expand/Fullscreen logic ---
+  // isExpanded and isContentFullscreen already exist
+
+  // --- Helper: Render Bottom Bar for non-video content ---
+  const renderBottomBar = () => {
+    if (isContentFullscreen) return null;
+    if (activeItemType === "video") return null;
+    return (
+      <div
+        className="bg-white border-t border-gray-200 flex items-center px-4 py-2 relative"
+        style={{ maxWidth: isExpanded ? "100%" : "75.5vw", width: "100%" }}
+      >
+        <div className="flex items-center justify-between w-full">
+          {/* Left: Content type label */}
+          <div className="flex items-center">
+            <span className="text-gray-700 font-medium capitalize">
+              {activeItemType.replace("-", " ")}
+            </span>
+          </div>
+          {/* Right: Controls */}
+          <div className="flex items-center space-x-2">
+            {/* Content Info */}
+            <button
+              className="p-2 text-gray-600 hover:text-gray-800 focus:outline-none"
+              onClick={handleContentInformation}
+              type="button"
+              aria-label="Content Information"
+            >
+              <i className="lucide-info w-5 h-5" />
+            </button>
+            {/* Fullscreen */}
+            <button
+              className="p-2 text-gray-600 hover:text-gray-800 focus:outline-none"
+              onClick={handleContentFullscreen}
+              type="button"
+              aria-label={isContentFullscreen ? "Exit fullscreen" : "Fullscreen"}
+            >
+              {isContentFullscreen ? (
+                <Minimize className="w-5 h-5" />
+              ) : (
+                <Maximize className="w-5 h-5" />
+              )}
+            </button>
+            {/* Expand/Shrink */}
+            <button
+              className="p-2 text-gray-600 hover:text-gray-800 focus:outline-none"
+              onClick={handleExpand}
+              type="button"
+              aria-label={isExpanded ? "Show sidebar" : "Hide sidebar"}
+            >
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                {isExpanded ? (
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M11 19l-7-7 7-7m8 14l-7-7 7-7"
+                  />
+                ) : (
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M13 5l7 7-7 7M5 5l7 7-7 7"
+                  />
+                )}
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // --- Main Render ---
   return (
-    <div className="bg-black relative w-full h-full flex flex-col justify-center items-center">
-      <ReactPlayer
-        ref={playerRef}
-        url={lecture.videoUrl}
-        width="100%"
-        height="100%"
-        playing={playing}
-        volume={muted ? 0 : volume}
-        muted={muted}
-        playbackRate={playbackRate}
-        onProgress={handleProgress}
-        onDuration={handleDuration}
-        progressInterval={100}
-        controls={false}
-        config={{
-          youtube: {
-            playerVars: {
-              controls: 1,
-              modestbranding: 1,
-              rel: 0,
-              showinfo: 0,
-              disablekb: 1,
-            },
-          },
-          vimeo: {
-            playerOptions: {
-              controls: true,
-              keyboard: false,
-            },
-          },
-          file: {
-            attributes: {
-              controlsList: "nodownload",
-              disablePictureInPicture: true,
-            },
-          },
-        }}
-        onReady={() => {
-          if (playerRef.current) {
-            const player = playerRef.current.getInternalPlayer();
-            if (player && player.setVolume) {
-              player.setVolume(volume * 100);
-            }
-          }
-        }}
-      />
-      {/* Always render controls */}
-      <VideoControls
-        playing={playing}
-        progress={progress}
-        duration={duration}
-        volume={volume}
-        playbackRate={playbackRate}
-        videoQuality={videoQuality}
-        onPlayPause={() => setPlaying(!playing)}
-        onRewind={handleRewind}
-        onForward={handleForward}
-        onVolumeChange={(newVolume: number) => {
-          setVolume(newVolume);
-          setMuted(newVolume === 0);
-        }}
-        onPlaybackRateChange={setPlaybackRate}
-        onVideoQualityChange={handleVideoQualityChange}
-        onFullscreen={handleContentFullscreen}
-        onExpand={handleExpand}
-        formatTime={formatTime}
-        currentVideoDetails={videoContent.selectedVideoDetails}
-        onReportAbuse={handleReportAbuse}
-        onShowKeyboardShortcuts={handleVideoKeyboardShortcuts}
-        onShowContentInformation={handleContentInformation}
-      />
+    <div className="fixed inset-0 z-[9999] bg-white flex flex-col">
+      <div className="flex flex-1 h-full">
+        {/* Main scrollable container */}
+        <div
+          ref={mainContentRef}
+          className="flex flex-col overflow-y-auto"
+          style={{
+            width: isExpanded ? "100%" : "75.5vw",
+            transition: "width 0.3s ease-in-out",
+          }}
+        >
+          {/* Content area */}
+          <div
+            className="flex-shrink-0"
+            style={{
+              height: isContentFullscreen ? "100vh" : "calc(100vh - 170px)",
+            }}
+          >
+            {/* Content Info Modal */}
+            {showContentInformation && (
+              <ContentInformationDisplay
+                isOpen={showContentInformation}
+                onClose={() => setShowContentInformation(false)}
+                contentData={{
+                  contentType: activeItemType,
+                  isEncrypted: false,
+                  courseHasEncryptedVideos: false,
+                }}
+              />
+            )}
+            {/* Video */}
+            {activeItemType === "video" ? (
+              <div className="bg-black relative w-full h-full flex flex-col justify-center items-center">
+                <ReactPlayer
+                  ref={playerRef}
+                  url={lecture.videoUrl}
+                  width="100%"
+                  height="100%"
+                  playing={playing}
+                  volume={muted ? 0 : volume}
+                  muted={muted}
+                  playbackRate={playbackRate}
+                  onProgress={handleProgress}
+                  onDuration={handleDuration}
+                  progressInterval={100}
+                  controls={false}
+                  config={{
+                    youtube: {
+                      playerVars: {
+                        controls: 1,
+                        modestbranding: 1,
+                        rel: 0,
+                        showinfo: 0,
+                        disablekb: 1,
+                      },
+                    },
+                    vimeo: {
+                      playerOptions: {
+                        controls: true,
+                        keyboard: false,
+                      },
+                    },
+                    file: {
+                      attributes: {
+                        controlsList: "nodownload",
+                        disablePictureInPicture: true,
+                      },
+                    },
+                  }}
+                  onReady={() => {
+                    if (playerRef.current) {
+                      const player = playerRef.current.getInternalPlayer();
+                      if (player && player.setVolume) {
+                        player.setVolume(volume * 100);
+                      }
+                    }
+                  }}
+                />
+                {/* Always render controls */}
+                <VideoControls
+                  playing={playing}
+                  progress={progress}
+                  duration={duration}
+                  volume={volume}
+                  playbackRate={playbackRate}
+                  videoQuality={videoQuality}
+                  onPlayPause={() => setPlaying(!playing)}
+                  onRewind={handleRewind}
+                  onForward={handleForward}
+                  onVolumeChange={(newVolume: number) => {
+                    setVolume(newVolume);
+                    setMuted(newVolume === 0);
+                  }}
+                  onPlaybackRateChange={setPlaybackRate}
+                  onVideoQualityChange={handleVideoQualityChange}
+                  onFullscreen={handleContentFullscreen}
+                  onExpand={handleExpand}
+                  formatTime={formatTime}
+                  currentVideoDetails={videoContent.selectedVideoDetails || undefined}
+                  onReportAbuse={handleReportAbuse}
+                  onShowKeyboardShortcuts={handleVideoKeyboardShortcuts}
+                  onShowContentInformation={handleContentInformation}
+                />
+              </div>
+            ) : (
+              // Non-video content (article, quiz, assignment, coding-exercise)
+              <div className="bg-white relative w-full h-full flex flex-col">
+                {/* Article */}
+                {activeItemType === "article" && (
+                  <div className="relative w-full h-full px-8 py-6 overflow-y-auto">
+                    <h1 className="text-2xl font-bold mb-4">{lecture.title}</h1>
+                    <div
+                      className="article-content prose w-full"
+                      dangerouslySetInnerHTML={{ __html: articleContent?.text || "" }}
+                    />
+                  </div>
+                )}
+                {/* Quiz */}
+                {activeItemType === "quiz" && (quizData || selectedItemData) ? (
+                  <div className="relative w-full h-full px-8 py-6 overflow-y-auto">
+                    <QuizPreview quiz={(quizData || selectedItemData) as any} />
+                  </div>
+                ) : activeItemType === "quiz" ? (
+                  <div className="relative w-full h-full flex items-center justify-center text-gray-500">No quiz data available.</div>
+                ) : null}
+                {/* Assignment */}
+                {activeItemType === "assignment" && selectedItemData ? (
+                  <div className="relative w-full h-full px-8 py-6 overflow-y-auto">
+                    <AssignmentPreview assignmentData={selectedItemData as any} />
+                  </div>
+                ) : activeItemType === "assignment" ? (
+                  <div className="relative w-full h-full flex items-center justify-center text-gray-500">No assignment data available.</div>
+                ) : null}
+                {/* Coding Exercise */}
+                {activeItemType === "coding-exercise" && selectedItemData ? (
+                  <div className="relative w-full h-full px-8 py-6 overflow-y-auto">
+                    <CodingExercisePreview data={selectedItemData as any} onClose={() => {}} />
+                  </div>
+                ) : activeItemType === "coding-exercise" ? (
+                  <div className="relative w-full h-full flex items-center justify-center text-gray-500">No coding exercise data available.</div>
+                ) : null}
+                {/* Bottom bar for non-video content */}
+                {renderBottomBar()}
+              </div>
+            )}
+          </div>
+          {/* --- BOTTOM TABS: Always show below content --- */}
+          <BottomTabsContainer
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            showSearch={showSearch}
+            setShowSearch={setShowSearch}
+            isExpanded={isExpanded}
+            selectedItemData={selectedItemData}
+            activeItemType={activeItemType}
+            progress={progress}
+            formatTime={formatTime}
+            notes={notes}
+            onCreateNote={handleCreateNote}
+            onSaveNote={handleSaveNote}
+            onCancelNote={handleCancelNote}
+            onEditNote={handleEditNote}
+            onDeleteNote={handleDeleteNote}
+            isAddingNote={isAddingNote}
+            currentNoteContent={currentNoteContent}
+            setCurrentNoteContent={setCurrentNoteContent}
+            selectedLectureFilter={selectedLectureFilter}
+            setSelectedLectureFilter={setSelectedLectureFilter}
+            selectedSortOption={selectedSortOption}
+            setSelectedSortOption={setSelectedSortOption}
+            getSortedNotes={getSortedNotes}
+            onOpenLearningModal={() => setShowLearningModal(true)}
+            activeItemId={activeItemId}
+          />
+        </div>
+        {/* Sidebar (only show when not expanded) */}
+        {!isExpanded && (
+          <div
+            className="flex-shrink-0"
+            style={{ width: "calc(100vw - 75.5vw)" }}
+          >
+            <StudentPreviewSidebar
+              currentLectureId={activeItemId}
+              setShowVideoPreview={setShowVideoPreview}
+              sections={processedSections}
+              uploadedFiles={uploadedFiles}
+              sourceCodeFiles={sourceCodeFiles}
+              externalResources={externalResources}
+              onSelectItem={handleItemSelect}
+            />
+          </div>
+        )}
+      </div>
+      {/* Exit fullscreen button */}
+      {isContentFullscreen && (
+        <button
+          className="fixed bottom-4 right-4 bg-black bg-opacity-70 text-white px-3 py-1 rounded text-sm hover:bg-opacity-90 focus:outline-none z-50"
+          onClick={handleContentFullscreen}
+          type="button"
+        >
+          Exit fullscreen
+        </button>
+      )}
     </div>
   );
 };
