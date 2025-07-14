@@ -384,13 +384,13 @@ const LectureContentDisplay: React.FC<LectureContentDisplayProps> = ({
             <div className="flex items-center py-3">
               <div className="w-20 h-16 bg-black rounded overflow-hidden mr-3 flex-shrink-0">
                 <img
-                  src="https://via.placeholder.com/160x120/000000/FFFFFF/?text=Video"
+                  src="/thumbnail_default.png"
                   alt={videoContent.selectedVideoDetails.filename}
                   className="w-full h-full object-cover"
                   onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
                     const target = e.target as HTMLImageElement;
                     target.src =
-                      "https://via.placeholder.com/160x120/000000/FFFFFF/?text=Video";
+                      "thumbnail_default.png";
                   }}
                 />
               </div>

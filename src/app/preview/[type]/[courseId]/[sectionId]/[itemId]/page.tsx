@@ -42,7 +42,7 @@ const Preview = () => {
     if (!itemId) return;
     try {
       const data = await getAssignment({ id: Number(itemId) });
-      console.log(data);
+      console.log("data", data);
       setAssignmentData({
         id: data?.id,
         attachedFiles: [],
@@ -78,6 +78,8 @@ const Preview = () => {
           const data = await getCourseSections({
             id: parseInt(courseId as string),
           });
+
+          console.log("data", data);
           setSections(data.courseSections);
         } catch (err) {
           console.error("Failed to fetch sections:", err);
@@ -88,6 +90,7 @@ const Preview = () => {
   }, [courseId]);
 
   // Find the current section
+  
   const currentSection = sections?.find(
     (s) => String(s.id) === String(sectionId)
   ) || {
@@ -126,6 +129,7 @@ const Preview = () => {
   // Find the item based on type
   let currentItem: any = null;
   let previewComponent: React.ReactNode = null;
+
   if (type === "lecture") {
     currentItem = currentSection.lectures?.find(
       (l: any) => String(l.id) === String(itemId)
@@ -170,21 +174,21 @@ const Preview = () => {
       libraryTab: { searchQuery: "", selectedVideo: null, videos: [] },
       activeTab: "uploadVideo",
     };
-    // const extendedLecture = {
-    //   attachedFiles: [],
-    //   videos: [],
-    //   contentType: isVideoLecture ? "video" : "article",
-    //   isExpanded: false,
-    //   assignmentTitle: "",
-    //   assignmentDescription: "",
-    //   estimatedDuration: 0,
-    //   durationUnit: "minutes" as "minutes",
-    //   instructions: "",
-    //   assignmentQuestions: [],
-    //   isPublished: false,
-    //   ...currentItem,
-    //   duration: currentItem?.duration ? String(currentItem.duration) : "",
-    // };
+    const extendedLecture = {
+      attachedFiles: [],
+      videos: [],
+      contentType: isVideoLecture ? "video" : "article",
+      isExpanded: false,
+      assignmentTitle: "",
+      assignmentDescription: "",
+      estimatedDuration: 0,
+      durationUnit: "minutes" as "minutes",
+      instructions: "",
+      assignmentQuestions: [],
+      isPublished: false,
+      ...currentItem,
+      duration: currentItem?.duration ? String(currentItem.duration) : "",
+    };
     // Type guard for notes
     const hasNotes = (lecture: any): lecture is { notes: string } =>
       typeof lecture?.notes === "string";
@@ -211,7 +215,7 @@ const Preview = () => {
           id: currentSection.id || "",
           name: currentSection.title || "",
           sections: sidebarSections,
-          lectures: (currentSection.lectures as any[]) || [],
+          lectures: (currentSection.lectures as any[]),
           quizzes: (currentSection.quiz as any[]) || [],
           assignments: (currentSection.assignment as any[]) || [],
           codingExercises: (currentSection.codingExercises as any[]) || [],
@@ -312,7 +316,7 @@ const Preview = () => {
     );
   }
 
-  return <div className="bg-white min-h-screen">{previewComponent}</div>;
+  return <div className="bg-white">{previewComponent}</div>;
 };
 
 export default Preview;
