@@ -41,6 +41,7 @@ import LectureContentDisplay from "./components/LectureContentDisplay";
 import { DeleteItemFn } from "../section/SectionItem";
 import { CourseSectionLecture } from "@/api/course/section/queries";
 import { BsTrash2Fill } from "react-icons/bs";
+import { useLocalModal } from "@/hooks/useModal";
 
 // Updated LectureItemProps interface with async functions
 interface UpdatedLectureItemProps {
@@ -182,10 +183,11 @@ export default function LectureItem(props: UpdatedLectureItemProps) {
     courseId,
   } = props;
 
+  console.log(lecture);
   const lectureNameInputRef = useRef<HTMLInputElement>(null);
   const [showContentTypeSelector, setShowContentTypeSelector] = useState(false);
   const [isHovering, setIsHovering] = useState(false);
-  const [content, setContent] = useState("");
+  const [content, setContent] = useState(lecture.notes || "");
   const [htmlMode, setHtmlMode] = useState(false);
   const [isVideoUploading, setIsVideoUploading] = useState(false);
   const [videoUploadProgress, setVideoUploadProgress] =
@@ -206,6 +208,16 @@ export default function LectureItem(props: UpdatedLectureItemProps) {
   const [uploadProgress, setUploadProgress] = useState(0);
   // Add state for uploadedVideoUrl
   const [uploadedVideoUrl, setUploadedVideoUrl] = useState<string>("");
+
+  // Local state for each expansion
+  const contentExpansion = useLocalModal();
+  const resourceExpansion = useLocalModal();
+  const descriptionExpansion = useLocalModal();
+
+  // No need for complex ID comparisons anymore
+  const isExpanded = contentExpansion.isOpen;
+  const isResourceSectionActive = resourceExpansion.isOpen;
+  const isDescriptionSectionActive = descriptionExpansion.isOpen;
 
   // Content state
   const [videoContent, setVideoContent] = useState<VideoContent>({
@@ -312,7 +324,12 @@ export default function LectureItem(props: UpdatedLectureItemProps) {
   const handleSaveArticle = async (articleContent: string) => {
     try {
       if (saveArticleToBackend) {
-        await saveArticleToBackend(sectionId, lecture.id, articleContent);
+        const result = await saveArticleToBackend(
+          sectionId,
+          lecture.id,
+          articleContent
+        );
+        console.log("Article saved successfully:", result);
       }
 
       setArticleContent({ text: articleContent });
@@ -791,6 +808,7 @@ export default function LectureItem(props: UpdatedLectureItemProps) {
     if (toggleAddResourceModal) {
       toggleAddResourceModal(sectionId, lecture.id);
     }
+    resourceExpansion.close();
   };
 
   const handleExternalResourceAdd = (
@@ -810,6 +828,7 @@ export default function LectureItem(props: UpdatedLectureItemProps) {
     if (toggleAddResourceModal) {
       toggleAddResourceModal(sectionId, lecture.id);
     }
+    resourceExpansion.close();
   };
 
   const handleLibraryItemSelect = (item: LibraryFileWithSize) => {
@@ -824,6 +843,7 @@ export default function LectureItem(props: UpdatedLectureItemProps) {
     if (toggleAddResourceModal) {
       toggleAddResourceModal(sectionId, lecture.id);
     }
+    resourceExpansion.close();
   };
 
   // Trigger file upload simulation
@@ -909,6 +929,14 @@ export default function LectureItem(props: UpdatedLectureItemProps) {
       detectedType = enhancedLecture.actualContentType || "video";
     }
 
+    if (
+      lecture.notes &&
+      // lecture.notes.trim() !== "" &&
+      !lecture.videoUrl
+      // lecture.videoUrl.length === 0
+    )
+      detectedType = "article";
+
     switch (detectedType) {
       case "video":
         return "Lecture";
@@ -925,28 +953,38 @@ export default function LectureItem(props: UpdatedLectureItemProps) {
     }
   };
 
+  console.log(lecture);
+
   // Check if lecture has existing content
   const hasExistingContent = (lecture: CourseSectionLecture): boolean => {
     return Boolean(
       (lecture.videoUrl && lecture.videoUrl.length > 0) ||
         lecture.title === "article" ||
+        lecture.notes ||
         videoContent.selectedVideoDetails !== null ||
         (articleContent.text && articleContent.text.trim() !== "")
     );
   };
 
-  // State flags
-  const isExpanded =
-    activeContentSection?.sectionId === sectionId &&
-    activeContentSection?.lectureId === lecture.id;
+  // // State flags
+  // const isExpanded =
+  //   activeContentSection?.sectionId === sectionId &&
+  //   activeContentSection?.lectureId === lecture.id;
 
-  const isResourceSectionActive =
-    activeResourceSection?.sectionId === sectionId &&
-    activeResourceSection?.lectureId === lecture.id;
+  // const isResourceSectionActive =
+  //   activeResourceSection?.sectionId === sectionId &&
+  //   activeResourceSection?.lectureId === lecture.id;
 
-  const isDescriptionSectionActive =
-    activeDescriptionSection?.sectionId === sectionId &&
-    activeDescriptionSection?.lectureId === lecture.id;
+  // const isDescriptionSectionActive =
+  // activeDescriptionSection?.sectionId === sectionId &&
+  // activeDescriptionSection?.lectureId === lecture.id;
+
+  console.log(
+    "Active Section type:",
+    !!activeResourceSection,
+    !!isExpanded,
+    !!isDescriptionSectionActive
+  );
 
   const isLoading = editLoading || deleteLoading;
   const maxLength = 80;
@@ -965,7 +1003,9 @@ export default function LectureItem(props: UpdatedLectureItemProps) {
             videoUploadProgress={videoUploadProgress}
             videoUploadComplete={videoUploadComplete}
             setVideoUploadComplete={setVideoUploadComplete}
-            onVideoFileUpload={(e) => handleVideoFileUpload(e, setUploadedVideoUrl)}
+            onVideoFileUpload={(e) =>
+              handleVideoFileUpload(e, setUploadedVideoUrl)
+            }
             onVideoSelect={selectVideo}
             onDeleteVideo={deleteVideo}
             videoUploading={videoUploading}
@@ -1159,13 +1199,44 @@ export default function LectureItem(props: UpdatedLectureItemProps) {
               )}
             </div>
 
+            {isResourceSectionActive && (
+              <>
+                <div className="flex items-center">
+                  <button
+                    className={`${
+                      (showContentTypeSelector && isExpanded) ||
+                      isResourceSectionActive ||
+                      activeContentType
+                        ? "text-gray-800 font-normal border-b-0 border-l border-t border-r border-gray-400 -mb-[12px] bg-white pb-2"
+                        : "text-[#6D28D2] font-medium border-[#6D28D2] hover:bg-indigo-50 rounded "
+                    } text-xs sm:text-sm px-2 sm:px-3 py-2 flex items-center ml-1 sm:ml-2 border`}
+                  >
+                    {" "}
+                    <span className="font-bold">Add Resource</span>
+                    <X
+                      className="w-3 h-3 sm:w-4 sm:h-4 ml-1 sm:ml-2"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        // if (toggleAddResourceModal) {
+                        //   toggleAddResourceModal(sectionId, lecture.id);
+                        // }
+                        resourceExpansion.close();
+                      }}
+                    />
+                  </button>
+                </div>
+              </>
+            )}
+
             <div className="flex items-center">
               {!hasExistingContent(lecture) && (
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    if (!isResourceSectionActive && toggleContentSection) {
-                      toggleContentSection(sectionId, lecture.id);
+                    if (!isResourceSectionActive) {
+                      // toggleContentSection(sectionId, lecture.id);
+                      contentExpansion.open();
+
                       if (!isExpanded) {
                         setShowContentTypeSelector(true);
                       } else {
@@ -1190,9 +1261,10 @@ export default function LectureItem(props: UpdatedLectureItemProps) {
                         className="w-3 h-3 sm:w-4 sm:h-4 ml-1 sm:ml-2"
                         onClick={(e) => {
                           e.stopPropagation();
-                          if (toggleAddResourceModal) {
-                            toggleAddResourceModal(sectionId, lecture.id);
-                          }
+                          // if (toggleAddResourceModal) {
+                          //   toggleAddResourceModal(sectionId, lecture.id);
+                          // }
+                          resourceExpansion.close();
                         }}
                       />
                     </>
@@ -1207,6 +1279,7 @@ export default function LectureItem(props: UpdatedLectureItemProps) {
                           if (toggleContentSection) {
                             toggleContentSection(sectionId, lecture.id);
                           }
+                          contentExpansion.close();
                         }}
                       />
                     </>
@@ -1223,6 +1296,7 @@ export default function LectureItem(props: UpdatedLectureItemProps) {
                           if (toggleContentSection) {
                             toggleContentSection(sectionId, lecture.id);
                           }
+                          contentExpansion.close();
                         }}
                       />
                     </>
@@ -1237,6 +1311,7 @@ export default function LectureItem(props: UpdatedLectureItemProps) {
                           if (toggleContentSection) {
                             toggleContentSection(sectionId, lecture.id);
                           }
+                          contentExpansion.close();
                         }}
                       />
                     </>
@@ -1251,6 +1326,7 @@ export default function LectureItem(props: UpdatedLectureItemProps) {
                           if (toggleContentSection) {
                             toggleContentSection(sectionId, lecture.id);
                           }
+                          contentExpansion.close();
                         }}
                       />
                     </>
@@ -1263,52 +1339,52 @@ export default function LectureItem(props: UpdatedLectureItemProps) {
                 </button>
               )}
 
-              <button
-                className="p-1 text-gray-400 hover:text-gray-600 ml-1"
-                onClick={(e) => {
-                  e.stopPropagation();
+              {hasExistingContent(lecture) && (
+                <button
+                  className="p-1 text-gray-400 hover:text-gray-600 ml-1"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    contentExpansion.toggle();
+                    // if (toggleContentSection) {
+                    //   toggleContentSection(sectionId, lecture.id);
 
-                  if (toggleContentSection) {
-                    toggleContentSection(sectionId, lecture.id);
-
-                    if (isExpanded) {
-                      setShowContentTypeSelector(false);
-                      setActiveContentType(null);
-                    }
-                  }
-                }}
-                aria-label={isExpanded ? "Collapse" : "Expand"}
-                disabled={isLoading}
-              >
-                {isExpanded ? (
-                  <ChevronUp className="w-5 h-5" />
-                ) : (
-                  <ChevronDown className="w-5 h-5" />
-                )}
-              </button>
-              {isHovering && !isLoading && (
-                <div>
-                  <AlignJustify className="w-5 h-5 text-gray-500 cursor-move" />
-                </div>
+                    //   if (isExpanded) {
+                    //     setShowContentTypeSelector(false);
+                    //     setActiveContentType(null);
+                    //   }
+                    // }
+                  }}
+                  aria-label={isExpanded ? "Collapse" : "Expand"}
+                  disabled={isLoading}
+                >
+                  {isExpanded ? (
+                    <ChevronUp className="w-5 h-5" />
+                  ) : (
+                    <ChevronDown className="w-5 h-5" />
+                  )}
+                </button>
               )}
+
+              <div className=" w-5 h-5 ml-1">
+                {isHovering && !isLoading && (
+                  <AlignJustify className="w-5 h-5 text-gray-500 cursor-move" />
+                )}
+              </div>
             </div>
           </div>
 
           {/* Expanded Content Area */}
-          {(isExpanded ||
-            isResourceSectionActive ||
-            isDescriptionSectionActive) && (
+          {isExpanded && (
             <div>
-              {/* Resource Component */}
-
               {/* Resource Component */}
               {isResourceSectionActive && (
                 <AddResourceComponent
                   activeContentSection={activeResourceSection}
                   onClose={() => {
-                    if (toggleAddResourceModal) {
-                      toggleAddResourceModal(sectionId, lecture.id);
-                    }
+                    // if (toggleAddResourceModal) {
+                    //   toggleAddResourceModal(sectionId, lecture.id);
+                    // }
+                    resourceExpansion.close();
                   }}
                   activeResourceTab={activeResourceTab}
                   setActiveResourceTab={setActiveResourceTab}
@@ -1326,25 +1402,25 @@ export default function LectureItem(props: UpdatedLectureItemProps) {
               )}
 
               {/* Description Component */}
-              {isDescriptionSectionActive &&
-                updateCurrentDescription &&
-                saveDescription && (
-                  <DescriptionEditorComponent
-                    activeDescriptionSection={activeDescriptionSection}
-                    onClose={() => {
-                      if (toggleDescriptionEditor) {
-                        toggleDescriptionEditor(
-                          sectionId,
-                          lecture.id,
-                          currentDescription
-                        );
-                      }
-                    }}
-                    currentDescription={currentDescription || ""}
-                    setCurrentDescription={updateCurrentDescription}
-                    saveDescription={saveDescription}
-                  />
-                )}
+              {isDescriptionSectionActive && (
+                <DescriptionEditorComponent
+                  activeDescriptionSection={isDescriptionSectionActive}
+                  onClose={() => {
+                    if (toggleDescriptionEditor) {
+                      toggleDescriptionEditor(
+                        sectionId,
+                        lecture.id,
+                        currentDescription
+                      );
+                    }
+                    descriptionExpansion.close();
+                  }}
+                  currentDescription={currentDescription || ""}
+                  setCurrentDescription={updateCurrentDescription!}
+                  saveDescription={saveDescription!}
+                  descriptionExpansion={descriptionExpansion}
+                />
+              )}
 
               {/* Content Type Selector */}
               {showContentTypeSelector &&
@@ -1394,6 +1470,8 @@ export default function LectureItem(props: UpdatedLectureItemProps) {
                     allSections={allSections}
                     children={children}
                     courseId={courseId}
+                    resourceExpansion={resourceExpansion}
+                    descriptionExpansion={descriptionExpansion}
                   />
                 )}
             </div>

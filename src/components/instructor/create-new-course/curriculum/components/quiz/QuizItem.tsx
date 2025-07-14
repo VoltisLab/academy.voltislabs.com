@@ -59,7 +59,7 @@ interface QuizItemProps {
     targetSectionId: string,
     targetLectureId?: string
   ) => void;
-  toggleContentSection: (sectionId: string, lectureId: string) => void;
+  toggleContentSection?: (sectionId: string, lectureId: string) => void;
   updateQuizQuestions?: (
     sectionId: string,
     quizId: number,
