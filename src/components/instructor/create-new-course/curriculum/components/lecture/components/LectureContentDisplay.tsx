@@ -336,19 +336,20 @@ const LectureContentDisplay: React.FC<LectureContentDisplayProps> = ({
     if (previewMode === "student") {
       return (
         <StudentCoursePreview
-          videoContent={videoContent}
-          articleContent={articleContent}
-          setShowVideoPreview={setShowVideoPreview}
-          lecture={enhancedLecture}
-          uploadedFiles={globalUploadedFiles}
-          sourceCodeFiles={globalSourceCodeFiles}
-          externalResources={globalExternalResources}
-          section={{
-            id: "all-sections",
-            name: "All Sections",
-            sections: enhancedSections,
-          }}
-        />
+        courseId={String(courseId)}
+        videoContent={videoContent}
+        articleContent={articleContent}
+        setShowVideoPreview={setShowVideoPreview}
+        activeItem={enhancedLecture}
+        uploadedFiles={globalUploadedFiles}
+        sourceCodeFiles={globalSourceCodeFiles}
+        externalResources={globalExternalResources}
+        section={{
+          id: "all-sections",
+          name: "All Sections",
+          sections: enhancedSections,
+        }}
+      />
       );
     }
 
