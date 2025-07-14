@@ -38,7 +38,7 @@ import {
 import ReactPlayer from "react-player";
 import StudentPreviewSidebar from "./StudentPreviewSidebar";
 import ReportAbuseModal from "../modals/ReportAbuseModal";
-import QuizPreview, { LectureType } from "../../quiz/QuizPreview";
+import QuizPreview, { Quiz, LectureType } from "../../quiz/QuizPreview";
 import AssignmentPreview from "../../assignment/AssignmentPreview";
 import VideoControls from "./VideoControls";
 import LearningReminderModal from "../modals/LearningReminderModal";
@@ -76,9 +76,10 @@ export interface QuizData {
 }
 
 type ChildProps = {
+  courseId: string;
+  activeItem: any;
   videoContent: VideoContent;
   setShowVideoPreview: React.Dispatch<React.SetStateAction<boolean>>;
-  lecture: any;
   uploadedFiles?: Array<{ name: string; size: string; lectureId?: string }>;
   sourceCodeFiles?: SourceCodeFile[];
   externalResources?: ExternalResource[];
@@ -104,15 +105,6 @@ type ChildProps = {
 };
 
 // Define interfaces for missing types
-interface Quiz {
-  id: string;
-  name: string;
-  description?: string;
-  questions?: any[];
-  duration?: string;
-  contentType?: string;
-}
-
 interface Assignment {
   id: string;
   name: string;
@@ -132,9 +124,10 @@ interface CodingExercise {
 type SelectedItemType = Lecture | Quiz | Assignment | CodingExercise;
 
 const StudentCoursePreview = ({
+  courseId,
+  activeItem,
   videoContent,
   setShowVideoPreview,
-  lecture,
   uploadedFiles = [],
   sourceCodeFiles = [],
   externalResources = [],
@@ -143,7 +136,7 @@ const StudentCoursePreview = ({
   quizData,
 }: ChildProps) => {
   // Debug logs for props and state
-  console.log("lecture", lecture);
+  console.log("activeItem", activeItem);
   console.log("videoContent", videoContent);
   console.log("articleContent", articleContent);
 
@@ -158,7 +151,7 @@ const StudentCoursePreview = ({
   const [videoQuality, setVideoQuality] = useState<string>("Auto");
   const [showSearch, setShowSearch] = useState<boolean>(false);
   const [showLearningModal, setShowLearningModal] = useState<boolean>(false);
-  const [activeItemId, setActiveItemId] = useState<string>(lecture?.id ?? "");
+  const [activeItemId, setActiveItemId] = useState<string>(activeItem?.id ?? "");
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
   const [showSettingsDropdown, setShowSettingsDropdown] =
     useState<boolean>(false);
@@ -168,7 +161,7 @@ const StudentCoursePreview = ({
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
 
   const [selectedItemData, setSelectedItemData] =
-    useState<SelectedItemType | null>(lecture);
+    useState<SelectedItemType | null>(activeItem);
   const [showQuizKeyboardShortcuts, setShowQuizKeyboardShortcuts] =
     useState<boolean>(false);
   const [showVideoKeyboardShortcuts, setShowVideoKeyboardShortcuts] =
@@ -457,7 +450,7 @@ const StudentCoursePreview = ({
     );
 
     if (hasRealArticleContent && hasRealVideoContent) {
-      return lecture.contentType === "video" ? "video" : "article";
+      return activeItem?.contentType === "video" ? "video" : "article";
     }
 
     if (hasRealArticleContent && !hasRealVideoContent) {
@@ -468,32 +461,33 @@ const StudentCoursePreview = ({
       return "video";
     }
 
-    if (lecture.contentType) {
-      return lecture.contentType;
+    if (activeItem?.contentType) {
+      return activeItem.contentType;
     }
 
     return "video";
   };
 
   const determineInitialContentType = (): string => {
-    const detectedType = detectContentType(lecture?.id ?? "", lecture);
+    const detectedType = detectContentType(activeItem?.id ?? "", activeItem);
     return detectedType;
   };
 
-  console.log(lecture);
+  console.log(activeItem);
 
   const [activeItemType, setActiveItemType] = useState<string>(
     determineInitialContentType()
   );
 
-  // Sync state with lecture prop when it changes
+  // Sync state with activeItem prop when it changes
   useEffect(() => {
-    if (activeItemId !== (lecture?.id ?? "") || selectedItemData !== lecture) {
-      setActiveItemId(lecture?.id ?? "");
-      setSelectedItemData(lecture);
-      setActiveItemType(detectContentType(lecture?.id ?? "", lecture));
-    }
-  }, [lecture, activeItemId, selectedItemData]);
+
+    console.log(activeItem)
+    setActiveItemId(activeItem?.id ?? "");
+    setSelectedItemData(activeItem);
+    setActiveItemType(determineInitialContentType());
+    // Only run when activeItem changes
+  }, [activeItem]);
 
   // Process sections
   const processedSections = React.useMemo(() => {
@@ -641,7 +635,7 @@ const StudentCoursePreview = ({
       }
 
       if (sectionData.quizzes) {
-        const foundQuiz = sectionData.quizzes.find((q: any) => q.id === itemId);
+        const foundQuiz = sectionData.quizzes.find((q: Quiz) => q.id === itemId);
         if (foundQuiz) {
           selectedItem = foundQuiz;
           break;
@@ -827,7 +821,7 @@ const StudentCoursePreview = ({
     } else if (activeItemType === "article") {
       let currentArticleData: ArticleContent;
 
-      if (activeItemId === lecture?.id) {
+      if (activeItemId === activeItem?.id) {
         currentArticleData = articleContent || { text: "" };
       } else {
         const enhancedSelectedItem = selectedItemData as EnhancedLecture;
@@ -841,9 +835,7 @@ const StudentCoursePreview = ({
           currentArticleData = { text: enhancedSelectedItem.description };
         } else {
           currentArticleData = {
-            text: `<h1>${
-              selectedItemData?.name || "Article"
-            }</h1><p>Article content for this lecture.</p>`,
+            text: `<h1>${getSelectedItemDisplayName() || "Article"}</h1><p>Article content for this lecture.</p>`,
           };
         }
       }
@@ -856,7 +848,7 @@ const StudentCoursePreview = ({
     } else {
       let currentVideoData;
 
-      if (activeItemId === lecture?.id) {
+      if (activeItemId === activeItem?.id) {
         currentVideoData = videoContent;
       } else {
         const enhancedSelectedItem = selectedItemData as EnhancedLecture;
@@ -901,7 +893,7 @@ const StudentCoursePreview = ({
         formattedTime: formatTime(progress),
         content: currentNoteContent,
         lectureId: activeItemId || "default-lecture",
-        lectureName: selectedItemData?.name || "Current Item",
+        lectureName: getSelectedItemDisplayName() || "Current Item",
         sectionName: "Demo Section",
         createdAt: new Date(),
       };
@@ -1165,16 +1157,16 @@ const StudentCoursePreview = ({
     return null;
   }
 
-  if (!lecture) {
+  if (!activeItem) {
     return <VoltisLoader />;
   }
 
   // Render article if no videoUrl
-  if (!lecture.videoUrl || String(lecture.videoUrl).trim() === "") {
+  if (!activeItem.videoUrl || String(activeItem.videoUrl).trim() === "") {
     console.log("Rendering article content");
     return (
       <div className="relative h-[70vh] px-8 py-6 overflow-y-auto">
-        <h1 className="text-2xl font-bold mb-4">{lecture.title}</h1>
+        <h1 className="text-2xl font-bold mb-4">{activeItem.title}</h1>
         <div
           className="article-content prose w-full"
           dangerouslySetInnerHTML={{ __html: articleContent?.text || "" }}
@@ -1262,6 +1254,24 @@ const StudentCoursePreview = ({
     );
   };
 
+  // Helper type guards
+  function isQuiz(obj: any): obj is Quiz {
+    return obj && typeof obj === 'object' && 'questions' in obj && Array.isArray(obj.questions);
+  }
+  function isAssignment(obj: any): obj is Assignment {
+    return obj && typeof obj === 'object' && 'description' in obj && 'duration' in obj;
+  }
+  function isCodingExercise(obj: any): obj is CodingExercise {
+    return obj && typeof obj === 'object' && 'description' in obj && 'duration' in obj && 'name' in obj;
+  }
+
+  // Helper to get display name for selectedItemData
+  const getSelectedItemDisplayName = () => {
+    if (selectedItemData && 'name' in selectedItemData && selectedItemData.name) return selectedItemData.name;
+    if (selectedItemData && 'title' in selectedItemData && selectedItemData.title) return selectedItemData.title;
+    return undefined;
+  };
+
   // --- Main Render ---
   return (
     <div className="fixed inset-0 z-[9999] bg-white flex flex-col">
@@ -1299,7 +1309,7 @@ const StudentCoursePreview = ({
               <div className="bg-black relative w-full h-full flex flex-col justify-center items-center">
                 <ReactPlayer
                   ref={playerRef}
-                  url={lecture.videoUrl}
+                  url={activeItem.videoUrl}
                   width="100%"
                   height="100%"
                   playing={playing}
@@ -1374,7 +1384,7 @@ const StudentCoursePreview = ({
                 {/* Article */}
                 {activeItemType === "article" && (
                   <div className="relative w-full h-full px-8 py-6 overflow-y-auto">
-                    <h1 className="text-2xl font-bold mb-4">{lecture.title}</h1>
+                    <h1 className="text-2xl font-bold mb-4">{activeItem.title}</h1>
                     <div
                       className="article-content prose w-full"
                       dangerouslySetInnerHTML={{ __html: articleContent?.text || "" }}
@@ -1382,25 +1392,37 @@ const StudentCoursePreview = ({
                   </div>
                 )}
                 {/* Quiz */}
-                {activeItemType === "quiz" && (quizData || selectedItemData) ? (
+                {activeItemType === "quiz" && isQuiz(quizData || selectedItemData) ? (
                   <div className="relative w-full h-full px-8 py-6 overflow-y-auto">
-                    <QuizPreview quiz={(quizData || selectedItemData) as any} />
+                    <QuizPreview quiz={activeItemType === "quiz" ? (selectedItemData as Quiz) : undefined} />
                   </div>
                 ) : activeItemType === "quiz" ? (
                   <div className="relative w-full h-full flex items-center justify-center text-gray-500">No quiz data available.</div>
                 ) : null}
                 {/* Assignment */}
-                {activeItemType === "assignment" && selectedItemData ? (
+                {activeItemType === "assignment" && isAssignment(selectedItemData) ? (
                   <div className="relative w-full h-full px-8 py-6 overflow-y-auto">
-                    <AssignmentPreview assignmentData={selectedItemData as any} />
+                    <AssignmentPreview assignmentData={{ attachedFiles: [], videos: [], ...selectedItemData, contentType: 'assignment' as 'assignment' }} />
                   </div>
                 ) : activeItemType === "assignment" ? (
                   <div className="relative w-full h-full flex items-center justify-center text-gray-500">No assignment data available.</div>
                 ) : null}
                 {/* Coding Exercise */}
-                {activeItemType === "coding-exercise" && selectedItemData ? (
+                {activeItemType === "coding-exercise" && isCodingExercise(selectedItemData) ? (
                   <div className="relative w-full h-full px-8 py-6 overflow-y-auto">
-                    <CodingExercisePreview data={selectedItemData as any} onClose={() => {}} />
+                    <CodingExercisePreview
+                      data={
+                        selectedItemData && "exercise" in selectedItemData
+                          ? (selectedItemData as any)
+                          : {
+                              exercise: {},
+                              content: {},
+                              testResults: null,
+                              ...selectedItemData,
+                            }
+                      }
+                      onClose={() => {}}
+                    />
                   </div>
                 ) : activeItemType === "coding-exercise" ? (
                   <div className="relative w-full h-full flex items-center justify-center text-gray-500">No coding exercise data available.</div>
@@ -1452,7 +1474,29 @@ const StudentCoursePreview = ({
               uploadedFiles={uploadedFiles}
               sourceCodeFiles={sourceCodeFiles}
               externalResources={externalResources}
-              onSelectItem={handleItemSelect}
+              onSelectItem={(itemId, itemType) => {
+                // Always use 'lecture' for video/article, else use itemType
+                let type = itemType;
+                if (itemType === "lecture") {
+                  type = "lecture";
+                }
+                // Find sectionId
+                let sectionId = "";
+                for (const section of processedSections) {
+                  if (
+                    (section.lectures && section.lectures.some(l => l.id === itemId)) ||
+                    (section.quizzes && section.quizzes.some(q => q.id === itemId)) ||
+                    (section.assignments && section.assignments.some(a => a.id === itemId)) ||
+                    (section.codingExercises && section.codingExercises.some(e => e.id === itemId))
+                  ) {
+                    sectionId = section.id;
+                    break;
+                  }
+                }
+                // Build URL: /preview/[type]/[courseId]/[sectionId]/[itemId]
+                const url = `/preview/${type}/${courseId}/${sectionId}/${itemId}`;
+                window.location.href = url;
+              }}
             />
           </div>
         )}
