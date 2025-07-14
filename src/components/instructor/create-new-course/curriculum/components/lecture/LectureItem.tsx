@@ -41,6 +41,8 @@ import LectureContentDisplay from "./components/LectureContentDisplay";
 import { DeleteItemFn } from "../section/SectionItem";
 import { CourseSectionLecture } from "@/api/course/section/queries";
 import { BsTrash2Fill } from "react-icons/bs";
+import { UserMediaItem } from "@/api/usermedia/query";
+import { useLectureService } from "@/services/useLectureService";
 
 // Updated LectureItemProps interface with async functions
 interface UpdatedLectureItemProps {
@@ -268,6 +270,8 @@ export default function LectureItem(props: UpdatedLectureItemProps) {
     }
   );
 
+
+
   const [articleContent, setArticleContent] = useState<ArticleContent>({
     text: "",
   });
@@ -416,55 +420,113 @@ export default function LectureItem(props: UpdatedLectureItemProps) {
   };
 
   // Select video handler
-  const selectVideo = (videoId: string) => {
-    const selectedVideo = videoContent.libraryTab.videos.find(
-      (v) => v.id === videoId
-    );
+//   const selectVideo = (videoId: UserMediaItem) => {
+//   if (videoContent.libraryTab.selectedVideo === videoId.id) return;
 
-    if (selectedVideo) {
-      const selectedDetails: SelectedVideoDetails = {
-        id: selectedVideo.id,
-        filename: selectedVideo.filename,
-        duration: selectedVideo.duration,
-        thumbnailUrl:
-          "https://via.placeholder.com/160x120/000000/FFFFFF/?text=Netflix",
-        isDownloadable: false,
-        url: selectedVideo.url || "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-      };
+//   const selectedDetails: SelectedVideoDetails = {
+//     id: videoId.id,
+//     filename: videoId.fileName,
+//     duration: "",
+//     thumbnailUrl: "/thumbnail_default.png",
+//     isDownloadable: false,
+//     url: videoId.url || "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+//   };
 
-      setVideoContent({
-        ...videoContent,
-        libraryTab: {
-          ...videoContent.libraryTab,
-          selectedVideo: videoId,
-        },
-        selectedVideoDetails: selectedDetails,
-      });
+//   setVideoContent({
+//     ...videoContent,
+//     libraryTab: {
+//       ...videoContent.libraryTab,
+//       selectedVideo: videoId.id,
+//     },
+//     selectedVideoDetails: selectedDetails,
+//   });
 
-      setArticleContent({ text: "" });
+//   setArticleContent({ text: "" });
 
-      if (updateLectureContent) {
-        const enhancedLecture = createEnhancedLectureForPreview();
-        const updatedLecture = ContentTypeDetector.updateLectureContentType(
-          enhancedLecture,
-          "video",
-          selectedDetails
-        );
-        updateLectureContent(sectionId, lecture.id, updatedLecture);
-      }
+//   if (updateLectureContent) {
+//     const enhancedLecture = createEnhancedLectureForPreview();
+//     const updatedLecture = ContentTypeDetector.updateLectureContentType(
+//       enhancedLecture,
+//       "video",
+//       selectedDetails
+//     );
+//     updateLectureContent(sectionId, lecture.id, updatedLecture);
+//   }
 
-      setActiveContentType(null);
+//   setActiveContentType(null);
 
-      if (
-        toggleContentSection &&
-        (!activeContentSection ||
-          activeContentSection.sectionId !== sectionId ||
-          activeContentSection.lectureId !== lecture.id)
-      ) {
-        toggleContentSection(sectionId, lecture.id);
-      }
-    }
+//   if (
+//     toggleContentSection &&
+//     (!activeContentSection ||
+//       activeContentSection.sectionId !== sectionId ||
+//       activeContentSection.lectureId !== lecture.id)
+//   ) {
+//     toggleContentSection(sectionId, lecture.id);
+//   }
+// };
+
+
+const {updateLecture} = useLectureService()
+
+const selectVideo = async (videoId: UserMediaItem) => {
+  // if (videoContent.libraryTab.selectedVideo === videoId.id) return;
+
+  const selectedDetails: SelectedVideoDetails = {
+    id: videoId.id,
+    filename: videoId.fileName,
+    duration: "",
+    thumbnailUrl: "/thumbnail_default.png",
+    isDownloadable: false,
+    url: videoId.url || "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
   };
+
+  setVideoContent((prev) => ({
+    ...prev,
+    libraryTab: {
+      ...prev.libraryTab,
+      selectedVideo: videoId.id,
+    },
+    selectedVideoDetails: selectedDetails,
+  }));
+
+  setArticleContent({ text: "" });
+  setActiveContentType(null);
+
+  // Enhance and update preview UI
+  const enhancedLecture = createEnhancedLectureForPreview();
+  const updatedLecture = ContentTypeDetector.updateLectureContentType(
+    enhancedLecture,
+    "video",
+    selectedDetails
+  );
+
+  if (updateLectureContent) {
+    updateLectureContent(sectionId, lecture.id, updatedLecture);
+  }
+
+  // ✅ Persist the change to the backend
+  try {
+    await updateLecture({
+      lectureId: Number(lecture.id),
+      videoUrl: videoId.url,
+    });
+  } catch (err) {
+    console.error("Failed to persist lecture video update", err);
+    // Optionally show a fallback error toast here if not handled inside updateLecture
+  }
+
+  // Handle content section toggle
+  if (
+    toggleContentSection &&
+    (!activeContentSection ||
+      activeContentSection.sectionId !== sectionId ||
+      activeContentSection.lectureId !== lecture.id)
+  ) {
+    toggleContentSection(sectionId, lecture.id);
+  }
+};
+
+
 
   // Delete video handler
   const deleteVideo = (videoId: string) => {

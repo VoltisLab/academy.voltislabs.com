@@ -26,7 +26,6 @@ export const UPDATE_LECTURE = gql`
     $duration: Int
     $notes: String
     $videoUrl: String
-    $resources: [LectureResourceInputType]
   ) {
     updateLecture(
       lectureId: $lectureId
@@ -35,7 +34,6 @@ export const UPDATE_LECTURE = gql`
       duration: $duration
       notes: $notes
       videoUrl: $videoUrl
-      resources: $resources
     ) {
       success
       lecture {
@@ -45,7 +43,14 @@ export const UPDATE_LECTURE = gql`
         duration
         notes
         videoUrl
-        resources
+        resources {
+        id
+        createdAt
+        title
+        type
+        updatedAt
+        url
+      }
         section {
           id
           title
