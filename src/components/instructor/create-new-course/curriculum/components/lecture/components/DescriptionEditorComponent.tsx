@@ -9,6 +9,7 @@ const ReactQuill = dynamic(() => import("react-quill-new"), {
 
 // Import ReactQuill styles
 import "react-quill-new/dist/quill.snow.css";
+import { ExpansionType } from "./LectureContentDisplay";
 
 // Custom styles to override default Quill styles
 const customStyles = `
@@ -68,11 +69,12 @@ const quillModules = {
 const quillFormats = ["bold", "italic", "list", "bullet"];
 
 interface DescriptionEditorComponentProps {
-  activeDescriptionSection: { sectionId: string; lectureId: string } | null;
+  activeDescriptionSection: boolean | null;
   onClose: () => void;
   currentDescription: string;
   setCurrentDescription: (description: string) => void;
   saveDescription: () => Promise<void>;
+  descriptionExpansion?: ExpansionType;
 }
 
 export default function DescriptionEditorComponent({
@@ -81,6 +83,7 @@ export default function DescriptionEditorComponent({
   currentDescription,
   setCurrentDescription,
   saveDescription,
+  descriptionExpansion,
 }: DescriptionEditorComponentProps) {
   if (!activeDescriptionSection) return null;
 
@@ -91,6 +94,7 @@ export default function DescriptionEditorComponent({
     // Call the parent component's save function
     await saveDescription();
     setIsSaving(false);
+    descriptionExpansion?.close();
     // No need to manually call onClose as the parent component will update state
   };
 
