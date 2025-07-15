@@ -1513,3 +1513,4 @@ const StudentCoursePreview = ({
 };
 
 export default StudentCoursePreview;
+

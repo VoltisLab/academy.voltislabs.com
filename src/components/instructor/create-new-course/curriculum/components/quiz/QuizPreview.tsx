@@ -342,9 +342,12 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({ quiz, onClose }) => {
                     {totalQuestions} {totalQuestions === 1 ? "question" : "questions"}
                   </span>
                 </div>
-                <div className="text-gray-700 ">
-                  {quiz?.description || "Quiz description"}
-                </div>
+               <div
+            className="text-gray-700"
+            dangerouslySetInnerHTML={{
+              __html: quiz?.description || "Quiz description"
+            }}
+          />
               </div>
 
               {/* Buttons */}
