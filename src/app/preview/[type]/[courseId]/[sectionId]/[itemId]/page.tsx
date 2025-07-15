@@ -232,7 +232,7 @@ const Preview = () => {
     if (quizItem) {
       quizForPreview = {
         id: quizItem.id || "",
-        title: (('name' in quizItem) && typeof quizItem.name === 'string' && quizItem.name) ? quizItem.name : (quizItem.title || "Quiz"),
+        title: (('name' in quizItem) && typeof quizItem.name === 'string' && quizItem.name) ? quizItem.name : (quizItem.title),
         description: quizItem.description || "",
         questions: Array.isArray(quizItem.questions)
           ? quizItem.questions.map((q: any) => ({

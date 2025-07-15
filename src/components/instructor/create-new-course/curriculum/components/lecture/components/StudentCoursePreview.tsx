@@ -8,8 +8,7 @@ import {
   ExternalResource,
   PreviewSection,
   EnhancedLecture,
-  ContentTypeDetector,
-  ExtendedLecture,
+
   ArticleContent,
   VideoNote,
 } from "@/lib/types";
@@ -19,29 +18,15 @@ import {
   Volume2,
   Settings,
   Maximize,
-  Search,
-  Clock,
-  Globe,
-  Plus,
-  Edit,
-  Trash2,
-  FileDown,
-  FileText,
-  SquareArrowOutUpRight,
-  Code,
+
   Minimize,
-  ChevronLeft,
-  ChevronRight,
-  Keyboard,
-  ChevronDown,
+
 } from "lucide-react";
 import ReactPlayer from "react-player";
 import StudentPreviewSidebar from "./StudentPreviewSidebar";
-import ReportAbuseModal from "../modals/ReportAbuseModal";
 import QuizPreview, { Quiz, LectureType } from "../../quiz/QuizPreview";
 import AssignmentPreview from "../../assignment/AssignmentPreview";
 import VideoControls from "./VideoControls";
-import LearningReminderModal from "../modals/LearningReminderModal";
 import { useRouter } from "next/navigation";
 import ContentInformationDisplay from "./ContentInformationDisplay";
 import { useAssignment } from "@/context/AssignmentDataContext";
@@ -49,6 +34,7 @@ import { CourseSectionQuiz } from "@/api/course/section/queries";
 import VoltisLoader from "@/components/loader/loader";
 import BottomTabsContainer from "./BottomTabsContainer";
 import CodingExercisePreview from "../../code/CodingExercisePreview";
+import { usePathname } from "next/navigation";
 
 // Add QuizData interface
 export interface Answer {
@@ -137,7 +123,7 @@ const StudentCoursePreview = ({
 }: ChildProps) => {
   // Debug logs for props and state
   console.log("activeItem", activeItem);
-  console.log("videoContent", videoContent);
+  console.log("videoContent", section);
   console.log("articleContent", articleContent);
 
   // State management
@@ -196,6 +182,7 @@ const StudentCoursePreview = ({
 
   const { assignmentData } = useAssignment();
   const router = useRouter();
+  const pathname = usePathname();
 
   const handleStartAssignment = () => {
     setAssignmentStatus("assignment");
@@ -488,6 +475,15 @@ const StudentCoursePreview = ({
     setActiveItemType(determineInitialContentType());
     // Only run when activeItem changes
   }, [activeItem]);
+
+  // Minimal: If URL is /preview/quiz/... force activeItemType to 'quiz'
+  useEffect(() => {
+    const pathSegments = window.location.href.split("/");
+    console.log(pathSegments[2] === "quiz")
+    if (pathSegments[2] === "quiz") {
+      setActiveItemType("quiz");
+    }
+  }, [pathname]);
 
   // Process sections
   const processedSections = React.useMemo(() => {
@@ -1384,6 +1380,7 @@ const StudentCoursePreview = ({
                 {/* Article */}
                 {activeItemType === "article" && (
                   <div className="relative w-full h-full px-8 py-6 overflow-y-auto">
+                    {/* REMOVE the title for quiz, only keep for article */}
                     <h1 className="text-2xl font-bold mb-4">{activeItem.title}</h1>
                     <div
                       className="article-content prose w-full"
