@@ -111,44 +111,43 @@ export default function PreviewLayout({
       <div className="flex flex-row bg-white">
         {/* Main preview window and bottom tabs (scrollable as a unit) */}
 
-        <PreviewProvider>
-          <div
-            ref={parentRef}
-            className={`flex-1 flex flex-col overflow-y-auto ${
-              expandedView ? "w-screen" : ""
-            }`}
-          >
-            {children}
-            {/* Bottom tabs always visible */}
-            <BottomTabsContainer
-              activeTab={activeTab}
-              setActiveTab={setActiveTab}
-              showSearch={showSearch}
-              setShowSearch={setShowSearch}
-              isExpanded={expandedView}
-              selectedItemData={{}}
-              activeItemType={"lecture"}
-              progress={0}
-              formatTime={() => ""}
-              notes={[]}
-              onCreateNote={() => {}}
-              onSaveNote={() => {}}
-              onCancelNote={() => {}}
-              onEditNote={() => {}}
-              onDeleteNote={() => {}}
-              isAddingNote={false}
-              currentNoteContent={""}
-              setCurrentNoteContent={() => {}}
-              selectedLectureFilter={""}
-              setSelectedLectureFilter={() => {}}
-              selectedSortOption={""}
-              setSelectedSortOption={() => {}}
-              getSortedNotes={() => []}
-              onOpenLearningModal={() => {}}
-              activeItemId={itemId}
-            />
-          </div>
-        </PreviewProvider>
+        <div
+          ref={parentRef}
+          className={`flex-1 flex flex-col overflow-y-auto ${
+            expandedView ? "w-screen" : ""
+          }`}
+        >
+          {children}
+          {/* Bottom tabs always visible */}
+          <BottomTabsContainer
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            showSearch={showSearch}
+            setShowSearch={setShowSearch}
+            isExpanded={expandedView}
+            selectedItemData={{}}
+            activeItemType={"lecture"}
+            progress={0}
+            formatTime={() => ""}
+            notes={[]}
+            onCreateNote={() => {}}
+            onSaveNote={() => {}}
+            onCancelNote={() => {}}
+            onEditNote={() => {}}
+            onDeleteNote={() => {}}
+            isAddingNote={false}
+            currentNoteContent={""}
+            setCurrentNoteContent={() => {}}
+            selectedLectureFilter={""}
+            setSelectedLectureFilter={() => {}}
+            selectedSortOption={""}
+            setSelectedSortOption={() => {}}
+            getSortedNotes={() => []}
+            onOpenLearningModal={() => {}}
+            activeItemId={itemId}
+          />
+        </div>
+        {/* </PreviewProvider> */}
 
         {/* Sidebar on the right, fixed width, scrollable */}
         <div

@@ -5,6 +5,7 @@ import { AuthProvider } from "@/context/AuthContext";
 import { AsideProvider } from "@/context/showAsideContext";
 import { LoadingProvider } from "@/context/LoadingContext";
 import ClientLoaderWrapper from "@/components/loader/ClientLoaderWrapper";
+import { PreviewProvider } from "@/context/PreviewContext";
 
 // Fonts
 const mavenPro = Maven_Pro({
@@ -68,7 +69,9 @@ export default function RootLayout({
         <AuthProvider>
           <LoadingProvider>
             <AsideProvider>
-              <ClientLoaderWrapper>{children}</ClientLoaderWrapper>
+              <PreviewProvider>
+                <ClientLoaderWrapper>{children}</ClientLoaderWrapper>
+              </PreviewProvider>
             </AsideProvider>
           </LoadingProvider>
         </AuthProvider>

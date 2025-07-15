@@ -228,6 +228,9 @@ const Preview = () => {
     let quizItem = currentSection.quiz?.find(
       (q: any) => String(q.id) === String(itemId)
     );
+    const quizIndex = currentSection.quiz?.findIndex(
+      (q: any) => String(q.id) === String(itemId)
+    );
     // Ensure the quiz object has the correct structure and fallback for missing questions
     console.log("Quiz Item:", quizItem);
     let quizForPreview = undefined;
@@ -235,6 +238,7 @@ const Preview = () => {
       quizForPreview = {
         id: quizItem.id || "",
         title: quizItem.title || "Quiz",
+
         description: quizItem.description || "",
         questions: Array.isArray(quizItem.questions)
           ? quizItem.questions.map((q: any) => ({
@@ -257,7 +261,9 @@ const Preview = () => {
         questions: [],
       };
     }
-    previewComponent = <QuizPreview quiz={quizForPreview} />;
+    previewComponent = (
+      <QuizPreview quiz={quizForPreview} quizIndex={quizIndex + 1} />
+    );
   } else if (type === "assignment") {
     previewComponent = (
       <AssignmentPreview

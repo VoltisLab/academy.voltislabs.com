@@ -69,7 +69,7 @@ export interface Quiz {
 interface QuizPreviewProps {
   quiz?: Quiz; // Make quiz optional
   onClose?: () => void; // Make onClose optional
-
+  quizIndex?: number;
   fullScreen?: boolean; // State for full screen mode
 }
 
@@ -83,6 +83,7 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
   quiz,
   onClose,
   fullScreen,
+  quizIndex,
 }) => {
   const { expandedView } = usePreviewContext();
 
@@ -367,7 +368,7 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
                   {quiz?.title || "New quiz"}
                 </h2>
                 <div className=" space-x-4">
-                  <span>{quiz?.title || "Quiz"}</span>
+                  <span>Quiz {quizIndex}</span>
                   <span>|</span>
                   <span>
                     {totalQuestions}{" "}
