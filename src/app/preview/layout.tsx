@@ -16,28 +16,7 @@ import StudentPreviewSidebar from "@/components/instructor/create-new-course/cur
 import BottomTabsContainer from "@/components/instructor/create-new-course/curriculum/components/lecture/components/BottomTabsContainer";
 import { useRouter } from "next/navigation";
 import { AssignmentProvider } from "@/context/AssignmentDataContext";
-
-// export interface ChildProps {
-//   expandedView: boolean;
-//   toggleExpandedView: () => void;
-//   parentRef: React.RefObject<HTMLDivElement | null>;
-// }
-
-const PreviewContext = React.createContext<{
-  expandedView: boolean;
-  toggleExpandedView: () => void;
-  parentRef: React.RefObject<HTMLDivElement | null>;
-} | null>(null);
-
-export const usePreviewContext = () => {
-  const context = useContext(PreviewContext);
-  if (!context) {
-    throw new Error(
-      "usePreviewContext must be used within PreviewContext.Provider"
-    );
-  }
-  return context;
-};
+import { PreviewProvider, usePreviewContext } from "@/context/PreviewContext";
 
 export default function PreviewLayout({
   children,
@@ -120,10 +99,11 @@ export default function PreviewLayout({
     }
   };
 
-  const [expandedView, setExpandedView] = useState(false);
-  const toggleExpandedView = () => setExpandedView(!expandedView);
-  const parentRef = useRef<HTMLDivElement>(null);
+  // const [expandedView, setExpandedView] = useState(false);
+  // const toggleExpandedView = () => setExpandedView(!expandedView);
+  // const parentRef = useRef<HTMLDivElement>(null);
 
+  const { expandedView, parentRef } = usePreviewContext();
   console.log("Expanded View:", expandedView);
 
   return (
@@ -131,9 +111,7 @@ export default function PreviewLayout({
       <div className="flex flex-row bg-white">
         {/* Main preview window and bottom tabs (scrollable as a unit) */}
 
-        <PreviewContext.Provider
-          value={{ expandedView, toggleExpandedView, parentRef }}
-        >
+        <PreviewProvider>
           <div
             ref={parentRef}
             className={`flex-1 flex flex-col overflow-y-auto ${
@@ -170,7 +148,7 @@ export default function PreviewLayout({
               activeItemId={itemId}
             />
           </div>
-        </PreviewContext.Provider>
+        </PreviewProvider>
 
         {/* Sidebar on the right, fixed width, scrollable */}
         <div

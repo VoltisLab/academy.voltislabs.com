@@ -629,72 +629,72 @@ const QuizItem: React.FC<QuizItemProps> = ({
   const isNewQuiz = questions.length === 0;
 
   // FIXED: Quiz preview page with proper resource handling
-  const QuizPreviewPage: React.FC = () => {
-    // Create enhanced sections with proper content type detection and resources
-    const enhancedSections = createEnhancedSections();
+  // const QuizPreviewPage: React.FC = () => {
+  //   // Create enhanced sections with proper content type detection and resources
+  //   const enhancedSections = createEnhancedSections();
 
-    console.log("📊 Quiz preview sections enhanced:", {
-      totalSections: enhancedSections.length,
-      totalLectures: enhancedSections.reduce(
-        (acc, section) => acc + (section.lectures?.length || 0),
-        0
-      ),
-      lecturesWithActualContentType: enhancedSections.reduce(
-        (acc, section) =>
-          acc +
-          (section.lectures?.filter(
-            (l: Lecture) => (l as EnhancedLecture).actualContentType
-          )?.length || 0),
-        0
-      ),
-      lecturesWithResources: enhancedSections.reduce(
-        (acc, section) =>
-          acc +
-          (section.lectures?.filter((l: Lecture) => {
-            const enhanced = l as EnhancedLecture;
-            return (
-              enhanced.lectureResources &&
-              (enhanced.lectureResources.uploadedFiles.length > 0 ||
-                enhanced.lectureResources.sourceCodeFiles.length > 0 ||
-                enhanced.lectureResources.externalResources.length > 0)
-            );
-          }).length || 0),
-        0
-      ),
-    });
+  //   console.log("📊 Quiz preview sections enhanced:", {
+  //     totalSections: enhancedSections.length,
+  //     totalLectures: enhancedSections.reduce(
+  //       (acc, section) => acc + (section.lectures?.length || 0),
+  //       0
+  //     ),
+  //     lecturesWithActualContentType: enhancedSections.reduce(
+  //       (acc, section) =>
+  //         acc +
+  //         (section.lectures?.filter(
+  //           (l: Lecture) => (l as EnhancedLecture).actualContentType
+  //         )?.length || 0),
+  //       0
+  //     ),
+  //     lecturesWithResources: enhancedSections.reduce(
+  //       (acc, section) =>
+  //         acc +
+  //         (section.lectures?.filter((l: Lecture) => {
+  //           const enhanced = l as EnhancedLecture;
+  //           return (
+  //             enhanced.lectureResources &&
+  //             (enhanced.lectureResources.uploadedFiles.length > 0 ||
+  //               enhanced.lectureResources.sourceCodeFiles.length > 0 ||
+  //               enhanced.lectureResources.externalResources.length > 0)
+  //           );
+  //         }).length || 0),
+  //       0
+  //     ),
+  //   });
 
-    return (
-      <StudentVideoPreview
-        videoContent={{
-          uploadTab: { selectedFile: null },
-          libraryTab: {
-            searchQuery: "",
-            selectedVideo: null,
-            videos: [],
-          },
-          activeTab: "uploadVideo",
-          selectedVideoDetails: null,
-        }}
-        articleContent={{ text: "" }}
-        setShowVideoPreview={setShowVideoPreview}
-        lecture={{
-          ...lecture,
-          contentType: "quiz",
-        }}
-        // FIXED: Pass both enhanced sections AND individual resource arrays
-        // This ensures resources are available regardless of how StudentVideoPreview expects them
-        uploadedFiles={uploadedFiles}
-        sourceCodeFiles={sourceCodeFiles}
-        externalResources={externalResources}
-        section={{
-          id: "all-sections",
-          name: "All Sections",
-          sections: enhancedSections, // Pass enhanced sections with proper content types and resources
-        }}
-        quizData={quizData}
-      />
-    );
-  };
+  //   return (
+  //     <StudentVideoPreview
+  //       videoContent={{
+  //         uploadTab: { selectedFile: null },
+  //         libraryTab: {
+  //           searchQuery: "",
+  //           selectedVideo: null,
+  //           videos: [],
+  //         },
+  //         activeTab: "uploadVideo",
+  //         selectedVideoDetails: null,
+  //       }}
+  //       articleContent={{ text: "" }}
+  //       setShowVideoPreview={setShowVideoPreview}
+  //       // lecture={{
+  //       //   ...lecture,
+  //       //   contentType: "quiz",
+  //       // }}
+  //       // FIXED: Pass both enhanced sections AND individual resource arrays
+  //       // This ensures resources are available regardless of how StudentVideoPreview expects them
+  //       uploadedFiles={uploadedFiles}
+  //       sourceCodeFiles={sourceCodeFiles}
+  //       externalResources={externalResources}
+  //       section={{
+  //         id: "all-sections",
+  //         name: "All Sections",
+  //         sections: enhancedSections, // Pass enhanced sections with proper content types and resources
+  //       }}
+  //       quizData={quizData}
+  //     />
+  //   );
+  // };
 
   if (showConfirmModal) {
     return (
@@ -1181,7 +1181,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
       )}
 
       {/* Show preview component when needed */}
-      {showVideoPreview && <QuizPreviewPage />}
+      {/* {showVideoPreview && <QuizPreviewPage />} */}
     </div>
   );
 };

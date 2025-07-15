@@ -10,7 +10,7 @@ import { IoIosInformationCircleOutline } from "react-icons/io";
 import { LiaFileDownloadSolid } from "react-icons/lia";
 import { HLSVideoPlayer } from "./HLSVideoPlayer";
 import RichTextEditor from "./NewRichTextEditor";
-import { usePreviewContext } from "@/app/preview/layout";
+import { usePreviewContext } from "@/context/PreviewContext";
 import { ControlButtons } from "@/components/preview/ControlsButton";
 
 export default function AssignmentPreview({
@@ -48,7 +48,9 @@ export default function AssignmentPreview({
   const { expandedView } = usePreviewContext();
 
   // Calculate duration text
-  const durationText = `${assignmentData?.estimatedDuration ?? 0} ${assignmentData.durationUnit}`;
+  const durationText = `${assignmentData?.estimatedDuration ?? 0} ${
+    assignmentData.durationUnit
+  }`;
 
   // Handle navigation to step
   const handleStepNavigation = (newStep: typeof step) => {

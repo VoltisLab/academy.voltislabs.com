@@ -31,7 +31,7 @@ import {
   RiExpandHorizontalLine,
 } from "react-icons/ri";
 import { ControlButtons } from "@/components/preview/ControlsButton";
-import { usePreviewContext } from "@/app/preview/layout";
+import { usePreviewContext } from "@/context/PreviewContext";
 
 // Define interfaces for quiz data
 export interface Answer {
