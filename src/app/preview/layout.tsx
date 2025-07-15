@@ -1,12 +1,22 @@
 "use client";
 
-import React, { useEffect, useState, useMemo } from "react";
+import React, {
+  useEffect,
+  useState,
+  useMemo,
+  isValidElement,
+  cloneElement,
+  ReactElement,
+  useRef,
+  useContext,
+} from "react";
 import { useSectionService } from "@/services/useSectionService";
 import { useParams } from "next/navigation";
 import StudentPreviewSidebar from "@/components/instructor/create-new-course/curriculum/components/lecture/components/StudentPreviewSidebar";
 import BottomTabsContainer from "@/components/instructor/create-new-course/curriculum/components/lecture/components/BottomTabsContainer";
 import { useRouter } from "next/navigation";
 import { AssignmentProvider } from "@/context/AssignmentDataContext";
+import { PreviewProvider, usePreviewContext } from "@/context/PreviewContext";
 
 export default function PreviewLayout({
   children,
@@ -89,12 +99,24 @@ export default function PreviewLayout({
     }
   };
 
+  // const [expandedView, setExpandedView] = useState(false);
+  // const toggleExpandedView = () => setExpandedView(!expandedView);
+  // const parentRef = useRef<HTMLDivElement>(null);
+
+  const { expandedView, parentRef } = usePreviewContext();
+  console.log("Expanded View:", expandedView);
+
   return (
     <AssignmentProvider>
       <div className="flex flex-row bg-white">
         {/* Main preview window and bottom tabs (scrollable as a unit) */}
 
-        <div className="flex-1 flex flex-col overflow-y-auto">
+        <div
+          ref={parentRef}
+          className={`flex-1 flex flex-col overflow-y-auto ${
+            expandedView ? "w-screen" : ""
+          }`}
+        >
           {children}
           {/* Bottom tabs always visible */}
           <BottomTabsContainer
@@ -102,7 +124,7 @@ export default function PreviewLayout({
             setActiveTab={setActiveTab}
             showSearch={showSearch}
             setShowSearch={setShowSearch}
-            isExpanded={false}
+            isExpanded={expandedView}
             selectedItemData={{}}
             activeItemType={"lecture"}
             progress={0}
@@ -125,9 +147,14 @@ export default function PreviewLayout({
             activeItemId={itemId}
           />
         </div>
+        {/* </PreviewProvider> */}
 
         {/* Sidebar on the right, fixed width, scrollable */}
-        <div className="w-[24vw] border-l border-gray-200 overflow-y-auto flex-shrink-0">
+        <div
+          className={` border-l border-gray-200 overflow-y-auto flex-shrink-0  ${
+            expandedView ? "w-0" : "w-[24vw]"
+          }`}
+        >
           <StudentPreviewSidebar
             currentLectureId={itemId}
             setShowVideoPreview={() => {}}
