@@ -343,20 +343,7 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
   const componentRef = useRef<HTMLDivElement>(null);
 
   return (
-    <div
-      ref={componentRef}
-      className={`flex flex-col relative bg-white ${
-        fullScreen
-          ? "w-screen h-screen"
-          : expandedView
-          ? "w-screen h-[80vh]"
-          : ""
-      }`}
-      style={{
-        maxHeight: fullScreen ? "100vh" : expandedView ? "80vh" : "70vh",
-        height: fullScreen ? "100vh" : expandedView ? "80vh" : "70vh",
-      }}
-    >
+    <div className="flex flex-col h-full w-full relative">
       {/* Main content */}
       {(quizStatus === "Overview" || quizStatus === "Questions") && (
         <main className="flex-1 overflow-y-auto p-4 sm:p-8 sm:pt-15 w-full">
