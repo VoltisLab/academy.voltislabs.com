@@ -1,6 +1,7 @@
 'use client'
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { UserData } from '@/lib/types';
+import Cookies from 'js-cookie';
 
 interface AuthContextType {
   user: UserData | null;
@@ -30,7 +31,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   useEffect(() => {
     // Check if user is logged in on initial load
-    const token = localStorage.getItem('token');
+    const token = Cookies.get('auth_token');
     
     if (token) {
       // Optionally, you can validate the token or fetch user data here
@@ -43,8 +44,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   const logout = () => {
-    localStorage.removeItem('token');
+    localStorage.removeItem('auth_token');
     localStorage.removeItem('refreshToken');
+    localStorage.removeItem('user');
     setUser(null);
   };
 

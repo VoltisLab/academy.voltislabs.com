@@ -10,6 +10,69 @@ body {
   font-family: var(--font-sans);
 }
 
+@layer base {
+  button {
+    @apply cursor-pointer;
+  }
+}
+
 .jakarta {
-  font-family: var(--font-jakarta)
+  font-family: var(--font-jakarta);
+}
+
+.my-quill .ql-editor {
+  @apply px-3 py-2 text-base leading-relaxed border-0 w-full min-h-[5.5rem] bg-transparent;
+  white-space: pre-wrap;
+}
+
+.ql-editor h2 {
+  font-size: 4rem;
+  /* font-weight: ; */
+  margin: 1rem 0;
+}
+
+/* For the quote style */
+.ql-editor blockquote {
+  border-left: 4px solid #ccc;
+  margin: 1rem 0;
+  padding-left: 1rem;
+  color: #555;
+  font-style: italic;
+}
+
+ql-editor a {
+  color: #2563eb; /* blue-600 */
+  text-decoration: underline;
+}
+
+.ql-editor a:hover {
+  color: #1d4ed8; /* blue-700 */
+}
+
+/* Target inline <code> elements inserted by Quill */
+.my-quill .ql-editor code {
+  color: #d0a120; /* yellow text */
+  background: transparent !important; /* remove bg */
+  border: 1px solid #d1d5db; /* gray-300 */
+  /* padding: 1rem 1rem; */
+  border-radius: 0.25rem;
+  font-family: monospace;
+}
+
+.my-quill .ql-container {
+  border-top: none !important;
+  border: none !important;
+}
+/* .my-quill .ql-container:hover { */
+/* background-color: #9792924a; */
+/* } */
+
+.my-quill .ql-editor:focus {
+  outline: none !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
+.my-quill .ql-editor::before {
+  font-style: normal !important; /* Make placeholder not italic */
 }

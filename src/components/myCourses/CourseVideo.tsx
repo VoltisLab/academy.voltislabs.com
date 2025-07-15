@@ -13,7 +13,7 @@ function CourseVideo({
   const videoRef = useRef<HTMLVideoElement>(null);
 
   return (
-    <div className="w-full lg:h-[449px] h-[349px] bg-black rounded-xl overflow-hidden relative">
+    <div className="w-full lg:h-[449px] h-[349px] bg-black rounded-[27px] overflow-hidden relative">
       <video
         ref={videoRef}
         className="w-full h-full object-cover"

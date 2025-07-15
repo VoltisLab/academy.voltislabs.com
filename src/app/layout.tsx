@@ -1,12 +1,10 @@
 import type { Metadata } from "next";
-import {
-  Geist_Mono,
-  Maven_Pro,
-  Plus_Jakarta_Sans,
-} from "next/font/google";
+import { Geist_Mono, Maven_Pro, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
-import Header from "@/components/Header";
 import { AuthProvider } from "@/context/AuthContext";
+import { AsideProvider } from "@/context/showAsideContext";
+import { LoadingProvider } from "@/context/LoadingContext";
+import ClientLoaderWrapper from "@/components/loader/ClientLoaderWrapper";
 
 // Fonts
 const mavenPro = Maven_Pro({
@@ -68,8 +66,11 @@ export default function RootLayout({
         className={`${mavenPro.variable} ${geistMono.variable} ${plusJakarta.variable} font-sans antialiased`}
       >
         <AuthProvider>
-        
-          {children}
+          <LoadingProvider>
+            <AsideProvider>
+              <ClientLoaderWrapper>{children}</ClientLoaderWrapper>
+            </AsideProvider>
+          </LoadingProvider>
         </AuthProvider>
       </body>
     </html>
