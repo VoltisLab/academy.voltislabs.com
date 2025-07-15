@@ -1,3 +1,4 @@
+"use client"
 import { useState, useEffect } from "react";
 import {
   ChevronDown,
@@ -21,6 +22,8 @@ import {
   EnhancedLecture,
   ContentTypeDetector,
 } from "@/lib/types";
+import { useRouter } from "next/router";
+import { useParams } from "next/navigation";
 
 // Define the ContentItemType properly
 type ContentItemType =
@@ -64,7 +67,8 @@ interface SectionWithItems {
 interface StudentPreviewSidebarProps {
   currentLectureId: string;
   setShowVideoPreview: React.Dispatch<React.SetStateAction<boolean>>;
-  onSelectItem?: (itemId: string, itemType: string) => void;
+  // onSelectItem?: (itemId: string, itemType: string) => void;
+    onSelectItem?: (itemId: string, itemType: string, courseId: string, sectionId: string) => void;
   sections?: Array<{
     id: string;
     name: string;
@@ -205,6 +209,11 @@ const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
     return "video";
   };
 
+
+
+
+
+
   // FIXED: Create resource map from props to aggregate all resources by lectureId
   const createResourceMap = () => {
     const resourcesByLectureId: Record<
@@ -281,9 +290,11 @@ const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
 
     // Initialize expanded state for all sections
     const initialExpandedState: Record<string, boolean> = {};
+
     sections.forEach((section) => {
       initialExpandedState[section.id] = section.isExpanded !== false;
     });
+
     setExpandedSections(initialExpandedState);
 
     // Process sections to format for sidebar display
@@ -422,10 +433,10 @@ const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
     setProcessedSections(formatted);
   }, [
     sections,
-    currentLectureId,
-    uploadedFiles,
-    sourceCodeFiles,
-    externalResources,
+    // currentLectureId,
+    // uploadedFiles,
+    // sourceCodeFiles,
+    // externalResources,
   ]); // FIXED: Include resource props in dependencies
 
   // Toggle a section's expanded state
@@ -451,20 +462,38 @@ const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
   };
 
   // FIXED: Handle selecting an item with proper content type detection
-  const handleSelectItem = (itemId: string, itemType?: string) => {
-    // Always use 'lecture' for both video and article lectures
-    // const forcedType =
-    //   itemType === "video" || itemType === "article" ? "lecture" : itemType;
-    // if (onSelectItem) {
-    //   onSelectItem(itemId, forcedType || "lecture");
-    // }
+  // const handleSelectItem = (itemId: string, itemType?: string) => {
+  //   // Always use 'lecture' for both video and article lectures
+  //   // const forcedType =
+  //   //   itemType === "video" || itemType === "article" ? "lecture" : itemType;
+  //   // if (onSelectItem) {
+  //   //   onSelectItem(itemId, forcedType || "lecture");
+  //   // }
 
-     const typeToSend = (itemType === "video" || itemType === "article") ? "lecture" : itemType;
-  if (onSelectItem) {
-    onSelectItem(itemId, typeToSend || "lecture");
-  }
+  //    const typeToSend = (itemType === "video" || itemType === "article") ? "lecture" : itemType;
+  // if (onSelectItem) {
+  //   onSelectItem(itemId, typeToSend || "lecture");
+  // }
 
-  };
+  // };
+
+  // const router = useRouter();
+
+  const params = useParams();
+
+  // console.log("params", params);
+  
+const courseId = Array.isArray(params?.courseId) ? params?.courseId[0] : params?.courseId;
+
+const handleSelectItem = (
+  itemId: string,
+  itemType: string,
+  // courseId: string,
+  sectionId: string
+) => {
+  const typeToSend = (itemType === "video" || itemType === "article") ? "lecture" : itemType;
+  window.location.href =`/preview/${typeToSend}/${courseId}/${sectionId}/${itemId}`;
+};
 
   // FIXED: Get icon for content type with better detection
   const getContentIcon = (item: ContentItem) => {
@@ -659,7 +688,7 @@ const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
                           ? "bg-gray-200 "
                           : "hover:bg-gray-50 bg-white"
                       } cursor-pointer hover:bg-gray-200`}
-                      onClick={() => handleSelectItem(item.id, item.type)}
+                      onClick={() => handleSelectItem(item.id, item.type, section.id)}
                     >
                       <div className="flex items-start">
                         <input
