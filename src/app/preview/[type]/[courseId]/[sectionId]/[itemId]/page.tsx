@@ -228,40 +228,23 @@ const Preview = () => {
     let quizItem = currentSection.quiz?.find(
       (q: any) => String(q.id) === String(itemId)
     );
+    // Ensure the quiz object has the correct structure and fallback for missing questions
+    console.log("Quiz Item:", quizItem);
     let quizForPreview = undefined;
     if (quizItem) {
       quizForPreview = {
         id: quizItem.id || "",
-        title:
-          "name" in quizItem &&
-          typeof quizItem.name === "string" &&
-          quizItem.name
-            ? quizItem.name
-            : quizItem.title,
+        title: quizItem.title || "Quiz",
         description: quizItem.description || "",
         questions: Array.isArray(quizItem.questions)
           ? quizItem.questions.map((q: any) => ({
               id: q.id || "",
-              text: q.text || q.name || "",
+              text: q.text || "",
               answerChoices: Array.isArray(q.answerChoices)
-                ? q.answerChoices.map((a: any) => ({
-                    id: a.id || a.order || 0,
-                    text: a.text || "",
-                    order: a.order || 0,
-                    isCorrect: !!a.isCorrect,
-                    explanation: a.explanation || "",
-                  }))
+                ? q.answerChoices
                 : [],
               orders: q.orders || [],
-              relatedLecture: q.relatedLecture
-                ? {
-                    id: q.relatedLecture.id || 0,
-                    title: q.relatedLecture.title || "",
-                    videoUrl: q.relatedLecture.videoUrl || "",
-                    notes: q.relatedLecture.notes || "",
-                    description: q.relatedLecture.description || "",
-                  }
-                : undefined,
+              relatedLecture: q.relatedLecture || null,
               type: q.type || "multiple-choice",
             }))
           : [],
@@ -274,30 +257,7 @@ const Preview = () => {
         questions: [],
       };
     }
-    const emptyVideoContent = {
-      uploadTab: { selectedFile: null },
-      libraryTab: { searchQuery: "", selectedVideo: null, videos: [] },
-      activeTab: "uploadVideo",
-      selectedVideoDetails: null,
-    };
-    previewComponent = (
-      <StudentCoursePreview
-        courseId={courseId}
-        activeItem={quizForPreview}
-        videoContent={emptyVideoContent}
-        setShowVideoPreview={() => {}}
-        section={{
-          id: currentSection.id || "",
-          name: currentSection.title || "",
-          sections: sidebarSections,
-          lectures: currentSection.lectures as any[],
-          quizzes: (currentSection.quiz as any[]) || [],
-          assignments: (currentSection.assignment as any[]) || [],
-          codingExercises: (currentSection.codingExercises as any[]) || [],
-        }}
-        articleContent={{ text: "" }}
-      />
-    );
+    previewComponent = <QuizPreview quiz={quizForPreview} />;
   } else if (type === "assignment") {
     previewComponent = (
       <AssignmentPreview
