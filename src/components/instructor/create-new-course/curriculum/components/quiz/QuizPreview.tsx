@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   IoIosInformationCircle,
   IoIosInformationCircleOutline,
@@ -22,6 +22,16 @@ import { IoReloadOutline } from "react-icons/io5";
 import { BiErrorAlt } from "react-icons/bi";
 import { IoChevronForward } from "react-icons/io5";
 import { PiCheckThin } from "react-icons/pi";
+import { MdOutlineCloseFullscreen, MdOutlineSettings } from "react-icons/md";
+import {
+  RiCollapseDiagonalLine,
+  RiCollapseHorizontalLine,
+  RiExpandDiagonalLine,
+  RiExpandHorizontalFill,
+  RiExpandHorizontalLine,
+} from "react-icons/ri";
+import { ControlButtons } from "@/components/preview/ControlsButton";
+import { usePreviewContext } from "@/app/preview/layout";
 
 // Define interfaces for quiz data
 export interface Answer {
@@ -59,6 +69,8 @@ export interface Quiz {
 interface QuizPreviewProps {
   quiz?: Quiz; // Make quiz optional
   onClose?: () => void; // Make onClose optional
+
+  fullScreen?: boolean; // State for full screen mode
 }
 
 // Helper function to remove paragraph tags
@@ -67,7 +79,13 @@ const removePTags = (text: string): string => {
   return text.replace(/<\/?p>/g, "");
 };
 
-const QuizPreview: React.FC<QuizPreviewProps> = ({ quiz, onClose }) => {
+const QuizPreview: React.FC<QuizPreviewProps> = ({
+  quiz,
+  onClose,
+  fullScreen,
+}) => {
+  const { expandedView } = usePreviewContext();
+
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState<number>(0);
   const [selectedAnswers, setSelectedAnswers] = useState<
     Record<number, number | undefined>
@@ -75,7 +93,7 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({ quiz, onClose }) => {
   const [quizStatus, setQuizStatus] = useState<
     "Overview" | "Questions" | "Result"
   >("Overview");
-  const [sidebarOpen, setSidebarOpen] = useState<boolean>(false);
+  // const [sidebarOpen, setSidebarOpen] = useState<boolean>(false);
   const [answeredCorrectly, setAnsweredCorrectly] = useState<
     Record<number, boolean>
   >({});
@@ -116,9 +134,9 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({ quiz, onClose }) => {
     }
   };
 
-  const toggleSidebar = (): void => {
-    setSidebarOpen(!sidebarOpen);
-  };
+  // const toggleSidebar = (): void => {
+  //   setSidebarOpen(!sidebarOpen);
+  // };
 
   const totalQuestions = quiz?.questions?.length || 0;
   console.log("Total questions:", totalQuestions);
@@ -320,10 +338,22 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({ quiz, onClose }) => {
   const skippedCount = skippedQuestions.length;
   const needsReviewCount = needsReviewQuestions.length;
 
+  const componentRef = useRef<HTMLDivElement>(null);
+
   return (
     <div
-      className="flex flex-col h-full relative w-[79.5vw]"
-      style={{ maxHeight: "70vh", height: "70vh" }}
+      ref={componentRef}
+      className={`flex flex-col relative bg-white ${
+        fullScreen
+          ? "w-screen h-screen"
+          : expandedView
+          ? "w-screen h-[80vh]"
+          : ""
+      }`}
+      style={{
+        maxHeight: fullScreen ? "100vh" : expandedView ? "80vh" : "70vh",
+        height: fullScreen ? "100vh" : expandedView ? "80vh" : "70vh",
+      }}
     >
       {/* Main content */}
       {(quizStatus === "Overview" || quizStatus === "Questions") && (
@@ -344,7 +374,13 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({ quiz, onClose }) => {
                   </span>
                 </div>
                 <div className="text-gray-700 ">
-                  {quiz?.description || "Quiz description"}
+                  <p
+                    dangerouslySetInnerHTML={
+                      quiz?.description
+                        ? { __html: quiz.description }
+                        : { __html: "No description provided." }
+                    }
+                  ></p>
                 </div>
               </div>
 
@@ -352,7 +388,7 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({ quiz, onClose }) => {
               <div className="flex space-x-4 text-sm">
                 <button
                   onClick={startQuiz}
-                  className="px-6 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 cursor-pointer"
+                  className="px-6 py-2 bg-[#6d28d2] text-white rounded hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 cursor-pointer"
                 >
                   Start quiz
                 </button>
@@ -544,7 +580,7 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({ quiz, onClose }) => {
       )}
 
       {quizStatus === "Result" && (
-        <div className="overflow-y-auto">
+        <div className="overflow-y-auto flex-1">
           {/* heading */}
           <div className="bg-black text-white w-full px-10 md:px-30 py-5 sm:py-10 space-y-2">
             <h2 className="font-semibold text-2xl">
@@ -631,85 +667,89 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({ quiz, onClose }) => {
       )}
 
       {/* Footer controls */}
-      <div className="flex justify-between items-center mt-auto px-4 h-14">
+      <div className="flex items-center bg-white border-t border-gray-200 pl-4 h-14">
         {quizStatus !== "Overview" && (
-          <>
-            <div className="">
-              Question {currentQuestionIndex + 1} of {totalQuestions}
-            </div>
+          <div className="flex justify-between items-center mt-auto pr-4 h-full flex-1">
+            <>
+              <div className="">
+                Question {currentQuestionIndex + 1} of {totalQuestions}
+              </div>
 
-            <div className="space-x-2 text-sm font-bold">
-              {quizStatus === "Questions" && (
-                <>
-                  {fromResult ? (
-                    <button
-                      onClick={backToResults}
-                      className="px-4 py-2 rounded bg-purple-600 text-white hover:bg-purple-700 cursor-pointer"
-                    >
-                      Back to result
-                    </button>
-                  ) : (
-                    <>
-                      {/* {isLastQuestion && (
+              <div className="space-x-2 text-sm font-bold">
+                {quizStatus === "Questions" && (
+                  <>
+                    {fromResult ? (
+                      <button
+                        onClick={backToResults}
+                        className="px-4 py-2 rounded bg-[#6d28d2] text-white hover:bg-purple-700 cursor-pointer"
+                      >
+                        Back to result
+                      </button>
+                    ) : (
+                      <>
+                        {/* {isLastQuestion && (
                        
                       )} */}
 
-                      {/* Always show Check button if answer isn't correct */}
-                      {!isAnswerChecked || !isCorrectAnswer ? (
-                        <>
+                        {/* Always show Check button if answer isn't correct */}
+                        {!isAnswerChecked || !isCorrectAnswer ? (
+                          <>
+                            <button
+                              onClick={skipQuestion}
+                              className="transition px-4 py-2 rounded hover:bg-neutral-200 cursor-pointer"
+                            >
+                              Skip question
+                            </button>
+                            <button
+                              disabled={!isAnswerSelected}
+                              onClick={checkAnswer}
+                              className="transition px-4 py-2 rounded bg-[#6d28d2] text-white hover:bg-purple-700 cursor-pointer disabled:cursor-not-allowed disabled:bg-purple-200"
+                            >
+                              Check answer
+                            </button>
+                          </>
+                        ) : (
                           <button
-                            onClick={skipQuestion}
-                            className="transition px-4 py-2 rounded hover:bg-neutral-200 cursor-pointer"
+                            onClick={goToNextQuestion}
+                            className={`px-4 py-2 rounded pointer bg-[#6d28d2] text-white hover:bg-purple-700`}
                           >
-                            Skip question
+                            <span className="flex items-center gap-0.5">
+                              {!isLastQuestion ? (
+                                <span>Next</span>
+                              ) : (
+                                <span>See results</span>
+                              )}
+                              <IoChevronForward
+                                size={12}
+                                className="translate-y-px"
+                              />
+                            </span>
                           </button>
-                          <button
-                            disabled={!isAnswerSelected}
-                            onClick={checkAnswer}
-                            className="transition px-4 py-2 rounded bg-purple-600 text-white hover:bg-purple-700 cursor-pointer disabled:cursor-not-allowed disabled:bg-purple-200"
-                          >
-                            Check answer
-                          </button>
-                        </>
-                      ) : (
-                        <button
-                          onClick={goToNextQuestion}
-                          className={`px-4 py-2 rounded pointer bg-purple-600 text-white hover:bg-purple-700`}
-                        >
-                          <span className="flex items-center gap-0.5">
-                            {!isLastQuestion ? (
-                              <span>Next</span>
-                            ) : (
-                              <span>See results</span>
-                            )}
-                            <IoChevronForward
-                              size={12}
-                              className="translate-y-px"
-                            />
-                          </span>
-                        </button>
-                      )}
-                    </>
-                  )}
-                </>
-              )}
-              {/* ... (keep the rest of the footer controls the same) */}
-              {quizStatus === "Result" && (
-                <>
-                  <button className="transition px-4 py-2 rounded hover:bg-neutral-200 cursor-pointer">
-                    Continue
-                  </button>
-                  <button
-                    onClick={retryQuiz}
-                    className="transition px-4 py-2 rounded bg-purple-600 text-white hover:bg-purple-700 cursor-pointer"
-                  >
-                    Retry quiz
-                  </button>
-                </>
-              )}
-            </div>
-          </>
+                        )}
+                      </>
+                    )}
+                  </>
+                )}
+                {/* ... (keep the rest of the footer controls the same) */}
+                {quizStatus === "Result" && (
+                  <>
+                    <button className="transition px-4 py-2 rounded hover:bg-neutral-200 cursor-pointer">
+                      Continue
+                    </button>
+                    <button
+                      onClick={retryQuiz}
+                      className="transition px-4 py-2 rounded bg-[#6d28d2] text-white hover:bg-purple-700 cursor-pointer"
+                    >
+                      Retry quiz
+                    </button>
+                  </>
+                )}
+              </div>
+            </>
+          </div>
         )}
+        {/* Sidebar settings and full screen toggle button */}
+        <ControlButtons componentRef={componentRef} className="ml-auto" />
       </div>
     </div>
   );

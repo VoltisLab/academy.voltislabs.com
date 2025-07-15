@@ -1,12 +1,43 @@
 "use client";
 
-import React, { useEffect, useState, useMemo } from "react";
+import React, {
+  useEffect,
+  useState,
+  useMemo,
+  isValidElement,
+  cloneElement,
+  ReactElement,
+  useRef,
+  useContext,
+} from "react";
 import { useSectionService } from "@/services/useSectionService";
 import { useParams } from "next/navigation";
 import StudentPreviewSidebar from "@/components/instructor/create-new-course/curriculum/components/lecture/components/StudentPreviewSidebar";
 import BottomTabsContainer from "@/components/instructor/create-new-course/curriculum/components/lecture/components/BottomTabsContainer";
 import { useRouter } from "next/navigation";
 import { AssignmentProvider } from "@/context/AssignmentDataContext";
+
+// export interface ChildProps {
+//   expandedView: boolean;
+//   toggleExpandedView: () => void;
+//   parentRef: React.RefObject<HTMLDivElement | null>;
+// }
+
+const PreviewContext = React.createContext<{
+  expandedView: boolean;
+  toggleExpandedView: () => void;
+  parentRef: React.RefObject<HTMLDivElement | null>;
+} | null>(null);
+
+export const usePreviewContext = () => {
+  const context = useContext(PreviewContext);
+  if (!context) {
+    throw new Error(
+      "usePreviewContext must be used within PreviewContext.Provider"
+    );
+  }
+  return context;
+};
 
 export default function PreviewLayout({
   children,
@@ -89,45 +120,64 @@ export default function PreviewLayout({
     }
   };
 
+  const [expandedView, setExpandedView] = useState(false);
+  const toggleExpandedView = () => setExpandedView(!expandedView);
+  const parentRef = useRef<HTMLDivElement>(null);
+
+  console.log("Expanded View:", expandedView);
+
   return (
     <AssignmentProvider>
       <div className="flex flex-row bg-white">
         {/* Main preview window and bottom tabs (scrollable as a unit) */}
 
-        <div className="flex-1 flex flex-col overflow-y-auto">
-          {children}
-          {/* Bottom tabs always visible */}
-          <BottomTabsContainer
-            activeTab={activeTab}
-            setActiveTab={setActiveTab}
-            showSearch={showSearch}
-            setShowSearch={setShowSearch}
-            isExpanded={false}
-            selectedItemData={{}}
-            activeItemType={"lecture"}
-            progress={0}
-            formatTime={() => ""}
-            notes={[]}
-            onCreateNote={() => {}}
-            onSaveNote={() => {}}
-            onCancelNote={() => {}}
-            onEditNote={() => {}}
-            onDeleteNote={() => {}}
-            isAddingNote={false}
-            currentNoteContent={""}
-            setCurrentNoteContent={() => {}}
-            selectedLectureFilter={""}
-            setSelectedLectureFilter={() => {}}
-            selectedSortOption={""}
-            setSelectedSortOption={() => {}}
-            getSortedNotes={() => []}
-            onOpenLearningModal={() => {}}
-            activeItemId={itemId}
-          />
-        </div>
+        <PreviewContext.Provider
+          value={{ expandedView, toggleExpandedView, parentRef }}
+        >
+          <div
+            ref={parentRef}
+            className={`flex-1 flex flex-col overflow-y-auto ${
+              expandedView ? "w-screen" : ""
+            }`}
+          >
+            {children}
+            {/* Bottom tabs always visible */}
+            <BottomTabsContainer
+              activeTab={activeTab}
+              setActiveTab={setActiveTab}
+              showSearch={showSearch}
+              setShowSearch={setShowSearch}
+              isExpanded={expandedView}
+              selectedItemData={{}}
+              activeItemType={"lecture"}
+              progress={0}
+              formatTime={() => ""}
+              notes={[]}
+              onCreateNote={() => {}}
+              onSaveNote={() => {}}
+              onCancelNote={() => {}}
+              onEditNote={() => {}}
+              onDeleteNote={() => {}}
+              isAddingNote={false}
+              currentNoteContent={""}
+              setCurrentNoteContent={() => {}}
+              selectedLectureFilter={""}
+              setSelectedLectureFilter={() => {}}
+              selectedSortOption={""}
+              setSelectedSortOption={() => {}}
+              getSortedNotes={() => []}
+              onOpenLearningModal={() => {}}
+              activeItemId={itemId}
+            />
+          </div>
+        </PreviewContext.Provider>
 
         {/* Sidebar on the right, fixed width, scrollable */}
-        <div className="w-[24vw] border-l border-gray-200 overflow-y-auto flex-shrink-0">
+        <div
+          className={` border-l border-gray-200 overflow-y-auto flex-shrink-0  ${
+            expandedView ? "w-0" : "w-[24vw]"
+          }`}
+        >
           <StudentPreviewSidebar
             currentLectureId={itemId}
             setShowVideoPreview={() => {}}
