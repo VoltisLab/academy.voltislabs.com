@@ -72,7 +72,6 @@ interface StudentPreviewSidebarProps {
     quizzes?: Array<{
       id: string;
       name: string;
-      title?: string;
       description?: string;
       questions?: any[];
       duration?: string;
@@ -81,7 +80,6 @@ interface StudentPreviewSidebarProps {
     assignments?: Array<{
       id: string;
       name: string;
-      title?: string;
       description?: string;
       duration?: string;
       contentType?: string;
@@ -89,7 +87,6 @@ interface StudentPreviewSidebarProps {
     codingExercises?: Array<{
       id: string;
       name: string;
-      title?: string;
       description?: string;
       duration?: string;
       contentType?: string;
@@ -335,7 +332,7 @@ const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
         section.quizzes.forEach((quiz, index) => {
           contentItems.push({
             id: quiz.id,
-            name: quiz.title || quiz.name || `Quiz ${index + 1}`,
+            name: quiz.name || `Quiz ${index + 1}`,
             type: "quiz",
             duration: quiz.duration || "10min",
             isCompleted: false,
@@ -356,7 +353,7 @@ const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
         section.assignments.forEach((assignment, index) => {
           contentItems.push({
             id: assignment.id,
-            name: assignment.title || assignment.name || `Assignment ${index + 1}`,
+            name: assignment.name || `Assignment ${index + 1}`,
             type: "assignment",
             duration: assignment.duration || "30min",
             isCompleted: false,
@@ -377,7 +374,7 @@ const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
         section.codingExercises.forEach((exercise, index) => {
           contentItems.push({
             id: exercise.id,
-            name: exercise.title || exercise.name || `Coding Exercise ${index + 1}`,
+            name: exercise.name || `Coding Exercise ${index + 1}`,
             type: "coding-exercise",
             duration: exercise.duration || "15min",
             isCompleted: false,
