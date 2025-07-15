@@ -96,7 +96,7 @@ export default function PreviewLayout({
 
         <div className="flex-1 flex flex-col overflow-y-auto">
           {children}
-          {/* Bottom tabs always visible */}
+        
           <BottomTabsContainer
             activeTab={activeTab}
             setActiveTab={setActiveTab}

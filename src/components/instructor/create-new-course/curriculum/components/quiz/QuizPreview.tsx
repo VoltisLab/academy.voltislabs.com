@@ -69,6 +69,7 @@ const removePTags = (text: string): string => {
 
 const QuizPreview: React.FC<QuizPreviewProps> = ({ quiz, onClose }) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState<number>(0);
+  console.log("quiz", quiz)
   const [selectedAnswers, setSelectedAnswers] = useState<
     Record<number, number | undefined>
   >({});
@@ -322,8 +323,7 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({ quiz, onClose }) => {
 
   return (
     <div
-      className="flex flex-col h-full relative w-[79.5vw]"
-      style={{ maxHeight: "70vh", height: "70vh" }}
+      className="flex flex-col h-full w-full relative"
     >
       {/* Main content */}
       {(quizStatus === "Overview" || quizStatus === "Questions") && (
@@ -336,11 +336,10 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({ quiz, onClose }) => {
                   {quiz?.title || "New quiz"}
                 </h2>
                 <div className=" space-x-4">
-                  <span>Quiz 1</span>
+                  <span>{quiz?.title || "Quiz"}</span>
                   <span>|</span>
                   <span>
-                    {totalQuestions}{" "}
-                    {totalQuestions === 1 ? "question" : "questions"}
+                    {totalQuestions} {totalQuestions === 1 ? "question" : "questions"}
                   </span>
                 </div>
                <div
