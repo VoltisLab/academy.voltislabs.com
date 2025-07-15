@@ -87,6 +87,7 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
   const { expandedView } = usePreviewContext();
 
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState<number>(0);
+  console.log("quiz", quiz);
   const [selectedAnswers, setSelectedAnswers] = useState<
     Record<number, number | undefined>
   >({});
@@ -366,7 +367,7 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
                   {quiz?.title || "New quiz"}
                 </h2>
                 <div className=" space-x-4">
-                  <span>Quiz 1</span>
+                  <span>{quiz?.title || "Quiz"}</span>
                   <span>|</span>
                   <span>
                     {totalQuestions}{" "}

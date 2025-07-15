@@ -48,7 +48,7 @@ export default function AssignmentPreview({
   const { expandedView } = usePreviewContext();
 
   // Calculate duration text
-  const durationText = `${assignmentData.estimatedDuration} ${assignmentData.durationUnit}`;
+  const durationText = `${assignmentData?.estimatedDuration ?? 0} ${assignmentData.durationUnit}`;
 
   // Handle navigation to step
   const handleStepNavigation = (newStep: typeof step) => {
@@ -167,7 +167,7 @@ export default function AssignmentPreview({
         {assignmentStatus === "overview" && (
           <div className="max-w-3xl mx-auto pt-10">
             <h2 className="text-2xl font-bold mb-2 text-zinc-700">
-              Assignment: <span>{assignmentData.assignmentTitle}</span>
+              Assignment: <span>{assignmentData?.title}</span>
             </h2>
             <p className="flex items-center gap-2 text-gray-600 mb-4">
               <Clock size={15} />
