@@ -110,9 +110,10 @@ const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
   setShowVideoPreview,
   sections = [],
   onSelectItem,
-  uploadedFiles = [],
-  sourceCodeFiles = [],
-  externalResources = [],
+  // Remove these unused props for resource mapping
+  // uploadedFiles = [],
+  // sourceCodeFiles = [],
+  // externalResources = [],
 }) => {
   // State for managing which resource dropdowns are open
   const [openResourcesDropdowns, setOpenResourcesDropdowns] = useState<
@@ -263,37 +264,51 @@ const type = params?.type;
       return;
     }
 
-    const resourcesByLectureId = createResourceMap();
-
+    // No need to build a global resource map; use lecture.resources directly
     const initialExpandedState: Record<string, boolean> = {};
-    if(type === "lecture"){
+    if (type === "lecture") {
       sections.forEach((section) => {
         initialExpandedState[section.id] = section.isExpanded !== true;
       });
-
-    }else{
-       sections.forEach((section) => {
+    } else {
+      sections.forEach((section) => {
         initialExpandedState[section.id] = section.isExpanded !== false;
       });
-
     }
     setExpandedSections(initialExpandedState);
-    
+
     const formatted = sections.map((section, sectionIndex) => {
       const contentItems: ContentItem[] = [];
-      console.log("mylecture", section);
-      
       // Process lectures
       if (section.lectures && section.lectures.length > 0) {
         section.lectures.forEach((lecture, index) => {
           const detectedContentType = detectLectureContentType(lecture);
-          const lectureResources = resourcesByLectureId[lecture.id] || {
-            uploadedFiles: [],
-            sourceCodeFiles: [],
-            externalResources: [],
+          // --- Use lecture.resources directly ---
+          const resources = lecture.resources || [];
+          const lectureResources = {
+            uploadedFiles: resources
+              .filter((r: any) => r.type === "DOWNLOADABLE_FILES")
+              .map((r: any) => ({
+                name: r.title,
+                size: "", // Add size if available
+                lectureId: lecture.id,
+              })),
+            sourceCodeFiles: resources
+              .filter((r: any) => r.type === "SOURCE_CODE")
+              .map((r: any) => ({
+                name: r.title,
+                url: r.url,
+                lectureId: lecture.id,
+              })),
+            externalResources: resources
+              .filter((r: any) => r.type === "EXTERNAL_RESOURCES")
+              .map((r: any) => ({
+                title: r.title,
+                name: r.title,
+                url: r.url,
+                lectureId: lecture.id,
+              })),
           };
-          
-          
           const hasResources =
             lectureResources.uploadedFiles.length > 0 ||
             lectureResources.sourceCodeFiles.length > 0 ||
@@ -305,7 +320,6 @@ const type = params?.type;
             type: detectedContentType as ContentItemType,
             duration: lecture.duration || "2min",
             hasResources: hasResources,
-            // hasResources: true,
             isCompleted: lecture.isCompleted || false,
             isActive: lecture.id === currentLectureId,
             lectureResources: lectureResources,
@@ -314,7 +328,6 @@ const type = params?.type;
             hasVideoContent: detectedContentType === "video",
             hasArticleContent: detectedContentType === "article",
           };
-
           contentItems.push(contentItem);
         });
       }
