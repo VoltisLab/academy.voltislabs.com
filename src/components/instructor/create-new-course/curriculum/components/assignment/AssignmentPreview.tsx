@@ -10,17 +10,21 @@ import { IoIosInformationCircleOutline } from "react-icons/io";
 import { LiaFileDownloadSolid } from "react-icons/lia";
 import { HLSVideoPlayer } from "./HLSVideoPlayer";
 import RichTextEditor from "./NewRichTextEditor";
+import { usePreviewContext } from "@/context/PreviewContext";
+import { ControlButtons } from "@/components/preview/ControlsButton";
 
 export default function AssignmentPreview({
   assignmentData,
+  fullScreen,
 }: {
   assignmentData: ExtendedLecture;
-  skipAssignment?: () => void;
-  startAssignment?: boolean;
-  setAssignmentStatus?: React.Dispatch<
-    React.SetStateAction<"overview" | "assignment" | "summary/feedback">
-  >;
-  assignmentStatus?: "overview" | "assignment" | "summary/feedback";
+  fullScreen?: boolean;
+  // skipAssignment?: () => void;
+  // startAssignment?: boolean;
+  // setAssignmentStatus?: React.Dispatch<
+  //   React.SetStateAction<"overview" | "assignment" | "summary/feedback">
+  // >;
+  // assignmentStatus?: "overview" | "assignment" | "summary/feedback";
 }) {
   const [assignmentStatus, setAssignmentStatus] = useState<
     "overview" | "assignment" | "summary/feedback"
@@ -41,9 +45,12 @@ export default function AssignmentPreview({
   const [showLearnedInput, setShowLearnedInput] = useState(false);
 
   const resourceRef = useRef<HTMLDivElement>(null);
+  const { expandedView } = usePreviewContext();
 
   // Calculate duration text
-  const durationText = `${assignmentData.estimatedDuration} ${assignmentData.durationUnit}`;
+  const durationText = `${assignmentData?.estimatedDuration ?? 0} ${
+    assignmentData.durationUnit
+  }`;
 
   // Handle navigation to step
   const handleStepNavigation = (newStep: typeof step) => {
@@ -140,17 +147,29 @@ export default function AssignmentPreview({
     console.log("Learned content submitted:", learnedContent);
   };
 
+  const componentRef = useRef<HTMLDivElement>(null);
+
   return (
     <div
-      className="flex flex-col h-full relative w-[79.5vw]"
-      style={{ maxHeight: "70vh", height: "70vh" }}
+      ref={componentRef}
+      className={`flex flex-col relative bg-white ${
+        fullScreen
+          ? "w-screen h-screen"
+          : expandedView
+          ? "w-screen h-[80vh]"
+          : ""
+      }`}
+      style={{
+        maxHeight: fullScreen ? "100vh" : expandedView ? "80vh" : "70vh",
+        height: fullScreen ? "100vh" : expandedView ? "80vh" : "70vh",
+      }}
     >
       {/* <div className="h-full flex-1 overflow-y-auto "> */}
       <main className="flex-1 overflow-y-auto h-full w-full pb-20 px-2">
         {assignmentStatus === "overview" && (
           <div className="max-w-3xl mx-auto pt-10">
             <h2 className="text-2xl font-bold mb-2 text-zinc-700">
-              Assignment: <span>{assignmentData.assignmentTitle}</span>
+              Assignment: <span>{assignmentData?.title}</span>
             </h2>
             <p className="flex items-center gap-2 text-gray-600 mb-4">
               <Clock size={15} />
@@ -296,72 +315,76 @@ export default function AssignmentPreview({
       </main>
 
       {/* Controls */}
-      <div className="flex justify-between items-center px-4 h-14 bg-white w-full absolute bottom-0 left-0">
-        {/* Left hand side */}
-        <div>
-          {isSubmitted && assignmentStatus === "overview" && (
-            <button
-              onClick={() => setAssignmentStatus("summary/feedback")}
-              className="px-3 py-1 border border-purple-600 text-purple-600 hover:bg-purple-100 transition cursor-pointer"
-            >
-              Go to summary
-            </button>
-          )}
-          {assignmentStatus === "summary/feedback" && (
-            <button
-              onClick={() => setAssignmentStatus("assignment")}
-              className="transition px-4 py-2 rounded hover:bg-neutral-200 cursor-pointer"
-            >
-              Back to assignment
-            </button>
-          )}
-        </div>
-
-        {/* Right hand side */}
-        <div>
-          {assignmentStatus === "assignment" && (
-            <>
-              {step !== "instructions" && (
-                <button
-                  onClick={handlePrevious}
-                  className="transition px-4 py-2 rounded hover:bg-neutral-200 cursor-pointer"
-                >
-                  Previous
-                </button>
-              )}
+      <div className="flex items-center bg-white border-t border-gray-200">
+        <div className="flex justify-between items-center px-4 h-14 bg-white w-full">
+          {/* Left hand side */}
+          <div>
+            {isSubmitted && assignmentStatus === "overview" && (
               <button
-                onClick={handleNext}
-                className="px-4 py-2 rounded bg-purple-600 text-white hover:bg-purple-700 cursor-pointer transition"
+                onClick={() => setAssignmentStatus("summary/feedback")}
+                className="px-3 py-1 border border-purple-600 text-purple-600 hover:bg-purple-100 transition cursor-pointer"
               >
-                {step === "giveFeedback" ? "Go to feedback" : "Next"}
+                Go to summary
               </button>
-            </>
-          )}
-
-          {assignmentStatus === "overview" && (
-            <div className="flex items-center gap-4">
+            )}
+            {assignmentStatus === "summary/feedback" && (
               <button
-                // onClick={handlePrevious}
+                onClick={() => setAssignmentStatus("assignment")}
                 className="transition px-4 py-2 rounded hover:bg-neutral-200 cursor-pointer"
               >
-                Skip Assignment
+                Back to assignment
               </button>
+            )}
+          </div>
 
-              <button
-                onClick={handleStartAssignment}
-                className="px-4 py-2 rounded bg-purple-600 text-white hover:bg-purple-700 cursor-pointer transition"
-              >
-                Start Assignment
+          {/* Right hand side */}
+          <div>
+            {assignmentStatus === "assignment" && (
+              <>
+                {step !== "instructions" && (
+                  <button
+                    onClick={handlePrevious}
+                    className="transition px-4 py-2 rounded hover:bg-neutral-200 cursor-pointer"
+                  >
+                    Previous
+                  </button>
+                )}
+                <button
+                  onClick={handleNext}
+                  className="px-4 py-2 rounded bg-purple-600 text-white hover:bg-purple-700 cursor-pointer transition"
+                >
+                  {step === "giveFeedback" ? "Go to feedback" : "Next"}
+                </button>
+              </>
+            )}
+
+            {assignmentStatus === "overview" && (
+              <div className="flex items-center gap-4">
+                <button
+                  // onClick={handlePrevious}
+                  className="transition px-4 py-2 rounded hover:bg-neutral-200 cursor-pointer"
+                >
+                  Skip Assignment
+                </button>
+
+                <button
+                  onClick={handleStartAssignment}
+                  className="px-4 py-2 rounded bg-purple-600 text-white hover:bg-purple-700 cursor-pointer transition"
+                >
+                  Start Assignment
+                </button>
+              </div>
+            )}
+
+            {assignmentStatus === "summary/feedback" && (
+              <button className="px-4 py-2 rounded bg-purple-600 text-white hover:bg-purple-700 cursor-pointer transition">
+                Next lecture
               </button>
-            </div>
-          )}
-
-          {assignmentStatus === "summary/feedback" && (
-            <button className="px-4 py-2 rounded bg-purple-600 text-white hover:bg-purple-700 cursor-pointer transition">
-              Next lecture
-            </button>
-          )}
+            )}
+          </div>
         </div>
+        {/* Sidebar settings and full screen toggle button */}
+        <ControlButtons componentRef={componentRef} />
       </div>
     </div>
   );

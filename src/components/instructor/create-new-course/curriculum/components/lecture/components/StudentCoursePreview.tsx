@@ -601,6 +601,12 @@ const StudentCoursePreview = ({
     setStartAssignment(false);
   };
 
+  const handleSidebarSelect = (itemId: string, itemType: string, courseId: string, sectionId: string) => {
+  // You can add some logging if desired
+  // console.log('Sidebar nav:', {itemId, itemType, courseId, sectionId});
+  router.push(`/preview/${itemType}/${courseId}/${sectionId}/${itemId}`);
+};
+
   // Go to first item of next section
   const goToNextSection = () => {
     const allItems = getAllItemsInOrder();
@@ -1452,7 +1458,9 @@ const StudentCoursePreview = ({
               uploadedFiles={uploadedFiles}
               sourceCodeFiles={sourceCodeFiles}
               externalResources={externalResources}
-              onSelectItem={handleItemSelect}
+              // onSelectItem={handleItemSelect}
+              onSelectItem={handleSidebarSelect}
+
             />
           </div>
         )}
@@ -1472,3 +1480,4 @@ const StudentCoursePreview = ({
 };
 
 export default StudentCoursePreview;
+

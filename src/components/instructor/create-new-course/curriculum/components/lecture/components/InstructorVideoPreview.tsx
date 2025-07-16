@@ -1105,7 +1105,7 @@ const InstructorCoursePreview = ({
     activeItemType === "video" ||
     selectedItemData;
 
-    console.log("hello", shouldShowPreview)
+  console.log("hello", shouldShowPreview);
 
   if (!shouldShowPreview) {
     return null;
@@ -1477,10 +1477,10 @@ const InstructorCoursePreview = ({
               <div className="w-full h-full">
                 <AssignmentPreview
                   assignmentData={assignmentData as ExtendedLecture}
-                  skipAssignment={() => navigateToItem("next")}
-                  startAssignment={startAssignment}
-                  setAssignmentStatus={setAssignmentStatus}
-                  assignmentStatus={assignmentStatus}
+                  // skipAssignment={() => navigateToItem("next")}
+                  // startAssignment={startAssignment}
+                  // setAssignmentStatus={setAssignmentStatus}
+                  // assignmentStatus={assignmentStatus}
                 />
               </div>
             ) : activeItemType === "article" ? (

@@ -5,7 +5,7 @@ import AssignmentPreview from "@/components/instructor/create-new-course/curricu
 import CodingExercisePreview from "@/components/instructor/create-new-course/curriculum/components/code/CodingExercisePreview";
 import { useParams, useRouter } from "next/navigation";
 import { useSectionService } from "@/services/useSectionService";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import React from "react";
 import { CourseSection } from "@/api/course/section/queries";
 import {
@@ -13,6 +13,7 @@ import {
   useAssignment,
 } from "@/context/AssignmentDataContext";
 import { useAssignmentService } from "@/services/useAssignmentService";
+// import { usePreviewContext } from "@/app/preview/layout";
 
 const Preview = () => {
   const params = useParams();
@@ -37,7 +38,6 @@ const Preview = () => {
 
   const { assignmentData, setAssignmentData } = useAssignment();
   const { getAssignment } = useAssignmentService();
-
   const fetchAssignment = useCallback(async () => {
     if (!itemId) return;
     try {
@@ -90,7 +90,7 @@ const Preview = () => {
   }, [courseId]);
 
   // Find the current section
-  
+
   const currentSection = sections?.find(
     (s) => String(s.id) === String(sectionId)
   ) || {
@@ -215,7 +215,7 @@ const Preview = () => {
           id: currentSection.id || "",
           name: currentSection.title || "",
           sections: sidebarSections,
-          lectures: (currentSection.lectures as any[]),
+          lectures: currentSection.lectures as any[],
           quizzes: (currentSection.quiz as any[]) || [],
           assignments: (currentSection.assignment as any[]) || [],
           codingExercises: (currentSection.codingExercises as any[]) || [],
@@ -230,11 +230,23 @@ const Preview = () => {
     );
     // Ensure the quiz object has the correct structure and fallback for missing questions
     console.log("Quiz Item:", quizItem);
+<<<<<<< HEAD
+=======
+    const quizIndex = currentSection.quiz?.findIndex(
+      (q: any) => String(q.id) === String(itemId)
+    );
+    // Ensure the quiz object has the correct structure and fallback for missing questions
+    console.log("Quiz Item:", quizItem);
+>>>>>>> fba79192ec4731373040f0044adb98ccaf0bbe46
     let quizForPreview = undefined;
     if (quizItem) {
       quizForPreview = {
         id: quizItem.id || "",
         title: quizItem.title || "Quiz",
+<<<<<<< HEAD
+=======
+
+>>>>>>> fba79192ec4731373040f0044adb98ccaf0bbe46
         description: quizItem.description || "",
         questions: Array.isArray(quizItem.questions)
           ? quizItem.questions.map((q: any) => ({
@@ -257,7 +269,13 @@ const Preview = () => {
         questions: [],
       };
     }
+<<<<<<< HEAD
     previewComponent = <QuizPreview quiz={quizForPreview} />;
+=======
+    previewComponent = (
+      <QuizPreview quiz={quizForPreview} quizIndex={quizIndex + 1} />
+    );
+>>>>>>> fba79192ec4731373040f0044adb98ccaf0bbe46
   } else if (type === "assignment") {
     previewComponent = <AssignmentPreview assignmentData={assignmentData} />;
   } else if (type === "coding-exercise") {
