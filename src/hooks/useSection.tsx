@@ -332,12 +332,12 @@ export const useSections = (
       isExpanded: true,
       isPublished: false,
       // New fields for practice coding exercise
-      code:
-        contentType === "practice"
-          ? getDefaultCodeTemplate("javascript")
-          : undefined,
+      code: contentType === "practice"
+        ? getDefaultCodeTemplate("javascript")
+        : undefined,
       codeLanguage: contentType === "practice" ? "javascript" : undefined,
       externalResources: [],
+      resources: []
     };
 
     setSections((prevSections) =>

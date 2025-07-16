@@ -27,6 +27,7 @@ const page = () => {
             instructions: "",
             assignmentQuestions: [],
             isPublished: false,
+            resources: []
           }}
           newAssinment={1}
           onClose={() => {}}

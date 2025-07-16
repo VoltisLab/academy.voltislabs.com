@@ -46,6 +46,7 @@ export const AssignmentProvider = ({
     ...initialData,
     isPublished:
       initialData?.isPublished !== undefined ? initialData.isPublished : false,
+      resources: []
   });
 
   useEffect(() => {

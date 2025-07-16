@@ -198,64 +198,64 @@ const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
     : params?.courseId;
 const type = params?.type;       
 
-  const createResourceMap = () => {
-    const resourcesByLectureId: Record<
-      string,
-      {
-        uploadedFiles: Array<{ name: string; size: string; lectureId: string }>;
-        sourceCodeFiles: SourceCodeFile[];
-        externalResources: ExternalResourceItem[];
-      }
-    > = {};
+  // const createResourceMap = () => {
+  //   const resourcesByLectureId: Record<
+  //     string,
+  //     {
+  //       uploadedFiles: Array<{ name: string; size: string; lectureId: string }>;
+  //       sourceCodeFiles: SourceCodeFile[];
+  //       externalResources: ExternalResourceItem[];
+  //     }
+  //   > = {};
 
-    uploadedFiles.forEach((file) => {
-      if (file.lectureId) {
-        if (!resourcesByLectureId[file.lectureId]) {
-          resourcesByLectureId[file.lectureId] = {
-            uploadedFiles: [],
-            sourceCodeFiles: [],
-            externalResources: [],
-          };
-        }
-        resourcesByLectureId[file.lectureId].uploadedFiles.push({
-          name: file.name,
-          size: file.size,
-          lectureId: file.lectureId,
-        });
-      }
-    });
+  //   uploadedFiles.forEach((file) => {
+  //     if (file.lectureId) {
+  //       if (!resourcesByLectureId[file.lectureId]) {
+  //         resourcesByLectureId[file.lectureId] = {
+  //           uploadedFiles: [],
+  //           sourceCodeFiles: [],
+  //           externalResources: [],
+  //         };
+  //       }
+  //       resourcesByLectureId[file.lectureId].uploadedFiles.push({
+  //         name: file.name,
+  //         size: file.size,
+  //         lectureId: file.lectureId,
+  //       });
+  //     }
+  //   });
 
-    sourceCodeFiles.forEach((file) => {
-      if (file.lectureId) {
-        if (!resourcesByLectureId[file.lectureId]) {
-          resourcesByLectureId[file.lectureId] = {
-            uploadedFiles: [],
-            sourceCodeFiles: [],
-            externalResources: [],
-          };
-        }
-        resourcesByLectureId[file.lectureId].sourceCodeFiles.push(file);
-      }
-    });
+  //   sourceCodeFiles.forEach((file) => {
+  //     if (file.lectureId) {
+  //       if (!resourcesByLectureId[file.lectureId]) {
+  //         resourcesByLectureId[file.lectureId] = {
+  //           uploadedFiles: [],
+  //           sourceCodeFiles: [],
+  //           externalResources: [],
+  //         };
+  //       }
+  //       resourcesByLectureId[file.lectureId].sourceCodeFiles.push(file);
+  //     }
+  //   });
 
-    externalResources.forEach((resource) => {
-      if (resource.lectureId) {
-        if (!resourcesByLectureId[resource.lectureId]) {
-          resourcesByLectureId[resource.lectureId] = {
-            uploadedFiles: [],
-            sourceCodeFiles: [],
-            externalResources: [],
-          };
-        }
-        const convertedResource = convertExternalResource(resource);
-        resourcesByLectureId[resource.lectureId].externalResources.push(
-          convertedResource
-        );
-      }
-    });
+  //   externalResources.forEach((resource) => {
+  //     if (resource.lectureId) {
+  //       if (!resourcesByLectureId[resource.lectureId]) {
+  //         resourcesByLectureId[resource.lectureId] = {
+  //           uploadedFiles: [],
+  //           sourceCodeFiles: [],
+  //           externalResources: [],
+  //         };
+  //       }
+  //       const convertedResource = convertExternalResource(resource);
+  //       resourcesByLectureId[resource.lectureId].externalResources.push(
+  //         convertedResource
+  //       );
+  //     }
+  //   });
 
-    return resourcesByLectureId;
-  };
+  //   return resourcesByLectureId;
+  // };
 
 
   useEffect(() => {
