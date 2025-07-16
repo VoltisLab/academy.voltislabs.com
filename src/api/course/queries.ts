@@ -28,7 +28,7 @@ export const GET_ALL_INSTRUCTOR_COURSES = gql`
       sections {
         assignment {
           description
-          downloadableResourceUrl
+          instructionDownloadableResource
           dueDate
           id
         }

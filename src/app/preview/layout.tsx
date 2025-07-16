@@ -4,11 +4,6 @@ import React, {
   useEffect,
   useState,
   useMemo,
-  isValidElement,
-  cloneElement,
-  ReactElement,
-  useRef,
-  useContext,
 } from "react";
 import { useSectionService } from "@/services/useSectionService";
 import { useParams } from "next/navigation";
@@ -17,6 +12,7 @@ import BottomTabsContainer from "@/components/instructor/create-new-course/curri
 import { useRouter } from "next/navigation";
 import { AssignmentProvider } from "@/context/AssignmentDataContext";
 import { PreviewProvider, usePreviewContext } from "@/context/PreviewContext";
+import LearningReminderModal from "@/components/instructor/create-new-course/curriculum/components/lecture/modals/LearningReminderModal";
 
 export default function PreviewLayout({
   children,
@@ -36,6 +32,7 @@ export default function PreviewLayout({
     "overview" | "notes" | "announcements" | "reviews" | "learning-tools"
   >("overview");
   const [showSearch, setShowSearch] = useState(false);
+  const [showLearningModal, setShowLearningModal] = useState(false);
 
   useEffect(() => {
     const fetchSections = async () => {
@@ -104,17 +101,15 @@ export default function PreviewLayout({
   // const parentRef = useRef<HTMLDivElement>(null);
 
   const { expandedView, parentRef } = usePreviewContext();
-  console.log("Expanded View:", expandedView);
 
   return (
     <AssignmentProvider>
-      <div className="flex flex-row bg-white">
+      <div className="flex flex-row w-full bg-white">
         {/* Main preview window and bottom tabs (scrollable as a unit) */}
-
         <div
           ref={parentRef}
-          className={`flex-1 flex flex-col overflow-y-auto ${
-            expandedView ? "w-screen" : ""
+          className={`flex flex-col overflow-y-auto ${
+            expandedView ? "w-full" : "w-[76vw]"
           }`}
         >
           {children}
@@ -143,15 +138,18 @@ export default function PreviewLayout({
             selectedSortOption={""}
             setSelectedSortOption={() => {}}
             getSortedNotes={() => []}
-            onOpenLearningModal={() => {}}
+            onOpenLearningModal={() => setShowLearningModal(true)}
             activeItemId={itemId}
           />
+          {/* Learning Reminder Modal */}
+          <LearningReminderModal
+            isOpen={showLearningModal}
+            onClose={() => setShowLearningModal(false)}
+          />
         </div>
-        {/* </PreviewProvider> */}
-
         {/* Sidebar on the right, fixed width, scrollable */}
         <div
-          className={` border-l border-gray-200 overflow-y-auto flex-shrink-0  ${
+          className={`border-l border-gray-200 overflow-y-auto ${
             expandedView ? "w-0" : "w-[24vw]"
           }`}
         >
