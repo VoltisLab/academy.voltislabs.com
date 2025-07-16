@@ -1,5 +1,17 @@
-import React, { useState } from 'react';
-import { Play, Settings, Maximize, Volume2, X, Download, Keyboard, Info, AlertTriangle } from 'lucide-react';
+import React, { useState } from "react";
+import {
+  Play,
+  Settings,
+  Maximize,
+  Volume2,
+  X,
+  Download,
+  Keyboard,
+  Info,
+  AlertTriangle,
+} from "lucide-react";
+import { usePreviewContext } from "@/context/PreviewContext";
+import ReportAbuseModal from "../modals/ReportAbuseModal";
 
 interface VideoControlsProps {
   playing: boolean;
@@ -23,6 +35,7 @@ interface VideoControlsProps {
   onReportAbuse?: () => void;
   onShowKeyboardShortcuts?: () => void;
   onShowContentInformation?: () => void;
+  fullScreen?: boolean;
 }
 
 const VideoControls: React.FC<VideoControlsProps> = ({
@@ -45,12 +58,16 @@ const VideoControls: React.FC<VideoControlsProps> = ({
   onReportAbuse,
   onShowKeyboardShortcuts,
   onShowContentInformation,
+  fullScreen,
 }) => {
   const [rewindLabel, setRewindLabel] = useState<boolean>(false);
   const [forwardLabel, setForwardLabel] = useState<boolean>(false);
   const [showVolumeSlider, setShowVolumeSlider] = useState<boolean>(false);
-  const [showSettingsDropdown, setShowSettingsDropdown] = useState<boolean>(false);
+  const [showSettingsDropdown, setShowSettingsDropdown] =
+    useState<boolean>(false);
   const [autoplay, setAutoplay] = useState<boolean>(false);
+
+  const { setShowVideoShortcut } = usePreviewContext();
 
   // Close settings dropdown when clicking outside
   React.useEffect(() => {
@@ -60,9 +77,9 @@ const VideoControls: React.FC<VideoControlsProps> = ({
       }
     };
 
-    document.addEventListener('click', handleClickOutside);
+    document.addEventListener("click", handleClickOutside);
     return () => {
-      document.removeEventListener('click', handleClickOutside);
+      document.removeEventListener("click", handleClickOutside);
     };
   }, [showSettingsDropdown]);
 
@@ -87,7 +104,7 @@ const VideoControls: React.FC<VideoControlsProps> = ({
 
   const handleVideoQualityChange = (quality: string) => {
     onVideoQualityChange(quality);
-    console.log('Video quality changed to:', quality);
+    console.log("Video quality changed to:", quality);
   };
 
   const handleShowKeyboardShortcuts = () => {
@@ -106,21 +123,27 @@ const VideoControls: React.FC<VideoControlsProps> = ({
   };
 
   const handleDownloadLecture = () => {
-    console.log('Download lecture clicked');
+    console.log("Download lecture clicked");
     setShowSettingsDropdown(false);
   };
 
   const handleContentInformation = () => {
-    console.log('Content information clicked');
+    console.log("Content information clicked");
     setShowSettingsDropdown(false);
     if (onShowContentInformation) {
       onShowContentInformation();
     }
   };
 
+  const [showReportModal, setShowReportModal] = useState(false);
+
   return (
     <>
-      <div className="h-12 bg-black w-full flex items-center px-4 text-white relative">
+      <div className="h-12 bg-black w-full flex items-center px-4 py-2 text-white relative">
+        <ReportAbuseModal
+          isOpen={showReportModal}
+          onClose={() => setShowReportModal(false)}
+        />
         {/* Progress bar at the very top */}
         <div className="absolute top-0 left-0 right-0 h-1 bg-gray-900">
           <div
@@ -274,26 +297,31 @@ const VideoControls: React.FC<VideoControlsProps> = ({
 
             {/* Settings Dropdown */}
             {showSettingsDropdown && (
-              <div 
+              <div
                 className="absolute bottom-full right-0 mb-2 bg-gray-900 text-white rounded shadow-xl border border-gray-700 z-50 min-w-[190px] h-70 overflow-y-auto text-xs"
                 onClick={(e) => e.stopPropagation()}
               >
                 {/* Quality Options */}
                 <div className="p-2 border-b border-gray-700">
                   <div className="space-y-2">
-                    {['1080p', '720p', '576p', '432p', '360p', 'Auto'].map((quality) => (
-                      <div key={quality} className="flex items-center justify-between">
-                        <button
-                          onClick={() => handleVideoQualityChange(quality)}
-                          className={`flex-1 text-left px-3 py-1 rounded hover:bg-gray-800 transition-colors`}
+                    {["1080p", "720p", "576p", "432p", "360p", "Auto"].map(
+                      (quality) => (
+                        <div
+                          key={quality}
+                          className="flex items-center justify-between"
                         >
-                          {quality}
-                        </button>
-                        {videoQuality === quality && (
-                          <div className="w-2 h-2 rounded-full bg-purple-500 ml-2"></div>
-                        )}
-                      </div>
-                    ))}
+                          <button
+                            onClick={() => handleVideoQualityChange(quality)}
+                            className={`flex-1 text-left px-3 py-1 rounded hover:bg-gray-800 transition-colors`}
+                          >
+                            {quality}
+                          </button>
+                          {videoQuality === quality && (
+                            <div className="w-2 h-2 rounded-full bg-purple-500 ml-2"></div>
+                          )}
+                        </div>
+                      )
+                    )}
                   </div>
                 </div>
 
@@ -304,12 +332,12 @@ const VideoControls: React.FC<VideoControlsProps> = ({
                     <button
                       onClick={() => setAutoplay(!autoplay)}
                       className={`relative inline-flex items-center h-5 rounded-full w-10 transition-colors focus:outline-none ${
-                        autoplay ? 'bg-purple-600' : 'bg-gray-600'
+                        autoplay ? "bg-purple-600" : "bg-gray-600"
                       }`}
                     >
                       <span
                         className={`inline-block w-4 h-4 transform bg-white rounded-full transition-transform ${
-                          autoplay ? 'translate-x-6' : 'translate-x-1'
+                          autoplay ? "translate-x-6" : "translate-x-1"
                         }`}
                       />
                     </button>
@@ -325,15 +353,16 @@ const VideoControls: React.FC<VideoControlsProps> = ({
                     <Download className="w-4 h-4 mr-3" />
                     Download lecture
                   </button>
-                  
+
                   <button
-                    onClick={handleShowKeyboardShortcuts}
+                    // onClick={handleShowKeyboardShortcuts}
+                    onClick={() => setShowVideoShortcut(true)}
                     className="w-full flex items-center px-3 py-1 text-left hover:bg-gray-800 rounded transition-colors"
                   >
                     <Keyboard className="w-4 h-4 mr-3" />
                     Keyboard shortcuts
                   </button>
-                  
+
                   <button
                     onClick={handleContentInformation}
                     className="w-full flex items-center px-3 py-1 text-left hover:bg-gray-800 rounded transition-colors"
@@ -341,9 +370,10 @@ const VideoControls: React.FC<VideoControlsProps> = ({
                     <Info className="w-4 h-4 mr-3" />
                     Content information
                   </button>
-                  
+
                   <button
-                    onClick={handleReportAbuse}
+                    // onClick={handleReportAbuse}
+                    onClick={() => setShowReportModal(true)}
                     className="w-full flex items-center px-3 py-1 text-left hover:bg-gray-800 rounded transition-colors"
                   >
                     <AlertTriangle className="w-4 h-4 mr-3" />
@@ -361,31 +391,32 @@ const VideoControls: React.FC<VideoControlsProps> = ({
           >
             <Maximize className="w-4 h-4" />
           </button>
-          
 
           {/* Expand button - added to video controls */}
-          <div className="border-l border-gray-700 pl-3 ml-3">
-            <button
-              className="hover:text-gray-300 focus:outline-none"
-              onClick={onExpand}
-              type="button"
-              aria-label="Expand"
-            >
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+          {!fullScreen && (
+            <div className="border-l border-gray-700 pl-3 ml-3">
+              <button
+                className="hover:text-gray-300 focus:outline-none"
+                onClick={onExpand}
+                type="button"
+                aria-label="Expand"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M13 5l7 7-7 7M5 5l7 7-7 7"
-                />
-              </svg>
-            </button>
-          </div>
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M13 5l7 7-7 7M5 5l7 7-7 7"
+                  />
+                </svg>
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </>
