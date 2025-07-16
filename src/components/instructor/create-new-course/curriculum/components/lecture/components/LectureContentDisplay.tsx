@@ -23,6 +23,7 @@ import StudentCoursePreview from "./StudentCoursePreview";
 import InstructorVideoPreview from "./InstructorVideoPreview";
 import Link from "next/link";
 import { CourseSectionLecture } from "@/api/course/section/queries";
+import ReactPlayer from "react-player";
 
 export type ExpansionType = {
   isOpen: boolean;
@@ -109,6 +110,14 @@ const LectureContentDisplay: React.FC<LectureContentDisplayProps> = ({
     "instructor" | "student" | null
   >(null);
   const [previewContentType, setPreviewContentType] = useState<string>("video");
+  console.log('Video preview URL:', videoContent.selectedVideoDetails?.url);
+  const [actualDuration, setActualDuration] = useState<number | null>(null);
+  const formatTime = (seconds: number) => {
+    if (!seconds && seconds !== 0) return '';
+    const min = Math.floor(seconds / 60);
+    const sec = Math.floor(seconds % 60);
+    return `${min}:${sec < 10 ? "0" : ""}${sec}`;
+  };
 
   console.log(currentLectureUploadedFiles);
 
@@ -381,34 +390,31 @@ const LectureContentDisplay: React.FC<LectureContentDisplayProps> = ({
       {videoContent.selectedVideoDetails && (
         <div className="overflow-hidden border-b border-gray-400 mb-4">
           <div className="flex flex-row justify-between sm:flex-row">
-            <div className="flex items-center py-3">
-              <div className="w-20 h-16 bg-black rounded overflow-hidden mr-3 flex-shrink-0">
-                <img
-                  src="/thumbnail_default.png"
-                  alt={videoContent.selectedVideoDetails.filename}
-                  className="w-full h-full object-cover"
-                  onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
-                    const target = e.target as HTMLImageElement;
-                    target.src =
-                      "thumbnail_default.png";
-                  }}
+            <div className="flex items-center">
+              <div className="w-28 h-20 mr-3 flex-shrink-0 flex items-center justify-center">
+                  <ReactPlayer
+                  url={videoContent.selectedVideoDetails.url}
+                  width="100%"
+                  onDuration={setActualDuration}
                 />
               </div>
 
               <div>
-                <h3 className="text-sm font-semibold text-gray-800">
-                  {videoContent.selectedVideoDetails.filename}
-                </h3>
-                <p className="text-xs text-gray-500">
-                  {videoContent.selectedVideoDetails.duration}
-                </p>
-                <button
-                  onClick={onEditContent}
-                  className="text-[#6D28D2] hover:text-[#7D28D2] text-xs font-medium flex items-center mt-1"
-                >
-                  <Edit3 className="w-3 h-3 mr-1" /> Edit Content
-                </button>
-              </div>
+                  <h3 className="text-sm font-semibold text-gray-800">
+                    {videoContent.selectedVideoDetails.filename}
+                  </h3>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {actualDuration !== null
+                      ? formatTime(actualDuration)
+                      : videoContent.selectedVideoDetails.duration}
+                  </p>
+                  <button
+                    onClick={onEditContent}
+                    className="text-[#6D28D2] hover:text-[#7D28D2] text-xs font-medium flex items-center mt-2"
+                  >
+                    <Edit3 className="w-3 h-3 mr-1" /> Edit Content
+                  </button>
+                </div>
             </div>
 
             <div className="flex flex-col gap-4 justify-end items-center py-3">
@@ -517,10 +523,7 @@ const LectureContentDisplay: React.FC<LectureContentDisplayProps> = ({
                   <Edit3 className="w-3 h-3 mr-1" /> Edit Content
                 </button>
                 <button
-                  onClick={() => {
-                    // This would need to be handled by parent component
-                    console.log("Replace with video clicked");
-                  }}
+                  onClick={onEditContent}
                   className="text-[#6D28D2] hover:text-[#7D28D2] text-xs font-medium"
                 >
                   Replace With Video
