@@ -266,15 +266,17 @@ const type = params?.type;
 
     // No need to build a global resource map; use lecture.resources directly
     const initialExpandedState: Record<string, boolean> = {};
-    if (type === "lecture") {
-      sections.forEach((section) => {
-        initialExpandedState[section.id] = section.isExpanded !== true;
-      });
-    } else {
-      sections.forEach((section) => {
-        initialExpandedState[section.id] = section.isExpanded !== false;
-      });
-    }
+    // if(type === "lecture"){
+    //   sections.forEach((section) => {
+    //     initialExpandedState[section.id] = section.isExpanded !== true;
+    //   });
+
+    // }else{
+      
+    // }
+    sections.forEach((section) => {
+     initialExpandedState[section.id] = section.isExpanded !== false;
+   });
     setExpandedSections(initialExpandedState);
 
     const formatted = sections.map((section, sectionIndex) => {
