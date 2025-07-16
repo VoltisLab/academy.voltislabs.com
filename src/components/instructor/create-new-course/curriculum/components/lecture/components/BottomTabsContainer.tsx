@@ -132,7 +132,7 @@ const BottomTabsContainer: React.FC<BottomTabsContainerProps> = ({
 
   return (
     <div className="border-t border-gray-200 flex-shrink-0">
-      <div className="" style={{ maxWidth: isExpanded ? "100%" : "76vw" }}>
+      <div className="" >
         {/* Tabs */}
         <div className="flex items-center border-b border-gray-200">
           <button
