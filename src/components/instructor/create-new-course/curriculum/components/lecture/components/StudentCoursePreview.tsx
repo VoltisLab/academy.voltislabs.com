@@ -8,8 +8,6 @@ import {
   ExternalResource,
   PreviewSection,
   EnhancedLecture,
-  ContentTypeDetector,
-  ExtendedLecture,
   ArticleContent,
   VideoNote,
 } from "@/lib/types";
@@ -47,7 +45,6 @@ import ContentInformationDisplay from "./ContentInformationDisplay";
 import { useAssignment } from "@/context/AssignmentDataContext";
 import { CourseSectionQuiz } from "@/api/course/section/queries";
 import VoltisLoader from "@/components/loader/loader";
-import BottomTabsContainer from "./BottomTabsContainer";
 import CodingExercisePreview from "../../code/CodingExercisePreview";
 
 // Add QuizData interface
@@ -1270,8 +1267,8 @@ const StudentCoursePreview = ({
 
   // --- Main Render ---
   return (
-    <div className="fixed inset-0 z-[9999] bg-white flex flex-col">
-      <div className="flex flex-1 h-full">
+    <div className="bg-white flex flex-col">
+      <div className="flex h-full">
         {/* Main scrollable container */}
         <div
           ref={mainContentRef}
@@ -1416,34 +1413,7 @@ const StudentCoursePreview = ({
               </div>
             )}
           </div>
-          {/* --- BOTTOM TABS: Always show below content --- */}
-          <BottomTabsContainer
-            activeTab={activeTab}
-            setActiveTab={setActiveTab}
-            showSearch={showSearch}
-            setShowSearch={setShowSearch}
-            isExpanded={isExpanded}
-            selectedItemData={selectedItemData}
-            activeItemType={activeItemType}
-            progress={progress}
-            formatTime={formatTime}
-            notes={notes}
-            onCreateNote={handleCreateNote}
-            onSaveNote={handleSaveNote}
-            onCancelNote={handleCancelNote}
-            onEditNote={handleEditNote}
-            onDeleteNote={handleDeleteNote}
-            isAddingNote={isAddingNote}
-            currentNoteContent={currentNoteContent}
-            setCurrentNoteContent={setCurrentNoteContent}
-            selectedLectureFilter={selectedLectureFilter}
-            setSelectedLectureFilter={setSelectedLectureFilter}
-            selectedSortOption={selectedSortOption}
-            setSelectedSortOption={setSelectedSortOption}
-            getSortedNotes={getSortedNotes}
-            onOpenLearningModal={() => setShowLearningModal(true)}
-            activeItemId={activeItemId}
-          />
+         
         </div>
         {/* Sidebar (only show when not expanded) */}
         {!isExpanded && (
@@ -1475,6 +1445,19 @@ const StudentCoursePreview = ({
           Exit fullscreen
         </button>
       )}
+
+      {/* Learning Reminder Modal */}
+      <LearningReminderModal
+        isOpen={showLearningModal}
+        onClose={() => setShowLearningModal(false)}
+      />
+
+      {/* Report Abuse Modal */}
+      <ReportAbuseModal
+        isOpen={showReportModal}
+        onClose={() => setShowReportModal(false)}
+        onSubmit={handleReportSubmit}
+      />
     </div>
   );
 };
