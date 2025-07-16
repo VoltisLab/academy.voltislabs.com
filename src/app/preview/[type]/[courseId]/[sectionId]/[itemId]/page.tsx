@@ -247,7 +247,6 @@ const Preview = () => {
       quizForPreview = {
         id: quizItem.id || "",
         title: quizItem.title || "Quiz",
-
         description: quizItem.description || "",
         questions: Array.isArray(quizItem.questions)
           ? quizItem.questions.map((q: any) => ({

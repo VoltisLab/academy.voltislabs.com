@@ -8,8 +8,6 @@ import {
   ExternalResource,
   PreviewSection,
   EnhancedLecture,
-  ContentTypeDetector,
-  ExtendedLecture,
   ArticleContent,
   VideoNote,
 } from "@/lib/types";
@@ -47,8 +45,8 @@ import ContentInformationDisplay from "./ContentInformationDisplay";
 import { useAssignment } from "@/context/AssignmentDataContext";
 import { CourseSectionQuiz } from "@/api/course/section/queries";
 import VoltisLoader from "@/components/loader/loader";
-import BottomTabsContainer from "./BottomTabsContainer";
 import CodingExercisePreview from "../../code/CodingExercisePreview";
+import PreviewHeader from "./PreviewHeader";
 import { ControlButtons } from "@/components/preview/ControlsButton";
 import { usePreviewContext } from "@/context/PreviewContext";
 
