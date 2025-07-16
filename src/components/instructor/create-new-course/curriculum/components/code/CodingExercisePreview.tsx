@@ -18,6 +18,8 @@ import { BsCheckCircleFill, BsFillCheckCircleFill } from "react-icons/bs";
 import { IoInformationCircle } from "react-icons/io5";
 import Editor, { useMonaco } from "@monaco-editor/react";
 import { exactDarkTheme } from "@/lib/utils";
+import { usePreviewContext } from "@/context/PreviewContext";
+import { ControlButtons } from "@/components/preview/ControlsButton";
 
 interface CodingExercisePreviewProps {
   data: CodingExercisePreviewData;
@@ -297,8 +299,17 @@ const CodingExercisePreview: React.FC<CodingExercisePreviewProps> = ({
   const canAccessSolution =
     failedAttempts >= 3 || (testResults?.success ?? false);
 
+  const componentRef = useRef<HTMLDivElement>(null);
+  const { expandedView } = usePreviewContext();
+
   return (
-    <div className="flex flex-col h-full relative w-[79.5vw]" style={{ maxHeight: '70vh', height: '70vh' }}>
+    <div
+      ref={componentRef}
+      className={`flex flex-col relative bg-white ${
+        expandedView ? "h-[80vh]" : "h-[70vh]"
+      }`}
+    >
+      {" "}
       {/* Reset Confirmation Modal */}
       {showResetModal && (
         <div className="fixed inset-0 bg-black/10 flex items-center justify-center z-50">
@@ -329,7 +340,6 @@ const CodingExercisePreview: React.FC<CodingExercisePreviewProps> = ({
           </div>
         </div>
       )}
-
       {/* First section: Instruction and controls */}
       <div
         className={`${
@@ -437,7 +447,6 @@ const CodingExercisePreview: React.FC<CodingExercisePreviewProps> = ({
           </div>
         )}
       </div>
-
       {/* Main editor and preview area */}
       <div
         className={`flex-1 h-full flex flex-col overflow-hidden ${
@@ -774,6 +783,24 @@ const CodingExercisePreview: React.FC<CodingExercisePreviewProps> = ({
             </div>
           </div>
         </div>
+      </div>
+      {/* Footer controls */}
+      <div className="flex items-center bg-white border-t border-gray-200 pl-4 h-14">
+        <div className="flex justify-between items-center mt-auto pr-4 h-full flex-1">
+          <div className="">Coding Exercise</div>
+
+          <div className="space-x-2 text-sm font-bold">
+            <button className="px-4 py-2 rounded bg-[#6d28d2] text-white hover:bg-purple-700 cursor-pointer">
+              Next
+            </button>
+          </div>
+        </div>
+
+        {/* Sidebar settings and full screen toggle button */}
+        <ControlButtons
+          componentRef={componentRef}
+          contentType="coding-exercise"
+        />
       </div>
     </div>
   );

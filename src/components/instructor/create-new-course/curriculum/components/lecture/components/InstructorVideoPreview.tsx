@@ -1477,10 +1477,6 @@ const InstructorCoursePreview = ({
               <div className="w-full h-full">
                 <AssignmentPreview
                   assignmentData={assignmentData as ExtendedLecture}
-                  // skipAssignment={() => navigateToItem("next")}
-                  // startAssignment={startAssignment}
-                  // setAssignmentStatus={setAssignmentStatus}
-                  // assignmentStatus={assignmentStatus}
                 />
               </div>
             ) : activeItemType === "article" ? (

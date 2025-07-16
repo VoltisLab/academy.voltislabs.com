@@ -4,7 +4,7 @@ import { X } from "lucide-react";
 interface ReportAbuseModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (issueType: string, issueDetails: string) => void;
+  onSubmit?: (issueType: string, issueDetails: string) => void;
 }
 
 const ReportAbuseModal: React.FC<ReportAbuseModalProps> = ({
@@ -28,7 +28,7 @@ const ReportAbuseModal: React.FC<ReportAbuseModalProps> = ({
 
   const handleSubmit = () => {
     if (issueType && issueDetails.trim()) {
-      onSubmit(issueType, issueDetails);
+      if (onSubmit) onSubmit(issueType, issueDetails);
       setIssueType("");
       setIssueDetails("");
       onClose();
@@ -47,7 +47,7 @@ const ReportAbuseModal: React.FC<ReportAbuseModalProps> = ({
     <div className="fixed inset-0 z-[10000] backdrop-blur-sm bg-transparent bg-opacity-50 flex items-center justify-center">
       <div className="bg-white rounded-lg w-full max-w-xl shadow-lg">
         <div className="p-4 flex justify-between items-center border-b border-gray-200">
-          <h2 className="text-lg font-medium">Report abuse</h2>
+          <h2 className="text-lg font-medium text-gray-900">Report abuse</h2>
           <button
             onClick={handleCancel}
             className="text-gray-500 hover:text-gray-700"
@@ -59,9 +59,9 @@ const ReportAbuseModal: React.FC<ReportAbuseModalProps> = ({
 
         <div className="p-6">
           <p className="text-sm text-gray-600 mb-6">
-            Flagged content is reviewed by Udemy staff to determine whether it violates
-            Terms of Service or Community Guidelines. If you have a question or
-            technical issue, please{" "}
+            Flagged content is reviewed by Udemy staff to determine whether it
+            violates Terms of Service or Community Guidelines. If you have a
+            question or technical issue, please{" "}
             <a href="#" className="text-purple-600 hover:underline">
               contact the Support team here
             </a>

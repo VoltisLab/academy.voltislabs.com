@@ -153,16 +153,8 @@ export default function AssignmentPreview({
     <div
       ref={componentRef}
       className={`flex flex-col relative bg-white ${
-        fullScreen
-          ? "w-screen h-screen"
-          : expandedView
-          ? "w-screen h-[80vh]"
-          : ""
+        expandedView ? "h-[80vh]" : "h-[70vh]"
       }`}
-      style={{
-        maxHeight: fullScreen ? "100vh" : expandedView ? "80vh" : "70vh",
-        height: fullScreen ? "100vh" : expandedView ? "80vh" : "70vh",
-      }}
     >
       {/* <div className="h-full flex-1 overflow-y-auto "> */}
       <main className="flex-1 overflow-y-auto h-full w-full pb-20 px-2">

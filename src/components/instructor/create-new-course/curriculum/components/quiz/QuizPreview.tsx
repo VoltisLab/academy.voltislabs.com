@@ -338,30 +338,20 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
   // Calculate results
   const correctCount = Object.keys(answeredCorrectly).length;
   const skippedCount = skippedQuestions.length;
-  const needsReviewCount = needsReviewQuestions.length;
-
   const componentRef = useRef<HTMLDivElement>(null);
 
   return (
     <div
       ref={componentRef}
       className={`flex flex-col relative bg-white ${
-        fullScreen
-          ? "w-screen h-screen"
-          : expandedView
-          ? "w-screen h-[80vh]"
-          : ""
+        expandedView ? "h-[80vh]" : "h-[70vh]"
       }`}
-      style={{
-        maxHeight: fullScreen ? "100vh" : expandedView ? "80vh" : "70vh",
-        height: fullScreen ? "100vh" : expandedView ? "80vh" : "70vh",
-      }}
     >
       {/* Main content */}
       {(quizStatus === "Overview" || quizStatus === "Questions") && (
         <main className="flex-1 overflow-y-auto p-4 sm:p-8 sm:pt-15 w-full">
           {quizStatus === "Overview" && (
-            <div className="text-zinc-950 space-y-12 font-medium">
+            <div className="text-zinc-950 space-y-12 font-medium max-w-3xl mx-auto">
               {/* Details */}
               <div className="space-y-3.5">
                 <h2 className="text-3xl font-bold">
@@ -751,7 +741,11 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
           </div>
         )}
         {/* Sidebar settings and full screen toggle button */}
-        <ControlButtons componentRef={componentRef} className="ml-auto" />
+        <ControlButtons
+          componentRef={componentRef}
+          className="ml-auto"
+          contentType="quiz"
+        />
       </div>
     </div>
   );

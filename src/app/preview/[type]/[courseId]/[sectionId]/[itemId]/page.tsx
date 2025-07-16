@@ -13,6 +13,11 @@ import {
   useAssignment,
 } from "@/context/AssignmentDataContext";
 import { useAssignmentService } from "@/services/useAssignmentService";
+import ReportAbuseModal from "@/components/instructor/create-new-course/curriculum/components/lecture/modals/ReportAbuseModal";
+import LearningReminderModal from "@/components/instructor/create-new-course/curriculum/components/lecture/modals/LearningReminderModal";
+import { ArrowBigLeft, ArrowLeft, X } from "lucide-react";
+import { usePreviewContext } from "@/context/PreviewContext";
+import ContentInformationDisplay from "@/components/instructor/create-new-course/curriculum/components/lecture/components/ContentInformationDisplay";
 // import { usePreviewContext } from "@/app/preview/layout";
 
 const Preview = () => {
@@ -35,7 +40,14 @@ const Preview = () => {
 
   const { getCourseSections, loading, error } = useSectionService();
   const [sections, setSections] = useState<CourseSection[] | null>(null);
-
+  const {
+    setShowQuizShortcut,
+    setShowVideoShortcut,
+    showQuizShortcut,
+    showVideoShortcut,
+    expandedView,
+    toggleExpandedView,
+  } = usePreviewContext();
   const { assignmentData, setAssignmentData } = useAssignment();
   const { getAssignment } = useAssignmentService();
   const fetchAssignment = useCallback(async () => {
@@ -198,7 +210,6 @@ const Preview = () => {
         : currentItem?.description || ""
       : "";
     previewComponent = (
-      // <AssignmentProvider initialData={extendedLecture}>
       <StudentCoursePreview
         videoContent={
           isVideoLecture
@@ -207,7 +218,6 @@ const Preview = () => {
         }
         setShowVideoPreview={() => {}}
         lecture={currentItem}
-        // quizData={null}
         uploadedFiles={uploadedFiles}
         sourceCodeFiles={sourceCodeFiles}
         externalResources={externalResources}
@@ -222,7 +232,6 @@ const Preview = () => {
         }}
         articleContent={{ text: articleText }}
       />
-      // </AssignmentProvider>
     );
   } else if (type === "quiz") {
     let quizItem = currentSection.quiz?.find(
@@ -233,8 +242,6 @@ const Preview = () => {
     const quizIndex = currentSection.quiz?.findIndex(
       (q: any) => String(q.id) === String(itemId)
     );
-    // Ensure the quiz object has the correct structure and fallback for missing questions
-    console.log("Quiz Item:", quizItem);
     let quizForPreview = undefined;
     if (quizItem) {
       quizForPreview = {
@@ -323,7 +330,116 @@ const Preview = () => {
     );
   }
 
-  return <div className="bg-white">{previewComponent}</div>;
+  return (
+    <div className="bg-white relative">
+      {showQuizShortcut ? (
+        <div className="bg-black h-[70vh] flex items-center justify-center p-8">
+          <button
+            onClick={() => setShowQuizShortcut(false)}
+            className="absolute top-8 right-[500px] text-white hover:text-white focus:outline-none"
+          >
+            <X className="w-5 h-5" />
+          </button>
+          <div className="bg-black text-white rounded-lg p-5 h-full max-w-2xl relative text-center justify-center items-center flex flex-col gap-20">
+            <div className="flex items-center mb-6 text-center">
+              <h2 className="text-2xl font-bold text-center">
+                Keyboard shortcuts
+              </h2>
+              <span className="ml-2 text-white bg-gray-700 px-2">?</span>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-center justify-between gap-10">
+                <span>Select answer 1-9</span>
+                <div className="flex space-x-1">
+                  <kbd className="bg-gray-700 text-white px-2 py-1 rounded text-sm font-mono min-w-[24px] text-center">
+                    1-9
+                  </kbd>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between gap-10">
+                <span>Check answer / Next question</span>
+                <kbd className="bg-gray-700 text-white px-2 py-1 rounded text-sm font-mono">
+                  →
+                </kbd>
+              </div>
+
+              <div className="flex items-center justify-between gap-10">
+                <span>Skip question</span>
+                <div className="flex items-center space-x-1">
+                  <kbd className="bg-gray-700 text-white px-2 py-1 rounded text-sm font-mono">
+                    Shift
+                  </kbd>
+                  <span className="text-gray-400">+</span>
+                  <kbd className="bg-gray-700 text-white px-2 py-1 rounded text-sm font-mono">
+                    →
+                  </kbd>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : showVideoShortcut ? (
+        <div className="bg-black h-[70vh] flex items-center justify-center p-8">
+          <div className="bg-black text-white rounded-lg p-6 max-w-2xl w-full mx-4 relative border border-gray-700">
+            <button
+              onClick={() => setShowVideoShortcut(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-white focus:outline-none"
+            >
+              <X className="w-6 h-6" />
+            </button>
+
+            <div className="flex items-center mb-6">
+              <h2 className="text-xl font-semibold">Keyboard shortcuts</h2>
+              <span className="ml-2 text-gray-400">?</span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-x-8 gap-y-4">
+              {[
+                { action: "Play / pause", key: "Space" },
+                { action: "Go back 5s", key: "←" },
+                { action: "Go forward 5s", key: "→" },
+                { action: "Speed slower", key: "Shift + ←" },
+                { action: "Speed faster", key: "Shift + →" },
+                { action: "Volume up", key: "↑" },
+                { action: "Volume down", key: "↓" },
+                { action: "Mute", key: "M" },
+                { action: "Fullscreen", key: "F" },
+                { action: "Exit fullscreen", key: "ESC" },
+                { action: "Add note", key: "B" },
+                { action: "Toggle captions", key: "C" },
+                { action: "Content information", key: "I" },
+              ].map((shortcut, index) => (
+                <div key={index} className="flex items-center justify-between">
+                  <span className="text-gray-300">{shortcut.action}</span>
+                  <kbd className="bg-gray-800 text-white px-2 py-1 rounded text-sm font-mono min-w-[60px] text-center">
+                    {shortcut.key}
+                  </kbd>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div>{previewComponent}</div>
+      )}
+      {/* Modals */}
+      {/* <LearningReminderModal
+        isOpen={showLearningModal}
+        onClose={() => setShowLearningModal(false)}
+      /> */}
+      {expandedView && (
+        <button
+          onClick={() => toggleExpandedView()}
+          className="absolute right-0 top-1/2 -translate-y-full px-4 py-2 flex gap-3 items-center rounded-l-md translate-x-31 duration-500 hover:translate-x-0 text-white bg-[#6d28d2] text-sm font-bold"
+        >
+          <ArrowLeft />
+          <span>Course content</span>
+        </button>
+      )}
+    </div>
+  );
 };
 
 export default Preview;

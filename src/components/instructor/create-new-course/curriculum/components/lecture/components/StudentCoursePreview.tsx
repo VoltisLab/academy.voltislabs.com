@@ -47,6 +47,8 @@ import { CourseSectionQuiz } from "@/api/course/section/queries";
 import VoltisLoader from "@/components/loader/loader";
 import CodingExercisePreview from "../../code/CodingExercisePreview";
 import PreviewHeader from "./PreviewHeader";
+import { ControlButtons } from "@/components/preview/ControlsButton";
+import { usePreviewContext } from "@/context/PreviewContext";
 
 // Add QuizData interface
 export interface Answer {
@@ -145,6 +147,36 @@ const StudentCoursePreview = ({
   console.log("videoContent", videoContent);
   console.log("articleContent", articleContent);
 
+  const componentRef = useRef<HTMLDivElement>(null);
+  const { expandedView, toggleExpandedView } = usePreviewContext();
+
+  const [fullScreen, setFullScreen] = useState(false);
+
+  const toggleFullScreen = () => {
+    if (!fullScreen) {
+      if (videoContentRef?.current?.requestFullscreen) {
+        videoContentRef.current.requestFullscreen();
+      }
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      }
+    }
+    setFullScreen(!fullScreen);
+  };
+
+  // Handle fullscreen change events
+  useEffect(() => {
+    const handleFullScreenChange = () => {
+      setFullScreen(document.fullscreenElement !== null);
+    };
+
+    document.addEventListener("fullscreenchange", handleFullScreenChange);
+    return () => {
+      document.removeEventListener("fullscreenchange", handleFullScreenChange);
+    };
+  }, []);
+
   // State management
   const [playing, setPlaying] = useState<boolean>(false);
   const [progress, setProgress] = useState<number>(0);
@@ -209,6 +241,7 @@ const StudentCoursePreview = ({
   const playerRef = useRef<ReactPlayer>(null);
   const playerContainerRef = useRef<HTMLDivElement>(null);
   const mainContentRef = useRef<HTMLDivElement>(null);
+  const videoContentRef = useRef<HTMLDivElement>(null);
 
   // Video control handlers for keyboard shortcuts
   const handlePlayPause = (): void => {
@@ -404,7 +437,11 @@ const StudentCoursePreview = ({
     hasArticleContent?: boolean
   ): string => {
     // If this is a lecture, use videoUrl to determine type
-    if (lectureData && typeof lectureData === 'object' && 'videoUrl' in lectureData) {
+    if (
+      lectureData &&
+      typeof lectureData === "object" &&
+      "videoUrl" in lectureData
+    ) {
       if (!lectureData.videoUrl || String(lectureData.videoUrl).trim() === "") {
         return "article";
       } else {
@@ -435,7 +472,7 @@ const StudentCoursePreview = ({
         return "video";
       }
 
-      console.log("lecturedaat", lectureData)
+      console.log("lecturedaat", lectureData);
 
       if (lectureData?.contentType) {
         return lectureData.contentType;
@@ -450,8 +487,7 @@ const StudentCoursePreview = ({
       articleContent.text.trim() !== ""
     );
     const hasRealVideoContent = !!(
-      videoContent.selectedVideoDetails &&
-      videoContent.selectedVideoDetails.url
+      videoContent.selectedVideoDetails && videoContent.selectedVideoDetails.url
     );
 
     if (hasRealArticleContent && hasRealVideoContent) {
@@ -599,11 +635,16 @@ const StudentCoursePreview = ({
     setStartAssignment(false);
   };
 
-  const handleSidebarSelect = (itemId: string, itemType: string, courseId: string, sectionId: string) => {
-  // You can add some logging if desired
-  // console.log('Sidebar nav:', {itemId, itemType, courseId, sectionId});
-  router.push(`/preview/${itemType}/${courseId}/${sectionId}/${itemId}`);
-};
+  const handleSidebarSelect = (
+    itemId: string,
+    itemType: string,
+    courseId: string,
+    sectionId: string
+  ) => {
+    // You can add some logging if desired
+    // console.log('Sidebar nav:', {itemId, itemType, courseId, sectionId});
+    router.push(`/preview/${itemType}/${courseId}/${sectionId}/${itemId}`);
+  };
 
   // Go to first item of next section
   const goToNextSection = () => {
@@ -679,8 +720,16 @@ const StudentCoursePreview = ({
     // Update activeItemType for correct preview switching
     if (itemType === "lecture") {
       // Only pass selectedItem if it is a Lecture (has videoUrl property)
-      const isLecture = selectedItem && typeof selectedItem === 'object' && 'videoUrl' in selectedItem;
-      setActiveItemType(detectContentType(selectedItem?.id ?? "", isLecture ? (selectedItem as Lecture) : undefined));
+      const isLecture =
+        selectedItem &&
+        typeof selectedItem === "object" &&
+        "videoUrl" in selectedItem;
+      setActiveItemType(
+        detectContentType(
+          selectedItem?.id ?? "",
+          isLecture ? (selectedItem as Lecture) : undefined
+        )
+      );
     } else {
       setActiveItemType(itemType);
     }
@@ -1177,12 +1226,23 @@ const StudentCoursePreview = ({
   if (!lecture.videoUrl || String(lecture.videoUrl).trim() === "") {
     console.log("Rendering article content");
     return (
-      <div className="relative h-[70vh] px-8 py-6 overflow-y-auto">
-        <h1 className="text-2xl font-bold mb-4">{lecture.title}</h1>
-        <div
-          className="article-content prose w-full"
-          dangerouslySetInnerHTML={{ __html: articleContent?.text || "" }}
-        />
+      <div
+        ref={componentRef}
+        className={`flex flex-col relative bg-white ${
+          expandedView ? "h-[80vh]" : "h-[70vh]"
+        }`}
+      >
+        <div className="px-8 py-6">
+          <h1 className="text-2xl  font-bold mb-4">{lecture.title}</h1>
+          <div
+            className="article-content prose w-full"
+            dangerouslySetInnerHTML={{ __html: articleContent?.text || "" }}
+          />
+        </div>
+
+        <div className="flex items-center bg-white border-t border-gray-200 pl-4 h-14 mt-auto">
+          <ControlButtons className="ml-auto" componentRef={componentRef} />
+        </div>
       </div>
     );
   }
@@ -1222,7 +1282,9 @@ const StudentCoursePreview = ({
               className="p-2 text-gray-600 hover:text-gray-800 focus:outline-none"
               onClick={handleContentFullscreen}
               type="button"
-              aria-label={isContentFullscreen ? "Exit fullscreen" : "Fullscreen"}
+              aria-label={
+                isContentFullscreen ? "Exit fullscreen" : "Fullscreen"
+              }
             >
               {isContentFullscreen ? (
                 <Minimize className="w-5 h-5" />
@@ -1268,157 +1330,206 @@ const StudentCoursePreview = ({
 
   // --- Main Render ---
   return (
-    <div className="bg-white flex flex-col">
-      <PreviewHeader progress={75} completedText="3 of 4 complete."/>
-      <div className="flex h-full">
-        {/* Main scrollable container */}
+    <div
+      className={`flex flex-col relative bg-white ${
+        expandedView ? "h-[80vh]" : "h-[70vh]"
+      }`}
+    >
+      <PreviewHeader progress={75} completedText="3 of 4 complete." />
+      {/* <div className="flex flex-1"> */}
+      {/* Main scrollable container */}
+      <div
+        ref={mainContentRef}
+        className="flex flex-col h-full w-full overflow-y-auto "
+        // style={{
+        //   width: isExpanded ? "100%" : "76vw",
+        //   transition: "width 0.3s ease-in-out",
+        // }}
+      >
+        {/* Content area */}
         <div
-          ref={mainContentRef}
-          className="flex flex-col overflow-y-auto"
-          style={{
-            width: isExpanded ? "100%" : "75.5vw",
-            transition: "width 0.3s ease-in-out",
-          }}
+          className=" relative h-full"
+          // style={{
+          //   height: fullScreen ? "100vh" : "100%",
+          // }}
         >
-          {/* Content area */}
-          <div
-            className="flex-shrink-0"
-            style={{
-              height: isContentFullscreen ? "100vh" : "calc(100vh - 170px)",
-            }}
-          >
-            {/* Content Info Modal */}
-            {showContentInformation && (
-              <ContentInformationDisplay
-                isOpen={showContentInformation}
-                onClose={() => setShowContentInformation(false)}
-                contentData={{
-                  contentType: activeItemType,
-                  isEncrypted: false,
-                  courseHasEncryptedVideos: false,
+          {/* Content Info Modal */}
+          {showContentInformation && (
+            <ContentInformationDisplay
+              isOpen={showContentInformation}
+              onClose={() => setShowContentInformation(false)}
+              contentData={{
+                contentType: activeItemType,
+                isEncrypted: false,
+                courseHasEncryptedVideos: false,
+              }}
+            />
+          )}
+          {/* Video */}
+          {activeItemType === "video" ? (
+            <div
+              ref={videoContentRef}
+              className="bg-black relative w-full h-full flex flex-col justify-center items-center"
+            >
+              {/* <div></div> */}
+              <ReactPlayer
+                ref={playerRef}
+                url={lecture.videoUrl}
+                width="100%"
+                height="91%"
+                playing={playing}
+                volume={muted ? 0 : volume}
+                muted={muted}
+                playbackRate={playbackRate}
+                onProgress={handleProgress}
+                onDuration={handleDuration}
+                progressInterval={100}
+                controls={false}
+                config={{
+                  youtube: {
+                    playerVars: {
+                      controls: 1,
+                      modestbranding: 1,
+                      rel: 0,
+                      showinfo: 0,
+                      disablekb: 1,
+                    },
+                  },
+                  vimeo: {
+                    playerOptions: {
+                      controls: true,
+                      keyboard: false,
+                    },
+                  },
+                  file: {
+                    attributes: {
+                      controlsList: "nodownload",
+                      disablePictureInPicture: true,
+                    },
+                  },
+                }}
+                onReady={() => {
+                  if (playerRef.current) {
+                    const player = playerRef.current.getInternalPlayer();
+                    if (player && player.setVolume) {
+                      player.setVolume(volume * 100);
+                    }
+                  }
                 }}
               />
-            )}
-            {/* Video */}
-            {activeItemType === "video" ? (
-              <div className="bg-black relative w-full h-full flex flex-col justify-center items-center">
-                <ReactPlayer
-                  ref={playerRef}
-                  url={lecture.videoUrl}
-                  width="100%"
-                  height="100%"
-                  playing={playing}
-                  volume={muted ? 0 : volume}
-                  muted={muted}
-                  playbackRate={playbackRate}
-                  onProgress={handleProgress}
-                  onDuration={handleDuration}
-                  progressInterval={100}
-                  controls={false}
-                  config={{
-                    youtube: {
-                      playerVars: {
-                        controls: 1,
-                        modestbranding: 1,
-                        rel: 0,
-                        showinfo: 0,
-                        disablekb: 1,
-                      },
-                    },
-                    vimeo: {
-                      playerOptions: {
-                        controls: true,
-                        keyboard: false,
-                      },
-                    },
-                    file: {
-                      attributes: {
-                        controlsList: "nodownload",
-                        disablePictureInPicture: true,
-                      },
-                    },
-                  }}
-                  onReady={() => {
-                    if (playerRef.current) {
-                      const player = playerRef.current.getInternalPlayer();
-                      if (player && player.setVolume) {
-                        player.setVolume(volume * 100);
-                      }
-                    }
-                  }}
-                />
-                {/* Always render controls */}
-                <VideoControls
-                  playing={playing}
-                  progress={progress}
-                  duration={duration}
-                  volume={volume}
-                  playbackRate={playbackRate}
-                  videoQuality={videoQuality}
-                  onPlayPause={() => setPlaying(!playing)}
-                  onRewind={handleRewind}
-                  onForward={handleForward}
-                  onVolumeChange={(newVolume: number) => {
-                    setVolume(newVolume);
-                    setMuted(newVolume === 0);
-                  }}
-                  onPlaybackRateChange={setPlaybackRate}
-                  onVideoQualityChange={handleVideoQualityChange}
-                  onFullscreen={handleContentFullscreen}
-                  onExpand={handleExpand}
-                  formatTime={formatTime}
-                  currentVideoDetails={videoContent.selectedVideoDetails || undefined}
-                  onReportAbuse={handleReportAbuse}
-                  onShowKeyboardShortcuts={handleVideoKeyboardShortcuts}
-                  onShowContentInformation={handleContentInformation}
-                />
-              </div>
-            ) : (
-              // Non-video content (article, quiz, assignment, coding-exercise)
-              <div className="bg-white relative w-full h-full flex flex-col">
-                {/* Article */}
-                {activeItemType === "article" && (
-                  <div className="relative w-full h-full px-8 py-6 overflow-y-auto">
-                    <h1 className="text-2xl font-bold mb-4">{lecture.title}</h1>
-                    <div
-                      className="article-content prose w-full"
-                      dangerouslySetInnerHTML={{ __html: articleContent?.text || "" }}
-                    />
-                  </div>
-                )}
-                {/* Quiz */}
-                {activeItemType === "quiz" && (quizData || selectedItemData) ? (
-                  <div className="relative w-full h-full px-8 py-6 overflow-y-auto">
-                    <QuizPreview quiz={(quizData || selectedItemData) as any} />
-                  </div>
-                ) : activeItemType === "quiz" ? (
-                  <div className="relative w-full h-full flex items-center justify-center text-gray-500">No quiz data available.</div>
-                ) : null}
-                {/* Assignment */}
-                {activeItemType === "assignment" && selectedItemData ? (
-                  <div className="relative w-full h-full px-8 py-6 overflow-y-auto">
-                    <AssignmentPreview assignmentData={selectedItemData as any} />
-                  </div>
-                ) : activeItemType === "assignment" ? (
-                  <div className="relative w-full h-full flex items-center justify-center text-gray-500">No assignment data available.</div>
-                ) : null}
-                {/* Coding Exercise */}
-                {activeItemType === "coding-exercise" && selectedItemData ? (
-                  <div className="relative w-full h-full px-8 py-6 overflow-y-auto">
-                    <CodingExercisePreview data={selectedItemData as any} onClose={() => {}} />
-                  </div>
-                ) : activeItemType === "coding-exercise" ? (
-                  <div className="relative w-full h-full flex items-center justify-center text-gray-500">No coding exercise data available.</div>
-                ) : null}
-                {/* Bottom bar for non-video content */}
-                {renderBottomBar()}
-              </div>
-            )}
-          </div>
-         
+              {/* Always render controls */}
+              <VideoControls
+                playing={playing}
+                progress={progress}
+                duration={duration}
+                volume={volume}
+                playbackRate={playbackRate}
+                videoQuality={videoQuality}
+                onPlayPause={() => setPlaying(!playing)}
+                onRewind={handleRewind}
+                onForward={handleForward}
+                onVolumeChange={(newVolume: number) => {
+                  setVolume(newVolume);
+                  setMuted(newVolume === 0);
+                }}
+                onPlaybackRateChange={setPlaybackRate}
+                onVideoQualityChange={handleVideoQualityChange}
+                onFullscreen={toggleFullScreen}
+                fullScreen={fullScreen}
+                onExpand={toggleExpandedView}
+                formatTime={formatTime}
+                currentVideoDetails={
+                  videoContent.selectedVideoDetails || undefined
+                }
+                onReportAbuse={handleReportAbuse}
+                onShowKeyboardShortcuts={handleVideoKeyboardShortcuts}
+                onShowContentInformation={handleContentInformation}
+              />
+            </div>
+          ) : (
+            // Non-video content (article, quiz, assignment, coding-exercise)
+            <div className="bg-white relative w-full h-full flex flex-col">
+              {/* Article */}
+              {activeItemType === "article" && (
+                <div className="relative w-full h-full px-8 py-6 overflow-y-auto">
+                  <h1 className="text-2xl font-bold mb-4">{lecture.title}</h1>
+                  <div
+                    className="article-content prose w-full"
+                    dangerouslySetInnerHTML={{
+                      __html: articleContent?.text || "",
+                    }}
+                  />
+                </div>
+              )}
+              {/* Quiz */}
+              {activeItemType === "quiz" && (quizData || selectedItemData) ? (
+                <div className="relative w-full h-full px-8 py-6 overflow-y-auto">
+                  <QuizPreview quiz={(quizData || selectedItemData) as any} />
+                </div>
+              ) : activeItemType === "quiz" ? (
+                <div className="relative w-full h-full flex items-center justify-center text-gray-500">
+                  No quiz data available.
+                </div>
+              ) : null}
+              {/* Assignment */}
+              {activeItemType === "assignment" && selectedItemData ? (
+                <div className="relative w-full h-full px-8 py-6 overflow-y-auto">
+                  <AssignmentPreview assignmentData={selectedItemData as any} />
+                </div>
+              ) : activeItemType === "assignment" ? (
+                <div className="relative w-full h-full flex items-center justify-center text-gray-500">
+                  No assignment data available.
+                </div>
+              ) : null}
+              {/* Coding Exercise */}
+              {activeItemType === "coding-exercise" && selectedItemData ? (
+                <div className="relative w-full h-full px-8 py-6 overflow-y-auto">
+                  <CodingExercisePreview
+                    data={selectedItemData as any}
+                    onClose={() => {}}
+                  />
+                </div>
+              ) : activeItemType === "coding-exercise" ? (
+                <div className="relative w-full h-full flex items-center justify-center text-gray-500">
+                  No coding exercise data available.
+                </div>
+              ) : null}
+              {/* Bottom bar for non-video content */}
+              {renderBottomBar()}
+            </div>
+          )}
         </div>
-        {/* Sidebar (only show when not expanded) */}
-        {!isExpanded && (
+        {/* --- BOTTOM TABS: Always show below content --- */}
+        {/* <BottomTabsContainer
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            showSearch={showSearch}
+            setShowSearch={setShowSearch}
+            isExpanded={isExpanded}
+            selectedItemData={selectedItemData}
+            activeItemType={activeItemType}
+            progress={progress}
+            formatTime={formatTime}
+            notes={notes}
+            onCreateNote={handleCreateNote}
+            onSaveNote={handleSaveNote}
+            onCancelNote={handleCancelNote}
+            onEditNote={handleEditNote}
+            onDeleteNote={handleDeleteNote}
+            isAddingNote={isAddingNote}
+            currentNoteContent={currentNoteContent}
+            setCurrentNoteContent={setCurrentNoteContent}
+            selectedLectureFilter={selectedLectureFilter}
+            setSelectedLectureFilter={setSelectedLectureFilter}
+            selectedSortOption={selectedSortOption}
+            setSelectedSortOption={setSelectedSortOption}
+            getSortedNotes={getSortedNotes}
+            onOpenLearningModal={() => setShowLearningModal(true)}
+            activeItemId={activeItemId}
+          /> */}
+      </div>
+      {/* Sidebar (only show when not expanded) */}
+      {/* {!isExpanded && (
           <div
             className="flex-shrink-0"
             style={{ width: "calc(100vw - 75.5vw)" }}
@@ -1432,13 +1543,12 @@ const StudentCoursePreview = ({
               externalResources={externalResources}
               // onSelectItem={handleItemSelect}
               onSelectItem={handleSidebarSelect}
-
             />
           </div>
-        )}
-      </div>
+        )} */}
+      {/* </div> */}
       {/* Exit fullscreen button */}
-      {isContentFullscreen && (
+      {/* {isContentFullscreen && (
         <button
           className="fixed bottom-4 right-4 bg-black bg-opacity-70 text-white px-3 py-1 rounded text-sm hover:bg-opacity-90 focus:outline-none z-50"
           onClick={handleContentFullscreen}
@@ -1446,23 +1556,9 @@ const StudentCoursePreview = ({
         >
           Exit fullscreen
         </button>
-      )}
-
-      {/* Learning Reminder Modal */}
-      <LearningReminderModal
-        isOpen={showLearningModal}
-        onClose={() => setShowLearningModal(false)}
-      />
-
-      {/* Report Abuse Modal */}
-      <ReportAbuseModal
-        isOpen={showReportModal}
-        onClose={() => setShowReportModal(false)}
-        onSubmit={handleReportSubmit}
-      />
+      )} */}
     </div>
   );
 };
 
 export default StudentCoursePreview;
-

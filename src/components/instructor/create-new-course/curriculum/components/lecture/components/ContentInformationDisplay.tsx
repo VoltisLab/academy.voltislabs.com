@@ -20,23 +20,27 @@ const ContentInformationDisplay: React.FC<{
         >
           <X className="w-6 h-6" />
         </button>
-        
-        <h2 className="text-xl font-semibold mb-6 text-center">Content information</h2>
-        
+
+        <h2 className="text-xl font-semibold mb-6 text-center">
+          Content information
+        </h2>
+
         <div className="space-y-4">
           <div>
             <span className="font-medium">Content type: </span>
             <span className="capitalize">{contentData.contentType}</span>
           </div>
-          
+
           <div>
-            <span className="font-medium">Course contains encrypted videos: </span>
-            <span>{contentData.courseHasEncryptedVideos ? 'Yes' : 'No'}</span>
+            <span className="font-medium">
+              Course contains encrypted videos:{" "}
+            </span>
+            <span>{contentData.courseHasEncryptedVideos ? "Yes" : "No"}</span>
           </div>
-          
+
           <div>
             <span className="font-medium">Is this video encrypted: </span>
-            <span>{contentData.isEncrypted ? 'Yes' : 'No'}</span>
+            <span>{contentData.isEncrypted ? "Yes" : "No"}</span>
           </div>
         </div>
       </div>
@@ -44,4 +48,4 @@ const ContentInformationDisplay: React.FC<{
   );
 };
 
-export default ContentInformationDisplay
+export default ContentInformationDisplay;
