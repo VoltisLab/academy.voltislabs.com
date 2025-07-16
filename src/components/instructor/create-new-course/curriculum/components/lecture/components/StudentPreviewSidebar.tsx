@@ -266,17 +266,17 @@ const type = params?.type;
     const resourcesByLectureId = createResourceMap();
 
     const initialExpandedState: Record<string, boolean> = {};
-    if(type === "lecture"){
-      sections.forEach((section) => {
-        initialExpandedState[section.id] = section.isExpanded !== true;
-      });
+    // if(type === "lecture"){
+    //   sections.forEach((section) => {
+    //     initialExpandedState[section.id] = section.isExpanded !== true;
+    //   });
 
-    }else{
-       sections.forEach((section) => {
-        initialExpandedState[section.id] = section.isExpanded !== false;
-      });
-
-    }
+    // }else{
+      
+    // }
+    sections.forEach((section) => {
+     initialExpandedState[section.id] = section.isExpanded !== false;
+   });
     setExpandedSections(initialExpandedState);
     
     const formatted = sections.map((section, sectionIndex) => {

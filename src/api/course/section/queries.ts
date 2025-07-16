@@ -23,6 +23,9 @@ export const GET_COURSE_SECTIONS = gql`
           createdAt
         }
       }
+      course {
+    title
+        }
       assignment {
         title
         id
@@ -121,6 +124,9 @@ export interface CourseSection {
   description: string;
   codingExercises: CourseSectionAssignnments[];
   practiceSet: CourseSectionAssignnments[];
+  course: {
+    title: string
+  }
 }
 
 export interface CourseSectionsResponse {
