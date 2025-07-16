@@ -198,66 +198,6 @@ const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
     : params?.courseId;
 const type = params?.type;       
 
-  const createResourceMap = () => {
-    const resourcesByLectureId: Record<
-      string,
-      {
-        uploadedFiles: Array<{ name: string; size: string; lectureId: string }>;
-        sourceCodeFiles: SourceCodeFile[];
-        externalResources: ExternalResourceItem[];
-      }
-    > = {};
-
-    uploadedFiles.forEach((file) => {
-      if (file.lectureId) {
-        if (!resourcesByLectureId[file.lectureId]) {
-          resourcesByLectureId[file.lectureId] = {
-            uploadedFiles: [],
-            sourceCodeFiles: [],
-            externalResources: [],
-          };
-        }
-        resourcesByLectureId[file.lectureId].uploadedFiles.push({
-          name: file.name,
-          size: file.size,
-          lectureId: file.lectureId,
-        });
-      }
-    });
-
-    sourceCodeFiles.forEach((file) => {
-      if (file.lectureId) {
-        if (!resourcesByLectureId[file.lectureId]) {
-          resourcesByLectureId[file.lectureId] = {
-            uploadedFiles: [],
-            sourceCodeFiles: [],
-            externalResources: [],
-          };
-        }
-        resourcesByLectureId[file.lectureId].sourceCodeFiles.push(file);
-      }
-    });
-
-    externalResources.forEach((resource) => {
-      if (resource.lectureId) {
-        if (!resourcesByLectureId[resource.lectureId]) {
-          resourcesByLectureId[resource.lectureId] = {
-            uploadedFiles: [],
-            sourceCodeFiles: [],
-            externalResources: [],
-          };
-        }
-        const convertedResource = convertExternalResource(resource);
-        resourcesByLectureId[resource.lectureId].externalResources.push(
-          convertedResource
-        );
-      }
-    });
-
-    return resourcesByLectureId;
-  };
-
-
   useEffect(() => {
     if (!sections || sections.length === 0) {
       setProcessedSections([]);
@@ -283,8 +223,8 @@ const type = params?.type;
       if (section.lectures && section.lectures.length > 0) {
         section.lectures.forEach((lecture, index) => {
           const detectedContentType = detectLectureContentType(lecture);
-          // --- Use lecture.resources directly ---
-          const resources = lecture.resources || [];
+          // --- Use lecture.resources directly, but type-safe ---
+          const resources = (lecture as any)?.resources || [];
           const lectureResources = {
             uploadedFiles: resources
               .filter((r: any) => r.type === "DOWNLOADABLE_FILES")
