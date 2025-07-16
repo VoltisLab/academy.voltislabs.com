@@ -1416,34 +1416,7 @@ const StudentCoursePreview = ({
               </div>
             )}
           </div>
-          {/* --- BOTTOM TABS: Always show below content --- */}
-          <BottomTabsContainer
-            activeTab={activeTab}
-            setActiveTab={setActiveTab}
-            showSearch={showSearch}
-            setShowSearch={setShowSearch}
-            isExpanded={isExpanded}
-            selectedItemData={selectedItemData}
-            activeItemType={activeItemType}
-            progress={progress}
-            formatTime={formatTime}
-            notes={notes}
-            onCreateNote={handleCreateNote}
-            onSaveNote={handleSaveNote}
-            onCancelNote={handleCancelNote}
-            onEditNote={handleEditNote}
-            onDeleteNote={handleDeleteNote}
-            isAddingNote={isAddingNote}
-            currentNoteContent={currentNoteContent}
-            setCurrentNoteContent={setCurrentNoteContent}
-            selectedLectureFilter={selectedLectureFilter}
-            setSelectedLectureFilter={setSelectedLectureFilter}
-            selectedSortOption={selectedSortOption}
-            setSelectedSortOption={setSelectedSortOption}
-            getSortedNotes={getSortedNotes}
-            onOpenLearningModal={() => setShowLearningModal(true)}
-            activeItemId={activeItemId}
-          />
+         
         </div>
         {/* Sidebar (only show when not expanded) */}
         {!isExpanded && (

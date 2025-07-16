@@ -88,10 +88,7 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
   const { expandedView } = usePreviewContext();
 
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState<number>(0);
-<<<<<<< HEAD
-=======
   console.log("quiz", quiz);
->>>>>>> fba79192ec4731373040f0044adb98ccaf0bbe46
   const [selectedAnswers, setSelectedAnswers] = useState<
     Record<number, number | undefined>
   >({});
@@ -347,10 +344,6 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
 
   return (
     <div
-<<<<<<< HEAD
-      className="flex flex-col h-full relative w-[79.5vw]"
-      style={{ maxHeight: "70vh", height: "70vh" }}
-=======
       ref={componentRef}
       className={`flex flex-col relative bg-white ${
         fullScreen
@@ -363,7 +356,6 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
         maxHeight: fullScreen ? "100vh" : expandedView ? "80vh" : "70vh",
         height: fullScreen ? "100vh" : expandedView ? "80vh" : "70vh",
       }}
->>>>>>> fba79192ec4731373040f0044adb98ccaf0bbe46
     >
       {/* Main content */}
       {(quizStatus === "Overview" || quizStatus === "Questions") && (
@@ -376,11 +368,7 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
                   {quiz?.title || "New quiz"}
                 </h2>
                 <div className=" space-x-4">
-<<<<<<< HEAD
-                  <span>Quiz 1</span>
-=======
                   <span>Quiz {quizIndex}</span>
->>>>>>> fba79192ec4731373040f0044adb98ccaf0bbe46
                   <span>|</span>
                   <span>
                     {totalQuestions}{" "}

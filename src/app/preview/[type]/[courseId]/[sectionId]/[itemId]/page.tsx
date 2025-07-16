@@ -230,23 +230,16 @@ const Preview = () => {
     );
     // Ensure the quiz object has the correct structure and fallback for missing questions
     console.log("Quiz Item:", quizItem);
-<<<<<<< HEAD
-=======
     const quizIndex = currentSection.quiz?.findIndex(
       (q: any) => String(q.id) === String(itemId)
     );
     // Ensure the quiz object has the correct structure and fallback for missing questions
     console.log("Quiz Item:", quizItem);
->>>>>>> fba79192ec4731373040f0044adb98ccaf0bbe46
     let quizForPreview = undefined;
     if (quizItem) {
       quizForPreview = {
         id: quizItem.id || "",
         title: quizItem.title || "Quiz",
-<<<<<<< HEAD
-=======
-
->>>>>>> fba79192ec4731373040f0044adb98ccaf0bbe46
         description: quizItem.description || "",
         questions: Array.isArray(quizItem.questions)
           ? quizItem.questions.map((q: any) => ({
@@ -269,13 +262,9 @@ const Preview = () => {
         questions: [],
       };
     }
-<<<<<<< HEAD
-    previewComponent = <QuizPreview quiz={quizForPreview} />;
-=======
     previewComponent = (
       <QuizPreview quiz={quizForPreview} quizIndex={quizIndex + 1} />
     );
->>>>>>> fba79192ec4731373040f0044adb98ccaf0bbe46
   } else if (type === "assignment") {
     previewComponent = <AssignmentPreview assignmentData={assignmentData} />;
   } else if (type === "coding-exercise") {
