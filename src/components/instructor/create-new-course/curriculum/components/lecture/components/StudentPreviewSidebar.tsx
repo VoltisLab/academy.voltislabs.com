@@ -1,4 +1,4 @@
-"use client"
+"use client";
 import { useState, useEffect } from "react";
 import {
   ChevronDown,
@@ -17,12 +17,11 @@ import {
   Lecture,
   SourceCodeFile,
   ExternalResourceItem,
-  ExternalResource, // FIXED: Import both types
+  ExternalResource,
   AttachedFile,
   EnhancedLecture,
   ContentTypeDetector,
 } from "@/lib/types";
-import { useRouter } from "next/router";
 import { useParams } from "next/navigation";
 
 // Define the ContentItemType properly
@@ -33,7 +32,6 @@ type ContentItemType =
   | "assignment"
   | "coding-exercise";
 
-// FIXED: Updated ContentItem interface to include proper resource structure
 interface ContentItem {
   id: string;
   name: string;
@@ -42,7 +40,6 @@ interface ContentItem {
   hasResources?: boolean;
   isCompleted?: boolean;
   isActive?: boolean;
-  // FIXED: Use the proper resource structure from EnhancedLecture
   lectureResources?: {
     uploadedFiles: Array<{ name: string; size: string; lectureId: string }>;
     sourceCodeFiles: SourceCodeFile[];
@@ -67,13 +64,18 @@ interface SectionWithItems {
 interface StudentPreviewSidebarProps {
   currentLectureId: string;
   setShowVideoPreview: React.Dispatch<React.SetStateAction<boolean>>;
-  // onSelectItem?: (itemId: string, itemType: string) => void;
-    onSelectItem?: (itemId: string, itemType: string, courseId: string, sectionId: string) => void;
+  onSelectItem?: (
+    itemId: string,
+    itemType: string,
+    courseId: string,
+    sectionId: string
+  ) => void;
   sections?: Array<{
     id: string;
     name: string;
     lectures?: Lecture[];
     quizzes?: Array<{
+      title: string;
       id: string;
       name: string;
       description?: string;
@@ -82,6 +84,7 @@ interface StudentPreviewSidebarProps {
       contentType?: string;
     }>;
     assignments?: Array<{
+      title: string;
       id: string;
       name: string;
       description?: string;
@@ -97,10 +100,9 @@ interface StudentPreviewSidebarProps {
     }>;
     isExpanded?: boolean;
   }>;
-  // FIXED: Accept both types and handle conversion internally
   uploadedFiles?: Array<{ name: string; size: string; lectureId?: string }>;
   sourceCodeFiles?: SourceCodeFile[];
-  externalResources?: (ExternalResource | ExternalResourceItem)[]; // Accept both types
+  externalResources?: (ExternalResource | ExternalResourceItem)[];
 }
 
 const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
@@ -108,7 +110,6 @@ const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
   setShowVideoPreview,
   sections = [],
   onSelectItem,
-  // FIXED: Accept resource props with defaults
   uploadedFiles = [],
   sourceCodeFiles = [],
   externalResources = [],
@@ -126,22 +127,19 @@ const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
     SectionWithItems[]
   >([]);
 
-  // FIXED: Add helper function to convert ExternalResource to ExternalResourceItem
+  // Helper to convert ExternalResource to ExternalResourceItem
   const convertExternalResource = (
     resource: ExternalResource | ExternalResourceItem
   ): ExternalResourceItem => {
-    // If it's already ExternalResourceItem, return as is
     if (typeof (resource as any).title === "string") {
       return resource as ExternalResourceItem;
     }
-
-    // Convert ExternalResource to ExternalResourceItem
     const externalResource = resource as ExternalResource;
     return {
       title:
         typeof externalResource.title === "string"
           ? externalResource.title
-          : externalResource.name, // Convert ReactNode to string
+          : externalResource.name,
       url: externalResource.url,
       name: externalResource.name,
       lectureId: externalResource.lectureId,
@@ -149,35 +147,26 @@ const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
     };
   };
 
-  // FIXED: Enhanced content type detector function for lectures
   const detectLectureContentType = (lecture: Lecture): string => {
     const enhancedLecture = lecture as EnhancedLecture;
-
-    // Priority 1: Check if it's explicitly a quiz
     if (
       lecture.contentType === "quiz" ||
       enhancedLecture.actualContentType === "quiz"
     ) {
       return "quiz";
     }
-
-    // Priority 2: Check if it's explicitly an assignment
     if (
       lecture.contentType === "assignment" ||
       enhancedLecture.actualContentType === "assignment"
     ) {
       return "assignment";
     }
-
-    // Priority 3: Check if it's explicitly a coding exercise
     if (
       lecture.contentType === "coding-exercise" ||
       enhancedLecture.actualContentType === "coding-exercise"
     ) {
       return "coding-exercise";
     }
-
-    // Priority 4: Use ContentTypeDetector if available
     if (ContentTypeDetector) {
       const detectedType =
         ContentTypeDetector.detectLectureContentType(enhancedLecture);
@@ -185,8 +174,6 @@ const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
         return detectedType;
       }
     }
-
-    // Priority 5: Check enhanced lecture properties for article content
     if (
       enhancedLecture.hasArticleContent ||
       (enhancedLecture.articleContent &&
@@ -195,26 +182,21 @@ const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
     ) {
       return "article";
     }
-
-    // Priority 6: Check enhanced lecture properties for video content
     if (enhancedLecture.hasVideoContent || enhancedLecture.videoDetails) {
       return "video";
     }
-
-    // Priority 7: Check explicit content type
     if (lecture.contentType === "article") {
       return "article";
     }
-
     return "video";
   };
+  
+  const params = useParams();
+  const courseId = Array.isArray(params?.courseId)
+    ? params?.courseId[0]
+    : params?.courseId;
+const type = params?.type;       
 
-
-
-
-
-
-  // FIXED: Create resource map from props to aggregate all resources by lectureId
   const createResourceMap = () => {
     const resourcesByLectureId: Record<
       string,
@@ -225,7 +207,6 @@ const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
       }
     > = {};
 
-    // Process uploaded files
     uploadedFiles.forEach((file) => {
       if (file.lectureId) {
         if (!resourcesByLectureId[file.lectureId]) {
@@ -243,7 +224,6 @@ const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
       }
     });
 
-    // Process source code files
     sourceCodeFiles.forEach((file) => {
       if (file.lectureId) {
         if (!resourcesByLectureId[file.lectureId]) {
@@ -257,7 +237,6 @@ const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
       }
     });
 
-    // FIXED: Process external resources with type conversion
     externalResources.forEach((resource) => {
       if (resource.lectureId) {
         if (!resourcesByLectureId[resource.lectureId]) {
@@ -267,7 +246,6 @@ const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
             externalResources: [],
           };
         }
-        // Convert to ExternalResourceItem before adding
         const convertedResource = convertExternalResource(resource);
         resourcesByLectureId[resource.lectureId].externalResources.push(
           convertedResource
@@ -278,42 +256,44 @@ const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
     return resourcesByLectureId;
   };
 
-  // Remove any reliance on pre-processed contentItems from the layout. Always process the raw backend data here.
+
   useEffect(() => {
     if (!sections || sections.length === 0) {
       setProcessedSections([]);
       return;
     }
 
-    // FIXED: Create resource map from props
     const resourcesByLectureId = createResourceMap();
 
-    // Initialize expanded state for all sections
     const initialExpandedState: Record<string, boolean> = {};
+    if(type === "lecture"){
+      sections.forEach((section) => {
+        initialExpandedState[section.id] = section.isExpanded !== true;
+      });
 
-    sections.forEach((section) => {
-      initialExpandedState[section.id] = section.isExpanded !== false;
-    });
+    }else{
+       sections.forEach((section) => {
+        initialExpandedState[section.id] = section.isExpanded !== false;
+      });
 
+    }
     setExpandedSections(initialExpandedState);
-
-    // Process sections to format for sidebar display
+    
     const formatted = sections.map((section, sectionIndex) => {
       const contentItems: ContentItem[] = [];
-
+      console.log("mylecture", section);
+      
       // Process lectures
       if (section.lectures && section.lectures.length > 0) {
         section.lectures.forEach((lecture, index) => {
-          // FIXED: Use the improved content type detection
           const detectedContentType = detectLectureContentType(lecture);
-
-          // FIXED: Get resources from the resource map instead of just the lecture
           const lectureResources = resourcesByLectureId[lecture.id] || {
             uploadedFiles: [],
             sourceCodeFiles: [],
             externalResources: [],
           };
-
+          
+          
           const hasResources =
             lectureResources.uploadedFiles.length > 0 ||
             lectureResources.sourceCodeFiles.length > 0 ||
@@ -321,13 +301,14 @@ const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
 
           const contentItem: ContentItem = {
             id: lecture.id,
-            name: lecture.name || lecture.title || `Lecture ${index + 1}`,
+            name: lecture.title || `Lecture ${index + 1}`,
             type: detectedContentType as ContentItemType,
             duration: lecture.duration || "2min",
             hasResources: hasResources,
+            // hasResources: true,
             isCompleted: lecture.isCompleted || false,
             isActive: lecture.id === currentLectureId,
-            lectureResources: lectureResources, // FIXED: Use resources from map
+            lectureResources: lectureResources,
             description: lecture.description,
             actualContentType: detectedContentType,
             hasVideoContent: detectedContentType === "video",
@@ -338,12 +319,11 @@ const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
         });
       }
 
-      // Process other content types (quizzes, assignments, etc.) - unchanged
       if (section.quizzes && section.quizzes.length > 0) {
         section.quizzes.forEach((quiz, index) => {
           contentItems.push({
             id: quiz.id,
-            name: quiz.name || `Quiz ${index + 1}`,
+            name: quiz?.title || `Quiz ${index + 1}`,
             type: "quiz",
             duration: quiz.duration || "10min",
             isCompleted: false,
@@ -364,7 +344,7 @@ const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
         section.assignments.forEach((assignment, index) => {
           contentItems.push({
             id: assignment.id,
-            name: assignment.name || `Assignment ${index + 1}`,
+            name: assignment?.title || `Assignment ${index + 1}`,
             type: "assignment",
             duration: assignment.duration || "30min",
             isCompleted: false,
@@ -402,13 +382,11 @@ const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
         });
       }
 
-      // Calculate totals
       const totalItems = contentItems.length;
       const completedItems = contentItems.filter(
         (item) => item.isCompleted
       ).length;
 
-      // Calculate total duration
       const totalDurationMinutes = contentItems.reduce((total, item) => {
         const durationMatch = item.duration?.match(/(\d+)/);
         if (durationMatch && durationMatch[1]) {
@@ -431,13 +409,7 @@ const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
     });
 
     setProcessedSections(formatted);
-  }, [
-    sections,
-    // currentLectureId,
-    // uploadedFiles,
-    // sourceCodeFiles,
-    // externalResources,
-  ]); // FIXED: Include resource props in dependencies
+  }, [sections]);
 
   // Toggle a section's expanded state
   const toggleSection = (sectionId: string) => {
@@ -453,7 +425,6 @@ const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
       e.stopPropagation();
       e.preventDefault();
     }
-
     setOpenResourcesDropdowns((prev) => {
       const newState = { ...prev };
       newState[itemId] = !prev[itemId];
@@ -461,44 +432,41 @@ const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
     });
   };
 
-  // FIXED: Handle selecting an item with proper content type detection
-  // const handleSelectItem = (itemId: string, itemType?: string) => {
-  //   // Always use 'lecture' for both video and article lectures
-  //   // const forcedType =
-  //   //   itemType === "video" || itemType === "article" ? "lecture" : itemType;
-  //   // if (onSelectItem) {
-  //   //   onSelectItem(itemId, forcedType || "lecture");
-  //   // }
+  // --- THE FIX: Toggle completed status for a content item ---
+  const handleToggleCompleted = (sectionId: string, itemId: string) => {
+    setProcessedSections((prevSections) =>
+      prevSections.map((section) =>
+        section.id === sectionId
+          ? {
+              ...section,
+              contentItems: section.contentItems.map((item) =>
+                item.id === itemId
+                  ? { ...item, isCompleted: !item.isCompleted }
+                  : item
+              ),
+            }
+          : section
+      )
+    );
+  };
 
-  //    const typeToSend = (itemType === "video" || itemType === "article") ? "lecture" : itemType;
-  // if (onSelectItem) {
-  //   onSelectItem(itemId, typeToSend || "lecture");
-  // }
-
-  // };
-
-  // const router = useRouter();
-
-  const params = useParams();
-
-  // console.log("params", params);
   
-const courseId = Array.isArray(params?.courseId) ? params?.courseId[0] : params?.courseId;
 
-const handleSelectItem = (
-  itemId: string,
-  itemType: string,
-  // courseId: string,
-  sectionId: string
-) => {
-  const typeToSend = (itemType === "video" || itemType === "article") ? "lecture" : itemType;
-  window.location.href =`/preview/${typeToSend}/${courseId}/${sectionId}/${itemId}`;
-};
 
-  // FIXED: Get icon for content type with better detection
+  const handleSelectItem = (
+    itemId: string,
+    itemType: string,
+    sectionId: string
+  ) => {
+    const typeToSend =
+      itemType === "video" || itemType === "article"
+        ? "lecture"
+        : itemType;
+    window.location.href = `/preview/${typeToSend}/${courseId}/${sectionId}/${itemId}`;
+  };
+
   const getContentIcon = (item: ContentItem) => {
     const contentType = item.actualContentType || item.type;
-
     switch (contentType) {
       case "video":
         return <Play className="w-3 h-3 mr-1" />;
@@ -515,13 +483,11 @@ const handleSelectItem = (
     }
   };
 
-  // FIXED: Resources dropdown component with proper resource handling
   const ResourcesDropdown: React.FC<{
     item: ContentItem;
     isOpen: boolean;
     toggleOpen: (e?: React.MouseEvent) => void;
   }> = ({ item, isOpen, toggleOpen }) => {
-    // Show for lectures (video/article) with resources
     const contentType = item.actualContentType || item.type;
     if (contentType !== "video" && contentType !== "article") return null;
 
@@ -531,7 +497,6 @@ const handleSelectItem = (
       toggleOpen(e);
     };
 
-    // FIXED: Use lectureResources structure
     const resources = item.lectureResources;
     if (!resources) return null;
 
@@ -544,7 +509,6 @@ const handleSelectItem = (
       resources.sourceCodeFiles.length +
       resources.externalResources.length;
 
-    // Don't show if no resources
     if (totalResourceCount === 0) {
       return null;
     }
@@ -623,7 +587,7 @@ const handleSelectItem = (
                         rel="noopener noreferrer"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        {resource.title} {/* Now guaranteed to be string */}
+                        {resource.title}
                       </a>
                     </div>
                   ))}
@@ -635,6 +599,10 @@ const handleSelectItem = (
       </div>
     );
   };
+
+  console.log("pooooo", processedSections)
+    console.log("pooooo2", sections)
+
 
   return (
     <div className="w-[24vw] bg-white border-l border-gray-200 flex flex-col h-full text-gray-700">
@@ -679,7 +647,7 @@ const handleSelectItem = (
             {expandedSections[section.id] &&
               section.contentItems &&
               section.contentItems.length > 0 && (
-                <div className="">
+                <div>
                   {section.contentItems.map((item, itemIndex) => (
                     <div
                       key={item.id}
@@ -688,15 +656,20 @@ const handleSelectItem = (
                           ? "bg-gray-200 "
                           : "hover:bg-gray-50 bg-white"
                       } cursor-pointer hover:bg-gray-200`}
-                      onClick={() => handleSelectItem(item.id, item.type, section.id)}
+                      onClick={() =>
+                        handleSelectItem(item.id, item.type, section.id)
+                      }
                     >
                       <div className="flex items-start">
                         <input
                           type="checkbox"
                           className="mt-1 mr-3"
                           checked={item.isCompleted}
-                          onChange={() => {}}
+                          onChange={e =>
+                            handleToggleCompleted(section.id, item.id)
+                          }
                           aria-label="Mark as complete"
+                          onClick={e => e.stopPropagation()} // prevent checkbox click from triggering lecture selection
                         />
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between">
@@ -704,7 +677,6 @@ const handleSelectItem = (
                               {itemIndex + 1}. {item.name}
                             </p>
                           </div>
-                          {/* FIXED: Show duration and resources for video/article content */}
                           {(item.actualContentType === "video" ||
                             item.actualContentType === "article") && (
                             <div className="flex items-center justify-between">
@@ -714,20 +686,17 @@ const handleSelectItem = (
                                 </span>
                                 <span>{item.duration}</span>
                               </div>
-
-                              {/* FIXED: Show resources dropdown for lectures with resources */}
                               {item.hasResources && (
                                 <ResourcesDropdown
                                   item={item}
                                   isOpen={!!openResourcesDropdowns[item.id]}
-                                  toggleOpen={(e) =>
+                                  toggleOpen={e =>
                                     toggleResourcesDropdown(item.id, e)
                                   }
                                 />
                               )}
                             </div>
                           )}
-                          {/* For other content types, show basic info */}
                           {item.actualContentType !== "video" &&
                             item.actualContentType !== "article" && (
                               <div className="flex items-center text-xs">

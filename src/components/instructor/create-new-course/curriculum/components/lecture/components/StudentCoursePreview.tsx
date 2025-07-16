@@ -46,6 +46,7 @@ import { useAssignment } from "@/context/AssignmentDataContext";
 import { CourseSectionQuiz } from "@/api/course/section/queries";
 import VoltisLoader from "@/components/loader/loader";
 import CodingExercisePreview from "../../code/CodingExercisePreview";
+import PreviewHeader from "./PreviewHeader";
 
 // Add QuizData interface
 export interface Answer {
@@ -1268,6 +1269,7 @@ const StudentCoursePreview = ({
   // --- Main Render ---
   return (
     <div className="bg-white flex flex-col">
+      <PreviewHeader progress={75} completedText="3 of 4 complete."/>
       <div className="flex h-full">
         {/* Main scrollable container */}
         <div
