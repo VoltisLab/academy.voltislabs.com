@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+"use client"
+import React, { useEffect, useState } from "react";
 import {
   Search,
   Clock,
@@ -8,8 +9,20 @@ import {
   Trash2,
   ChevronDown,
 } from "lucide-react";
-import { VideoNote } from "@/lib/types";
 
+interface videoNooteType{
+  id: string;
+  notes: string;
+  time?: string;
+  updatedAt?: string;
+  createdAt?: string;
+  lecture: {
+    title: string;
+    section: {
+        title: string;
+      }
+  }
+}
 interface BottomTabsContainerProps {
   activeTab:
     | "overview"
@@ -27,7 +40,7 @@ interface BottomTabsContainerProps {
   activeItemType: string;
   progress: number;
   formatTime: (seconds: number) => string;
-  notes: VideoNote[];
+  notes: videoNooteType[];
   onCreateNote: () => void;
   onSaveNote: () => void;
   onCancelNote: () => void;
@@ -40,7 +53,7 @@ interface BottomTabsContainerProps {
   setSelectedLectureFilter: (filter: string) => void;
   selectedSortOption: string;
   setSelectedSortOption: (option: string) => void;
-  getSortedNotes: () => VideoNote[];
+  getSortedNotes: () => videoNooteType[];
   onOpenLearningModal: () => void;
   activeItemId: string;
 }
@@ -81,6 +94,25 @@ const BottomTabsContainer: React.FC<BottomTabsContainerProps> = ({
       setActiveTab("overview");
     }
   };
+
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't trigger if any input or textarea is focused!
+      if (
+        activeTab === "notes" &&
+        (e.key === "b" || e.key === "B") &&
+        document.activeElement &&
+        // If not on a textarea or input
+        !["INPUT", "TEXTAREA"].includes(document.activeElement.tagName)
+      ) {
+        e.preventDefault();
+        onCreateNote();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [activeTab, onCreateNote]);
 
   // Function to clean HTML content for display
   const cleanHtmlContent = (htmlString: string): string => {
@@ -499,11 +531,11 @@ const BottomTabsContainer: React.FC<BottomTabsContainerProps> = ({
                     <div key={note.id} className="mb-4">
                       <div className="flex items-center mb-2">
                         <div className="bg-black text-white text-xs px-2 py-1 rounded-sm mr-3">
-                          {note.formattedTime}
+                          {note.time}
                         </div>
                         <div className="text-sm text-gray-700 font-medium mr-2">
-                          {note.sectionName && `${note.sectionName}.`}{" "}
-                          {note.lectureName}
+                          {note.lecture.section.title && `${note.lecture.section.title}.`}{" "}
+                          {note.lecture.title}
                         </div>
                         <div className="ml-auto flex">
                           <button
@@ -523,7 +555,7 @@ const BottomTabsContainer: React.FC<BottomTabsContainerProps> = ({
                         </div>
                       </div>
                       <div className="bg-gray-50 p-4 rounded-md">
-                        <p className="text-sm text-gray-700">{note.content}</p>
+                        <p className="text-sm text-gray-700">{note.notes}</p>
                       </div>
                     </div>
                   ))}
