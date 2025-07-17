@@ -579,7 +579,10 @@ const LectureContentDisplay: React.FC<LectureContentDisplayProps> = ({
 
       {/* Lecture Description */}
       {lecture.description && (
-        <div className="mb-4 border-b border-gray-400 pb-2">
+
+        <div>
+          <p className="text-gray-800 font-bold">Description</p>
+          <div className="mb-4 border-b border-gray-400 pb-2">
           <div
             className="text-gray-800 text-sm pt-1 pr-1 hover:outline-1 hover:outline-gray-400 border-gray-300 cursor-pointer"
             onClick={(e) => {
@@ -595,6 +598,7 @@ const LectureContentDisplay: React.FC<LectureContentDisplayProps> = ({
             }}
             dangerouslySetInnerHTML={{ __html: lecture.description }}
           />
+        </div>
         </div>
       )}
 
