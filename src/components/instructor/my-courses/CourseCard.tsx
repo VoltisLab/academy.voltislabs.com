@@ -3,10 +3,15 @@ import Image, { StaticImageData } from 'next/image'
 import Link from 'next/link'
 import { useState } from 'react'
 import DeleteModal from './DeleteCourseModal'
+import { apolloClient } from '@/lib/apollo-client'
+import { DELETE_COURSE } from '@/api/course/mutation'
+import toast from 'react-hot-toast'
+import { useCoursesData } from '@/services/useCourseDataService'
 
 
 interface CourseCardProps {
   title: string;
+  id:number;
   description: string;
   imageUrl?: string | StaticImageData;
   isGrid?: boolean;
@@ -43,6 +48,46 @@ const cleanHtmlContent = (htmlString: string): string => {
     return cleaned;
   };
 
+  const deleteCourse = async (courseId: number) => {
+  try {
+    // setLoading(true);
+    // setError(null);
+
+    const { data, errors } = await apolloClient.mutate({
+      mutation: DELETE_COURSE,
+      variables: { courseId },
+      context: {
+        includeAuth: true, // if you use auth
+      },
+      fetchPolicy: "no-cache",
+    });
+
+    if (errors) {
+      console.error("GraphQL errors deleting course:", errors);
+      throw new Error(errors[0]?.message || "Failed to delete course");
+    }
+
+    if (data?.deleteCourse?.success) {
+      // Optionally show a toast or update UI
+      toast.success(data.deleteCourse.message || "Course deleted!");
+      // Optionally: remove from state if you list courses
+    } else {
+      toast.error(data?.deleteCourse?.message || "Delete failed");
+    }
+    return data?.deleteCourse;
+  } catch (err) {
+    console.error("Error deleting course:", err);
+    // setError(err instanceof Error ? err : new Error("Failed to delete course"));
+    toast.error(
+      err instanceof Error
+        ? err.message
+        : "Failed to delete course. Please try again."
+    );
+    return null;
+  } finally {
+    // setLoading(false);
+  }
+};
   
 
 export default function MyCourseCard({
@@ -55,14 +100,24 @@ export default function MyCourseCard({
   status = 'DRAFT',
   isPublic = false,
   editUrl = '#',
+  id
 }: CourseCardProps) {
 
 const [showDeleteModal, setShowDeleteModal] = useState(false);
+// const {fetchInstructorCourses, pageNumber,setPageNumber,} = useCoursesData()
+// console.log("DD",pageNumber);
 
-const handleDeleteConfirm = () => {
-  setShowDeleteModal(false);
-  console.log(`Deleting course: ${title}`);
-  // You can place your actual delete logic here
+const handleDeleteConfirm = async () => {
+  // setPageNumber((prev) => prev)  
+  const response = await deleteCourse(id);
+  if (response?.success) { // NOT response?.deleteCourse?.success
+    // await fetchInstructorCourses()
+
+    setShowDeleteModal(false);
+    console.log(`Deleting course: ${title}`);
+    window.location.reload()
+    // Additional logic...
+  }
 };
 
 
@@ -134,6 +189,7 @@ const handleDeleteConfirm = () => {
           onClose={() => setShowDeleteModal(false)}
           onConfirm={handleDeleteConfirm}
           courseTitle={title}
+          id={id}
         />
       </div>
     )
@@ -194,6 +250,7 @@ const handleDeleteConfirm = () => {
         onClose={() => setShowDeleteModal(false)}
         onConfirm={handleDeleteConfirm}
         courseTitle={title}
+        id={id}
       />
     </div>
 
