@@ -44,7 +44,7 @@ export const useCoursesData = () => {
   const [pageCount] = useState(10); // items per page
   const [total, setTotal] = useState(0)
 
-  const fetchInstructorCourses = async () => {
+  const fetchInstructorCourses = async ({ searchValue = "" }: { searchValue?: string } = {}) => {
     try {
       setLoading(true);
       setError(null);
@@ -55,7 +55,7 @@ export const useCoursesData = () => {
       const { data } = await apolloClient.query({
         query: GET_ALL_INSTRUCTOR_COURSES,
         variables: {
-          search,
+          search: searchValue? searchValue : search,
           pageNumber,
           pageCount,
           filters,
@@ -64,6 +64,7 @@ export const useCoursesData = () => {
       });
 
       setInstructorCourses(data.instructorCourses);
+      return data
     } catch (err: any) {
       console.error("Fetch courses failed", err);
       setError(err.message || "Failed to fetch courses");

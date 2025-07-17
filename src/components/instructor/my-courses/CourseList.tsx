@@ -60,7 +60,7 @@ const MyCourseList = () => {
           status={ 'DRAFT' }
           isPublic={false}
           description={course?.description}
-          editUrl={course?.id}
+          editUrl={`/instructor/create-new-course/basic?edit=${course?.title}&id=${course?.id}`}
           isGrid={grid}
           imageUrl={course?.banner?.thumbnail === "https://prelura.s3.eu-west-2.amazonaws.com/" ? bg : course?.banner?.thumbnail ?? bg}
           category={course?.category?.name}

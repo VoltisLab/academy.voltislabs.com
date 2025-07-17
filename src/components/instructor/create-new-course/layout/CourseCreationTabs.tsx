@@ -35,6 +35,8 @@ export default function CourseCreationTabs() {
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const courseId = searchParams?.get("courseId");
+    const title = searchParams?.get("edit");
+
 
   // Determine current step from pathname
   const currentStep = pathname?.split("/").pop();
@@ -49,7 +51,7 @@ export default function CourseCreationTabs() {
             return (
               <Link
                 key={tab.key}
-                href={`/instructor/create-new-course/${tab.key}${courseId ? `?courseId=${courseId}` : ""}`}
+                href={`/instructor/create-new-course/${tab.key}${courseId && title ? `?courseId=${courseId}&edit=${title}` : courseId ? `?courseId=${courseId}` : title ?`?edit=${title}`:  ""}`}
                 className={`py-3 flex-shrink-0 flex items-center gap-1 whitespace-nowrap transition-all relative ${
                   isActive
                     ? "text-[#313273] font-bold border-b-2 border-pink-600"
@@ -77,7 +79,7 @@ export default function CourseCreationTabs() {
           return (
             <Link
               key={tab.key}
-              href={`/instructor/create-new-course/${tab.key}${courseId ? `?courseId=${courseId}` : ""}`}
+              href={`/instructor/create-new-course/${tab.key}${courseId && title ? `?courseId=${courseId}&edit=${title}` : courseId ? `?courseId=${courseId}` : title ?`?edit=${title}`:  ""}`}
               className={`relative py-4 px-2 lg:px-4 text-sm font-medium border-b-2 border-transparent transition flex items-center gap-1 lg:gap-2 ${
                 isActive
                   ? "text-[#313273] font-bold border-b-pink-600"

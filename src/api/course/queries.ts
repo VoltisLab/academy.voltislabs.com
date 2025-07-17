@@ -15,7 +15,11 @@ export const GET_ALL_INSTRUCTOR_COURSES = gql`
     ) {
       id
       title
+      subtitle
       banner
+      requirements
+    targetAudience
+    teachingPoints
       description
       instructor {
         id
@@ -25,6 +29,15 @@ export const GET_ALL_INSTRUCTOR_COURSES = gql`
         id
         name
       }
+        subCategory {
+      id
+      name
+    }
+      topic
+      subtitleLanguage
+      language
+      level
+      duration
       sections {
         assignment {
           description
@@ -56,6 +69,7 @@ export interface GetInstructorCoursesResponse {
 export interface InstructorCourse {
   id: string;
   title: string;
+  subtitle: string;
   banner: {
     thumbnail: string;
     url: string;
