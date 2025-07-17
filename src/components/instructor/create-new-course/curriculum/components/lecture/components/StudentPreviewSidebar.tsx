@@ -198,6 +198,66 @@ const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
     : params?.courseId;
 const type = params?.type;       
 
+  // const createResourceMap = () => {
+  //   const resourcesByLectureId: Record<
+  //     string,
+  //     {
+  //       uploadedFiles: Array<{ name: string; size: string; lectureId: string }>;
+  //       sourceCodeFiles: SourceCodeFile[];
+  //       externalResources: ExternalResourceItem[];
+  //     }
+  //   > = {};
+
+  //   uploadedFiles.forEach((file) => {
+  //     if (file.lectureId) {
+  //       if (!resourcesByLectureId[file.lectureId]) {
+  //         resourcesByLectureId[file.lectureId] = {
+  //           uploadedFiles: [],
+  //           sourceCodeFiles: [],
+  //           externalResources: [],
+  //         };
+  //       }
+  //       resourcesByLectureId[file.lectureId].uploadedFiles.push({
+  //         name: file.name,
+  //         size: file.size,
+  //         lectureId: file.lectureId,
+  //       });
+  //     }
+  //   });
+
+  //   sourceCodeFiles.forEach((file) => {
+  //     if (file.lectureId) {
+  //       if (!resourcesByLectureId[file.lectureId]) {
+  //         resourcesByLectureId[file.lectureId] = {
+  //           uploadedFiles: [],
+  //           sourceCodeFiles: [],
+  //           externalResources: [],
+  //         };
+  //       }
+  //       resourcesByLectureId[file.lectureId].sourceCodeFiles.push(file);
+  //     }
+  //   });
+
+  //   externalResources.forEach((resource) => {
+  //     if (resource.lectureId) {
+  //       if (!resourcesByLectureId[resource.lectureId]) {
+  //         resourcesByLectureId[resource.lectureId] = {
+  //           uploadedFiles: [],
+  //           sourceCodeFiles: [],
+  //           externalResources: [],
+  //         };
+  //       }
+  //       const convertedResource = convertExternalResource(resource);
+  //       resourcesByLectureId[resource.lectureId].externalResources.push(
+  //         convertedResource
+  //       );
+  //     }
+  //   });
+
+  //   return resourcesByLectureId;
+  // };
+
+
   useEffect(() => {
     if (!sections || sections.length === 0) {
       setProcessedSections([]);
@@ -206,15 +266,17 @@ const type = params?.type;
 
     // No need to build a global resource map; use lecture.resources directly
     const initialExpandedState: Record<string, boolean> = {};
-    if (type === "lecture") {
-      sections.forEach((section) => {
-        initialExpandedState[section.id] = section.isExpanded !== true;
-      });
-    } else {
-      sections.forEach((section) => {
-        initialExpandedState[section.id] = section.isExpanded !== false;
-      });
-    }
+    // if(type === "lecture"){
+    //   sections.forEach((section) => {
+    //     initialExpandedState[section.id] = section.isExpanded !== true;
+    //   });
+
+    // }else{
+      
+    // }
+    sections.forEach((section) => {
+     initialExpandedState[section.id] = section.isExpanded !== false;
+   });
     setExpandedSections(initialExpandedState);
 
     const formatted = sections.map((section, sectionIndex) => {

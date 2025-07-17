@@ -6,9 +6,10 @@ interface DeleteModalProps {
   onClose: () => void;
   onConfirm: () => void;
   courseTitle: string;
+  id: number;
 }
 
-export default function DeleteModal({ isOpen, onClose, onConfirm, courseTitle }: DeleteModalProps) {
+export default function DeleteModal({ isOpen, onClose, onConfirm, courseTitle, id }: DeleteModalProps) {
   const [inputValue, setInputValue] = useState('');
 
   useEffect(() => {
@@ -26,6 +27,8 @@ export default function DeleteModal({ isOpen, onClose, onConfirm, courseTitle }:
   if (!isOpen) return null;
 
   const isMatch = inputValue.trim() === courseTitle;
+
+
 
   return (
     <div className="fixed inset-0 bg-white/30 backdrop-blur-sm flex items-center justify-center z-50">

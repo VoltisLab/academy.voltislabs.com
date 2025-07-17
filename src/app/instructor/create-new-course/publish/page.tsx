@@ -3,11 +3,46 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback } from "react";
 import CourseCreationTabs from "@/components/instructor/create-new-course/layout/CourseCreationTabs";
+import {
+  useCourseInfoUpdate,
+  useCourseStatusUpdate,
+} from "@/services/useCourseInfoUpdate";
+import toast from "react-hot-toast";
 
 export default function PublishCoursePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const courseId = searchParams!.get("courseId");
+
+  // Use the course update hook
+  const {
+    updateCourseStatusInfo,
+    loading: mutationLoading,
+    error: mutationError,
+  } = useCourseStatusUpdate();
+
+  const handlePublishClick = async () => {
+    try {
+      const publishPromise = updateCourseStatusInfo({
+        courseId: Number(courseId), // replace with actual course ID
+        status: "PUBLISHED",
+      });
+
+      toast.promise(publishPromise, {
+        loading: "Publishing course...",
+        success: (res) =>
+          res?.updateCourse.success
+            ? "✅ Course published successfully!"
+            : res?.updateCourse.message || "Something went wrong",
+        error: (err) => err.message || "❌ Failed to publish course",
+      });
+
+      await publishPromise;
+    } catch (err) {
+      console.error("Error publishing course:", err);
+      // toast is already handled by toast.promise
+    }
+  };
 
   const handleBackToCurriculum = useCallback(() => {
     if (courseId) {
@@ -17,13 +52,13 @@ export default function PublishCoursePage() {
     }
   }, [router, courseId]);
 
-  const handlePublishCourse = useCallback(() => {
-    if (courseId) {
-      // TODO: Implement publish course API call
-      alert(`Course ${courseId} published!`);
-      // router.push(`/instructor/dashboard`);
-    }
-  }, [courseId]);
+  // const handlePublishCourse = useCallback(() => {
+  //   if (courseId) {
+  //     // TODO: Implement publish course API call
+  //     alert(`Course ${courseId} published!`);
+  //     // router.push(`/instructor/dashboard`);
+  //   }
+  // }, [courseId]);
 
   return (
     <div className="bg-white w-full xl:max-w-[90rem] mx-auto ">
@@ -46,15 +81,15 @@ export default function PublishCoursePage() {
               ← Back to Curriculum
             </button> */}
             <button
-              onClick={handlePublishCourse}
-              disabled={!courseId}
+              onClick={handlePublishClick}
+              disabled={!courseId || mutationLoading}
               className={`px-6 py-3 rounded-md font-medium ml-auto text-sm ${
                 courseId
                   ? "bg-green-600 text-white hover:bg-green-700"
                   : "bg-gray-300 text-gray-500 cursor-not-allowed"
               }`}
             >
-              Publish Course
+              {mutationLoading ? "Publishing" : "Publish Course"}
             </button>
           </div>
         </div>

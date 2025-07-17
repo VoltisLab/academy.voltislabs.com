@@ -54,7 +54,8 @@ export default function CourseThumbnailUploader({
       <div className="w-[340px] h-[150px] bg-gray-100 border border-gray-300 rounded-md flex items-center justify-center overflow-hidden relative">
         {preview ? (
           <>
-            <img
+            <Image
+              fill
               src={preview}
               alt="Thumbnail Preview"
               className="object-cover w-full h-full"
@@ -90,7 +91,7 @@ export default function CourseThumbnailUploader({
           className="bg-[#D9D6FB] text-[#2E2C6F] font-semibold px-6 py-2 text-sm flex items-center gap-2"
           disabled={isUploading || localUploading}
         >
-          {isUploading || localUploading ? "Uploading..." : "Upload Image"}
+          {isUploading || localUploading ? "Uploading..." : preview ? "Change Image":  "Upload Image"}
           <Upload className="w-4 h-4" />
         </button>
 
