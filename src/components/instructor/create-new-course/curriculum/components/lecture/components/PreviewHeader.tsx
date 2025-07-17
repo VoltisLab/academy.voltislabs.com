@@ -21,11 +21,13 @@ function useOutsideClick(
 interface UdemyHeaderProps {
   progress?: number;
   completedText?: string;
+  title: string;
 }
 
 const PreviewHeader: React.FC<UdemyHeaderProps> = ({
   progress = 100,
   completedText = "1 of 1 complete.",
+  title
 }) => {
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef<any>(null);
@@ -46,7 +48,7 @@ const PreviewHeader: React.FC<UdemyHeaderProps> = ({
             />
         <span className="border-l border-gray-600 h-6 mx-3" />
         <span className="text-white text-lg font-medium">
-          Learn Frontend Development from Scratch
+          {title?.replace(/\b\w/g, (char) => char?.toUpperCase())}
         </span>
       </div>
       <div className="flex-1" />

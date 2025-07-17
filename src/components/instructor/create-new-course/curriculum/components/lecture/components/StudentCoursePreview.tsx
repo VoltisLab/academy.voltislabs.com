@@ -1335,7 +1335,6 @@ const StudentCoursePreview = ({
         expandedView ? "h-[80vh]" : "h-[70vh]"
       }`}
     >
-      <PreviewHeader progress={75} completedText="3 of 4 complete." />
       {/* <div className="flex flex-1"> */}
       {/* Main scrollable container */}
       <div

@@ -391,7 +391,7 @@ const LectureContentDisplay: React.FC<LectureContentDisplayProps> = ({
         <div className="overflow-hidden border-b border-gray-400 mb-4">
           <div className="flex flex-row justify-between sm:flex-row">
             <div className="flex items-center">
-              <div className="w-28 h-20 mr-3 flex-shrink-0 flex items-center justify-center">
+              <div className="w-28 h-20 mr-3 flex-shrink-0 shadow flex items-center justify-center">
                   <ReactPlayer
                   url={videoContent.selectedVideoDetails.url}
                   width="100%"

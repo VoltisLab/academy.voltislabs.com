@@ -13,6 +13,7 @@ import { useRouter } from "next/navigation";
 import { AssignmentProvider } from "@/context/AssignmentDataContext";
 import { PreviewProvider, usePreviewContext } from "@/context/PreviewContext";
 import LearningReminderModal from "@/components/instructor/create-new-course/curriculum/components/lecture/modals/LearningReminderModal";
+import PreviewHeader from "@/components/instructor/create-new-course/curriculum/components/lecture/components/PreviewHeader";
 
 export default function PreviewLayout({
   children,
@@ -104,6 +105,7 @@ export default function PreviewLayout({
 
   return (
     <AssignmentProvider>
+      <PreviewHeader progress={75} completedText="3 of 4 complete." title={sections[0]?.course?.title}/>
       <div className="flex flex-row w-full bg-white">
         {/* Main preview window and bottom tabs (scrollable as a unit) */}
         <div

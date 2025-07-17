@@ -334,6 +334,7 @@ export interface AssignmentQuestion {
 
 // UPDATED: Base Lecture interface
 export interface Lecture {
+  resources?: never[];
   id: string;
   name?: string;
   title?: string;
