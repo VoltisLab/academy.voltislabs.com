@@ -67,7 +67,7 @@ export default function RootLayout({
       <body
         className={`${mavenPro.variable} ${geistMono.variable} ${plusJakarta.variable} font-sans antialiased`}
       >
-        <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!}>
+        <GoogleOAuthProvider clientId={"148895792478-0cbulg7s4ohrkd3u25s3fvuo1fd1f30b.apps.googleusercontent.com"}>
           <AuthProvider>
             <LoadingProvider>
               <AsideProvider>
