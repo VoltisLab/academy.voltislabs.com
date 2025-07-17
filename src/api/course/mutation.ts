@@ -58,6 +58,15 @@ export const GET_CATEGORIES = gql`
   }
 `;
 
+export const UPDATE_COURSE_STATUS = gql`
+  mutation UpdateCourseStatus($courseId: Int!, $status: CourseStatusEnum!) {
+    updateCourse(courseId: $courseId, status: $status) {
+      success
+      message
+    }
+  }
+`;
+
 export const UPDATE_COURSE_INFO = gql`
   mutation UpdateCourse(
     $courseId: Int!
