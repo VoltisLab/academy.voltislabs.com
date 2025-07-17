@@ -1,3 +1,4 @@
+"use client"
 import { useState, useEffect, ChangeEvent, FormEvent } from "react";
 import { apolloClient } from "@/lib/apollo-client";
 import {
@@ -7,6 +8,7 @@ import {
   DurationUnitEnum,
   LanguageEnum,
   LANGUAGES,
+  languageCodeMap,
 } from "@/lib/utils";
 import {
   CourseCategory,
@@ -18,9 +20,12 @@ import Cookies from "js-cookie";
 import {
   CREATE_COURSE_BASIC_INFO,
   GET_CATEGORIES,
+  UPDATE_COURSE_INFO,
 } from "@/api/course/mutation";
 import toast from "react-hot-toast";
 import FormHeader from "../../layout/FormHeader";
+import { useCoursesData } from "@/services/useCourseDataService";
+import { useSearchParams } from "next/navigation";
 
 type BasicInformationFormProps = {
   onSaveNext: (id: number) => void;
@@ -46,6 +51,8 @@ export const BasicInformationForm = ({
     description: "",
   });
 
+    const searchParams = useSearchParams();
+
   // Category state
   const [categories, setCategories] = useState<CourseCategory[]>([]);
   const [categoryLoading, setCategoryLoading] = useState<boolean>(true);
@@ -59,6 +66,40 @@ export const BasicInformationForm = ({
   useEffect(() => {
     fetchCategories();
   }, []);
+  const {fetchInstructorCourses} = useCoursesData()
+  const title = searchParams?.get("edit")
+  const [editId, setEditId]  = useState("") ; 
+
+useEffect(() => {
+  const fetchCourse = async() => {
+    if(title?.trim()){
+      const data =await fetchInstructorCourses({searchValue: title })
+      const result = data?.instructorCourses[0]
+if (result) {
+          const parsed = JSON.parse(result.duration);
+          setEditId(result?.id ?? ""),
+
+        setFormData({
+          title: result.title || "",
+          subtitle: result.subtitle || "", // If not in API, remains empty
+          categoryId: result.category?.id || "",
+          subCategoryId: result.subCategory?.id || "", // If not in API, remains empty
+          topic: result.topic || "",
+          language: languageCodeMap[result.language] || "", // Map short code to enum
+          subtitleLanguage: languageCodeMap[result.subtitleLanguage] || "",
+          courseLevel: result.level || "",
+          durationValue: parsed.value !== undefined ? String(parsed.value) : "",
+          durationUnit: parsed.unit || DurationUnitEnum.DAY,
+          description: "",
+        });
+      }
+    }
+
+  }
+
+  fetchCourse()
+},[])
+
 
   // Fetch categories from the backend
   const fetchCategories = async () => {
@@ -196,6 +237,74 @@ export const BasicInformationForm = ({
     }
   };
 
+const updateCourseInfo = async (
+  variables: any // Preferably use your typed UpdateCourseVariables
+) => {
+  try {
+    setLoading(true);
+    setError(null);
+
+    const authToken = Cookies.get("auth_token");
+    if (!authToken) {
+      throw new Error("Authentication token not found. Please login again.");
+    }
+
+    const { data, errors } = await apolloClient.mutate({
+      mutation: UPDATE_COURSE_INFO,
+      variables,
+      context: {
+        includeAuth: true,
+      },
+      fetchPolicy: "no-cache",
+    });
+
+    if (errors) {
+      console.error("GraphQL errors:", errors);
+
+      const authErrors = errors.filter(
+        (err) =>
+          err.message.toLowerCase().includes("auth") ||
+          err.message.toLowerCase().includes("token") ||
+          err.message.toLowerCase().includes("credentials") ||
+          err.message.toLowerCase().includes("permission")
+      );
+
+      if (authErrors.length > 0) {
+        console.error("Authentication errors detected:", authErrors);
+        throw new Error("Authentication failed. Please try logging in again.");
+      }
+
+      throw new Error(
+        errors[0]?.message || "An error occurred during course update"
+      );
+    }
+
+    return data;
+  } catch (err) {
+    console.error("Course update error:", err);
+
+    if (err instanceof Error) {
+      if (err.message.includes("NetworkError")) {
+        setError(
+          new Error("Network error. Please check your connection and try again.")
+        );
+      } else if (
+        err.message.includes("Authentication") ||
+        err.message.includes("credentials")
+      ) {
+        setError(new Error("Authentication failed. Please log in again."));
+      } else {
+        setError(err);
+      }
+    } else {
+      setError(new Error("An unexpected error occurred"));
+    }
+
+    throw err;
+  } finally {
+    setLoading(false);
+  }
+};
   // Handle course creation submission
   const handleCourseCreation = async (
     e: FormEvent,
@@ -229,7 +338,24 @@ export const BasicInformationForm = ({
         return;
       }
 
-      const response = await createCourseBasicInfo({
+      const response = title?.trim() ?
+      
+       await updateCourseInfo({
+        courseId: parseInt(editId?? ""),
+        title: formData.title,
+        subtitle:  (formData.subtitleLanguage as LanguageEnum) ||
+                (formData.language as LanguageEnum),
+        // description: formData.description,
+        categoryId: parseInt(formData.categoryId),
+        subCategoryId: parseInt(formData.subCategoryId),
+        language: formData.language as LanguageEnum,
+        // targetAudience: ["Developers", "Designers"],
+        // teachingPoints: ["React Basics", "Hooks"],
+        // trailer: "https://youtube.com/mytrailer",
+        // banner: { thumbnail: "thumb.png", url: "banner.png" }
+      })
+
+      :await createCourseBasicInfo({
         title: formData.title,
         subtitle: formData.subtitle || "",
         categoryId: parseInt(formData.categoryId),
@@ -247,13 +373,16 @@ export const BasicInformationForm = ({
         },
       });
 
-      if (response?.createCourse?.success) {
+      
+
+      if (title?.trim() ? response?.updateCourse?.success : response?.createCourse?.success) {
         toast.success(
+          title?.trim()? response.updateCourse.message :
           response.createCourse.message ||
             "Course information saved successfully!"
         );
         // Extract course ID and pass it to the parent component
-        const courseId = response.createCourse?.course?.id;
+        const courseId = title?.trim() ?editId : response.createCourse?.course?.id;
         if (courseId) {
           onSaveNext(courseId); // Always call onSaveNext with courseId
         } else {
