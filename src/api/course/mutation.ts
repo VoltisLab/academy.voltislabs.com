@@ -213,3 +213,12 @@ export const DELETE_QUESTION = gql`
     }
   }
 `;
+
+export const DELETE_COURSE = gql`
+  mutation DeleteCourse($courseId: Int!) {
+    deleteCourse(courseId: $courseId) {
+      message
+      success
+    }
+  }
+`;

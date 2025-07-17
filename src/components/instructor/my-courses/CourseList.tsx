@@ -56,6 +56,7 @@ const MyCourseList = () => {
       {instructorCourses?.map((course, index) => (
         <MyCourseCard
           key={index}
+          id={Number(course?.id)}
           title={course?.title}
           status={ 'DRAFT' }
           isPublic={false}
