@@ -98,6 +98,23 @@ export const GET_INSTRUCTOR_COURSES_TOTAL = gql`
     instructorCoursesTotalNumber
   }
 `;
+export const GET_LECTURE_NOTES = gql`
+  query UserLectureVideoNotes($lectureId: Int!) {
+    userLectureVideoNotes(lectureId: $lectureId ) {
+      createdAt
+      id
+      notes
+      lecture {
+      title
+      section {
+        title
+      }
+      }
+      time
+      updatedAt
+    }
+  }
+`;
 
 export const GET_COURSES_TOTAL = gql`
   query GetCoursesTotal {

@@ -62,7 +62,6 @@ useEffect(() => {
         courseRequirements: result?.requirements ?? ["", "", "", ""],
         });
       }
-      console.log("sssssss", data?.instructorCourses[0]);
     }
 
   }

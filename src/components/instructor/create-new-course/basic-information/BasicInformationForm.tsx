@@ -93,7 +93,6 @@ if (result) {
           description: "",
         });
       }
-      console.log("sssssss", data?.instructorCourses[0]);
     }
 
   }
