@@ -9,11 +9,14 @@ export default function BasicInformationPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const courseId = searchParams!.get("courseId");
+  const title = searchParams!.get("edit");
+
 
   // When the form is saved, redirect to advanced step with courseId
   const handleSaveNext = useCallback(
     (id: number) => {
-      router.push(`/instructor/create-new-course/advanced?courseId=${id}`);
+      title?.trim() ? router.push(`/instructor/create-new-course/advanced?courseId=${id}&edit=${title}`) :
+      router.push(`/instructor/create-new-course/advanced?courseId=${id}`)
     },
     [router]
   );

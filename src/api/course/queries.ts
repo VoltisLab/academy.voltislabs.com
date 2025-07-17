@@ -17,6 +17,9 @@ export const GET_ALL_INSTRUCTOR_COURSES = gql`
       title
       subtitle
       banner
+      requirements
+    targetAudience
+    teachingPoints
       description
       instructor {
         id

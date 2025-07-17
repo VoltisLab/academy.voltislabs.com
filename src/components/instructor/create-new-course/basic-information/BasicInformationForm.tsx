@@ -66,9 +66,9 @@ export const BasicInformationForm = ({
   useEffect(() => {
     fetchCategories();
   }, []);
-  const {fetchInstructorCourses, instructorCourses} = useCoursesData()
+  const {fetchInstructorCourses} = useCoursesData()
   const title = searchParams?.get("edit")
-  const editId = searchParams?.get("id")
+  const [editId, setEditId]  = useState("") ; 
 
 useEffect(() => {
   const fetchCourse = async() => {
@@ -77,6 +77,8 @@ useEffect(() => {
       const result = data?.instructorCourses[0]
 if (result) {
           const parsed = JSON.parse(result.duration);
+          setEditId(result?.id ?? ""),
+
         setFormData({
           title: result.title || "",
           subtitle: result.subtitle || "", // If not in API, remains empty
@@ -88,7 +90,7 @@ if (result) {
           courseLevel: result.level || "",
           durationValue: parsed.value !== undefined ? String(parsed.value) : "",
           durationUnit: parsed.unit || DurationUnitEnum.DAY,
-          description: result.description?.replace(/<[^>]+>/g, '') || "",
+          description: "",
         });
       }
       console.log("sssssss", data?.instructorCourses[0]);
@@ -344,7 +346,7 @@ const updateCourseInfo = async (
         title: formData.title,
         subtitle:  (formData.subtitleLanguage as LanguageEnum) ||
                 (formData.language as LanguageEnum),
-        description: formData.description,
+        // description: formData.description,
         categoryId: parseInt(formData.categoryId),
         subCategoryId: parseInt(formData.subCategoryId),
         language: formData.language as LanguageEnum,
