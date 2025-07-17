@@ -1,6 +1,6 @@
 import { LoginData, LoginResponse, SignUpData, SignUpResponse } from '@/lib/types';
 import { apolloClient } from '@/lib/apollo-client';
-import { LOGIN_MUTATION, REGISTER_MUTATION, SEND_VERIFICATION_EMAIL_MUTATION, VERIFY_TOKEN_MUTATION } from './mutations';
+import { LOGIN_MUTATION, REGISTER_MUTATION, SEND_VERIFICATION_EMAIL_MUTATION, VERIFY_TOKEN_MUTATION, GOOGLE_LOGIN_MUTATION, SOCIAL_AUTH_MUTATION } from './mutations';
 import Cookies from 'js-cookie'
 
 // Helper function to set cookies with a default expiration of 7 days
@@ -158,4 +158,29 @@ export const getCurrentUser = () => {
 // Helper function to check if user is authenticated
 export const isAuthenticated = () => {
   return !!Cookies.get('auth_token');
+};
+
+// Type for Google login response (customize as needed)
+export interface GoogleAuthResponse {
+  success: boolean;
+  token?: string;
+  refreshToken?: string;
+  user?: any;
+  message?: string;
+}
+
+// Google login function
+export const loginWithGoogle = async (accessToken: string) => {
+  try {
+    const { data, errors } = await apolloClient.mutate({
+      mutation: SOCIAL_AUTH_MUTATION,
+      variables: { accessToken },
+    });
+    if (errors || !data?.socialAuth?.success) {
+      throw new Error(errors?.[0]?.message || 'Google login failed');
+    }
+    return data.socialAuth;
+  } catch (error: any) {
+    throw new Error(error?.message || 'Google login failed');
+  }
 };

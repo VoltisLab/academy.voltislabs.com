@@ -6,6 +6,7 @@ import { AsideProvider } from "@/context/showAsideContext";
 import { LoadingProvider } from "@/context/LoadingContext";
 import ClientLoaderWrapper from "@/components/loader/ClientLoaderWrapper";
 import { PreviewProvider } from "@/context/PreviewContext";
+import { GoogleOAuthProvider } from "@react-oauth/google";
 
 // Fonts
 const mavenPro = Maven_Pro({
@@ -66,15 +67,17 @@ export default function RootLayout({
       <body
         className={`${mavenPro.variable} ${geistMono.variable} ${plusJakarta.variable} font-sans antialiased`}
       >
-        <AuthProvider>
-          <LoadingProvider>
-            <AsideProvider>
-              <PreviewProvider>
-                <ClientLoaderWrapper>{children}</ClientLoaderWrapper>
-              </PreviewProvider>
-            </AsideProvider>
-          </LoadingProvider>
-        </AuthProvider>
+        <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!}>
+          <AuthProvider>
+            <LoadingProvider>
+              <AsideProvider>
+                <PreviewProvider>
+                  <ClientLoaderWrapper>{children}</ClientLoaderWrapper>
+                </PreviewProvider>
+              </AsideProvider>
+            </LoadingProvider>
+          </AuthProvider>
+        </GoogleOAuthProvider>
       </body>
     </html>
   );
