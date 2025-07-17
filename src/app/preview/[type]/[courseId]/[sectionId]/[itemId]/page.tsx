@@ -422,7 +422,7 @@ const Preview = () => {
           </div>
         </div>
       ) : (
-        <div>{previewComponent}</div>
+        <div className="relative overflow-y-auto">{previewComponent}</div>
       )}
       {/* Modals */}
       {/* <LearningReminderModal
