@@ -49,6 +49,7 @@ export enum CourseLevelEnum {
   ALL_LEVELS = "ALL_LEVELS"
 }
 
+
 export enum LanguageEnum {
   ENGLISH = "ENGLISH",
   SPANISH = "SPANISH",
@@ -72,6 +73,30 @@ export enum LanguageEnum {
   SWAHILI = "SWAHILI",
   INDONESIAN = "INDONESIAN"
 }
+
+export const languageCodeMap: Record<string, LanguageEnum> = {
+  EN: LanguageEnum.ENGLISH,
+  ES: LanguageEnum.SPANISH,
+  FR: LanguageEnum.FRENCH,
+  DE: LanguageEnum.GERMAN,
+  IT: LanguageEnum.ITALIAN,
+  PT: LanguageEnum.PORTUGUESE,
+  ZH: LanguageEnum.CHINESE,
+  JA: LanguageEnum.JAPANESE,
+  RU: LanguageEnum.RUSSIAN,
+  AR: LanguageEnum.ARABIC,
+  HI: LanguageEnum.HINDI,
+  BN: LanguageEnum.BENGALI,
+  UR: LanguageEnum.URDU,
+  KO: LanguageEnum.KOREAN,
+  TR: LanguageEnum.TURKISH,
+  SV: LanguageEnum.SWEDISH,
+  NO: LanguageEnum.NORWEGIAN,
+  NL: LanguageEnum.DUTCH,
+  PL: LanguageEnum.POLISH,
+  SW: LanguageEnum.SWAHILI,
+  ID: LanguageEnum.INDONESIAN
+};
 
 export enum DurationUnitEnum {
   DAY = "DAY",

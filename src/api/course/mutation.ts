@@ -70,25 +70,38 @@ export const UPDATE_COURSE_STATUS = gql`
 export const UPDATE_COURSE_INFO = gql`
   mutation UpdateCourse(
     $courseId: Int!
-    $requirements: [String]!
-    $banner: BannerInput!
-    $targetAudience: [String]!
-    $teachingPoints: [String]!
+    $title: String
+    $subtitle: LanguageEnum
     $description: String
+    $categoryId: Int
+    $subCategoryId: Int
+    $language: LanguageEnum
+    $requirements: [String]
+    $targetAudience: [String]
+    $teachingPoints: [String]
+    $trailer: String
+    $banner: BannerInput
   ) {
     updateCourse(
       courseId: $courseId
+      title: $title
+      subtitle: $subtitle
+      description: $description
+      categoryId: $categoryId
+      subCategoryId: $subCategoryId
+      language: $language
       requirements: $requirements
-      banner: $banner
       targetAudience: $targetAudience
       teachingPoints: $teachingPoints
-      description: $description
+      trailer: $trailer
+      banner: $banner
     ) {
       success
       message
     }
   }
 `;
+
 
 export const UPDATE_COURSE_SECTIONS = gql`
   mutation UpdateCourseSections(
@@ -205,6 +218,15 @@ export const UPDATE_QUESTION = gql`
 export const DELETE_QUESTION = gql`
   mutation DeleteQuestion($questionId: Int!) {
     deleteQuestion(questionId: $questionId) {
+      success
+    }
+  }
+`;
+
+export const DELETE_COURSE = gql`
+  mutation DeleteCourse($courseId: Int!) {
+    deleteCourse(courseId: $courseId) {
+      message
       success
     }
   }

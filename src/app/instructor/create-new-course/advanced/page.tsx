@@ -9,11 +9,13 @@ export default function AdvancedInformationPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const courseId = searchParams?.get("courseId");
+  const title = searchParams?.get("edit");
 
   // When the form is saved, redirect to curriculum step with courseId
   const handleSaveNext = useCallback(() => {
     if (courseId) {
       router.push(
+        title?.trim() ? `/instructor/create-new-course/curriculum?courseId=${courseId}&edit=${title}`:
         `/instructor/create-new-course/curriculum?courseId=${courseId}`
       );
     }
