@@ -17,6 +17,7 @@ export const GET_ALL_INSTRUCTOR_COURSES = gql`
       title
       subtitle
       banner
+      status
       requirements
     targetAudience
     teachingPoints
@@ -96,6 +97,23 @@ export const GET_ALL_COURSES = gql`
 export const GET_INSTRUCTOR_COURSES_TOTAL = gql`
   query GetInstructorCoursesTotal {
     instructorCoursesTotalNumber
+  }
+`;
+export const GET_LECTURE_NOTES = gql`
+  query UserLectureVideoNotes($lectureId: Int!) {
+    userLectureVideoNotes(lectureId: $lectureId ) {
+      createdAt
+      id
+      notes
+      lecture {
+      title
+      section {
+        title
+      }
+      }
+      time
+      updatedAt
+    }
   }
 `;
 

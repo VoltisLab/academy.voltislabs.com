@@ -231,3 +231,34 @@ export const DELETE_COURSE = gql`
     }
   }
 `;
+
+export const SAVE_LECTURE_VIDEO_NOTE = gql`
+  mutation SaveLectureVideoNote($lectureId: Int!, $notes: String!, $time: Time!) {
+    saveLectureVideoNote(lectureId: $lectureId, notes: $notes, time: $time) {
+      lectureVideoNote {
+        createdAt
+        id
+        notes
+        time
+        updatedAt
+      }
+    }
+  }
+`;
+
+export const UPDATE_LECTURE_VIDEO_NOTE = gql`
+  mutation UpdateLectureVideoNote($lectureVideoNoteId: Int!, $notes: String!) {
+    updateLectureVideoNote(lectureVideoNoteId: $lectureVideoNoteId, notes: $notes) {
+      success
+    }
+  }
+`;
+
+export const DELETE_LECTURE_VIDEO_NOTE = gql`
+  mutation DeleteLectureVideoNote($lectureVideoNoteId: Int!) {
+    deleteLectureVideoNote(lectureVideoNoteId: $lectureVideoNoteId) {
+      message
+      success
+    }
+  }
+`;
