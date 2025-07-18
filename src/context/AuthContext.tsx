@@ -2,6 +2,8 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { UserData } from '@/lib/types';
 import Cookies from 'js-cookie';
+import { logout as removeAuthCookies } from "@/api/auth/auth";
+import { signOut } from "next-auth/react";
 
 interface AuthContextType {
   user: UserData | null;
@@ -44,10 +46,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   const logout = () => {
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('refreshToken');
-    localStorage.removeItem('user');
+    removeAuthCookies(); // Remove cookies
     setUser(null);
+    signOut({ callbackUrl: "/" }); // End NextAuth session and redirect to home
   };
 
   const value = {

@@ -23,6 +23,7 @@ import { Category, CategoryItem, UserData } from "@/lib/types";
 import { useAside } from "@/context/showAsideContext";
 import { logout } from "@/api/auth/auth";
 import { getCurrentUser } from "@/api/auth/auth";
+import { signOut } from "next-auth/react";
 
 // Add this to your global CSS or as a style tag in the component
 const customStyles = `
@@ -134,9 +135,8 @@ export default function Sidebar() {
 
   const handleLogout = () => {
     logout();
-    console.log("User logged out");
     setIsLogoutModalOpen(false);
-    router.push("/");
+    signOut({ callbackUrl: "/" });
   };
 
   // Toggle mobile sidebar

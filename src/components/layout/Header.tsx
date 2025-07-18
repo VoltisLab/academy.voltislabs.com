@@ -21,6 +21,8 @@ const Header = () => {
     setUserExists(userString);
   }, []);
 
+  console.log("USER", userExists);
+
   const toggleMenu = () => setIsOpen(!isOpen);
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => setIsModalOpen(false);

@@ -4,8 +4,25 @@ import Sidebar from "@/components/dashboard/Sidebar";
 import { AsideProvider } from "@/context/showAsideContext";
 import { ReactNode, Suspense } from "react";
 import { LoadingProvider } from "@/context/LoadingContext";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 export default function RootLayout({ children }: { children: ReactNode }) {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (status === "loading") return;
+    if (status === "unauthenticated") {
+      router.replace("/");
+    }
+  }, [status, router]);
+
+  if (status === "loading") {
+    return <div>Loading...</div>;
+  }
+
   return (
     <AsideProvider>
       <LoadingProvider>
