@@ -225,7 +225,7 @@ export default function CourseSection() {
           >
             Discover Courses & Bootcamps
           </motion.h2>
-          <Link href="/courses">
+          <Link href="/bootcamp">
             <motion.button
               variants={itemVariants}
               whileHover={{ scale: 1.05 }}
