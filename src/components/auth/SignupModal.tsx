@@ -12,7 +12,7 @@ import { GoogleOAuthProvider, useGoogleLogin } from "@react-oauth/google";
 
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "";
 
-const SignupModalContent: React.FC<SignupModalProps> = ({
+const SignupModal: React.FC<SignupModalProps> = ({
   isOpen,
   onClose,
 }) => {
@@ -143,6 +143,7 @@ const SignupModalContent: React.FC<SignupModalProps> = ({
     scope: 'openid email profile',
   });
 
+
   // Handler for Google login error
   const handleGoogleError = () => {
     toast.error("Google sign-in was cancelled or failed.");
@@ -237,7 +238,7 @@ const handleSendCode = async () => {
         if (!value) {
           newErrors.password = "Password is required";
         } else {
-          const passwordError = validatePassword(value);
+          const passwordError: string | undefined = validatePassword(value);
           if (passwordError) {
             newErrors.password = passwordError;
           } else {
@@ -583,7 +584,7 @@ const handleSendCode = async () => {
         </button>
             <button
               type="button"
-              className="flex-1 border border-gray-300 rounded-full py-1 xl:py-2 font-bold px-1 md:px-3 flex justify-center items-center md:gap-2 gap-1 text-[#A1A1A1] text-[10px] xl:text-[12px]"
+              className="flex-1 border border-gray-300 rounded-md py-1 xl:py-2 font-bold px-1 md:px-3 flex justify-center items-center md:gap-2 gap-1 text-[#A1A1A1] text-[10px] xl:text-[12px]"
             >
               <div className="h-5 w-5 bg-white rounded ">
                 <Image
@@ -672,7 +673,7 @@ const handleSendCode = async () => {
                   </p>
                 )}
               </div>
-                  
+                
                 {/* OTP Code field - only shown after code is sent */}
                 {codeSent && (
                   <div className="mb-6">
@@ -837,11 +838,5 @@ const handleSendCode = async () => {
   );
 };
 
-// Wrap the component with ApolloProvider
-const SignupModal: React.FC<SignupModalProps> = (props) => {
-  return (
-    <SignupModalContent {...props} />
-  );
-};
 
 export default SignupModal;
