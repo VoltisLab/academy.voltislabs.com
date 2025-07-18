@@ -17,11 +17,7 @@ interface CourseCardProps {
   isGrid?: boolean;
   category?: string;
   progressPercent?: number;
-<<<<<<< HEAD
-  status?: 'DRAFT' | 'PUBLISHED';
-=======
   status?: 'DRAFT' | 'PUBLISHED' | 'PENDING';
->>>>>>> 833a8175e45998681bd349dd004991dfdb94e00e
   isPublic?: boolean;
   editUrl?: string;
 }
@@ -167,64 +163,6 @@ const handleDeleteConfirm = async () => {
       <div className="absolute bottom-0 w-full h-1/3 bg-gradient-to-t from-[#23253a88] to-transparent pointer-events-none" />
     </div>
 
-<<<<<<< HEAD
-        {/* Content */}
-        <div className="p-4 flex flex-col gap-2">
-          <div className='flex items-center justify-between'>
-            <span className="text-[10px] font-semibold text-[#A99EF6] uppercase tracking-wide">
-              {category}
-            </span>
-            {/* Edit Icon */}
-            {/* <div className="flex justify-center text-purple-700 mt-3">
-              <Link href={editUrl}>
-                <p className="text-[#A99EF6] transition-colors font-semibold">Edit</p>
-
-              </Link>
-              <button className='text-red-500'>Delete</button>
-            </div> */}
-
-          </div>
-
-          <h2 className="text-base font-semibold text-gray-900">{title}</h2>
-          <p className="text-sm text-gray-700">{cleanHtmlContent(description)}</p>
-
-          {/* Status and Visibility */}
-           <p className="text-xs text-red-700 bg-red-100 absolute top-2 right-2 p-2 rounded-lg">
-              <span className="font-bold">{status}</span>
-            </p>
-
-          {/* Progress Text */}
-          <div className="flex items-center justify-between text-[10px] text-gray-500">
-            {/* <span>{progressText}</span> */}
-            <span>Your Course is {progressPercent}% completed</span>
-          </div>
-
-          {/* Progress Bar */}
-          <div className="w-full bg-gray-300 h-2 rounded-full overflow-hidden">
-            <div
-              className="bg-[#A99EF6] h-full transition-all duration-300"
-              style={{ width: `${progressPercent}%` }}
-            />
-          </div>
-          <div className="flex justify-center text-purple-700 mt-3 gap-3">
-              <Link href={editUrl} className='w-full'>
-                {/* <FiEdit size={18} className="hover:text-purple-800 transition-colors" /> */}
-                <button className="text-white transition-colors text-sm font-semibold w-full py-1 rounded-xl border bg-[#A99EF6]">Edit</button>
-
-              </Link>
-              <button onClick={() => setShowDeleteModal(true)} className='text-[#A99EF6] w-full border border-[#A99EF6] py-1 rounded-xl text-sm'>Delete</button>
-            </div>
-          
-        </div>
-
-        <DeleteModal
-          isOpen={showDeleteModal}
-          onClose={() => setShowDeleteModal(false)}
-          onConfirm={handleDeleteConfirm}
-          courseTitle={title}
-          id={id}
-        />
-=======
     {/* Card Content */}
     <div className="px-6 py-5 flex flex-col gap-3 bg-white/80 backdrop-blur-xl">
       <div className="flex items-center justify-between">
@@ -232,7 +170,6 @@ const handleDeleteConfirm = async () => {
         {isPublic && (
           <span className="text-[10px] px-2 py-0.5 rounded bg-gray-100 text-gray-700">Public</span>
         )}
->>>>>>> 833a8175e45998681bd349dd004991dfdb94e00e
       </div>
 
       <h2 className="text-xl font-extrabold text-gray-900 line-clamp-1">{title}</h2>
@@ -285,55 +222,6 @@ const handleDeleteConfirm = async () => {
 
   // List view
   return (
-<<<<<<< HEAD
-    <div className="group relative flex items-center gap-4  pr-4 w-full max-w-6xl rounded-md shadow-md transition-colors duration-200 hover:bg-gray-50">
-      {/* Image */}
-      <div className="relative w-36 h-28 shrink-0">
-        <Image
-          src={imageUrl}
-          alt="Course Icon"
-          fill
-          className="object-cover rounded-md"
-        />
-      </div>
-
-      {/* Content */}
-      <div className="flex flex-col gap-1 flex-1  h-24 " >
-        <span className="text-[10px] font-semibold text-[#A99EF6] uppercase tracking-wide">
-          {category}
-        </span>
-
-        <h2 className="font-semibold text-base text-black">{title}</h2>
-        <p className="text-sm text-black">{cleanHtmlContent(description)}</p>
-
-        {/* Status and Visibility */}
-       <p className="text-xs text-red-700 bg-red-100 absolute right-2 p-2 rounded-lg">
-          <span className="font-bold">{status}</span>
-        </p>
-
-        {/* Progress Text */}
-        <div className="flex items-center justify-between text-[10px]  text-gray-500">
-          {/* <span>{progressText}</span> */}
-          <span>Your course is {progressPercent}% completed</span>
-        </div>
-
-        {/* Progress Bar */}
-        <div className="w-full bg-gray-300 h-2 rounded-full overflow-hidden">
-          <div
-            className="bg-[#A99EF6] h-full transition-all duration-300"
-            style={{ width: `${progressPercent}%` }}
-          />
-        </div>
-      </div>
-
-      {/* Edit Icon */}
-      <div className="text-purple-700  mt-auto ml-auto flex items-center gap-2">
-        <Link href={editUrl}>
-          {/* <FiEdit size={18} className="hover:text-purple-800 transition-colors" /> */}
-          <p className="text-[#A99EF6] transition-colors font-semibold">Edit</p>
-        </Link>
-        <button onClick={() => setShowDeleteModal(true)} className='text-red-500'>Delete</button>
-=======
   <div className="relative flex w-full max-w-full bg-white rounded-2xl shadow-md hover:shadow-xl transition-all border border-gray-100 overflow-hidden group">
     {/* Left: Big Image (1/3 width) */}
     <div className="relative w-[240px] rounded-2xl min-w-[180px] h-48 sm:h-56 md:h-60 bg-gray-100">
@@ -397,7 +285,6 @@ const handleDeleteConfirm = async () => {
         >
           Delete
         </button>
->>>>>>> 833a8175e45998681bd349dd004991dfdb94e00e
       </div>
       <DeleteModal
         isOpen={showDeleteModal}
@@ -407,11 +294,6 @@ const handleDeleteConfirm = async () => {
         id={id}
       />
     </div>
-<<<<<<< HEAD
-
-
-  )
-=======
     <DeleteModal
       isOpen={showDeleteModal}
       onClose={() => setShowDeleteModal(false)}
@@ -422,5 +304,4 @@ const handleDeleteConfirm = async () => {
   </div>
 )
 
->>>>>>> 833a8175e45998681bd349dd004991dfdb94e00e
 }

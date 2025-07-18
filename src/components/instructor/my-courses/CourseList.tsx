@@ -5,14 +5,9 @@ import MyCourseCard from './CourseCard'
 import ViewToggle from './MyCourseViewToggle'
 import bg from '@/../public/education.jpg'
 import { useCoursesData } from '@/services/useCourseDataService'
-<<<<<<< HEAD
-
-
-=======
 import { Loader } from './LoadingState' // adjust path
 import { EmptyCourses } from './EmprtyState' // adjust path
 import { StatusSegmentedControl } from './StatusSegmentedControl' // adjust path
->>>>>>> 833a8175e45998681bd349dd004991dfdb94e00e
 
 const MyCourseList = () => {
   const [grid, setGrid] = useState(true)
@@ -40,31 +35,6 @@ const MyCourseList = () => {
   return (
     <div className="flex flex-col gap-4 p-4 md:p-0">
 
-<<<<<<< HEAD
-  {/* Course Cards */}
-  <div className={`${grid && 'w-full flex items-center justify-center'}`}>
-    <div
-      className={
-        grid
-          ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4'
-          : 'flex flex-col gap-4'
-      }
-    >
-      {instructorCourses?.map((course, index) => (
-        <MyCourseCard
-          key={index}
-          id={Number(course?.id)}
-          title={course?.title}
-          status={ 'DRAFT' }
-          isPublic={false}
-          description={course?.description}
-          editUrl={`/instructor/create-new-course/basic?edit=${course?.title}&id=${course?.id}`}
-          isGrid={grid}
-          imageUrl={course?.banner?.thumbnail === "https://prelura.s3.eu-west-2.amazonaws.com/" ? bg : course?.banner?.thumbnail ?? bg}
-          category={course?.category?.name}
-        />
-      ))}
-=======
       {/* View Toggle */}
       <div className="hidden md:flex mb-2 w-full items-end justify-end ">
         <ViewToggle isGrid={grid} onToggle={setGrid} />
@@ -145,7 +115,6 @@ const MyCourseList = () => {
           </button>
         </div>
       )}
->>>>>>> 833a8175e45998681bd349dd004991dfdb94e00e
     </div>
   )
 }
