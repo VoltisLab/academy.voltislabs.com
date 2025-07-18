@@ -174,11 +174,12 @@ export const loginWithGoogle = async (accessToken: string) => {
   try {
     const { data, errors } = await apolloClient.mutate({
       mutation: SOCIAL_AUTH_MUTATION,
-      variables: { accessToken },
+      variables: { accessToken, provider: "google-oauth2" },
     });
     if (errors || !data?.socialAuth?.success) {
       throw new Error(errors?.[0]?.message || 'Google login failed');
     }
+    // Do not set cookies here; let performLogin handle it for consistency
     return data.socialAuth;
   } catch (error: any) {
     throw new Error(error?.message || 'Google login failed');
