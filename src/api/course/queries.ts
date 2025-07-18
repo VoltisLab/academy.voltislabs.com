@@ -17,6 +17,7 @@ export const GET_ALL_INSTRUCTOR_COURSES = gql`
       title
       subtitle
       banner
+      status
       requirements
     targetAudience
     teachingPoints

@@ -49,7 +49,7 @@ const MyCourseList = () => {
     <div
       className={
         grid
-          ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4'
+          ? 'flex flex-wrap gap-10 items-center justify-center'
           : 'flex flex-col gap-4'
       }
     >
@@ -58,7 +58,7 @@ const MyCourseList = () => {
           key={index}
           id={Number(course?.id)}
           title={course?.title}
-          status={ 'DRAFT' }
+          status={ course?.status }
           isPublic={false}
           description={course?.description}
           editUrl={`/instructor/create-new-course/basic?edit=${course?.title}&id=${course?.id}`}

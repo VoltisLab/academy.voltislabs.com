@@ -17,35 +17,48 @@ interface CourseCardProps {
   isGrid?: boolean;
   category?: string;
   progressPercent?: number;
-  status?: 'DRAFT' | 'PUBLISHED';
+  status?: 'DRAFT' | 'PUBLISHED' | 'PENDING';
   isPublic?: boolean;
   editUrl?: string;
 }
 
 const cleanHtmlContent = (htmlString: string): string => {
     if (!htmlString || htmlString.trim() === '') return '';
-    
-    // Handle React Quill's empty content pattern
-    if (htmlString === '<p><br></p>' || htmlString === '<p></p>') {
-      return '';
+
+  // Remove empty <p> tags (with or without spaces/br/&nbsp;)
+  let cleaned = htmlString.replace(/<p>(\s|&nbsp;|<br\s*\/?>)*<\/p>/gi, '').trim();
+
+  // Browser: Use DOM for parsing
+  if (typeof window !== "undefined" && typeof document !== "undefined") {
+    const wrapper = document.createElement("div");
+    wrapper.innerHTML = cleaned;
+
+    // Remove nodes that are just whitespace text
+    let realChildren = Array.from(wrapper.childNodes).filter(
+      (node) => !(node.nodeType === 3 && !/\S/.test(node.textContent || ""))
+    );
+
+    // If only one element and it's a <p>
+    if (
+      realChildren.length === 1 &&
+      realChildren[0].nodeType === 1 &&
+      (realChildren[0] as HTMLElement).tagName === "P"
+    ) {
+      return (realChildren[0] as HTMLElement).innerHTML.trim();
     }
-    
-    let cleaned = htmlString;
-    
-    // Remove outer p tags if the content is just a single paragraph
-    // FIXED: Use [\s\S]* instead of .* with /s flag for ES5+ compatibility
-    if (cleaned.match(/^<p[^>]*>[\s\S]*<\/p>$/) && !cleaned.includes('</p><p>')) {
-      cleaned = cleaned.replace(/^<p[^>]*>/, '').replace(/<\/p>$/, '');
-    }
-    
-    // Clean up other unwanted p tag patterns
-    cleaned = cleaned
-      .replace(/<p><\/p>/g, '') // Remove empty p tags
-      .replace(/<p>\s*<\/p>/g, '') // Remove p tags with only whitespace
-      .replace(/^<p><br><\/p>$/, '') // Remove single br in p tag
-      .trim();
-    
+    // Otherwise, return cleaned (could be multiple <p>s)
     return cleaned;
+  } else {
+    // Server: Use regex (best effort)
+    // Check if there's only one <p> (with possible whitespace around)
+    const match = cleaned.match(/^\s*<p[^>]*>([\s\S]*)<\/p>\s*$/i);
+    // Ensure not multiple paragraphs
+    const multipleP = cleaned.match(/<\/p>\s*<p[^>]*>/i);
+    if (match && !multipleP) {
+      return match[1].trim();
+    }
+    return cleaned;
+  }
   };
 
   const deleteCourse = async (courseId: number) => {
@@ -153,10 +166,10 @@ const handleDeleteConfirm = async () => {
           </div>
 
           <h2 className="text-base font-semibold text-gray-900">{title}</h2>
-          <p className="text-sm text-gray-700">{cleanHtmlContent(description)}</p>
+          <p className="text-sm text-gray-700 h-[40px] line-clamp-2">{cleanHtmlContent(description)}</p>
 
           {/* Status and Visibility */}
-           <p className="text-xs text-red-700 bg-red-100 absolute top-2 right-2 p-2 rounded-lg">
+       <p className={`text-xs ${status === "PUBLISHED"? "text-green-700 bg-green-100" : status === "PENDING"? "text-yellow-700 bg-yellow-100" :"text-red-700 bg-red-100" }  absolute right-2 p-2 rounded-lg`}>
               <span className="font-bold">{status}</span>
             </p>
 
@@ -215,10 +228,10 @@ const handleDeleteConfirm = async () => {
         </span>
 
         <h2 className="font-semibold text-base text-black">{title}</h2>
-        <p className="text-sm text-black">{cleanHtmlContent(description)}</p>
+        <p className="text-sm text-black line-clamp-1">{cleanHtmlContent(description)}</p>
 
         {/* Status and Visibility */}
-       <p className="text-xs text-red-700 bg-red-100 absolute right-2 p-2 rounded-lg">
+       <p className={`text-xs ${status === "PUBLISHED"? "text-green-700 bg-green-100" : status === "PENDING"? "text-yellow-700 bg-yellow-100" :"text-red-700 bg-red-100" }  absolute right-2 p-2 rounded-lg`}>
           <span className="font-bold">{status}</span>
         </p>
 
