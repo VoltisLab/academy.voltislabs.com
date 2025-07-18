@@ -16,8 +16,8 @@ const Header = () => {
 
   // Move localStorage access to useEffect
   useEffect(() => {
-    const userString = getCurrentUser()
-    console.log(userString)
+    const userString = getCurrentUser();
+    console.log(userString);
     setUserExists(userString);
   }, []);
 
@@ -25,10 +25,10 @@ const Header = () => {
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => setIsModalOpen(false);
 
-  const handleLogout = () =>{
-    logout()
-    window.location.reload()
-  }
+  const handleLogout = () => {
+    logout();
+    window.location.reload();
+  };
   return (
     <div>
       <header className="w-full bg-white fixed top-0 left-0 z-50">
@@ -56,7 +56,7 @@ const Header = () => {
               Home
             </Link>
             <Link
-              href="/bootcamp"
+              href="/programmes"
               className="text-[#331C1C] font-semibold hover:text-pink-600 transition"
             >
               Programmes
@@ -75,22 +75,22 @@ const Header = () => {
             </Link>
             {userExists && (
               <Link
-              href={userExists?.isInstructor? "/instructor" : "/dashboard"}
-              className="text-[#331C1C] font-semibold hover:text-pink-600 transition"
-            >
-              Dashboard
-            </Link>
+                href={userExists?.isInstructor ? "/instructor" : "/dashboard"}
+                className="text-[#331C1C] font-semibold hover:text-pink-600 transition"
+              >
+                Dashboard
+              </Link>
             )}
           </nav>
 
           {/* Contact Button (Desktop) */}
           <div className="hidden md:block">
-              <button
-                className="border-2 border-[#313273] text-[#313273] font-semibold px-5 py-2 rounded-lg hover:bg-[#313273] hover:text-white transition"
-                onClick={userExists? handleLogout : openModal}
-              >
-                {userExists? "Logout" : "Login/Signup"}
-              </button>
+            <button
+              className="border-2 border-[#313273] text-[#313273] font-semibold px-5 py-2 rounded-lg hover:bg-[#313273] hover:text-white transition"
+              onClick={userExists ? handleLogout : openModal}
+            >
+              {userExists ? "Logout" : "Login/Signup"}
+            </button>
           </div>
 
           {/* Mobile Menu Toggle */}
@@ -127,26 +127,29 @@ const Header = () => {
             </Link>
             {userExists && (
               <Link
-              href={userExists?.login?.user?.isInstructor? "/instructor" : "/dashboard"}
-              className="text-[#331C1C] font-semibold hover:text-pink-600 transition"
-            >
-              Dashboard
-            </Link>
+                href={
+                  userExists?.login?.user?.isInstructor
+                    ? "/instructor"
+                    : "/dashboard"
+                }
+                className="text-[#331C1C] font-semibold hover:text-pink-600 transition"
+              >
+                Dashboard
+              </Link>
             )}
-              <div className="flex flex-row justify-between mt-10">
+            <div className="flex flex-row justify-between mt-10">
               <Link href="/contact">
-              <button className="w-full border-2 border-[#313273] text-[#313273] font-semibold px-5 py-2 rounded-lg hover:bg-[#313273] hover:text-white transition">
-                Contact Us
-              </button>
-            </Link>
+                <button className="w-full border-2 border-[#313273] text-[#313273] font-semibold px-5 py-2 rounded-lg hover:bg-[#313273] hover:text-white transition">
+                  Contact Us
+                </button>
+              </Link>
               <button
                 className="border-2 border-[#313273] text-[#313273] font-semibold px-5 py-2 rounded-lg hover:bg-[#313273] hover:text-white transition"
-                onClick={userExists? handleLogout : openModal}
+                onClick={userExists ? handleLogout : openModal}
               >
-                {userExists? "Logout" : "Login/Signup"}
+                {userExists ? "Logout" : "Login/Signup"}
               </button>
             </div>
-         
           </div>
         )}
       </header>
