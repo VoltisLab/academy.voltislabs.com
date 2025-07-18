@@ -285,8 +285,8 @@ const type = params?.type;
       if (section.lectures && section.lectures.length > 0) {
         section.lectures.forEach((lecture, index) => {
           const detectedContentType = detectLectureContentType(lecture);
-          // --- Use lecture.resources directly ---
-          const resources = lecture.resources || [];
+          // --- Use lecture.resources directly, but type-safe ---
+          const resources = (lecture as any)?.resources || [];
           const lectureResources = {
             uploadedFiles: resources
               .filter((r: any) => r.type === "DOWNLOADABLE_FILES")
