@@ -145,7 +145,7 @@ export default function AllCoursesPage() {
             variants={itemVariants}
             className="text-3xl md:text-[40px] font-bold text-[#090D2C] leading-snug"
           >
-            All Courses & Bootcamps
+            All Programmes & Bootcamps
           </motion.h2>
         </div>
 
