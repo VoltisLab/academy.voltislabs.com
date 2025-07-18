@@ -609,7 +609,11 @@ const updateCourseInfo = async (
                 >
                   {DURATION_UNITS.map((unit) => (
                     <option key={unit.value} value={unit.value}>
+<<<<<<< HEAD
                       {unit.label}
+=======
+                      {unit.label} (s)
+>>>>>>> 833a8175e45998681bd349dd004991dfdb94e00e
                     </option>
                   ))}
                 </select>

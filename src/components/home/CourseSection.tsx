@@ -176,8 +176,11 @@ export default function CourseSection() {
     error,
   } = usePublishedCoursesData();
 
+<<<<<<< HEAD
   console.log(publishedCourses, loading);
 
+=======
+>>>>>>> 833a8175e45998681bd349dd004991dfdb94e00e
   const [activeCategory, setActiveCategory] = useState<number | null>(null);
 
   useEffect(() => {
@@ -225,7 +228,11 @@ export default function CourseSection() {
           >
             Discover Courses & Bootcamps
           </motion.h2>
+<<<<<<< HEAD
           <Link href="/courses">
+=======
+          <Link href="/programmes">
+>>>>>>> 833a8175e45998681bd349dd004991dfdb94e00e
             <motion.button
               variants={itemVariants}
               whileHover={{ scale: 1.05 }}
