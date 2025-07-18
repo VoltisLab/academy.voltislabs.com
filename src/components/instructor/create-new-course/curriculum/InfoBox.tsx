@@ -8,7 +8,7 @@ const InfoBox: React.FC<{ onDismiss: () => void }> = ({ onDismiss }) => {
       </div>
       <div className="flex-1">
         <p className="text-md font-bold text-gray-700">
-          Here's where you add course content—like lectures, course sections, assignments, and more. Click a + icon on the left to get started.
+          Here's where you add course content—like lectures, course sections, assignments, and more. Click the + icon to get started.
         </p>
         <button 
           onClick={onDismiss} 
