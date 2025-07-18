@@ -222,7 +222,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   }, []);
 
   const wrapperRing = isFocused
-    ? "border border-transparent ring-1 ring-purple-600"
+    ? "border border-transparent ring-1 ring-[#6d28d2]"
     : "border-zinc-400 border";
 
   const showCode = type === "question" || type === "answer";
@@ -260,7 +260,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
 
           <button
             onClick={() => toggleFormat("bold")}
-            className={`h-full px-3 transition flex items-center cursor-pointer ${
+            className={`h-full px-2 transition flex items-center cursor-pointer ${
               formats.bold
                 ? "bg-black text-white rounded-l"
                 : "hover:bg-zinc-200 rounded"
@@ -271,7 +271,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           </button>
           <button
             onClick={() => toggleFormat("italic")}
-            className={`h-full px-3 transition flex items-center cursor-pointer ${
+            className={`h-full px-2 transition flex items-center cursor-pointer ${
               formats.italic ? "bg-black text-white" : "hover:bg-zinc-200"
             }`}
             title="Italic"
@@ -283,7 +283,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
             <>
               <button
                 onClick={() => toggleFormat("list")}
-                className={`h-full px-3 transition flex items-center cursor-pointer ${
+                className={`h-full px-2 transition flex items-center cursor-pointer ${
                   formats.list ? "bg-black text-white" : "hover:bg-zinc-200"
                 }`}
                 title="Bullet List"
@@ -292,7 +292,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
               </button>
               <button
                 onClick={() => toggleFormat("ordered")}
-                className={`h-full px-3 transition flex items-center cursor-pointer ${
+                className={`h-full px-2 transition flex items-center cursor-pointer ${
                   formats.ordered ? "bg-black text-white" : "hover:bg-zinc-200"
                 }`}
                 title="Numbered List"
@@ -305,7 +305,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           {showLists && (
             <button
               onClick={() => setShowLinkModal(true)}
-              className={`h-full px-3 transition flex items-center cursor-pointer hover:bg-zinc-200 rounded`}
+              className={`h-full px-2 transition flex items-center cursor-pointer hover:bg-zinc-200 rounded`}
               title="Insert Link"
             >
               <Link size={14} />
@@ -315,7 +315,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           {showImage && (
             <button
               onClick={() => setShowImageModal(true)}
-              className={`h-full px-3 transition flex items-center cursor-pointer hover:bg-zinc-200 rounded`}
+              className={`h-full px-2 transition flex items-center cursor-pointer hover:bg-zinc-200 rounded`}
               title="Insert Image"
             >
               <ImageIcon size={14} />
@@ -324,7 +324,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           {/* {showCode && ( */}
           <button
             onClick={() => toggleFormat("code")}
-            className={`h-full px-3 transition flex items-center cursor-pointer ${
+            className={`h-full px-2 transition flex items-center cursor-pointer ${
               formats.code ? "bg-black text-white" : "hover:bg-zinc-200"
             }`}
             title="Code"
@@ -336,7 +336,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           {showLists && (
             <button
               onClick={toggleHtmlEditor}
-              className="text-blue-600 text-sm ml-auto px-2 cursor-pointer flex items-center"
+              className="text-sm ml-auto px-2 cursor-pointer font-normal flex items-center"
               title="HTML Editor"
             >
               Edit HTML
@@ -371,7 +371,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           value={value}
           theme="snow"
           onChange={onChange}
-          className="my-quill no-border w-[100%]"
+          className="my-quill no-border w-[100%] focus:border-transparent"
           placeholder={placeholder}
           readOnly={readOnly} // Pass the prop to ReactQuill
           modules={{

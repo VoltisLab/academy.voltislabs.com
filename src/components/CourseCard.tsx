@@ -5,8 +5,8 @@ export default function CourseCard({
   date,
   description,
   image,
-  // students,
-}: {
+}: // students,
+{
   title: string;
   date: string;
   description: string;
@@ -28,8 +28,13 @@ export default function CourseCard({
       {/* Content */}
       <div className="p-4 space-y-2">
         <p className="text-xs text-gray-500">{date}</p>
-        <h3 className="font-semibold text-[24px] h-[72px] text-black leading-tight">{title}</h3>
-        <p className="h-[72px] text-[16px] text-[#4D4D4D]">{description}</p>
+        <h3 className="font-semibold text-[24px] h-[59px] text-black leading-tight line-clamp-2">
+          {title}
+        </h3>
+        <p
+          className="h-[72px] text-[16px] text-[#4D4D4D] line-clamp-4"
+          dangerouslySetInnerHTML={{ __html: description }}
+        />
 
         <div className="flex items-center justify-between pt-4">
           <span className="text-[#DC4298] font-bold text-sm">FREE</span>

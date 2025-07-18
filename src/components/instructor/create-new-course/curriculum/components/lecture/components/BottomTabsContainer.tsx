@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+"use client"
+import React, { useEffect, useState } from "react";
 import {
   Search,
   Clock,
@@ -8,11 +9,30 @@ import {
   Trash2,
   ChevronDown,
 } from "lucide-react";
-import { VideoNote } from '@/lib/types';
 
+interface videoNooteType{
+  id: string;
+  notes: string;
+  time?: string;
+  updatedAt?: string;
+  createdAt?: string;
+  lecture: {
+    title: string;
+    section: {
+        title: string;
+      }
+  }
+}
 interface BottomTabsContainerProps {
-  activeTab: "overview" | "notes" | "announcements" | "reviews" | "learning-tools";
-  setActiveTab: (tab: "overview" | "notes" | "announcements" | "reviews" | "learning-tools") => void;
+  activeTab:
+    | "overview"
+    | "notes"
+    | "announcements"
+    | "reviews"
+    | "learning-tools";
+  setActiveTab: (
+    tab: "overview" | "notes" | "announcements" | "reviews" | "learning-tools"
+  ) => void;
   showSearch: boolean;
   setShowSearch: (show: boolean) => void;
   isExpanded: boolean;
@@ -20,7 +40,7 @@ interface BottomTabsContainerProps {
   activeItemType: string;
   progress: number;
   formatTime: (seconds: number) => string;
-  notes: VideoNote[];
+  notes: videoNooteType[];
   onCreateNote: () => void;
   onSaveNote: () => void;
   onCancelNote: () => void;
@@ -33,7 +53,7 @@ interface BottomTabsContainerProps {
   setSelectedLectureFilter: (filter: string) => void;
   selectedSortOption: string;
   setSelectedSortOption: (option: string) => void;
-  getSortedNotes: () => VideoNote[];
+  getSortedNotes: () => videoNooteType[];
   onOpenLearningModal: () => void;
   activeItemId: string;
 }
@@ -75,52 +95,76 @@ const BottomTabsContainer: React.FC<BottomTabsContainerProps> = ({
     }
   };
 
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't trigger if any input or textarea is focused!
+      if (
+        activeTab === "notes" &&
+        (e.key === "b" || e.key === "B") &&
+        document.activeElement &&
+        // If not on a textarea or input
+        !["INPUT", "TEXTAREA"].includes(document.activeElement.tagName)
+      ) {
+        e.preventDefault();
+        onCreateNote();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [activeTab, onCreateNote]);
+
   // Function to clean HTML content for display
   const cleanHtmlContent = (htmlString: string): string => {
-    if (!htmlString || htmlString.trim() === '') return '';
-    
+    if (!htmlString || htmlString.trim() === "") return "";
+
     // Handle React Quill's empty content pattern
-    if (htmlString === '<p><br></p>' || htmlString === '<p></p>') {
-      return '';
+    if (htmlString === "<p><br></p>" || htmlString === "<p></p>") {
+      return "";
     }
-    
+
     let cleaned = htmlString;
-    
+
     // Remove outer p tags if the content is just a single paragraph
     // FIXED: Use [\s\S]* instead of .* with /s flag for ES5+ compatibility
-    if (cleaned.match(/^<p[^>]*>[\s\S]*<\/p>$/) && !cleaned.includes('</p><p>')) {
-      cleaned = cleaned.replace(/^<p[^>]*>/, '').replace(/<\/p>$/, '');
+    if (
+      cleaned.match(/^<p[^>]*>[\s\S]*<\/p>$/) &&
+      !cleaned.includes("</p><p>")
+    ) {
+      cleaned = cleaned.replace(/^<p[^>]*>/, "").replace(/<\/p>$/, "");
     }
-    
+
     // Clean up other unwanted p tag patterns
     cleaned = cleaned
-      .replace(/<p><\/p>/g, '') // Remove empty p tags
-      .replace(/<p>\s*<\/p>/g, '') // Remove p tags with only whitespace
-      .replace(/^<p><br><\/p>$/, '') // Remove single br in p tag
+      .replace(/<p><\/p>/g, "") // Remove empty p tags
+      .replace(/<p>\s*<\/p>/g, "") // Remove p tags with only whitespace
+      .replace(/^<p><br><\/p>$/, "") // Remove single br in p tag
       .trim();
-    
+
     return cleaned;
   };
 
   // Function to strip HTML tags completely (for plain text display)
   const stripHtmlTags = (htmlString: string): string => {
-    if (!htmlString) return '';
-    return htmlString.replace(/<[^>]*>/g, '').trim();
+    if (!htmlString) return "";
+    return htmlString.replace(/<[^>]*>/g, "").trim();
   };
 
   // Get cleaned description for display
   const getDisplayDescription = () => {
     const description = selectedItemData?.description;
     if (!description) return `This is a ${activeItemType} content item.`;
-    
+
     // First clean the HTML, then strip remaining tags for plain text display
     const cleaned = cleanHtmlContent(description);
-    return stripHtmlTags(cleaned) || `This is a ${activeItemType} content item.`;
+    return (
+      stripHtmlTags(cleaned) || `This is a ${activeItemType} content item.`
+    );
   };
 
   return (
-    <div className="bg-white border-t border-gray-200 flex-shrink-0">
-      <div className="" style={{ maxWidth: isExpanded ? '100%' : '79.5vw' }}>
+    <div className="border-t border-gray-200 flex-shrink-0">
+      <div className="" >
         {/* Tabs */}
         <div className="flex items-center border-b border-gray-200">
           <button
@@ -233,10 +277,10 @@ const BottomTabsContainer: React.FC<BottomTabsContainerProps> = ({
                         Schedule learning time
                       </h4>
                       <p className="text-sm text-gray-600 mb-4">
-                        Learning a little each day adds up. Research shows
-                        that students who make learning a habit are more
-                        likely to reach their goals. Set time aside to learn
-                        and get reminders using your learning scheduler.
+                        Learning a little each day adds up. Research shows that
+                        students who make learning a habit are more likely to
+                        reach their goals. Set time aside to learn and get
+                        reminders using your learning scheduler.
                       </p>
                       <div className="flex">
                         <button
@@ -305,9 +349,7 @@ const BottomTabsContainer: React.FC<BottomTabsContainerProps> = ({
                     <h4 className="font-medium text-sm mb-2">
                       Content Details
                     </h4>
-                    <p className="mb-4">
-                      {getDisplayDescription()}
-                    </p>
+                    <p className="mb-4">{getDisplayDescription()}</p>
                   </div>
                 </div>
               </div>
@@ -333,7 +375,9 @@ const BottomTabsContainer: React.FC<BottomTabsContainerProps> = ({
                   <div className="relative">
                     <input
                       type="text"
-                      placeholder={`Create a new note at ${formatTime(progress)}`}
+                      placeholder={`Create a new note at ${formatTime(
+                        progress
+                      )}`}
                       className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500"
                       onClick={onCreateNote}
                       readOnly
@@ -487,10 +531,11 @@ const BottomTabsContainer: React.FC<BottomTabsContainerProps> = ({
                     <div key={note.id} className="mb-4">
                       <div className="flex items-center mb-2">
                         <div className="bg-black text-white text-xs px-2 py-1 rounded-sm mr-3">
-                          {note.formattedTime}
+                          {note.time}
                         </div>
                         <div className="text-sm text-gray-700 font-medium mr-2">
-                          {note.sectionName && `${note.sectionName}.`} {note.lectureName}
+                          {note.lecture.section.title && `${note.lecture.section.title}.`}{" "}
+                          {note.lecture.title}
                         </div>
                         <div className="ml-auto flex">
                           <button
@@ -510,7 +555,7 @@ const BottomTabsContainer: React.FC<BottomTabsContainerProps> = ({
                         </div>
                       </div>
                       <div className="bg-gray-50 p-4 rounded-md">
-                        <p className="text-sm text-gray-700">{note.content}</p>
+                        <p className="text-sm text-gray-700">{note.notes}</p>
                       </div>
                     </div>
                   ))}
@@ -518,8 +563,8 @@ const BottomTabsContainer: React.FC<BottomTabsContainerProps> = ({
               ) : (
                 <div className="flex flex-col items-center justify-center h-32 text-center">
                   <p className="text-gray-600 mb-2">
-                    Click the "Create a new note" box, the "+" button, or
-                    press "B" to make your first note.
+                    Click the "Create a new note" box, the "+" button, or press
+                    "B" to make your first note.
                   </p>
                 </div>
               )}
@@ -557,8 +602,8 @@ const BottomTabsContainer: React.FC<BottomTabsContainerProps> = ({
               <div className="mb-6">
                 <h3 className="text-xl font-bold mb-2">Learning reminders</h3>
                 <p className="text-gray-600 mb-4">
-                  Set up push notifications or calendar events to stay on
-                  track for your learning goals.
+                  Set up push notifications or calendar events to stay on track
+                  for your learning goals.
                 </p>
 
                 <button

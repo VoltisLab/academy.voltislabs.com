@@ -11,31 +11,63 @@ export const GET_ASSIGNMENT = gql`
       createdAt
       estimatedDurationMinutes
       maxPoints
-      videoUrl
-      downloadableResourceUrl
+      instructionDownloadableResource
+      instructionVideo
+      solutionDownloadableResource
+      solutionVideo
+      isPublished
       questions {
         id
-        text
-        solution
-        maxPoints
-        allowMultipleCorrect
         order
         questionType
+        text
+        maxPoints
         required
+        solution
+        allowMultipleCorrect
         questionSolutions {
           id
           text
-          videoUrl
-          downloadableResourceUrl
         }
       }
     }
   }
 `;
 
-
 export interface GetAssignmentVariables {
   id: number;
+}
+
+export interface GetAssignmentQuery {
+  getAssignment: {
+    id: number;
+    title: string;
+    description: string;
+    instructions: string;
+    dueDate: string;
+    createdAt: string;
+    estimatedDurationMinutes: number;
+    maxPoints: number;
+    instructionDownloadableResource: string | null;
+    instructionVideo: string | null;
+    solutionDownloadableResource: string | null;
+    solutionVideo: string | null;
+    isPublished: boolean;
+    questions: {
+      id: number;
+      order: number;
+      questionType: string;
+      text: string;
+      maxPoints: number;
+      required: boolean;
+      solution: string | null;
+      questionSolutions: {
+        id: string;
+        text: string;
+      };
+      allowMultipleCorrect: boolean;
+    }[];
+  };
 }
 
 export interface QuestionSolution {
@@ -95,11 +127,11 @@ export interface GetAssignmentData {
     estimatedDurationMinutes: number;
     downloadableResourceUrl: string | null;
     questions: AssignmentQuestion[];
-    questionSolutions:{
-         downloadableResourceUrl: string;
-            id: string;
-            text: string;
-            videoUrl: string;
-    }
+    questionSolutions: {
+      downloadableResourceUrl: string;
+      id: string;
+      text: string;
+      videoUrl: string;
+    };
   };
 }

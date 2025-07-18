@@ -1,19 +1,16 @@
-"use client"
-import AssignmentEditor from '@/components/instructor/create-new-course/curriculum/components/assignment/AssignmentEditor'
-import { AssignmentProvider, useAssignment } from '@/context/AssignmentDataContext'
-import React, { useEffect } from 'react'
-import { Toaster } from 'react-hot-toast'
+"use client";
+import AssignmentEditor from "@/components/instructor/create-new-course/curriculum/components/assignment/AssignmentEditor";
+import { AssignmentProvider } from "@/context/AssignmentDataContext";
+import React from "react";
+import { Toaster } from "react-hot-toast";
 
 const page = () => {
-
-    
   return (
-
     <div>
-        <AssignmentProvider>
-        <Toaster/>
+      <AssignmentProvider>
+        <Toaster />
         <AssignmentEditor
-        initialData={{
+          initialData={{
             id: "1",
             name: "",
             description: "",
@@ -27,18 +24,18 @@ const page = () => {
             assignmentDescription: "",
             estimatedDuration: 0,
             durationUnit: "minutes",
-            assignmentInstructions: "",
+            instructions: "",
             assignmentQuestions: [],
             isPublished: false,
-        }}
-        newAssinment={1}
-        onClose={() => {}}
-        onSave={(data) => console.log("Saved:", data)}
+            resources: []
+          }}
+          newAssinment={1}
+          onClose={() => {}}
+          onSave={(data) => console.log("Saved:", data)}
         />
-        </AssignmentProvider>
-
+      </AssignmentProvider>
     </div>
-  )
-}
+  );
+};
 
-export default page
+export default page;

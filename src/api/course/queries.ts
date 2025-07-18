@@ -15,6 +15,59 @@ export const GET_ALL_INSTRUCTOR_COURSES = gql`
     ) {
       id
       title
+      subtitle
+      banner
+      requirements
+    targetAudience
+    teachingPoints
+      description
+      instructor {
+        id
+        thumbnailUrl
+      }
+      category {
+        id
+        name
+      }
+        subCategory {
+      id
+      name
+    }
+      topic
+      subtitleLanguage
+      language
+      level
+      duration
+      sections {
+        assignment {
+          description
+          instructionDownloadableResource
+          dueDate
+          id
+        }
+        id
+      }
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+export const GET_ALL_COURSES = gql`
+  query GetAllCourses(
+    $search: String
+    $pageNumber: Int
+    $pageCount: Int
+    $filters: CourseFiltersInput
+  ) {
+    courses(
+      search: $search
+      pageNumber: $pageNumber
+      pageCount: $pageCount
+      filters: $filters
+    ) {
+      id
+      title
       banner
       description
       instructor {
@@ -24,6 +77,15 @@ export const GET_ALL_INSTRUCTOR_COURSES = gql`
       category {
         id
         name
+      }
+      sections {
+        assignment {
+          description
+          instructionDownloadableResource
+          dueDate
+          id
+        }
+        id
       }
       createdAt
       updatedAt
@@ -35,8 +97,30 @@ export const GET_INSTRUCTOR_COURSES_TOTAL = gql`
   query GetInstructorCoursesTotal {
     instructorCoursesTotalNumber
   }
-`
+`;
+export const GET_LECTURE_NOTES = gql`
+  query UserLectureVideoNotes($lectureId: Int!) {
+    userLectureVideoNotes(lectureId: $lectureId ) {
+      createdAt
+      id
+      notes
+      lecture {
+      title
+      section {
+        title
+      }
+      }
+      time
+      updatedAt
+    }
+  }
+`;
 
+export const GET_COURSES_TOTAL = gql`
+  query GetCoursesTotal {
+    coursesTotalNumber
+  }
+`;
 
 // Root response type
 export interface GetInstructorCoursesResponse {
@@ -47,7 +131,11 @@ export interface GetInstructorCoursesResponse {
 export interface InstructorCourse {
   id: string;
   title: string;
-  banner: string;
+  subtitle: string;
+  banner: {
+    thumbnail: string;
+    url: string;
+  };
   description: string;
   instructor: Instructor;
   category: CourseCategory;
@@ -78,11 +166,10 @@ export interface GetInstructorCoursesVariables {
 // Filters input type (based on naming convention – update as needed)
 export interface CourseFiltersInput {
   categoryIds?: string[];
-  status?: 'DRAFT' | 'PUBLISHED';
+  status?: "DRAFT" | "PUBLISHED";
   isPublic?: boolean;
 }
-
+//instructorresponse
 export interface GetInstructorCoursesTotalResponse {
-  instructorCoursesTotalNumber: number
+  instructorCoursesTotalNumber: number;
 }
-

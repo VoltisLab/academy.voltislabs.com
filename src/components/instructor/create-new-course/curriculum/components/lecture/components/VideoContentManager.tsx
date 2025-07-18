@@ -1,6 +1,8 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Search, ChevronDown, Trash2, X } from "lucide-react";
 import { VideoContent, TabInterface, StoredVideo, SelectedVideoDetails } from "@/lib/types";
+import { useUserService } from "@/services/userMediaService";
+import { UserMediaItem } from "@/api/usermedia/query";
 
 interface VideoContentManagerProps {
   videoContent: VideoContent;
@@ -10,10 +12,12 @@ interface VideoContentManagerProps {
   videoUploadComplete: boolean;
   setVideoUploadComplete: (complete: boolean) => void;
   onVideoFileUpload: (event: React.ChangeEvent<HTMLInputElement>) => Promise<void>;
-  onVideoSelect: (videoId: string) => void;
+  onVideoSelect: (videoId: UserMediaItem) => void;
   onDeleteVideo: (videoId: string) => void;
   videoUploading?: boolean;
   onClose: () => void;
+  uploadedVideoUrl?: string;
+  setUploadedVideoUrl?: (url: string) => void;
 }
 
 const VideoContentManager: React.FC<VideoContentManagerProps> = ({
@@ -27,9 +31,12 @@ const VideoContentManager: React.FC<VideoContentManagerProps> = ({
   onVideoSelect,
   onDeleteVideo,
   videoUploading = false,
-  onClose
+  onClose,
+  uploadedVideoUrl: propUploadedVideoUrl,
+  setUploadedVideoUrl: propSetUploadedVideoUrl
 }) => {
   // Video tab options
+  const [videoData, setVideoData] = useState<UserMediaItem[] >([])
   const videoTabs: TabInterface[] = [
     { label: "Upload Video", key: "uploadVideo" },
     { label: "Add from library", key: "addFromLibrary" },
@@ -39,6 +46,23 @@ const VideoContentManager: React.FC<VideoContentManagerProps> = ({
     event.preventDefault();
     console.log("Searching for:", videoContent.libraryTab.searchQuery);
   };
+const { getUserMedia, loading, error } = useUserService();
+
+useEffect(() => {
+  (async () => {
+    try {
+      const media = await getUserMedia({ mediaType: "VIDEO" });
+      setVideoData(media)
+      console.log("my video oeee",media);
+    } catch (err) {
+      // handled in the service
+    }
+  })();
+}, []);
+
+
+
+
 
   const renderUploadTab = () => {
     return (
@@ -71,6 +95,8 @@ const VideoContentManager: React.FC<VideoContentManagerProps> = ({
                       setVideoContent({
                         ...videoContent,
                         uploadTab: { selectedFile: null },
+                        // Clear selectedVideoDetails if replacing
+                        selectedVideoDetails: null,
                       });
                     }}
                   >
@@ -129,7 +155,7 @@ const VideoContentManager: React.FC<VideoContentManagerProps> = ({
                 <input
                   type="file"
                   accept="video/*"
-                  onChange={onVideoFileUpload}
+                  onChange={handleVideoFileUpload}
                   className="hidden"
                   disabled={videoUploading || isVideoUploading}
                 />
@@ -149,8 +175,8 @@ const VideoContentManager: React.FC<VideoContentManagerProps> = ({
   };
 
   const renderLibraryTab = () => {
-    const filteredVideos = videoContent.libraryTab.videos.filter((video) =>
-      video.filename
+    const filteredVideos = videoData?.filter((video) =>
+      video.fileName
         .toLowerCase()
         .includes(videoContent.libraryTab.searchQuery.toLowerCase())
     );
@@ -197,22 +223,22 @@ const VideoContentManager: React.FC<VideoContentManagerProps> = ({
             </div>
           </div>
 
-          {filteredVideos.length > 0 ? (
-            filteredVideos.map((video) => (
+          {filteredVideos?.length > 0 ? (
+            filteredVideos?.map((video) => (
               <div
                 key={video.id}
                 className="grid grid-cols-4 gap-2 md:gap-4 p-3 border-b border-gray-200 hover:bg-gray-50 items-center"
               >
-                <div className="truncate">{video.filename}</div>
-                <div>{video.type}</div>
+                <div className="truncate">{video?.fileName}</div>
+                <div>{video?.extension}</div>
                 <div className="text-sm font-medium text-green-800">
-                  {video.status}
+                  {"Success"}
                 </div>
                 <div className="flex items-center justify-between">
-                  <div>{video.date}</div>
+                  <div>{video?.createdAt.split("T")[0]}</div>
                   <div className="text-indigo-600">
                     <button
-                      onClick={() => onVideoSelect(video.id)}
+                      onClick={() => onVideoSelect(video)}
                       className="text-indigo-600 hover:text-indigo-800 text-xs font-medium"
                     >
                       Select
@@ -236,6 +262,39 @@ const VideoContentManager: React.FC<VideoContentManagerProps> = ({
       </div>
     );
   };
+
+  // Local state to store the uploaded video URL after upload
+  const [uploadedVideoUrl, setUploadedVideoUrl] = useState<string>("");
+
+  // Wrap the original onVideoFileUpload to capture the uploaded URL
+  const handleVideoFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (onVideoFileUpload) {
+      const result = await onVideoFileUpload(event);
+      // If your upload handler returns the URL, set it here
+      // setUploadedVideoUrl(result);
+      // If not, you need to set it in the upload handler and pass it here
+    }
+  };
+
+  useEffect(() => {
+    if (
+      videoUploadComplete &&
+      videoContent.uploadTab.selectedFile &&
+      uploadedVideoUrl
+    ) {
+      setVideoContent({
+        ...videoContent,
+        selectedVideoDetails: {
+          id: Date.now().toString(),
+          url: uploadedVideoUrl,
+          filename: videoContent.uploadTab.selectedFile.name,
+          thumbnailUrl: "",
+          isDownloadable: false,
+        },
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [videoUploadComplete, videoContent.uploadTab.selectedFile, uploadedVideoUrl]);
 
   return (
     <div className="border border-gray-300 rounded-md">

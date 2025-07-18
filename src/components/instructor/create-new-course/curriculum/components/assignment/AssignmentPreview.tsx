@@ -2,27 +2,38 @@
 import { ExtendedLecture } from "@/lib/types";
 import { Clock, User } from "lucide-react";
 import Link from "next/link";
-import React, { useState, useRef, useEffect } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
-import { LiaFileDownloadSolid } from "react-icons/lia";
-import RichTextEditor from "./NewRichTextEditor";
+import toast from "react-hot-toast";
 import { FaCircleCheck } from "react-icons/fa6";
 import { IoIosInformationCircleOutline } from "react-icons/io";
-import toast from "react-hot-toast";
+import { LiaFileDownloadSolid } from "react-icons/lia";
+import { HLSVideoPlayer } from "./HLSVideoPlayer";
+import RichTextEditor from "./NewRichTextEditor";
+import { usePreviewContext } from "@/context/PreviewContext";
+import { ControlButtons } from "@/components/preview/ControlsButton";
 
 export default function AssignmentPreview({
   assignmentData,
-  setAssignmentStatus,
-  assignmentStatus,
+  fullScreen,
 }: {
   assignmentData: ExtendedLecture;
-  skipAssignment?: () => void;
-  startAssignment?: boolean;
-  setAssignmentStatus: React.Dispatch<
-    React.SetStateAction<"overview" | "assignment" | "summary/feedback">
-  >;
-  assignmentStatus?: "overview" | "assignment" | "summary/feedback";
+  fullScreen?: boolean;
+  // skipAssignment?: () => void;
+  // startAssignment?: boolean;
+  // setAssignmentStatus?: React.Dispatch<
+  //   React.SetStateAction<"overview" | "assignment" | "summary/feedback">
+  // >;
+  // assignmentStatus?: "overview" | "assignment" | "summary/feedback";
 }) {
+  const [assignmentStatus, setAssignmentStatus] = useState<
+    "overview" | "assignment" | "summary/feedback"
+  >("overview");
+
+  const handleStartAssignment = () => {
+    setAssignmentStatus("assignment");
+  };
+
   const [step, setStep] = useState<
     "instructions" | "submissions" | "instructorExample" | "giveFeedback"
   >("instructions");
@@ -34,9 +45,12 @@ export default function AssignmentPreview({
   const [showLearnedInput, setShowLearnedInput] = useState(false);
 
   const resourceRef = useRef<HTMLDivElement>(null);
+  const { expandedView } = usePreviewContext();
 
   // Calculate duration text
-  const durationText = `${assignmentData.estimatedDuration} ${assignmentData.durationUnit}`;
+  const durationText = `${assignmentData?.estimatedDuration ?? 0} ${
+    assignmentData.durationUnit
+  }`;
 
   // Handle navigation to step
   const handleStepNavigation = (newStep: typeof step) => {
@@ -89,23 +103,35 @@ export default function AssignmentPreview({
   };
 
   // Handle download resource
-  const handleDownloadResource = (resource: {
-    file?: File;
+  const handleDownloadResource = async (resource: {
     url: string;
-    name?: string;
+    file_name?: string;
   }) => {
-    if (resource.file) {
-      const url = URL.createObjectURL(resource.file);
+    if (!resource.url) return;
+    toast.loading("Preparing resource for download...");
+    try {
+      const response = await fetch(resource.url);
+
+      if (!response.ok) throw new Error("Network response was not ok");
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+
       const a = document.createElement("a");
       a.href = url;
-      a.download = resource.name || "resource";
+      a.download = resource.file_name || "resource";
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
+
       URL.revokeObjectURL(url);
-    } else if (resource.url) {
-      // Handle URL download (mock implementation)
-      console.log("Downloading resource from URL:", resource.url);
+      toast.success("Download started");
+    } catch (error) {
+      console.error("Failed to download resource:", error);
+      toast.dismiss();
+      toast.error("Failed to download resource");
+    } finally {
+      toast.dismiss();
     }
   };
 
@@ -121,14 +147,21 @@ export default function AssignmentPreview({
     console.log("Learned content submitted:", learnedContent);
   };
 
+  const componentRef = useRef<HTMLDivElement>(null);
+
   return (
-    <div className=" w-full h-full relative ">
+    <div
+      ref={componentRef}
+      className={`flex flex-col relative bg-white ${
+        expandedView ? "h-[80vh]" : "h-[70vh]"
+      }`}
+    >
       {/* <div className="h-full flex-1 overflow-y-auto "> */}
       <main className="flex-1 overflow-y-auto h-full w-full pb-20 px-2">
         {assignmentStatus === "overview" && (
           <div className="max-w-3xl mx-auto pt-10">
             <h2 className="text-2xl font-bold mb-2 text-zinc-700">
-              Assignment: <span>{assignmentData.assignmentTitle}</span>
+              Assignment: <span>{assignmentData?.title}</span>
             </h2>
             <p className="flex items-center gap-2 text-gray-600 mb-4">
               <Clock size={15} />
@@ -144,7 +177,7 @@ export default function AssignmentPreview({
             </p>
 
             {/* Description */}
-            <p className="mt-8">{assignmentData.assignmentDescription}</p>
+            <p className="mt-8">{assignmentData.description}</p>
           </div>
         )}
 
@@ -274,54 +307,76 @@ export default function AssignmentPreview({
       </main>
 
       {/* Controls */}
-      <div className="flex justify-between items-center px-4 h-14 bg-white w-full absolute bottom-0 left-0">
-        {/* Left hand side */}
-        <div>
-          {isSubmitted && assignmentStatus === "overview" && (
-            <button
-              onClick={() => setAssignmentStatus("summary/feedback")}
-              className="px-3 py-1 border border-purple-600 text-purple-600 hover:bg-purple-100 transition cursor-pointer"
-            >
-              Go to summary
-            </button>
-          )}
-          {assignmentStatus === "summary/feedback" && (
-            <button
-              onClick={() => setAssignmentStatus("assignment")}
-              className="transition px-4 py-2 rounded hover:bg-neutral-200 cursor-pointer"
-            >
-              Back to assignment
-            </button>
-          )}
-        </div>
+      <div className="flex items-center bg-white border-t border-gray-200">
+        <div className="flex justify-between items-center px-4 h-14 bg-white w-full">
+          {/* Left hand side */}
+          <div>
+            {isSubmitted && assignmentStatus === "overview" && (
+              <button
+                onClick={() => setAssignmentStatus("summary/feedback")}
+                className="px-3 py-1 border border-purple-600 text-purple-600 hover:bg-purple-100 transition cursor-pointer"
+              >
+                Go to summary
+              </button>
+            )}
+            {assignmentStatus === "summary/feedback" && (
+              <button
+                onClick={() => setAssignmentStatus("assignment")}
+                className="transition px-4 py-2 rounded hover:bg-neutral-200 cursor-pointer"
+              >
+                Back to assignment
+              </button>
+            )}
+          </div>
 
-        {/* Right hand side */}
-        <div>
-          {assignmentStatus === "assignment" && (
-            <>
-              {step !== "instructions" && (
+          {/* Right hand side */}
+          <div>
+            {assignmentStatus === "assignment" && (
+              <>
+                {step !== "instructions" && (
+                  <button
+                    onClick={handlePrevious}
+                    className="transition px-4 py-2 rounded hover:bg-neutral-200 cursor-pointer"
+                  >
+                    Previous
+                  </button>
+                )}
                 <button
-                  onClick={handlePrevious}
+                  onClick={handleNext}
+                  className="px-4 py-2 rounded bg-purple-600 text-white hover:bg-purple-700 cursor-pointer transition"
+                >
+                  {step === "giveFeedback" ? "Go to feedback" : "Next"}
+                </button>
+              </>
+            )}
+
+            {assignmentStatus === "overview" && (
+              <div className="flex items-center gap-4">
+                <button
+                  // onClick={handlePrevious}
                   className="transition px-4 py-2 rounded hover:bg-neutral-200 cursor-pointer"
                 >
-                  Previous
+                  Skip Assignment
                 </button>
-              )}
-              <button
-                onClick={handleNext}
-                className="px-4 py-2 rounded bg-purple-600 text-white hover:bg-purple-700 cursor-pointer transition"
-              >
-                {step === "giveFeedback" ? "Go to feedback" : "Next"}
-              </button>
-            </>
-          )}
 
-          {assignmentStatus === "summary/feedback" && (
-            <button className="px-4 py-2 rounded bg-purple-600 text-white hover:bg-purple-700 cursor-pointer transition">
-              Next lecture
-            </button>
-          )}
+                <button
+                  onClick={handleStartAssignment}
+                  className="px-4 py-2 rounded bg-purple-600 text-white hover:bg-purple-700 cursor-pointer transition"
+                >
+                  Start Assignment
+                </button>
+              </div>
+            )}
+
+            {assignmentStatus === "summary/feedback" && (
+              <button className="px-4 py-2 rounded bg-purple-600 text-white hover:bg-purple-700 cursor-pointer transition">
+                Next lecture
+              </button>
+            )}
+          </div>
         </div>
+        {/* Sidebar settings and full screen toggle button */}
+        <ControlButtons componentRef={componentRef} />
       </div>
     </div>
   );
@@ -365,26 +420,25 @@ const Instructions = ({
       </div>
 
       <div className="shadow-sm shadow-purple-200 p-6 border border-gray-400/40 divide-y divide-gray-300">
-        {assignmentData.instructionalVideo?.url ||
-        assignmentData.instructionalVideo?.file ? (
-          <div className="h-80 flex items-center justify-center bg-gray-100">
-            <video controls className="max-w-full max-h-full">
-              <source
+        <div className="h-80 flex items-center justify-center bg-gray-100">
+          {assignmentData.instructionalVideo?.url ? (
+            assignmentData.instructionalVideo.file ? (
+              <video
+                controls
                 src={
-                  assignmentData.instructionalVideo.url ||
-                  (assignmentData.instructionalVideo.file
+                  assignmentData.instructionalVideo.file
                     ? URL.createObjectURL(
                         assignmentData.instructionalVideo.file
                       )
-                    : undefined) // Use undefined instead of empty string
+                    : assignmentData.instructionalVideo.url
                 }
-                type="video/mp4"
+                className="w-full h-full rounded object-contain"
               />
-              Your browser does not support the video tag.
-            </video>
-          </div>
-        ) : (
-          <div className="text-gray-800 h-80 flex items-center">
+            ) : (
+              <HLSVideoPlayer src={assignmentData.instructionalVideo.url} />
+            )
+          ) : (
+            // <div className="text-gray-800 h-80 flex items-center">
             <div className="max-w-xl mx-auto">
               Your video failed to process for the following reasons:
               <ul className="list-disc pl-5">
@@ -400,15 +454,16 @@ const Instructions = ({
                 </li>
               </ul>
             </div>
-          </div>
-        )}
+            // </div>
+          )}
+        </div>
 
         <div>
           <div className="pt-4">
             <h3 className="font-bold mb-2">Questions for this assignment</h3>
             <ul className="list-decimal pl-5 space-y-2">
               {assignmentData.assignmentQuestions?.map((question) => (
-                <li key={question.id}>{question.content}</li>
+                <li key={question.id}>{question.text}</li>
               ))}
             </ul>
           </div>
@@ -420,13 +475,13 @@ const Instructions = ({
               </h3>
               <div
                 onClick={() => {
-                  onDownloadResource(assignmentData.instructionalResource!);
+                  onDownloadResource(assignmentData.instructionalResource);
                 }}
                 className="flex items-center gap-2 text-purple-600 hover:bg-purple-100 transition rounded p-2 cursor-pointer"
               >
                 <LiaFileDownloadSolid size={17} />
                 <span>
-                  {assignmentData.instructionalResource.name ||
+                  {assignmentData.instructionalResource.file_name ||
                     assignmentData.instructionalResource.file?.name ||
                     "Resource"}
                 </span>
@@ -583,12 +638,16 @@ const InstructorExample = ({
             </div>
           </div>
 
-          <ul className="list-decimal pl-6 marker:font-bold mt-4 bg-red-300">
+          <ul className="list-decimal pl-6 marker:font-bold mt-4">
             {assignmentData.assignmentQuestions?.map((question, index) => (
               <li key={question.id} className="space-y-2 text-sm">
-                <p>{question.content}</p>
-                {question.solution && (
-                  <p dangerouslySetInnerHTML={{ __html: question.solution }} />
+                <p>{question.text}</p>
+                {question?.questionSolutions?.[0].text && (
+                  <p
+                    dangerouslySetInnerHTML={{
+                      __html: question?.questionSolutions[0].text,
+                    }}
+                  />
                 )}
               </li>
             ))}
@@ -601,13 +660,13 @@ const InstructorExample = ({
               </h3>
               <div
                 onClick={() =>
-                  onDownloadResource(assignmentData.solutionResource!)
+                  onDownloadResource(assignmentData.solutionResource)
                 }
                 className="flex items-center gap-2 text-purple-600 hover:bg-purple-100 transition rounded p-2 cursor-pointer"
               >
                 <LiaFileDownloadSolid size={17} />
                 <span>
-                  {assignmentData.solutionResource.name ||
+                  {assignmentData.solutionResource.file_name ||
                     assignmentData.solutionResource.file?.name ||
                     "Resource"}
                 </span>
@@ -616,45 +675,41 @@ const InstructorExample = ({
           )}
         </div>
 
-        {assignmentData.solutionVideo?.url ||
-        assignmentData.solutionVideo?.file ? (
-          <div className="h-80 flex items-center justify-center bg-gray-100">
-            <video controls className="max-w-full max-h-full">
-              <source
-                // src={
-                //   assignmentData.solutionVideo.url ||
-                //   URL.createObjectURL(assignmentData.solutionVideo.file!)
-                // }
+        <div className="h-80 flex items-center justify-center bg-gray-100">
+          {assignmentData.solutionVideo?.url ? (
+            assignmentData.solutionVideo.file ? (
+              <video
+                controls
                 src={
-                  assignmentData.solutionVideo.url ||
-                  (assignmentData.solutionVideo.file
+                  assignmentData.solutionVideo.file
                     ? URL.createObjectURL(assignmentData.solutionVideo.file)
-                    : undefined) // Use undefined instead of empty string
+                    : assignmentData.solutionVideo.url
                 }
-                type="video/mp4"
+                className="w-full h-full rounded object-contain"
               />
-              Your browser does not support the video tag.
-            </video>
-          </div>
-        ) : (
-          <div className="text-gray-800 h-80 flex items-center border-b border-gray-400/50">
-            <div className="max-w-xl mx-auto">
-              Your video failed to process for the following reasons:
-              <ul className="list-disc pl-5">
-                <li>
-                  Your video didn't meet our lowest permissible resolution of at
-                  least 720p.{" "}
-                  <Link
-                    href={"#"}
-                    className="text-purple-600 underline cursor-pointer hover:text-purple-800 transition"
-                  >
-                    Get Help
-                  </Link>
-                </li>
-              </ul>
+            ) : (
+              <HLSVideoPlayer src={assignmentData.solutionVideo.url} />
+            )
+          ) : (
+            <div className="text-gray-800 h-80 flex items-center border-b border-gray-400/50">
+              <div className="max-w-xl mx-auto">
+                Your video failed to process for the following reasons:
+                <ul className="list-disc pl-5">
+                  <li>
+                    Your video didn't meet our lowest permissible resolution of
+                    at least 720p.{" "}
+                    <Link
+                      href={"#"}
+                      className="text-purple-600 underline cursor-pointer hover:text-purple-800 transition"
+                    >
+                      Get Help
+                    </Link>
+                  </li>
+                </ul>
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       <div className="shadow-sm shadow-purple-200 p-6 border border-gray-400/40">

@@ -1,16 +1,15 @@
 "use client";
 import { useState, useEffect, useRef, FormEvent } from "react";
 import Image from "next/image";
-import { signUp, login, sendVerificationCode } from "@/api/auth/auth";
+import { signUp, login, sendVerificationCode, loginWithGoogle } from "@/api/auth/auth";
 import { SignUpData, LoginData, FormErrors } from "@/lib/types";
 import { useRouter } from "next/navigation";
-import { ApolloProvider } from "@apollo/client";
-import { apolloClient } from "@/lib/apollo-client";
 import { isAllowedDomain, isValidEmail, SignupModalProps, validatePassword } from "@/lib/utils";
 import { usePageLoading } from "@/hooks/UsePageLoading";
+import toast, { Toaster } from "react-hot-toast";
+import { useGoogleLogin } from "@react-oauth/google";
 
-
-const SignupModalContent: React.FC<SignupModalProps> = ({
+const SignupModal: React.FC<SignupModalProps> = ({
   isOpen,
   onClose,
 }) => {
@@ -110,6 +109,40 @@ const SignupModalContent: React.FC<SignupModalProps> = ({
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
   };
+  
+  // Handler for Google login success using access token
+  const googleLogin = useGoogleLogin({
+    flow: 'implicit',
+    onSuccess: async (tokenResponse) => {
+      console.log("Google token response:", tokenResponse);
+      try {
+        const result = await loginWithGoogle(tokenResponse.access_token);
+        console.log("result", result)
+        if (result.success) {
+          toast.success("Google sign-in successful!");
+          if (result.user?.isInstructor) {
+            router.push("/instructor");
+          } else {
+            router.push("/dashboard");
+          }
+        } else {
+          toast.error("Google sign-in failed.");
+        }
+      } catch (error: any) {
+        console.error("Google login error:", error);
+        toast.error(error?.message || "Google sign-in failed.");
+      }
+    },
+    onError: (error) => {
+      console.error("Google sign-in error:", error);
+      toast.error("Google sign-in was cancelled or failed.");
+    },
+    onNonOAuthError: (nonOAuthError) => {
+      console.error('Google Non-OAuth error:', nonOAuthError);
+      toast.error(`Google login error: ${nonOAuthError.type}`);
+    },
+    scope: 'openid email profile',
+  });
 
   if (!isOpen) return null;
 
@@ -200,7 +233,7 @@ const handleSendCode = async () => {
         if (!value) {
           newErrors.password = "Password is required";
         } else {
-          const passwordError = validatePassword(value);
+          const passwordError: string | undefined = validatePassword(value);
           if (passwordError) {
             newErrors.password = passwordError;
           } else {
@@ -430,6 +463,7 @@ const handleSendCode = async () => {
 
   return (
     <>
+      <Toaster position="top-right" />
       <div className="fixed inset-0 backdrop-blur-sm bg-opacity-30 flex items-center justify-center z-50">
         <div
           ref={modalRef}
@@ -527,21 +561,22 @@ const handleSendCode = async () => {
           </div>
 
           <div className="flex gap-4 mb-8">
-            <button
-              type="button"
-              className="flex-1 border border-gray-300 rounded-md py-1 xl:py-2 font-bold px-1 md:px-3 flex justify-center items-center md:gap-2 gap-1 text-[#A1A1A1] text-[10px] xl:text-[12px]"
-            >
-              <div className="h-6 w-6 bg-white rounded">
-                <Image
-                  src={"/auth/google.png"}
-                  alt="3D geometric shapes"
-                  height={40}
-                  width={40}
-                  objectFit="contain"
-                />
-              </div>
-              Continue with Google
-            </button>
+        <button
+          type="button"
+          onClick={() => googleLogin()}
+          className="flex-1 border border-gray-300 rounded-md py-1 xl:py-2 font-bold px-1 md:px-3 flex justify-center items-center md:gap-2 gap-1 text-[#A1A1A1] text-[10px] xl:text-[12px]"
+        >
+          <div className="h-6 w-6 bg-white rounded">
+            <Image
+              src={"/auth/google.png"}
+              alt="Google"
+              height={40}
+              width={40}
+              objectFit="contain"
+            />
+          </div>
+          Continue with Google
+        </button>
             <button
               type="button"
               className="flex-1 border border-gray-300 rounded-md py-1 xl:py-2 font-bold px-1 md:px-3 flex justify-center items-center md:gap-2 gap-1 text-[#A1A1A1] text-[10px] xl:text-[12px]"
@@ -798,13 +833,5 @@ const handleSendCode = async () => {
   );
 };
 
-// Wrap the component with ApolloProvider
-const SignupModal: React.FC<SignupModalProps> = (props) => {
-  return (
-    <ApolloProvider client={apolloClient}>
-      <SignupModalContent {...props} />
-    </ApolloProvider>
-  );
-};
 
 export default SignupModal;

@@ -312,6 +312,14 @@ export interface Question {
   type: string;
 }
 
+export interface AssignmentQuestionSolution {
+  id: string;
+  text: string;
+  videoUrl: string;
+  downloadableResourceUrl: string | null;
+  __typename: "AssignmentQuestionSolutionType";
+}
+
 export interface AssignmentQuestion {
   text?: string;
   id: string;
@@ -321,10 +329,12 @@ export interface AssignmentQuestion {
     id?: string;
     text?: string;
   };
+  questionSolutions?: AssignmentQuestionSolution[];
 }
 
 // UPDATED: Base Lecture interface
 export interface Lecture {
+  resources?: never[];
   id: string;
   name?: string;
   title?: string;
@@ -358,20 +368,22 @@ export interface Lecture {
   assignmentDescription?: string;
   estimatedDuration?: number;
   durationUnit?: "minutes" | "hours" | "days";
-  assignmentInstructions?: string;
+  instructions?: string;
   instructionalVideo?: {
     file: File | null;
     url?: string;
+    file_name?: string;
   };
   downloadableResource?: {
     file: File | null;
     url?: string;
-    name?: string;
+    file_name?: string;
   };
   assignmentQuestions?: AssignmentQuestion[];
   solutionVideo?: {
     file: File | null;
     url?: string;
+    file_name?: string;
   };
   isPublished?: boolean;
 }
@@ -414,25 +426,28 @@ export interface ExtendedLecture extends Lecture {
   assignmentDescription?: string;
   estimatedDuration?: number;
   durationUnit?: "minutes" | "hours" | "days";
-  assignmentInstructions?: string;
+  instructions?: string;
   instructionalVideo?: {
     file: File | null;
     url?: string;
+    file_name?: string;
   };
+  videoUrl?: string;
   instructionalResource?: {
     file: File | null;
     url?: string;
-    name?: string;
+    file_name?: string;
   };
   solutionResource?: {
     file: File | null;
     url?: string;
-    name?: string;
+    file_name?: string;
   };
   assignmentQuestions?: AssignmentQuestion[];
   solutionVideo?: {
     file: File | null;
     url?: string;
+    file_name?: string;
   };
   isPublished?: boolean;
 }

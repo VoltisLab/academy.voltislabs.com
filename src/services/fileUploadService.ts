@@ -1,8 +1,8 @@
-import { gql } from '@apollo/client';
-import { apolloClient } from '@/lib/apollo-client';
-import { toast } from 'react-hot-toast';
+import { ApolloError, gql } from "@apollo/client";
+import { apolloClient } from "@/lib/apollo-client";
+import { toast } from "react-hot-toast";
 
-export type FileTypeEnum = 'RESOURCE' | 'PROFILE_PICTURE' | 'VIDEO';
+export type FileTypeEnum = "RESOURCE" | "PROFILE_PICTURE" | "VIDEO";
 
 interface UploadResponse {
   baseUrl: string;
@@ -24,9 +24,12 @@ const UPLOAD_FILE = gql`
   }
 `;
 
-export const uploadFile = async (file: File, filetype: FileTypeEnum): Promise<string | null> => {
+export const uploadFile = async (
+  file: File,
+  filetype: FileTypeEnum,
+  signal?: AbortSignal
+): Promise<string | null> => {
   try {
-
     if (!(file instanceof File)) {
       throw new Error("Invalid file object");
     }
@@ -39,8 +42,9 @@ export const uploadFile = async (file: File, filetype: FileTypeEnum): Promise<st
       },
       context: {
         includeAuth: true,
+        fetchOptions: signal ? { signal } : undefined,
       },
-      fetchPolicy: 'no-cache',
+      fetchPolicy: "no-cache",
     });
 
     if (errors && errors.length) {
@@ -49,15 +53,28 @@ export const uploadFile = async (file: File, filetype: FileTypeEnum): Promise<st
       return null;
     }
 
-    console.log(data)
-
     if (data?.upload?.success) {
-      return data.upload.baseUrl;
+      const baseUrl = data.upload.baseUrl;
+      const rawJson = data.upload.data?.[0]; // JSON string
+      const parsed = rawJson ? JSON.parse(rawJson) : null;
+
+      if (parsed?.file_url) {
+        return `${baseUrl}${parsed.file_url}`;
+      } else {
+        toast.error("Invalid upload response format");
+        return null;
+      }
     } else {
       toast.error("File upload failed");
       return null;
     }
-  } catch (err) {
+  } catch (err: any) {
+    if (
+      err.name === "AbortError" ||
+      (err instanceof ApolloError && err.message.includes("signal is aborted"))
+    ) {
+      throw new Error("UPLOAD_CANCELLED");
+    }
     console.error("Upload error:", err);
     toast.error(err instanceof Error ? err.message : "Unexpected upload error");
     return null;

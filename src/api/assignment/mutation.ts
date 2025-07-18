@@ -1,53 +1,47 @@
 import { gql } from "@apollo/client";
 
-
-export const CREATE_ASSIGNMENT= gql`
-    mutation CreateAssignment($sectionId: Int!, $title: String!) {
-  createAssignment(sectionId: $sectionId, title: $title) {
-    assignment {
-      id
-      title
-      description
-      instructions
-      dueDate
-      createdAt
-      updatedAt
-      maxPoints
-      estimatedDurationMinutes
-      videoUrl
-      downloadableResourceUrl
-      
+export const CREATE_ASSIGNMENT = gql`
+  mutation CreateAssignment($sectionId: Int!, $title: String!) {
+    createAssignment(sectionId: $sectionId, title: $title) {
+      assignment {
+        id
+        title
+      }
+      success
     }
-    success
   }
-}
-
-`
+`;
 export const UPDATE_ASSIGNMENT_MUTATION = gql`
   mutation UpdateAssignment(
     $assignmentId: Int!
+    $title: String
     $description: String
     $estimatedDurationMinutes: Int
     $instructions: String
-    $resourceUrl: String
-    $title: String
-    $videoUrl: String
+    $instructionDownloadableResource: MediaInputType
+    $instructionVideo: MediaInputType
+    $solutionDownloadableResource: MediaInputType
+    $solutionVideo: MediaInputType
+    $isPublished: Boolean
   ) {
     updateAssignment(
       assignmentId: $assignmentId
+      title: $title
       description: $description
       estimatedDurationMinutes: $estimatedDurationMinutes
       instructions: $instructions
-      resourceUrl: $resourceUrl
-      title: $title
-      videoUrl: $videoUrl
+      instructionDownloadableResource: $instructionDownloadableResource
+      instructionVideo: $instructionVideo
+      solutionDownloadableResource: $solutionDownloadableResource
+      solutionVideo: $solutionVideo
+      isPublished: $isPublished
     ) {
       success
       assignment {
         id
         title
         description
-       
+        isPublished
       }
     }
   }
@@ -116,38 +110,26 @@ export const UPDATE_ASSIGNMENT_QUESTION = gql`
 `;
 
 export const DELETE_ASSIGNMENT_QUESTION = gql`
-  mutation DeleteAssignmentQuestion(
-    $assignmentQuestionId: Int!
-  ){
-    deleteAssignmentQuestion(
-    assignmentQuestionId: $assignmentQuestionId
-      
-    ) {
+  mutation DeleteAssignmentQuestion($assignmentQuestionId: Int!) {
+    deleteAssignmentQuestion(assignmentQuestionId: $assignmentQuestionId) {
       success
-     
     }
   }
-`
+`;
 
 export const CREATE_ASSIGNMENT_QUESTION_SOLUTION = gql`
   mutation CreateAssignmentQuestionSolution(
     $assignmentQuestionId: Int!
-    $downloadableResourceUrl: String
     $text: String
-    $videoUrl: String
   ) {
     createAssignmentQuestionSolution(
       assignmentQuestionId: $assignmentQuestionId
-      downloadableResourceUrl: $downloadableResourceUrl
       text: $text
-      videoUrl: $videoUrl
     ) {
       success
       assignmentQuestionSolution {
         id
-        downloadableResourceUrl
         text
-        videoUrl
       }
     }
   }
@@ -156,22 +138,16 @@ export const CREATE_ASSIGNMENT_QUESTION_SOLUTION = gql`
 export const UPDATE_ASSIGNMENT_QUESTION_SOLUTION = gql`
   mutation UpdateAssignmentQuestionSolution(
     $questionSolutionId: Int!
-    $downloadableResourceUrl: String
     $text: String
-    $videoUrl: String
   ) {
     updateAssignmentQuestionSolution(
       questionSolutionId: $questionSolutionId
-      downloadableResourceUrl: $downloadableResourceUrl
       text: $text
-      videoUrl: $videoUrl
     ) {
       success
       assignmentQuestionSolution {
         id
         text
-        videoUrl
-        downloadableResourceUrl
       }
     }
   }
@@ -194,7 +170,6 @@ export interface Assignment {
   estimatedDurationMinutes?: number;
   videoUrl?: string;
   downloadableResourceUrl?: string;
-  
 }
 
 export interface CreateAssignmentResponse {
@@ -205,27 +180,31 @@ export interface CreateAssignmentResponse {
   };
 }
 
-// Input variables for the mutation
+export interface MediaInputType {
+  fileName: string;
+  url: string;
+}
+
 export interface UpdateAssignmentVariables {
   assignmentId: number;
+  title?: string;
   description?: string;
   estimatedDurationMinutes?: number;
   instructions?: string;
-  resourceUrl?: string;
-  title?: string;
-  videoUrl?: string;
+  instructionDownloadableResource?: MediaInputType;
+  instructionVideo?: MediaInputType;
+  solutionDownloadableResource?: MediaInputType;
+  solutionVideo?: MediaInputType;
+  isPublished?: boolean;
 }
 
-// Response from the mutation
 export interface UpdateAssignmentResponse {
   updateAssignment: {
     success: boolean;
     assignment: {
-      id: string;
+      id: number;
       title: string;
       description: string;
-     
-      
     };
   };
 }
@@ -249,12 +228,14 @@ interface BaseAssignmentQuestionInput {
 }
 
 // Create input extends base + assignmentId
-export interface CreateAssignmentQuestionVariables extends BaseAssignmentQuestionInput {
+export interface CreateAssignmentQuestionVariables
+  extends BaseAssignmentQuestionInput {
   assignmentId: number;
 }
 
 // Update input extends base + assignmentQuestionId
-export interface UpdateAssignmentQuestionVariables extends BaseAssignmentQuestionInput {
+export interface UpdateAssignmentQuestionVariables
+  extends BaseAssignmentQuestionInput {
   assignmentQuestionId: number;
 }
 
@@ -285,11 +266,10 @@ export interface UpdateAssignmentQuestionResponse {
 export interface DeleteAssignmentQuestionVariables {
   assignmentQuestionId: number;
 }
-export interface DeleteAssignmentQuestionResponse{
-  
-  deleteAssignmentQuestion:{
-    success: boolean
-  }
+export interface DeleteAssignmentQuestionResponse {
+  deleteAssignmentQuestion: {
+    success: boolean;
+  };
 }
 
 export interface CreateAssignmentQuestionSolutionVariables {
@@ -302,8 +282,8 @@ export interface CreateAssignmentQuestionSolutionVariables {
 export interface CreateAssignmentQuestionSolutionResponse {
   createAssignmentQuestionSolution: {
     success: true;
-    assignmentQuestionSolution: CreateAssignmentQuestionVariables
-  }
+    assignmentQuestionSolution: CreateAssignmentQuestionVariables;
+  };
 }
 
 export interface UpdateAssignmentQuestionSolutionVariables {

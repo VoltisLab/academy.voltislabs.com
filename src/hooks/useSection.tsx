@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { Lecture, ContentType, ContentItemType, Question } from "@/lib/types";
 import { generateId } from "@/lib/utils";
 import { toast } from "react-hot-toast";
@@ -30,11 +30,13 @@ export const useSections = (
   courseId?: number
 ) => {
   const [sections, setSections] = useState<Section[]>(initialSections);
+  const [mainSectionData, setMainSectionData] = useState<any>(null);
 
   const { createQuiz: createQuizBackend, updateQuiz: updateQuizBackend } =
     useQuizOperations();
   const {
     createSection,
+    getCourseSections,
     updateSection,
     loading: sectionLoading,
   } = useSectionService();
@@ -47,6 +49,17 @@ export const useSections = (
     videoUploading,
     videoUploadProgress,
   } = useLectureService();
+
+  const fetchSectionData = async () => {
+    try {
+      const data = await getCourseSections({ id: Number(courseId) });
+      setMainSectionData(data?.courseSections); // ✅ update shared state
+      return data;
+    } catch (error) {
+      console.error("Failed to fetch course sections:", error);
+      return null;
+    }
+  };
 
   const saveDescription = async (
     sectionId: string,
@@ -78,7 +91,9 @@ export const useSections = (
         })
       );
 
-      return description;
+      await fetchSectionData();
+
+      // return description;
     } catch (error) {
       console.error("Error saving description:", error);
       throw error;
@@ -152,6 +167,10 @@ export const useSections = (
       }
 
       const a = await saveArticleToLecture(numericLectureId, articleContent);
+
+      await fetchSectionData();
+
+      console.log("Hey yosdhsdsbd", mainSectionData);
       console.log("article", a);
 
       // Update local state after successful backend save
@@ -313,12 +332,12 @@ export const useSections = (
       isExpanded: true,
       isPublished: false,
       // New fields for practice coding exercise
-      code:
-        contentType === "practice"
-          ? getDefaultCodeTemplate("javascript")
-          : undefined,
+      code: contentType === "practice"
+        ? getDefaultCodeTemplate("javascript")
+        : undefined,
       codeLanguage: contentType === "practice" ? "javascript" : undefined,
       externalResources: [],
+      resources: []
     };
 
     setSections((prevSections) =>
@@ -886,6 +905,7 @@ export const useSections = (
   };
 
   return {
+    fetchSectionData,
     sections,
     updateQuizQuestions,
     addQuiz,
@@ -915,5 +935,7 @@ export const useSections = (
     // NEW: Expose video upload states
     videoUploading,
     videoUploadProgress,
+    mainSectionData,
+    setMainSectionData,
   };
 };

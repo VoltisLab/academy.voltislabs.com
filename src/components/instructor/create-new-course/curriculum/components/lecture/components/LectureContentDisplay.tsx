@@ -22,9 +22,18 @@ import {
 import StudentCoursePreview from "./StudentCoursePreview";
 import InstructorVideoPreview from "./InstructorVideoPreview";
 import Link from "next/link";
+import { CourseSectionLecture } from "@/api/course/section/queries";
+import ReactPlayer from "react-player";
+
+export type ExpansionType = {
+  isOpen: boolean;
+  open: () => void;
+  close: () => void;
+  toggle: () => void;
+};
 
 interface LectureContentDisplayProps {
-  lecture: Lecture;
+  lecture: CourseSectionLecture;
   sectionId: string;
   videoContent: VideoContent;
   articleContent: ArticleContent;
@@ -33,16 +42,27 @@ interface LectureContentDisplayProps {
   isDescriptionSectionActive: boolean;
   onEditContent: () => void;
   onToggleDownloadable: () => void;
-  onToggleDescriptionEditor?: (sectionId: string, lectureId: string, currentText: string) => void;
+  onToggleDescriptionEditor?: (
+    sectionId: string,
+    lectureId: string,
+    currentText: string
+  ) => void;
   onToggleAddResourceModal?: (sectionId: string, lectureId: string) => void;
   onSetActiveContentType: (type: "article") => void;
   onToggleContentSection?: (sectionId: string, lectureId: string) => void;
   // Resource props
-  currentLectureUploadedFiles: Array<{ name: string; size: string; lectureId: string }>;
+  currentLectureUploadedFiles: Array<{
+    name: string;
+    size: string;
+    lectureId: string;
+  }>;
   currentLectureSourceCodeFiles: SourceCodeFile[];
   currentLectureExternalResources: ExternalResourceItem[];
   removeUploadedFile?: (fileName: string, lectureId: string) => void;
-  removeSourceCodeFile?: (fileName: string | undefined, lectureId: string) => void;
+  removeSourceCodeFile?: (
+    fileName: string | undefined,
+    lectureId: string
+  ) => void;
   removeExternalResource?: (title: string, lectureId: string) => void;
   // Global arrays for preview
   globalUploadedFiles: Array<{ name: string; size: string; lectureId: string }>;
@@ -50,7 +70,9 @@ interface LectureContentDisplayProps {
   globalExternalResources: ExternalResourceItem[];
   allSections: PreviewSection[];
   children?: React.ReactNode;
-  courseId?: number
+  courseId?: number;
+  resourceExpansion?: ExpansionType;
+  descriptionExpansion?: ExpansionType;
 }
 
 const LectureContentDisplay: React.FC<LectureContentDisplayProps> = ({
@@ -78,49 +100,88 @@ const LectureContentDisplay: React.FC<LectureContentDisplayProps> = ({
   globalExternalResources,
   allSections,
   children,
-  courseId
+  courseId,
+  resourceExpansion,
+  descriptionExpansion,
 }) => {
   const [showPreviewDropdown, setShowPreviewDropdown] = useState(false);
   const [showVideoPreview, setShowVideoPreview] = useState(false);
-  const [previewMode, setPreviewMode] = useState<"instructor" | "student" | null>(null);
+  const [previewMode, setPreviewMode] = useState<
+    "instructor" | "student" | null
+  >(null);
   const [previewContentType, setPreviewContentType] = useState<string>("video");
+  console.log('Video preview URL:', videoContent.selectedVideoDetails?.url);
+  const [actualDuration, setActualDuration] = useState<number | null>(null);
+  const formatTime = (seconds: number) => {
+    if (!seconds && seconds !== 0) return '';
+    const min = Math.floor(seconds / 60);
+    const sec = Math.floor(seconds % 60);
+    return `${min}:${sec < 10 ? "0" : ""}${sec}`;
+  };
+
+  console.log(currentLectureUploadedFiles);
 
   // Create enhanced lecture for preview
   const createEnhancedLectureForPreview = (): EnhancedLecture => {
-    const hasRealVideoContent = !!(videoContent.selectedVideoDetails && videoContent.selectedVideoDetails.url);
-    const hasRealArticleContent = !!(articleContent && articleContent.text && articleContent.text.trim() !== '');
+    const hasRealVideoContent = !!(
+      videoContent.selectedVideoDetails && videoContent.selectedVideoDetails.url
+    );
+    const hasRealArticleContent = !!(
+      articleContent &&
+      articleContent.text &&
+      articleContent.text.trim() !== ""
+    );
 
-    const enhancedLecture: EnhancedLecture = {
+    const enhancedLecture: any = {
       ...lecture,
       hasVideoContent: hasRealVideoContent,
       hasArticleContent: hasRealArticleContent,
       articleContent: hasRealArticleContent ? articleContent : undefined,
-      videoDetails: hasRealVideoContent && videoContent.selectedVideoDetails ? videoContent.selectedVideoDetails : undefined,
+      videoDetails:
+        hasRealVideoContent && videoContent.selectedVideoDetails
+          ? videoContent.selectedVideoDetails
+          : undefined,
       contentMetadata: {
         createdAt: new Date(),
         lastModified: new Date(),
         ...(hasRealArticleContent && {
-          articleWordCount: articleContent.text.split(/\s+/).length
+          articleWordCount: articleContent.text.split(/\s+/).length,
         }),
-        ...(hasRealVideoContent && videoContent.selectedVideoDetails?.duration && {
-          videoDuration: videoContent.selectedVideoDetails.duration
-        })
-      }
+        ...(hasRealVideoContent &&
+          videoContent.selectedVideoDetails?.duration && {
+            videoDuration: videoContent.selectedVideoDetails.duration,
+          }),
+      },
+      attachedFiles: [],
+      videos: [],
     };
 
-    let detectedType: "article" | "video" | "quiz" | "coding-exercise" | "assignment";
-    
+    let detectedType:
+      | "article"
+      | "video"
+      | "quiz"
+      | "coding-exercise"
+      | "assignment";
+
     if (hasRealArticleContent && !hasRealVideoContent) {
-      detectedType = 'article';
+      detectedType = "article";
     } else if (hasRealVideoContent && !hasRealArticleContent) {
-      detectedType = 'video';
+      detectedType = "video";
     } else if (hasRealArticleContent && hasRealVideoContent) {
-      console.warn('⚠️ Both article and video content exist - this is unexpected');
-      detectedType = 'article';
+      console.warn(
+        "⚠️ Both article and video content exist - this is unexpected"
+      );
+      detectedType = "article";
     } else {
-      detectedType = (lecture.contentType as "article" | "video" | "quiz" | "coding-exercise" | "assignment") || 'video';
+      detectedType =
+        (lecture.title as
+          | "article"
+          | "video"
+          | "quiz"
+          | "coding-exercise"
+          | "assignment") || "video";
     }
-    
+
     enhancedLecture.actualContentType = detectedType;
     enhancedLecture.contentType = detectedType;
 
@@ -133,69 +194,95 @@ const LectureContentDisplay: React.FC<LectureContentDisplayProps> = ({
       return allSections;
     }
 
-    return allSections.map(section => ({
+    return allSections.map((section) => ({
       ...section,
-      lectures: section.lectures?.map(lec => {
-        const lectureUploadedFiles = globalUploadedFiles.filter(file => file.lectureId === lec.id);
-        const lectureSourceCodeFiles = globalSourceCodeFiles.filter(file => file.lectureId === lec.id);
-        const lectureExternalResources = globalExternalResources.filter(resource => resource.lectureId === lec.id);
+      lectures:
+        section.lectures?.map((lec) => {
+          const lectureUploadedFiles = globalUploadedFiles.filter(
+            (file) => file.lectureId === lec.id
+          );
+          const lectureSourceCodeFiles = globalSourceCodeFiles.filter(
+            (file) => file.lectureId === lec.id
+          );
+          const lectureExternalResources = globalExternalResources.filter(
+            (resource) => resource.lectureId === lec.id
+          );
 
-        let enhancedLecture: EnhancedLecture;
-        
-        if (lec.id === lecture.id) {
-          enhancedLecture = createEnhancedLectureForPreview();
-        } else {
-          const existingEnhanced = lec as EnhancedLecture;
-          
-          if (existingEnhanced.actualContentType) {
-            enhancedLecture = existingEnhanced;
+          let enhancedLecture: EnhancedLecture;
+
+          if (lec.id === lecture.id) {
+            enhancedLecture = createEnhancedLectureForPreview();
           } else {
-            let hasVideoContent = false;
-            let hasArticleContent = false;
-            let actualContentType = lec.contentType || 'video';
-            
-            if (lec.contentType === 'article') {
-              hasArticleContent = true;
-              actualContentType = 'article';
-            } else if (lec.contentType === 'video' || !lec.contentType) {
-              hasVideoContent = true;
-              actualContentType = 'video';
+            const existingEnhanced = lec as EnhancedLecture;
+
+            if (existingEnhanced.actualContentType) {
+              enhancedLecture = existingEnhanced;
             } else {
-              actualContentType = lec.contentType;
-            }
-            
-            enhancedLecture = {
-              ...lec,
-              actualContentType: actualContentType as any,
-              hasVideoContent,
-              hasArticleContent,
-              contentMetadata: {
-                createdAt: new Date(),
-                lastModified: new Date()
+              let hasVideoContent = false;
+              let hasArticleContent = false;
+              let actualContentType = lec.contentType || "video";
+              // Robustly extract article content from lec
+              const articleContent =
+                (lec as any).articleContent ||
+                ((lec as any).lectureNotes
+                  ? { text: (lec as any).lectureNotes }
+                  : undefined) ||
+                (lec.description ? { text: lec.description } : undefined);
+              if (
+                articleContent &&
+                typeof articleContent.text === "string" &&
+                articleContent.text.trim() !== ""
+              ) {
+                hasArticleContent = true;
+                actualContentType = "article";
               }
-            };
+              if (lec.contentType === "article") {
+                hasArticleContent = true;
+                actualContentType = "article";
+              } else if (lec.contentType === "video" || !lec.contentType) {
+                hasVideoContent = true;
+                actualContentType = "video";
+              } else {
+                actualContentType = lec.contentType;
+              }
+
+              enhancedLecture = {
+                ...lec,
+                actualContentType: actualContentType as any,
+                hasVideoContent,
+                hasArticleContent,
+                articleContent,
+                contentMetadata: {
+                  createdAt: new Date(),
+                  lastModified: new Date(),
+                },
+              };
+            }
           }
-        }
-        
-        enhancedLecture.lectureResources = {
-          uploadedFiles: lectureUploadedFiles,
-          sourceCodeFiles: lectureSourceCodeFiles,
-          externalResources: lectureExternalResources
-        };
-        
-        return enhancedLecture;
-      }) || []
+
+          enhancedLecture.lectureResources = {
+            uploadedFiles: lectureUploadedFiles,
+            sourceCodeFiles: lectureSourceCodeFiles,
+            externalResources: lectureExternalResources,
+          };
+
+          return enhancedLecture;
+        }) || [],
     }));
   };
 
   const handlePreviewSelection = (mode: "instructor" | "student"): void => {
     const enhancedLecture = createEnhancedLectureForPreview();
-    
+
     let detectedContentType: string;
-    if (ContentTypeDetector && typeof ContentTypeDetector.detectLectureContentType === 'function') {
-      detectedContentType = ContentTypeDetector.detectLectureContentType(enhancedLecture);
+    if (
+      ContentTypeDetector &&
+      typeof ContentTypeDetector.detectLectureContentType === "function"
+    ) {
+      detectedContentType =
+        ContentTypeDetector.detectLectureContentType(enhancedLecture);
     } else {
-      detectedContentType = enhancedLecture.actualContentType || 'video';
+      detectedContentType = enhancedLecture.actualContentType || "video";
     }
 
     setPreviewMode(mode);
@@ -209,8 +296,11 @@ const LectureContentDisplay: React.FC<LectureContentDisplayProps> = ({
 
   const isArticleContent = (): boolean => {
     return (
-      !!(articleContent && articleContent.text && articleContent.text.trim() !== '') &&
-      !videoContent.selectedVideoDetails
+      !!(
+        articleContent &&
+        articleContent.text &&
+        articleContent.text.trim() !== ""
+      ) && !videoContent.selectedVideoDetails
     );
   };
 
@@ -237,13 +327,19 @@ const LectureContentDisplay: React.FC<LectureContentDisplayProps> = ({
   const VideoPreviewPage: React.FC = () => {
     const enhancedLecture = createEnhancedLectureForPreview();
     const enhancedSections = createEnhancedSections();
-    
-    const hasArticleContent = !!(articleContent && articleContent.text && articleContent.text.trim() !== '') && 
-      !videoContent.selectedVideoDetails;
+
+    const hasArticleContent =
+      !!(
+        articleContent &&
+        articleContent.text &&
+        articleContent.text.trim() !== ""
+      ) && !videoContent.selectedVideoDetails;
 
     const [activeItemId] = useState<string>(lecture.id);
     const [activeItemType] = useState<string>(
-      hasArticleContent ? "article" : previewContentType || enhancedLecture.actualContentType || "video"
+      hasArticleContent
+        ? "article"
+        : previewContentType || enhancedLecture.actualContentType || "video"
     );
 
     if (previewMode === "student") {
@@ -257,22 +353,24 @@ const LectureContentDisplay: React.FC<LectureContentDisplayProps> = ({
           sourceCodeFiles={globalSourceCodeFiles}
           externalResources={globalExternalResources}
           section={{
-            id: 'all-sections',
-            name: 'All Sections',
-            sections: enhancedSections
+            id: "all-sections",
+            name: "All Sections",
+            sections: enhancedSections,
           }}
         />
       );
     }
 
-    const currentSection = enhancedSections.find(section => section.id === sectionId) || {
+    const currentSection = enhancedSections.find(
+      (section) => section.id === sectionId
+    ) || {
       id: sectionId,
       name: "Section",
       lectures: [enhancedLecture],
       quizzes: [],
       assignments: [],
       codingExercises: [],
-      isExpanded: true
+      isExpanded: true,
     };
 
     return (
@@ -292,33 +390,31 @@ const LectureContentDisplay: React.FC<LectureContentDisplayProps> = ({
       {videoContent.selectedVideoDetails && (
         <div className="overflow-hidden border-b border-gray-400 mb-4">
           <div className="flex flex-row justify-between sm:flex-row">
-            <div className="flex items-center py-3">
-              <div className="w-20 h-16 bg-black rounded overflow-hidden mr-3 flex-shrink-0">
-                <img
-                  src="https://via.placeholder.com/160x120/000000/FFFFFF/?text=Video"
-                  alt={videoContent.selectedVideoDetails.filename}
-                  className="w-full h-full object-cover"
-                  onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
-                    const target = e.target as HTMLImageElement;
-                    target.src = "https://via.placeholder.com/160x120/000000/FFFFFF/?text=Video";
-                  }}
+            <div className="flex items-center">
+              <div className="w-28 h-20 mr-3 flex-shrink-0 shadow flex items-center justify-center">
+                  <ReactPlayer
+                  url={videoContent.selectedVideoDetails.url}
+                  width="100%"
+                  onDuration={setActualDuration}
                 />
               </div>
 
               <div>
-                <h3 className="text-sm font-semibold text-gray-800">
-                  {videoContent.selectedVideoDetails.filename}
-                </h3>
-                <p className="text-xs text-gray-500">
-                  {videoContent.selectedVideoDetails.duration}
-                </p>
-                <button
-                  onClick={onEditContent}
-                  className="text-[#6D28D2] hover:text-[#7D28D2] text-xs font-medium flex items-center mt-1"
-                >
-                  <Edit3 className="w-3 h-3 mr-1" /> Edit Content
-                </button>
-              </div>
+                  <h3 className="text-sm font-semibold text-gray-800">
+                    {videoContent.selectedVideoDetails.filename}
+                  </h3>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {actualDuration !== null
+                      ? formatTime(actualDuration)
+                      : videoContent.selectedVideoDetails.duration}
+                  </p>
+                  <button
+                    onClick={onEditContent}
+                    className="text-[#6D28D2] hover:text-[#7D28D2] text-xs font-medium flex items-center mt-2"
+                  >
+                    <Edit3 className="w-3 h-3 mr-1" /> Edit Content
+                  </button>
+                </div>
             </div>
 
             <div className="flex flex-col gap-4 justify-end items-center py-3">
@@ -330,30 +426,36 @@ const LectureContentDisplay: React.FC<LectureContentDisplayProps> = ({
                 >
                   Preview <ChevronDown className="ml-1 w-4 h-4" />
                 </button>
-         
 
                 {showPreviewDropdown && (
                   <div className="absolute mt-1 right-0 w-40 bg-white border border-gray-200 rounded-md shadow-lg z-50">
                     <ul>
-                      <li>
-                        <button
-                          onClick={() => handlePreviewSelection("instructor")}
-                          className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                          type="button"
-                        >
-                          As Instructor
-                        </button>
-                      </li>
-                      <Link href={`/preview/${courseId}/${lecture.id}`}>
-                      <li>
-                        <button
-                          // onClick={() => handlePreviewSelection("student")}
-                          className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                          type="button"
-                        >
-                          As Student
-                        </button>
-                      </li>
+                      <Link
+                        href={`/preview/lecture/${courseId}/${sectionId}/${lecture.id}`}
+                      >
+                        <li>
+                          <button
+                            // onClick={() => handlePreviewSelection("student")}
+                            className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                            type="button"
+                          >
+                            As Instructor
+                          </button>
+                        </li>
+                      </Link>
+
+                      <Link
+                        href={`/preview/lecture/${courseId}/${sectionId}/${lecture.id}`}
+                      >
+                        <li>
+                          <button
+                            // onClick={() => handlePreviewSelection("student")}
+                            className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                            type="button"
+                          >
+                            As Student
+                          </button>
+                        </li>
                       </Link>
                     </ul>
                   </div>
@@ -372,7 +474,9 @@ const LectureContentDisplay: React.FC<LectureContentDisplayProps> = ({
                       ? "bg-[#6D28D2]"
                       : "bg-gray-400"
                   }`}
-                  aria-pressed={videoContent.selectedVideoDetails.isDownloadable}
+                  aria-pressed={
+                    videoContent.selectedVideoDetails.isDownloadable
+                  }
                   aria-label={
                     videoContent.selectedVideoDetails.isDownloadable
                       ? "Disable downloading"
@@ -394,7 +498,7 @@ const LectureContentDisplay: React.FC<LectureContentDisplayProps> = ({
       )}
 
       {/* Article Content Display */}
-      {articleContent.text && articleContent.text.trim() !== "" && !videoContent.selectedVideoDetails && (
+      {lecture.notes && !videoContent.selectedVideoDetails && (
         <div className="overflow-hidden border-b border-gray-400 mb-4">
           <div className="flex flex-row justify-between sm:flex-row items-start">
             <div className="flex items-center py-3">
@@ -405,7 +509,7 @@ const LectureContentDisplay: React.FC<LectureContentDisplayProps> = ({
               <div>
                 <h3 className="text-sm font-semibold text-gray-800">Article</h3>
                 <p className="text-xs text-gray-500">
-                  {`${articleContent.text.length} characters`}
+                  {`${lecture.notes.length} characters`}
                 </p>
                 <button
                   onClick={() => {
@@ -419,10 +523,7 @@ const LectureContentDisplay: React.FC<LectureContentDisplayProps> = ({
                   <Edit3 className="w-3 h-3 mr-1" /> Edit Content
                 </button>
                 <button
-                  onClick={() => {
-                    // This would need to be handled by parent component
-                    console.log("Replace with video clicked");
-                  }}
+                  onClick={onEditContent}
                   className="text-[#6D28D2] hover:text-[#7D28D2] text-xs font-medium"
                 >
                   Replace With Video
@@ -444,28 +545,28 @@ const LectureContentDisplay: React.FC<LectureContentDisplayProps> = ({
                   <div className="absolute mt-1 right-0 w-40 bg-white border border-gray-200 rounded-md shadow-lg z-50">
                     <ul>
                       <li>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handlePreviewSelection("instructor");
-                          }}
-                          className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                          type="button"
+                        <Link
+                          href={`/preview/lecture/${courseId}/${sectionId}/${lecture.id}`}
                         >
-                          As Instructor
-                        </button>
+                          <button
+                            className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                            type="button"
+                          >
+                            As Instructor
+                          </button>
+                        </Link>
                       </li>
                       <li>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handlePreviewSelection("student");
-                          }}
-                          className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                          type="button"
+                        <Link
+                          href={`/preview/lecture/${courseId}/${sectionId}/${lecture.id}`}
                         >
-                          As Student
-                        </button>
+                          <button
+                            className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                            type="button"
+                          >
+                            As Student
+                          </button>
+                        </Link>
                       </li>
                     </ul>
                   </div>
@@ -478,17 +579,26 @@ const LectureContentDisplay: React.FC<LectureContentDisplayProps> = ({
 
       {/* Lecture Description */}
       {lecture.description && (
-        <div className="mb-4 border-b border-gray-400 pb-2">
+
+        <div>
+          <p className="text-gray-800 font-bold">Description</p>
+          <div className="mb-4 border-b border-gray-400 pb-2">
           <div
             className="text-gray-800 text-sm pt-1 pr-1 hover:outline-1 hover:outline-gray-400 border-gray-300 cursor-pointer"
             onClick={(e) => {
               e.stopPropagation();
               if (onToggleDescriptionEditor) {
-                onToggleDescriptionEditor(sectionId, lecture.id, lecture.description || "");
+                onToggleDescriptionEditor(
+                  sectionId,
+                  lecture.id,
+                  lecture.description || ""
+                );
+                descriptionExpansion?.open();
               }
             }}
             dangerouslySetInnerHTML={{ __html: lecture.description }}
           />
+        </div>
         </div>
       )}
 
@@ -560,17 +670,21 @@ const LectureContentDisplay: React.FC<LectureContentDisplayProps> = ({
             External Resources
           </h3>
           {currentLectureExternalResources.map((resource, index) => {
-            const resourceTitle = typeof resource.title === 'string' 
-              ? resource.title 
-              : resource.name || `Resource ${index + 1}`;
-              
+            const resourceTitle =
+              typeof resource.title === "string"
+                ? resource.title
+                : resource.name || `Resource ${index + 1}`;
+
             return (
               <div
                 key={`external-${resourceTitle}-${resource.lectureId}-${index}`}
                 className="flex justify-between items-center py-1"
               >
                 <div className="flex items-center text-gray-800">
-                  <SquareArrowOutUpRight size={13} className="mr-1 text-gray-800" />
+                  <SquareArrowOutUpRight
+                    size={13}
+                    className="mr-1 text-gray-800"
+                  />
                   <span className="text-sm text-gray-800">{resourceTitle}</span>
                 </div>
                 <button
@@ -595,8 +709,13 @@ const LectureContentDisplay: React.FC<LectureContentDisplayProps> = ({
           onClick={(e) => {
             e.stopPropagation();
             if (onToggleDescriptionEditor) {
-              onToggleDescriptionEditor(sectionId, lecture.id, lecture.description || "");
+              onToggleDescriptionEditor(
+                sectionId,
+                lecture.id,
+                lecture.description || ""
+              );
             }
+            descriptionExpansion?.open();
           }}
           className="flex items-center gap-2 py-1.5 sm:py-2 px-2 sm:px-4 text-xs sm:text-sm text-[#6D28D2] font-medium border border-[#6D28D2] rounded-sm hover:bg-gray-50"
         >
@@ -613,6 +732,8 @@ const LectureContentDisplay: React.FC<LectureContentDisplayProps> = ({
             if (onToggleAddResourceModal) {
               onToggleAddResourceModal(sectionId, lecture.id);
             }
+            resourceExpansion?.open();
+            console.log("Hey");
           }}
           className={`flex items-center ${
             !lecture.description ? "mt-2" : ""

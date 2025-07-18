@@ -9,18 +9,27 @@ export default function AdvancedInformationPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const courseId = searchParams?.get("courseId");
+  const title = searchParams?.get("edit");
 
   // When the form is saved, redirect to curriculum step with courseId
   const handleSaveNext = useCallback(() => {
     if (courseId) {
-      router.push(`/instructor/create-new-course/curriculum?courseId=${courseId}`);
+      router.push(
+        title?.trim() ? `/instructor/create-new-course/curriculum?courseId=${courseId}&edit=${title}`:
+        `/instructor/create-new-course/curriculum?courseId=${courseId}`
+      );
     }
   }, [router, courseId]);
 
   return (
-    <div className="bg-white w-full xl:max-w-[90rem] p-1 mx-auto min-h-screen">
+    <div className="bg-white w-full xl:max-w-[90rem] mx-auto min-h-screen">
       <CourseCreationTabs />
-      <AdvanceInformationForm onSaveNext={handleSaveNext} courseId={courseId ? Number(courseId) : undefined} />
+      <div className="px-4">
+        <AdvanceInformationForm
+          onSaveNext={handleSaveNext}
+          courseId={courseId ? Number(courseId) : undefined}
+        />
+      </div>
     </div>
   );
-} 
+}

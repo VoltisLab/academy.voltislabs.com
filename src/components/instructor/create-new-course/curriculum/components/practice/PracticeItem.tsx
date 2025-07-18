@@ -12,9 +12,10 @@ import {
 import { Lecture } from "@/lib/types";
 import CodeEditorComponent from "../code/CodeEditor";
 import { DeleteItemFn } from "../section/SectionItem";
+import { CourseSectionAssignnments } from "@/api/course/section/queries";
 
 interface PracticeItemProps {
-  lecture: Lecture;
+  lecture: CourseSectionAssignnments;
   lectureIndex: number;
   totalLectures: number;
   sectionId: string;
@@ -158,7 +159,7 @@ const PracticeItem: React.FC<PracticeItemProps> = ({
               <input
                 ref={nameInputRef}
                 type="text"
-                value={lecture.name || ""}
+                value={lecture.title || ""}
                 onChange={(e) =>
                   updateLectureName(sectionId, lecture.id, e.target.value)
                 }
@@ -173,7 +174,7 @@ const PracticeItem: React.FC<PracticeItemProps> = ({
               />
             ) : (
               <span className="font-medium text-gray-800 flex-1 truncate">
-                {lecture.name || "Coding Practice"}
+                {lecture.title || "Coding Practice"}
               </span>
             )}
           </div>
@@ -251,11 +252,11 @@ const PracticeItem: React.FC<PracticeItemProps> = ({
           <div className="p-4 bg-white border-t border-gray-200">
             <div className="prose prose-sm max-w-none">
               <h3 className="text-lg font-medium text-gray-900 mb-2">
-                {lecture.name || "Coding Practice"}
+                {lecture.title || "Coding Practice"}
               </h3>
 
-              {lecture.description ? (
-                <div className="text-gray-700 mb-4">{lecture.description}</div>
+              {lecture.title ? (
+                <div className="text-gray-700 mb-4">{lecture.title}</div>
               ) : (
                 <div className="text-gray-500 italic mb-4">
                   No description provided for this practice exercise.
@@ -271,10 +272,11 @@ const PracticeItem: React.FC<PracticeItemProps> = ({
                   Start Coding
                 </button>
 
-                {lecture.externalResources &&
-                  lecture.externalResources.length > 0 && (
+                {lecture.title &&
+                  lecture && (
                     <a
-                      href={lecture.externalResources[0].url}
+                      // href={lecture?.externalResources[0].url}
+                      href="#"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
@@ -293,10 +295,10 @@ const PracticeItem: React.FC<PracticeItemProps> = ({
       <CodeEditorComponent
         isOpen={isEditorOpen}
         onClose={() => setIsEditorOpen(false)}
-        initialCode={lecture.code || ""}
-        language={lecture.codeLanguage || "javascript"}
-        title={`${lecture.name || "Practice"} - Code Editor`}
-        instructions={lecture.description}
+        initialCode={lecture.title || ""}
+        language={lecture.title || "javascript"}
+        title={`${lecture.title || "Practice"} - Code Editor`}
+        instructions={lecture.title}
         sectionId={sectionId}
         lectureId={lecture.id}
         onSaveCode={handleSaveCode}

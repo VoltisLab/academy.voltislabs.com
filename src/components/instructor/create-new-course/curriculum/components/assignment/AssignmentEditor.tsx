@@ -1,38 +1,88 @@
-"use client"
-import React, { useState, useRef, JSX, useEffect } from "react";
-import { ArrowLeft } from "lucide-react";
+"use client";
+import React, { useState, useCallback, useEffect, JSX, useMemo } from "react";
+import { CheckCircle, ChevronLeft, XCircle } from "lucide-react";
 import SolutionsTab from "./SolutionsTab";
 import QuestionsTab from "./QuestionsTab";
 import BasicInfoTab from "./BasicInfoTab";
 import InstructionsTab from "./InstructionsTab";
 import toast from "react-hot-toast";
 import { ExtendedLecture } from "@/lib/types";
-import AssignmentPreview from "./AssignmentPreview";
 import { useAssignment } from "@/context/AssignmentDataContext";
 import { UpdateAssignmentVariables } from "@/api/assignment/mutation";
 import { useAssignmentService } from "@/services/useAssignmentService";
 import { useParams, useRouter } from "next/navigation";
-import { GET_ASSIGNMENT, GetAssignmentData, GetAssignmentVariables } from "@/api/assignment/query";
+import { FiMenu } from "react-icons/fi";
+import { GetAssignmentQuery } from "@/api/assignment/query";
+import AssignmentPreview from "./AssignmentPreview";
 
-
-// Types
-interface AssignmentQuestion {
+export interface AssignmentQuestion {
   id: string;
   content: string;
   order: number;
   solution?: {
-    text?:string;
-  } // Optional solution field for answers
+    text?: string;
+  };
 }
+
+export type Video = {
+  id: string;
+  filename: string;
+  type: "Video";
+  status: "success" | "failed" | "uploading" | "processing";
+  url?: string;
+  date: string;
+};
 
 interface AssignmentEditorProps {
   initialData?: ExtendedLecture;
   onClose?: () => void;
   onSave: (data: ExtendedLecture) => void;
-  newAssinment?: number
+  newAssinment?: number;
 }
 
-// Main Assignment Editor Component
+const initialLibraryVideos: Video[] = [
+  {
+    id: "5",
+    filename: "Aetflix.mp4",
+    type: "Video",
+    status: "success",
+    date: "05/08/2025",
+    url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+  },
+  {
+    id: "4",
+    filename: "Betflix.mp4",
+    type: "Video",
+    status: "success",
+    date: "05/08/2025",
+    url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
+  },
+  {
+    id: "3",
+    filename: "f.webm",
+    type: "Video",
+    status: "success",
+    date: "05/08/2025",
+    url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+  },
+  {
+    id: "2",
+    filename: "detflix.mp4",
+    type: "Video",
+    status: "success",
+    date: "05/07/2025",
+    url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4",
+  },
+  {
+    id: "1",
+    filename: "cetflix.mp4",
+    type: "Video",
+    status: "success",
+    date: "05/07/2025",
+    url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4",
+  },
+];
+
 const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
   initialData,
   newAssinment,
@@ -40,87 +90,67 @@ const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
   onSave,
 }) => {
   const [activeTab, setActiveTab] = useState("basic-info");
-  const router = useRouter()
-  
+  const router = useRouter();
   const params = useParams();
-    const id = params?.id; 
-  // const [assignmentData, setAssignmentData] = useState<ExtendedLecture>({
-  //   ...(initialData || {
-  //     id: Date.now().toString(),
-  //     name: "",
-  //     description: "",
-  //     captions: "",
-  //     lectureNotes: "",
-  //     attachedFiles: [],
-  //     videos: [],
-  //     contentType: "assignment",
-  //     isExpanded: false,
-  //     assignmentTitle: "",
-  //     assignmentDescription: "",
-  //     estimatedDuration: 0,
-  //     durationUnit: "minutes",
-  //     assignmentInstructions: "",
-  //     assignmentQuestions: [],
-  //     isPublished: false,
-  //   }),
+  const id = params?.id;
 
-  //   // Make sure isPublished is never undefined
-  //   isPublished:
-  //     initialData?.isPublished !== undefined ? initialData.isPublished : false,
-  // });
+  const { assignmentData, setAssignmentData } = useAssignment();
+  const { getAssignment } = useAssignmentService();
 
   const [showPublishModal, setShowPublishModal] = useState(false);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [hasAttemptedPublish, setHasAttemptedPublish] = useState(false);
-  const [showValidation, setShowValidation] = useState(false);
-  const [publishSuccess, setPublishSuccess] = useState(false);
-  const [isEditingInstructions, setIsEditingInstructions] = useState(true);
-  const [assignmentStatus, setAssignmentStatus] = useState<
-    "overview" | "assignment" | "summary/feedback"
-  >("overview");
+  const [publishSuccess, setPublishSuccess] = useState(
+    assignmentData?.isPublished
+  );
 
-  const { assignmentData, setAssignmentData } = useAssignment();
-  
+  console.log("Assignment Data:", assignmentData.isPublished);
+  const [libraryVideos, setLibraryVideos] =
+    useState<Video[]>(initialLibraryVideos);
+  const [sortByNameAsc, setSortByNameAsc] = useState(false);
+  const [sortByDateAsc, setSortByDateAsc] = useState(false);
+  const [showTab, setShowTab] = useState(false);
 
+  const toggleSortByName = () => {
+    setSortByNameAsc((prev) => !prev);
+    setSortByDateAsc(false);
+  };
 
-
-
-  
+  const toggleSortByDate = () => {
+    setSortByDateAsc((prev) => !prev);
+    setSortByNameAsc(false);
+  };
 
   const validateAssignment = () => {
     const errors: string[] = [];
-
-    // Basic Info validation
-    if (!assignmentData.assignmentTitle?.trim()) {
-      errors.push("title");
-    }
-    if (!assignmentData.assignmentDescription?.trim()) {
-      errors.push("description");
-    }
+    if (!assignmentData.title?.trim()) errors.push("title");
+    if (!assignmentData.description?.trim()) errors.push("description");
     if (
       !assignmentData.estimatedDuration ||
       assignmentData.estimatedDuration <= 0
-    ) {
+    )
       errors.push("duration");
-    }
-
-    // Questions validation
+    // Validate questions and answers
     if (!assignmentData.assignmentQuestions?.length) {
       errors.push("questions");
     } else {
-      // Check all questions have answers
-      const unansweredQuestions = assignmentData.assignmentQuestions.filter(
-        (q) => !q.solution?.text?.trim()
-      );
-      if (unansweredQuestions.length > 0) {
-        errors.push("answers");
-      }
-    }
+      // Check each question for valid answers
+      const hasInvalidAnswers = assignmentData.assignmentQuestions.some(
+        (question) => {
+          // If no solutions array or empty solutions array
+          if (!question.questionSolutions?.length) return true;
 
-    // Instructions validation
-    if (!assignmentData.assignmentInstructions?.trim()) {
-      errors.push("instructions");
+          // Check each solution in the question
+          return question.questionSolutions.some((solution) => {
+            // Consider empty string or whitespace as invalid
+            return !solution.text?.trim();
+          });
+        }
+      );
+
+      if (hasInvalidAnswers) errors.push("answers");
     }
+    if (!assignmentData.instructions?.trim()) errors.push("instructions");
 
     setValidationErrors(errors);
     return errors.length === 0;
@@ -128,173 +158,103 @@ const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
 
   const handlePublishClick = () => {
     setHasAttemptedPublish(true);
-    // if (validateAssignment()) {
     setShowPublishModal(true);
-    // }
   };
-  const {updateAssignment, getAssignment} = useAssignmentService()
-  console.log("assignmentment===", assignmentData)
 
-const fetchAssignment: () => Promise<void> = async () => {
+  const fetchAssignment = useCallback(async () => {
     if (!id) return;
     try {
       const data = await getAssignment({ id: Number(id) });
-      setAssignmentData(
-              {
-              id: data?.id,
-              name: "",
-              description: "hfgfgfg",
-              captions: "jjjjjj",
-              lectureNotes: "",
-              attachedFiles: [],
-              videos: [],
-              contentType: "assignment",
-              isExpanded: false,
-              assignmentTitle: data?.title,
-              assignmentDescription: data?.description,
-              estimatedDuration: data?.estimatedDurationMinutes,
-              durationUnit: "minutes",
-              assignmentInstructions: data?.description,
-              assignmentQuestions: data?.questions,
-              isPublished: false,
-              solution: data?.questionSolutions
-              }
-          )
-    } catch (err) {
-      // Error already handled inside getAssignment
-    }
-  };
+      console.log(data);
+      setAssignmentData({
+        id: data?.id,
+        attachedFiles: [],
+        contentType: "assignment",
+        isExpanded: false,
+        title: data?.title,
+        description: data?.description,
+        estimatedDuration: data?.estimatedDurationMinutes,
+        durationUnit: "minutes",
+        instructionalVideo: data?.instructionVideo,
+        instructionalResource: data?.instructionDownloadableResource,
+        instructions: data?.instructions,
+        assignmentQuestions: data?.questions,
+        maxPoints: data?.maxPoints,
+        solutionVideo: data?.solutionVideo,
+        solutionResource: data?.solutionDownloadableResource,
+        dueDate: data?.dueDate,
+        createdAt: data?.createdAt,
+        isPublished: data?.isPublished,
+      });
+    } catch (err) {}
+  }, [getAssignment, id, setAssignmentData]);
+
   useEffect(() => {
-  if (id) {
-    fetchAssignment();
-  }
-}, [id]);
-  const handleConfirmPublish = async() => {
+    if (id) fetchAssignment();
+  }, [id]);
+  const [isPublishing, setIsPublishing] = useState(false);
+  const { updateAssignment } = useAssignmentService();
+
+  const handleConfirmPublish = async () => {
     if (!validateAssignment()) {
-      
       setShowPublishModal(false);
       return;
     }
 
-    const publishedData = { ...assignmentData, isPublished: true };
-    const variables: UpdateAssignmentVariables = {
-        assignmentId: Number(newAssinment),
-        title: publishedData.assignmentTitle,
-        description: publishedData.assignmentDescription,
-        estimatedDurationMinutes: publishedData.estimatedDuration,
-        instructions: publishedData.assignmentInstructions,
-        resourceUrl: publishedData.instructionalResource?.url,
-        videoUrl: publishedData.instructionalVideo?.url
+    setIsPublishing(true);
+    try {
+      // const publishedData = { ...assignmentData, isPublished: true };
+      const variables: UpdateAssignmentVariables = {
+        assignmentId: Number(id),
+        isPublished: true,
       };
 
-    await updateAssignment(variables);
-    onSave(publishedData);
-    setShowPublishModal(false);
-    setPublishSuccess(true);
+      await updateAssignment(variables);
+      await fetchAssignment();
+      setPublishSuccess(true);
+      toast.success("Assignment published successfully");
+    } catch (error) {
+      toast.error("Failed to publish assignment");
+    } finally {
+      setIsPublishing(false);
+      setShowPublishModal(false);
+    }
   };
 
   const handleErrorClick = (errorType: string) => {
-    // Immediately remove just this error from validationErrors
     setValidationErrors((prev) => prev.filter((e) => e !== errorType));
-
-    console.log("Error clicked:", errorType);
-
-    // showValidationErrors();
-
-    // Determine which tab to navigate to
-    let targetTab = "basic-info";
-    switch (errorType) {
-      case "title":
-      case "description":
-      case "duration":
-        targetTab = "basic-info";
-        break;
-      case "questions":
-        targetTab = "questions";
-        break;
-      case "answers":
-        targetTab = "solutions";
-        break;
-      case "instructions":
-        targetTab = "instructions";
-        break;
-    }
-
-    // Navigate to the tab
-    setActiveTab(targetTab);
-
-    // Optional: Scroll to top of content area
-    const contentArea = document.querySelector(".flex-1.overflow-auto");
-    if (contentArea) {
-      contentArea.scrollTo({ top: 0, behavior: "smooth" });
-    }
+    const tabMap: Record<string, string> = {
+      title: "basic-info",
+      description: "basic-info",
+      duration: "basic-info",
+      questions: "questions",
+      answers: "solutions",
+      instructions: "instructions",
+    };
+    setActiveTab(tabMap[errorType] || "basic-info");
+    document
+      .querySelector(".flex-1.overflow-auto")
+      ?.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const showValidationErrors = () => {
-    const errorMessages: JSX.Element[] = [];
-
-    if (validationErrors.includes("title")) {
-      errorMessages.push(
-        <ErrorAlert
-          key="title"
-          message="You need to add a title"
-          errorType="title"
-        />
-      );
-    }
-    if (validationErrors.includes("description")) {
-      errorMessages.push(
-        <ErrorAlert
-          key="description"
-          message="You need to have a description"
-          errorType="description"
-        />
-      );
-    }
-    if (validationErrors.includes("duration")) {
-      errorMessages.push(
-        <ErrorAlert
-          key="duration"
-          message="You need to estimate the duration"
-          errorType="duration"
-        />
-      );
-    }
-    if (validationErrors.includes("questions")) {
-      errorMessages.push(
-        <ErrorAlert
-          key="questions"
-          message="You need to have at least one question"
-          errorType="questions"
-        />
-      );
-    }
-    if (validationErrors.includes("answers")) {
-      errorMessages.push(
-        <ErrorAlert
-          key="answers"
-          message="You need to have answers for all questions"
-          errorType="answers"
-        />
-      );
-    }
-    if (validationErrors.includes("instructions")) {
-      errorMessages.push(
-        <ErrorAlert
-          key="instructions"
-          message="You need to add assignment instructions"
-          errorType="instructions"
-        />
-      );
-    }
-
-    return errorMessages;
+  const errorMessagesMap: Record<string, string> = {
+    title: "You need to add a title",
+    description: "You need to have a description",
+    duration: "You need to estimate the duration",
+    questions: "You need to have at least one question",
+    answers: "You need to have answers for all questions",
+    instructions: "You need to add assignment instructions",
   };
 
-  // Only show success if all errors are fixed AND we've attempted validation
-  const showSuccess = showValidation && validationErrors.length === 0;
+  const showValidationErrors = () =>
+    validationErrors.map((type) => (
+      <ErrorAlert
+        key={type}
+        message={errorMessagesMap[type]}
+        errorType={type}
+      />
+    ));
 
-  // ErrorAlert component
   const ErrorAlert = ({
     errorType,
     message,
@@ -304,69 +264,35 @@ const fetchAssignment: () => Promise<void> = async () => {
   }) => (
     <div className="border-l-4 border-red-500 bg-red-50 p-4 mb-2">
       <div className="flex items-center">
-        <div className="flex-shrink-0">
-          <svg
-            className="h-5 w-5 text-red-500"
-            fill="currentColor"
-            viewBox="0 0 20 20"
+        <XCircle className="h-5 w-5 text-red-500" />
+
+        <p className="ml-3 text-sm text-red-700">
+          {message}.{" "}
+          <button
+            onClick={() => handleErrorClick(errorType)}
+            className="font-medium text-red-700 hover:text-red-600 underline"
           >
-            <path
-              fillRule="evenodd"
-              d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-              clipRule="evenodd"
-            />
-          </svg>
-        </div>
-        <div className="ml-3">
-          <p className="text-sm text-red-700">
-            {message}.{" "}
-            <button
-              onClick={() => handleErrorClick(errorType)}
-              className="font-medium text-red-700 hover:text-red-600 underline"
-            >
-              Click here to fix it
-            </button>
-          </p>
-        </div>
+            Click here to fix it
+          </button>
+        </p>
       </div>
     </div>
   );
 
-  // SuccessAlert component
   const SuccessAlert = () => (
     <div className="border-l-4 border-green-500 bg-green-50 p-4 mb-2">
       <div className="flex items-center">
-        <div className="flex-shrink-0">
-          <svg
-            className="h-5 w-5 text-green-500"
-            fill="currentColor"
-            viewBox="0 0 20 20"
-          >
-            <path
-              fillRule="evenodd"
-              d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-              clipRule="evenodd"
-            />
-          </svg>
-        </div>
-        <div className="ml-3">
-          <p className="text-sm text-green-700">
-            All requirements are met! Your assignment is now published.
-          </p>
-        </div>
+        <CheckCircle className="h-5 w-5 text-green-500" />
+
+        <p className="ml-3 text-sm text-green-700">
+          All requirements are met! Your assignment is now published.
+        </p>
       </div>
     </div>
   );
 
   const handleDataChange = (field: string, value: any) => {
-    setAssignmentData((prev: any) => ({
-      ...prev,
-      [field]: value,
-    }));
-  };
-
-  const handleSave = () => {
-    onSave(assignmentData);
+    setAssignmentData((prev: any) => ({ ...prev, [field]: value }));
   };
 
   const tabs = [
@@ -376,7 +302,7 @@ const fetchAssignment: () => Promise<void> = async () => {
     { id: "solutions", label: "Solutions" },
   ];
 
-  const renderTabContent = () => {
+  const renderTabContent = useCallback(() => {
     switch (activeTab) {
       case "basic-info":
         return (
@@ -384,7 +310,7 @@ const fetchAssignment: () => Promise<void> = async () => {
             fetchAssignment={fetchAssignment}
             data={assignmentData}
             onChange={handleDataChange}
-            onSave={() => console.log("Basic info saved", assignmentData)}
+            onSave={() => {}}
           />
         );
       case "instructions":
@@ -393,58 +319,73 @@ const fetchAssignment: () => Promise<void> = async () => {
             fetchAssignment={fetchAssignment}
             data={assignmentData}
             onChange={handleDataChange}
-            isEditing={isEditingInstructions}
-            onEditToggle={setIsEditingInstructions}
-            hasSubmitted={Boolean(assignmentData.assignmentInstructions)}
+            hasSubmitted={!!assignmentData.instructions}
+            libraryVideos={libraryVideos}
+            setLibraryVideos={setLibraryVideos}
+            sortByNameAsc={sortByNameAsc}
+            sortByDateAsc={sortByDateAsc}
+            toggleSortByName={toggleSortByName}
+            toggleSortByDate={toggleSortByDate}
           />
         );
       case "questions":
         return (
-          <QuestionsTab     fetchAssignment={fetchAssignment} data={assignmentData} onChange={handleDataChange} assignmentId={newAssinment}  />
+          <QuestionsTab
+            fetchAssignment={fetchAssignment}
+            data={assignmentData}
+            onChange={handleDataChange}
+            assignmentId={newAssinment}
+          />
         );
       case "solutions":
         return (
           <SolutionsTab
-                      fetchAssignment={fetchAssignment}
-
-            data={assignmentData}
-            onChange={handleDataChange}
-            setActiveTab={setActiveTab}
-          />
-        );
-      default:
-        return (
-          <BasicInfoTab
             fetchAssignment={fetchAssignment}
             data={assignmentData}
             onChange={handleDataChange}
-            onSave={() => console.log("Basic info saved")}
+            setActiveTab={setActiveTab}
+            libraryVideos={libraryVideos}
+            setLibraryVideos={setLibraryVideos}
+            sortByNameAsc={sortByNameAsc}
+            sortByDateAsc={sortByDateAsc}
+            toggleSortByName={toggleSortByName}
+            toggleSortByDate={toggleSortByDate}
           />
         );
+      default:
+        return null;
     }
-  };
+  }, [
+    activeTab,
+    assignmentData,
+    fetchAssignment,
+    handleDataChange,
+    newAssinment,
+    sortByNameAsc,
+    sortByDateAsc,
+  ]);
 
   return (
-    <div className="fixed inset-0 bg-white z-50 flex flex-col px-20">
+    <div className=" bg-white z-50 flex flex-col max-w-7xl mx-auto">
       {/* Top Bar */}
-      <div className="border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-        <div className=" gap-4 w-full">
+      <div className="border-b border-gray-200 px-2 md:px-6 py-2 md:py-4 flex items-center justify-between">
+        <div className="gap-4 w-full">
           <button
             onClick={() => router.back()}
-            className="flex items-center gap-2 py-1.5 px-2 hover:bg-purple-100 font-bold rounded-md text-[#6d28d2] hover:text-purple-800 cursor-pointer transition"
+            className="flex items-center gap-2 py-2 px-2 hover:bg-[rgba(108,40,210,0.125)] font-bold rounded-md text-[#6d28d2] cursor-pointer transition text-sm"
           >
-            <ArrowLeft className="w-4 h-4" />
+            <ChevronLeft className="w-4 h-4" />
             Back to curriculum
           </button>
 
-          <div className="flex items-center justify-between w-full">
-            <h1 className="text-3xl font-bold text-gray-900">
+          <div className="flex items-center justify-between w-full gap-1">
+            <h1 className="text-xl md:text-3xl font-bold text-gray-900">
               Create Assignment
             </h1>
             <button
               onClick={handlePublishClick}
               disabled={assignmentData.isPublished}
-              className="px-6 py-2 bg-[#6d28d2] text-white cursor-pointer rounded-md hover:bg-purple-600 disabled:bg-purple-300 disabled:cursor-not-allowed transition"
+              className="px-4 py-2 bg-[#6d28d2] text-white cursor-pointer rounded-md hover:bg-purple-600 disabled:bg-purple-300 disabled:cursor-not-allowed transition font-bold text-sm"
             >
               Publish
             </button>
@@ -453,28 +394,31 @@ const fetchAssignment: () => Promise<void> = async () => {
       </div>
 
       {/* Validation Errors */}
-      {hasAttemptedPublish && (
-        <div className="px-6 py-2">
-          {validationErrors.length > 0
-            ? showValidationErrors()
-            : publishSuccess && <SuccessAlert />}
-        </div>
-      )}
+      {assignmentData.isPublished && <SuccessAlert />}
+
+      <button
+        onClick={() => setShowTab(!showTab)}
+        className={`inline-flex items-center gap-2 py-2 px-2 hover:bg-[rgba(108,40,210,0.125)] font-bold rounded-md text-[#6d28d2] cursor-pointer transition text-sm w-max md:mx-6 mx-2 lg:hidden`}
+      >
+        <FiMenu size={25} />
+      </button>
 
       {/* Main Content */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden lg:mt-10 flex-col lg:flex-row">
         {/* Left Sidebar */}
-        <div className="w-64 ">
-          <nav className="p-4 space-y-1">
+        <div
+          className={`w-full lg:w-64 ${showTab ? "block" : "hidden"} lg:block`}
+        >
+          <nav className="py-4 px-2 md:px-6 space-y-1">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`w-full text-left px-3 py-2 text-sm ${
+                className={`w-full text-left px-4 py-2 text-sm border-l-4  ${
                   activeTab === tab.id
-                    ? "text-gray-800 border-l-4 border-gray-800"
-                    : "text-gray-800"
-                } hover:bg-gray-100`}
+                    ? "text-gray-800 border-gray-800"
+                    : "text-gray-800 border-transparent"
+                } hover:bg-gray-100 transition`}
               >
                 {tab.label}
               </button>
@@ -500,27 +444,27 @@ const fetchAssignment: () => Promise<void> = async () => {
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => setShowPublishModal(false)}
-                className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                className="px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-md transition"
               >
                 Cancel
               </button>
               <button
+                disabled={isPublishing}
                 onClick={handleConfirmPublish}
-                className="px-4 py-2 bg-[#6d28d2] text-white rounded-md hover:bg-purple-700"
+                className="px-4 py-2 bg-[#6d28d2] text-white rounded-md hover:bg-purple-700 disabled:bg-purple-300 disabled:cursor-not-allowed transition cursor-pointer"
               >
-                Publish
+                {isPublishing ? "Publishing..." : "Publish"}
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* {assignmentData.isPublished && (
-        <AssignmentPreview
-          setAssignmentStatus={setAssignmentStatus}
-          assignmentData={assignmentData}
-        />
-      )} */}
+      {assignmentData.isPublished && (
+        <div className="fixed top-0 left-0 right-0 bg-white p-4 shadow-md size-full">
+          <AssignmentPreview assignmentData={assignmentData} />
+        </div>
+      )}
     </div>
   );
 };

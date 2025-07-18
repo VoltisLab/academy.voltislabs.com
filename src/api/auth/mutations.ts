@@ -70,3 +70,39 @@ export const VERIFY_TOKEN_MUTATION = gql`
   }
 `;
 
+export const GOOGLE_LOGIN_MUTATION = gql`
+  mutation GoogleLogin($credential: String!) {
+    loginWithGoogle(credential: $credential) {
+      success
+      token
+      refreshToken
+      user {
+        id
+        email
+        firstName
+        lastName
+        isInstructor
+      }
+      message
+    }
+  }
+`;
+
+export const SOCIAL_AUTH_MUTATION = gql`
+  mutation SocialAuth($accessToken: String!) {
+    socialAuth(accessToken: $accessToken) {
+      success
+      token
+      refreshToken
+      user {
+        id
+        email
+        firstName
+        lastName
+        isInstructor
+      }
+      errors
+    }
+  }
+`;
+

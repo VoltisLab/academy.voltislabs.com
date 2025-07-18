@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Trash2, Edit3, ChevronDown, ChevronUp, X, Plus } from "lucide-react";
+
+import Link from "next/link";
 import {
   Lecture,
   EnhancedLecture,
@@ -20,9 +22,14 @@ import toast, { LoaderIcon } from "react-hot-toast";
 import { LectureType } from "./QuizPreview";
 import { DeleteItemFn } from "../section/SectionItem";
 import { ConfirmQuizDeleteModal } from "@/components/modals/DeleteConfirmationModal";
+import {
+  CourseSectionQuiz,
+  CourseSectionQuizQuestion,
+} from "@/api/course/section/queries";
 
 interface QuizItemProps {
-  lecture: Lecture;
+  fetchSectionData?: any;
+  lecture: CourseSectionQuiz;
   lectureIndex: number;
   newQuizId?: number; // For new quizzes
   totalLectures: number;
@@ -52,7 +59,7 @@ interface QuizItemProps {
     targetSectionId: string,
     targetLectureId?: string
   ) => void;
-  toggleContentSection: (sectionId: string, lectureId: string) => void;
+  toggleContentSection?: (sectionId: string, lectureId: string) => void;
   updateQuizQuestions?: (
     sectionId: string,
     quizId: number,
@@ -71,7 +78,7 @@ interface QuizItemProps {
   uploadedFiles?: Array<{ name: string; size: string; lectureId: string }>;
   sourceCodeFiles?: SourceCodeFile[];
   externalResources?: ExternalResourceItem[];
-  courseId?: number
+  courseId?: number;
 }
 
 interface Question {
@@ -91,6 +98,7 @@ export const generateNumericId = (): string => {
 };
 
 const QuizItem: React.FC<QuizItemProps> = ({
+  fetchSectionData,
   lecture,
   lectureIndex,
   newQuizId,
@@ -113,7 +121,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
   uploadedFiles = [],
   sourceCodeFiles = [],
   externalResources = [],
-  courseId
+  courseId,
 }) => {
   const lectureNameInputRef = useRef<HTMLInputElement>(null);
   const [expanded, setExpanded] = useState(false);
@@ -129,8 +137,8 @@ const QuizItem: React.FC<QuizItemProps> = ({
   >(null);
   const [showEditQuizForm, setShowEditQuizForm] = useState(false);
 
-  const [questions, setQuestions] = useState<Question[]>(
-    lecture.questions || []
+  const [questions, setQuestions] = useState<CourseSectionQuizQuestion[]>(
+    lecture?.questions || []
   );
   const [editingQuestionIndex, setEditingQuestionIndex] = useState<
     number | null
@@ -166,6 +174,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
 
       if (result?.deleteQuiz?.success) {
         toast.success("Quiz deleted successfully!");
+        await fetchSectionData();
         deleteLocalQuiz(sectionId, lecture.id);
         setShowConfirmModal(false);
       }
@@ -350,6 +359,8 @@ const QuizItem: React.FC<QuizItemProps> = ({
     try {
       if (onEditQuiz) {
         await onEditQuiz(sectionId, lecture.id, title, description);
+        await fetchSectionData();
+        setExpanded(false);
       }
     } catch (error) {
       throw error;
@@ -400,7 +411,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
   }, [editingLectureId, lecture.id]);
 
   useEffect(() => {
-    setQuestions(lecture.questions || []);
+    setQuestions(lecture?.questions || []);
   }, [lecture.questions]);
 
   // Add effect to close dropdown when clicking outside
@@ -431,7 +442,6 @@ const QuizItem: React.FC<QuizItemProps> = ({
     }
   };
 
-  
   const handleAddQuestion = async (question: Question) => {
     try {
       // Convert answers to backend-compatible format
@@ -452,13 +462,15 @@ const QuizItem: React.FC<QuizItemProps> = ({
         order: questions.length + 1,
         choices,
         questionType: "MC",
+        relatedLectureId: Number(question.relatedLecture?.id),
       });
+
+      await fetchSectionData();
 
       const newQuestionId = result?.addQuestionToQuiz?.question?.id;
       const newQuestionChoices =
         result?.addQuestionToQuiz?.question?.answerChoices;
 
-      
       if (!newQuestionId || !newQuestionChoices)
         throw new Error("No question ID or choices returned from backend");
 
@@ -472,11 +484,11 @@ const QuizItem: React.FC<QuizItemProps> = ({
         {
           ...question,
           id: newQuestionId.toString(),
-          answers: newAnswers, // Save updated answers with IDs
+          text: newAnswers, // Save updated answers with IDs
         },
       ];
 
-      setQuestions(newQuestions);
+      // setQuestions(newQuestions);
 
       toast.success("Question added successfully!");
       setShowQuestionForm(false);
@@ -490,6 +502,8 @@ const QuizItem: React.FC<QuizItemProps> = ({
     }
   };
 
+  // console.log("QuizItem questions:", lecture, sectionId);
+
   const handleDeleteQuestion = async (index: number) => {
     const questionId = questions[index]?.id;
     if (!questionId) return;
@@ -500,11 +514,12 @@ const QuizItem: React.FC<QuizItemProps> = ({
       });
 
       if (result?.deleteQuestion?.success) {
-        const newQuestions = questions.filter((_, idx) => idx !== index);
-        setQuestions(newQuestions);
-        if (updateQuizQuestions) {
-          updateQuizQuestions(sectionId, newQuizId as number, newQuestions);
-        }
+        await fetchSectionData();
+        // const newQuestions = questions.filter((_, idx) => idx !== index);
+        // setQuestions(newQuestions);
+        // if (updateQuizQuestions) {
+        //   updateQuizQuestions(sectionId, newQuizId as number, newQuestions);
+        // }
 
         toast.success("Question deleted successfully!");
       }
@@ -516,14 +531,11 @@ const QuizItem: React.FC<QuizItemProps> = ({
     }
   };
 
-  
   const handleUpdateQuestion = async (question: any, index: number) => {
     try {
-
       if (!question.id || isNaN(parseInt(question.id))) {
         throw new Error("Question ID is missing or invalid");
       }
-
 
       // Convert answers to choices format
       const choices = question.answers.map((answer: any, idx: number) => {
@@ -541,7 +553,13 @@ const QuizItem: React.FC<QuizItemProps> = ({
         questionId: Number(question.id),
         text: question.text,
         choices,
+        relatedLectureId: question.relatedLecture?.id
+          ? Number(question.relatedLecture.id)
+          : undefined,
+        removeRelatedLecture: !question.relatedLecture?.id,
       });
+
+      await fetchSectionData();
 
       if (result?.updateQuestion?.success) {
         const newQuestions = [...questions];
@@ -563,6 +581,8 @@ const QuizItem: React.FC<QuizItemProps> = ({
     setEditingQuestionIndex(null);
   };
 
+  console.log(lecture);
+
   const handleEditQuestion = (index: number) => {
     setEditingQuestionIndex(index);
     setShowQuestionForm(true);
@@ -570,12 +590,12 @@ const QuizItem: React.FC<QuizItemProps> = ({
     setExpanded(true);
   };
 
-  const handleQuestionSubmit = (question: any) => {
+  const handleQuestionSubmit = async (question: any) => {
     if (editingQuestionIndex !== null) {
       console.log(question.id);
-      handleUpdateQuestion(question, editingQuestionIndex);
+      await handleUpdateQuestion(question, editingQuestionIndex);
     } else {
-      handleAddQuestion(question);
+      await handleAddQuestion(question);
     }
   };
 
@@ -596,9 +616,9 @@ const QuizItem: React.FC<QuizItemProps> = ({
     }, 50);
   };
 
-  const quizData: QuizData = {
+  const quizData: CourseSectionQuiz = {
     id: lecture.id,
-    name: lecture.name || "New quiz",
+    title: lecture.title || "New quiz",
     description: lecture.description,
     questions: questions.map((q) => ({
       ...q,
@@ -609,72 +629,72 @@ const QuizItem: React.FC<QuizItemProps> = ({
   const isNewQuiz = questions.length === 0;
 
   // FIXED: Quiz preview page with proper resource handling
-  const QuizPreviewPage: React.FC = () => {
-    // Create enhanced sections with proper content type detection and resources
-    const enhancedSections = createEnhancedSections();
+  // const QuizPreviewPage: React.FC = () => {
+  //   // Create enhanced sections with proper content type detection and resources
+  //   const enhancedSections = createEnhancedSections();
 
-    console.log("📊 Quiz preview sections enhanced:", {
-      totalSections: enhancedSections.length,
-      totalLectures: enhancedSections.reduce(
-        (acc, section) => acc + (section.lectures?.length || 0),
-        0
-      ),
-      lecturesWithActualContentType: enhancedSections.reduce(
-        (acc, section) =>
-          acc +
-          (section.lectures?.filter(
-            (l: Lecture) => (l as EnhancedLecture).actualContentType
-          )?.length || 0),
-        0
-      ),
-      lecturesWithResources: enhancedSections.reduce(
-        (acc, section) =>
-          acc +
-          (section.lectures?.filter((l: Lecture) => {
-            const enhanced = l as EnhancedLecture;
-            return (
-              enhanced.lectureResources &&
-              (enhanced.lectureResources.uploadedFiles.length > 0 ||
-                enhanced.lectureResources.sourceCodeFiles.length > 0 ||
-                enhanced.lectureResources.externalResources.length > 0)
-            );
-          }).length || 0),
-        0
-      ),
-    });
+  //   console.log("📊 Quiz preview sections enhanced:", {
+  //     totalSections: enhancedSections.length,
+  //     totalLectures: enhancedSections.reduce(
+  //       (acc, section) => acc + (section.lectures?.length || 0),
+  //       0
+  //     ),
+  //     lecturesWithActualContentType: enhancedSections.reduce(
+  //       (acc, section) =>
+  //         acc +
+  //         (section.lectures?.filter(
+  //           (l: Lecture) => (l as EnhancedLecture).actualContentType
+  //         )?.length || 0),
+  //       0
+  //     ),
+  //     lecturesWithResources: enhancedSections.reduce(
+  //       (acc, section) =>
+  //         acc +
+  //         (section.lectures?.filter((l: Lecture) => {
+  //           const enhanced = l as EnhancedLecture;
+  //           return (
+  //             enhanced.lectureResources &&
+  //             (enhanced.lectureResources.uploadedFiles.length > 0 ||
+  //               enhanced.lectureResources.sourceCodeFiles.length > 0 ||
+  //               enhanced.lectureResources.externalResources.length > 0)
+  //           );
+  //         }).length || 0),
+  //       0
+  //     ),
+  //   });
 
-    return (
-      <StudentVideoPreview
-        videoContent={{
-          uploadTab: { selectedFile: null },
-          libraryTab: {
-            searchQuery: "",
-            selectedVideo: null,
-            videos: [],
-          },
-          activeTab: "uploadVideo",
-          selectedVideoDetails: null,
-        }}
-        articleContent={{ text: "" }}
-        setShowVideoPreview={setShowVideoPreview}
-        lecture={{
-          ...lecture,
-          contentType: "quiz",
-        }}
-        // FIXED: Pass both enhanced sections AND individual resource arrays
-        // This ensures resources are available regardless of how StudentVideoPreview expects them
-        uploadedFiles={uploadedFiles}
-        sourceCodeFiles={sourceCodeFiles}
-        externalResources={externalResources}
-        section={{
-          id: "all-sections",
-          name: "All Sections",
-          sections: enhancedSections, // Pass enhanced sections with proper content types and resources
-        }}
-        quizData={quizData}
-      />
-    );
-  };
+  //   return (
+  //     <StudentVideoPreview
+  //       videoContent={{
+  //         uploadTab: { selectedFile: null },
+  //         libraryTab: {
+  //           searchQuery: "",
+  //           selectedVideo: null,
+  //           videos: [],
+  //         },
+  //         activeTab: "uploadVideo",
+  //         selectedVideoDetails: null,
+  //       }}
+  //       articleContent={{ text: "" }}
+  //       setShowVideoPreview={setShowVideoPreview}
+  //       // lecture={{
+  //       //   ...lecture,
+  //       //   contentType: "quiz",
+  //       // }}
+  //       // FIXED: Pass both enhanced sections AND individual resource arrays
+  //       // This ensures resources are available regardless of how StudentVideoPreview expects them
+  //       uploadedFiles={uploadedFiles}
+  //       sourceCodeFiles={sourceCodeFiles}
+  //       externalResources={externalResources}
+  //       section={{
+  //         id: "all-sections",
+  //         name: "All Sections",
+  //         sections: enhancedSections, // Pass enhanced sections with proper content types and resources
+  //       }}
+  //       quizData={quizData}
+  //     />
+  //   );
+  // };
 
   if (showConfirmModal) {
     return (
@@ -709,7 +729,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
                 <input
                   ref={lectureNameInputRef}
                   type="text"
-                  value={lecture.name || ""}
+                  value={lecture.title || ""}
                   onChange={(e) =>
                     updateLectureName(sectionId, lecture.id, e.target.value)
                   }
@@ -723,7 +743,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
                 />
               ) : (
                 <h4 className="font-medium text-sm w-max shrink-0">
-                  {lecture.name || "New quiz"}
+                  {lecture.title || "New quiz"}
                 </h4>
               )}
             </div>
@@ -745,7 +765,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
                 <button
                   onClick={handleDeleteQuiz}
                   disabled={quizOperationLoading}
-                  className={`text-gray-500 hover:text-blue-600 p-1 transition-opacity cursor-pointer disabled:cursor-not-allowed ${
+                  className={`text-gray-500 hover:text-red-500 p-1 transition-opacity cursor-pointer disabled:cursor-not-allowed ${
                     quizOperationLoading ? "animate-pulse" : ""
                   }`}
                 >
@@ -867,7 +887,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
               <input
                 ref={lectureNameInputRef}
                 type="text"
-                value={lecture.name || ""}
+                value={lecture.title || ""}
                 onChange={(e) =>
                   updateLectureName(sectionId, lecture.id, e.target.value)
                 }
@@ -881,7 +901,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
               />
             ) : (
               <h4 className="font-medium text-sm w-max">
-                {lecture.name || "New quiz"}
+                {lecture.title || "New quiz"}
               </h4>
             )}
           </div>
@@ -942,9 +962,12 @@ const QuizItem: React.FC<QuizItemProps> = ({
             <QuizForm
               sectionId={sectionId}
               onEditQuiz={handleQuizEditSubmit}
-              onCancel={() => setShowEditQuizForm(false)}
+              onCancel={() => {
+                setShowEditQuizForm(false);
+                setExpanded(false);
+              }}
               isEdit={true}
-              initialTitle={lecture.name || ""}
+              initialTitle={lecture.title || ""}
               initialDescription={lecture.description || ""}
               quizId={Number(lecture.id)}
               setShowEditQuizForm={setShowEditQuizForm}
@@ -1072,22 +1095,23 @@ const QuizItem: React.FC<QuizItemProps> = ({
                     <div className="absolute mt-1 right-0 w-40 bg-white border border-gray-200 rounded-md shadow-lg z-50">
                       <ul>
                         <li>
-                          <button
-                            onClick={() => handlePreviewSelection("instructor")}
+                          {/* <Link> */}
+                          <Link
+                            href={`/preview/quiz/${courseId}/${sectionId}/${lecture.id}`}
                             className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                             type="button"
                           >
                             As Instructor
-                          </button>
+                          </Link>
                         </li>
                         <li>
-                          <button
-                            onClick={() => handlePreviewSelection("student")}
+                          <Link
+                            href={`/preview/quiz/${courseId}/${sectionId}/${lecture.id}`}
                             className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                             type="button"
                           >
                             As Student
-                          </button>
+                          </Link>
                         </li>
                       </ul>
                     </div>
@@ -1157,7 +1181,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
       )}
 
       {/* Show preview component when needed */}
-      {showVideoPreview && <QuizPreviewPage />}
+      {/* {showVideoPreview && <QuizPreviewPage />} */}
     </div>
   );
 };

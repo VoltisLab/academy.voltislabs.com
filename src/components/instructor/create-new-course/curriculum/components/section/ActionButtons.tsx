@@ -28,6 +28,7 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
         await onAddLecture(sectionId, 'video', lectureTitle.trim());
         setShowLectureForm(false);
         setLectureTitle("");
+        
       } catch (error) {
         console.error("Failed to add lecture:", error);
         // Error is already handled in the service with toast
@@ -132,7 +133,7 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
       <button
         onClick={() => handleButtonClick('coding-exercise')}
         className="inline-flex items-center text-xs font-medium text-[#6D28D2] rounded-md p-1 m-1 hover:bg-gray-200 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
-        disabled={formLoading || isLoading}
+        disabled
       >
         <Plus className="w-3 h-3 mr-1" />
         Coding Exercise

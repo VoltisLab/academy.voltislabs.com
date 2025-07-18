@@ -1,10 +1,12 @@
-import { gql } from '@apollo/client';
+import { gql } from "@apollo/client";
 
 export const GET_COURSE_SECTIONS = gql`
   query GetCourseSections($id: Int!) {
     courseSections(id: $id) {
       id
       order
+      title
+      description
       lectures {
         id
         videoUrl
@@ -12,6 +14,7 @@ export const GET_COURSE_SECTIONS = gql`
         notes
         duration
         description
+
         resources {
           id
           type
@@ -19,6 +22,22 @@ export const GET_COURSE_SECTIONS = gql`
           title
           createdAt
         }
+      }
+      course {
+    title
+        }
+      assignment {
+        title
+        id
+        isPublished
+      }
+      practiceSet {
+        id
+        title
+      }
+      codingExercises {
+        id
+        title
       }
       quiz {
         description
@@ -37,6 +56,8 @@ export const GET_COURSE_SECTIONS = gql`
           }
           relatedLecture {
             title
+            id
+            videoUrl
           }
         }
       }
@@ -48,6 +69,33 @@ export interface CourseSectionsVariables {
   id: number;
 }
 
+export interface CourseSectionAssignnments {
+  id: string;
+  title: string;
+  isPublished: boolean;
+}
+export interface CourseSectionQuiz {
+  id: string;
+  title: string;
+  description: string;
+  questions: CourseSectionQuizQuestion[];
+}
+
+export interface CourseSectionQuizQuestion {
+  id: string;
+  text: string;
+  order: number;
+  answerChoices: CourseSectionAnswerChoice[];
+  relatedLectureId: number;
+}
+
+export interface CourseSectionAnswerChoice {
+  id: string;
+  text: string;
+  order: number;
+  isCorrect: boolean;
+  explanation: string;
+}
 export interface Resource {
   id: string;
   type: string;
@@ -56,7 +104,7 @@ export interface Resource {
   createdAt: string;
 }
 
-export interface Lecture {
+export interface CourseSectionLecture {
   id: string;
   videoUrl: string;
   title: string;
@@ -69,7 +117,16 @@ export interface Lecture {
 export interface CourseSection {
   id: string;
   order: number;
-  lectures: Lecture[];
+  title: string;
+  quiz: CourseSectionQuiz[];
+  lectures: CourseSectionLecture[];
+  assignment: CourseSectionAssignnments[];
+  description: string;
+  codingExercises: CourseSectionAssignnments[];
+  practiceSet: CourseSectionAssignnments[];
+  course: {
+    title: string
+  }
 }
 
 export interface CourseSectionsResponse {
