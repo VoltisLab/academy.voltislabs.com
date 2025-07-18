@@ -24,21 +24,24 @@ const MyCourseList = () => {
       } = useCoursesData();
 
   useEffect(() => {
-    // Detect screen size and default to grid for small screens
-    const mediaQuery = window.matchMedia('(min-width: 768px)') // md breakpoint
-    setGrid(!mediaQuery.matches) // true if below md → grid, false if md+ → list
+  const mediaQuery = window.matchMedia('(min-width: 768px)');
 
-    const handleResize = () => {
-      setGrid(!window.matchMedia('(min-width: 768px)').matches)
+  const handleResize = () => {
+    if (!mediaQuery.matches) {
+      setGrid(true); // Always grid on small screens
     }
+    // Don't change state on desktop - let user control
+  };
 
-    // Update layout on screen resize
-    window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
-  }, [])
+  // On mount: force grid if small
+  handleResize();
+
+  window.addEventListener('resize', handleResize);
+  return () => window.removeEventListener('resize', handleResize);
+}, []);
 
   return (
-   <div className="flex flex-col gap-4 p-4">
+   <div className="flex flex-col gap-4 p-4 md:p-0 ">
   {/* Toggle */}
   <div className="hidden md:flex mb-4 w-full items-end justify-end ">
   <ViewToggle isGrid={grid} onToggle={setGrid} />
@@ -49,7 +52,7 @@ const MyCourseList = () => {
     <div
       className={
         grid
-          ? 'flex flex-wrap gap-10 items-center justify-center'
+          ? 'flex flex-wrap gap-4 items-center justify-center'
           : 'flex flex-col gap-4'
       }
     >
@@ -60,6 +63,7 @@ const MyCourseList = () => {
           title={course?.title}
           status={ course?.status }
           isPublic={false}
+          progressPercent={course?.status === "PUBLISHED" ? 100 : course?.status ==="DRAFT" ? 65 : 50}
           description={course?.description}
           editUrl={`/instructor/create-new-course/basic?edit=${course?.title}&id=${course?.id}`}
           isGrid={grid}
