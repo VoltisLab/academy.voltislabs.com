@@ -320,8 +320,8 @@ export default function AllCoursesPage() {
                     title={course.title}
                     date={new Date(course.createdAt).toLocaleDateString()}
                     description={course.description}
-                    image={course.banner?.url || "/education.jpg"}
-                    students={0} // You can add this data if available
+                    image={course.banner?.thumbnail || "/education.jpg"}
+                    students={0}
                   />
                 </motion.div>
               ))}
