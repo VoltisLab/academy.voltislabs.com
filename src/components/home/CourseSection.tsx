@@ -25,8 +25,6 @@ export default function CourseSection() {
     error,
   } = usePublishedCoursesData();
 
-  console.log(publishedCourses, loading);
-
   const [activeCategory, setActiveCategory] = useState<number | null>(null);
 
   useEffect(() => {

@@ -19,6 +19,7 @@ import { useRouter } from "next/navigation";
 import LogoutModal from "../../modals/LogoutModal";
 import { logout } from "@/api/auth/auth";
 import toast from "react-hot-toast";
+import { signOut } from "next-auth/react";
 // Add custom styles for mobile sidebar transitions with enhanced modern styling
 const customStyles = `
   @media (max-width: 767px) {
@@ -110,11 +111,10 @@ export default function InstructorSidebar() {
 
   // Logout handler (similar to student sidebar)
   const handleLogout = () => {
-    // Replace with your actual logout logic
     logout();
-    toast.success("Logging out... Please wait while we redirect you...")
+    toast.success("Logging out... Please wait while we redirect you...");
     setIsLogoutModalOpen(false);
-    router.push("/");
+    signOut({ callbackUrl: "/" });
   };
 
   // Mock functions for auth - replace with your actual implementations
