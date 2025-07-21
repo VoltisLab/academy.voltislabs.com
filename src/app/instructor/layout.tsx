@@ -4,7 +4,7 @@ import DashboardNavbar from "@/components/instructor/layout/DashboardNav";
 import Sidebar from "@/components/instructor/layout/Sidebar";
 import { LoadingProvider } from "@/context/LoadingContext";
 import { AsideProvider } from "@/context/showAsideContext";
-import { ReactNode, Suspense } from "react";
+import { ReactNode } from "react";
 import { Toaster } from 'react-hot-toast';
 
 

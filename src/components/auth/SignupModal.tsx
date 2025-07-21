@@ -7,10 +7,12 @@ import { useRouter } from "next/navigation";
 import { isAllowedDomain, isValidEmail, SignupModalProps, validatePassword } from "@/lib/utils";
 import { usePageLoading } from "@/hooks/UsePageLoading";
 import toast, { Toaster } from "react-hot-toast";
-import { GoogleOAuthProvider, useGoogleLogin } from "@react-oauth/google";
-
-
-const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "";
+import { signIn, useSession } from "next-auth/react";
+import type { Session } from "next-auth";
+// Extend the Session type to include accessToken
+interface SessionWithToken extends Session {
+  accessToken?: string;
+}
 
 const SignupModal: React.FC<SignupModalProps> = ({
   isOpen,
@@ -45,6 +47,7 @@ const SignupModal: React.FC<SignupModalProps> = ({
 
   const modalRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+  const { data: session, status } = useSession();
 
   useEffect(() => {
     // Function to handle outside clicks
@@ -103,6 +106,30 @@ const SignupModal: React.FC<SignupModalProps> = ({
     return () => clearInterval(timer);
   }, [codeExpiry]);
 
+  // When session changes and is authenticated, handle Google login
+  useEffect(() => {
+    const handleGoogleBackendLogin = async () => {
+      const sessionWithToken = session as SessionWithToken | null;
+      if (sessionWithToken && sessionWithToken.accessToken) {
+        try {
+          console.log("Google access token:", sessionWithToken.accessToken);
+          const backendResponse = await loginWithGoogle(sessionWithToken.accessToken);
+          console.log("Backend response:", backendResponse);
+          toast.success("Google sign-in and backend login successful!");
+          if (backendResponse.success) {
+            router.push(backendResponse.user?.isInstructor ? "/instructor" : "/dashboard");
+            return { success: true };
+          }
+        
+        } catch (error: any) {
+          console.error("Backend Google login error:", error);
+          toast.error(error?.message || "Backend Google login failed.");
+        }
+      }
+    };
+    handleGoogleBackendLogin();
+  }, [session as SessionWithToken | null]);
+
   // Toggle between instructor and student mode
   const toggleUserType = () => {
     setIsInstructor(!isInstructor);
@@ -113,38 +140,6 @@ const SignupModal: React.FC<SignupModalProps> = ({
     setShowPassword(!showPassword);
   };
   
-  // Handler for Google login success using access token
-  const googleLogin = useGoogleLogin({
-    flow: 'implicit',
-    onSuccess: async (tokenResponse) => {
-      console.log("Google token response:", tokenResponse);
-      try {
-        const result = await loginWithGoogle(tokenResponse.access_token);
-        console.log("result", result)
-        if (result.success) {
-          toast.success("Google sign-in successful!");
-          if (result.user?.isInstructor) {
-            router.push("/instructor");
-          } else {
-            router.push("/dashboard");
-          }
-        } else {
-          toast.error("Google sign-in failed.");
-        }
-      } catch (error: any) {
-        console.error("Google login error:", error);
-        toast.error(error?.message || "Google sign-in failed.");
-      }
-    },
-    onError: (error) => {
-      console.error("Google sign-in error:", error);
-      toast.error("Google sign-in was cancelled or failed.");
-    },
-    scope: 'openid email profile',
-  });
-
-
-  // Handler for Google login error
   const handleGoogleError = () => {
     toast.error("Google sign-in was cancelled or failed.");
   };
@@ -324,6 +319,8 @@ const handleSendCode = async () => {
       };
 
       const result = await login(credentials);
+
+      console.log("result from perform login ", result) 
 
       if (result.login?.success) {
         // onClose();
@@ -568,7 +565,7 @@ const handleSendCode = async () => {
           <div className="flex gap-4 mb-8">
         <button
           type="button"
-          onClick={() => googleLogin()}
+          onClick={() => signIn("google")}
           className="flex-1 border border-gray-300 rounded-md py-1 xl:py-2 font-bold px-1 md:px-3 flex justify-center items-center md:gap-2 gap-1 text-[#A1A1A1] text-[10px] xl:text-[12px]"
         >
           <div className="h-6 w-6 bg-white rounded">

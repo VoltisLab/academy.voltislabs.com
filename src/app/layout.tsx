@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Geist_Mono, Maven_Pro, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
-import AppProviders from "./providers";
+import ClientProviders from "./ClientProviders";
 
 // Fonts
 const mavenPro = Maven_Pro({
@@ -62,9 +62,9 @@ export default function RootLayout({
       <body
         className={`${mavenPro.variable} ${geistMono.variable} ${plusJakarta.variable} font-sans antialiased`}
       >
-        <AppProviders>
+        <ClientProviders>
           {children}
-        </AppProviders>
+        </ClientProviders>
       </body>
     </html>
   );

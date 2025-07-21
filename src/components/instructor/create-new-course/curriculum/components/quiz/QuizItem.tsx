@@ -628,74 +628,6 @@ const QuizItem: React.FC<QuizItemProps> = ({
 
   const isNewQuiz = questions.length === 0;
 
-  // FIXED: Quiz preview page with proper resource handling
-  // const QuizPreviewPage: React.FC = () => {
-  //   // Create enhanced sections with proper content type detection and resources
-  //   const enhancedSections = createEnhancedSections();
-
-  //   console.log("📊 Quiz preview sections enhanced:", {
-  //     totalSections: enhancedSections.length,
-  //     totalLectures: enhancedSections.reduce(
-  //       (acc, section) => acc + (section.lectures?.length || 0),
-  //       0
-  //     ),
-  //     lecturesWithActualContentType: enhancedSections.reduce(
-  //       (acc, section) =>
-  //         acc +
-  //         (section.lectures?.filter(
-  //           (l: Lecture) => (l as EnhancedLecture).actualContentType
-  //         )?.length || 0),
-  //       0
-  //     ),
-  //     lecturesWithResources: enhancedSections.reduce(
-  //       (acc, section) =>
-  //         acc +
-  //         (section.lectures?.filter((l: Lecture) => {
-  //           const enhanced = l as EnhancedLecture;
-  //           return (
-  //             enhanced.lectureResources &&
-  //             (enhanced.lectureResources.uploadedFiles.length > 0 ||
-  //               enhanced.lectureResources.sourceCodeFiles.length > 0 ||
-  //               enhanced.lectureResources.externalResources.length > 0)
-  //           );
-  //         }).length || 0),
-  //       0
-  //     ),
-  //   });
-
-  //   return (
-  //     <StudentVideoPreview
-  //       videoContent={{
-  //         uploadTab: { selectedFile: null },
-  //         libraryTab: {
-  //           searchQuery: "",
-  //           selectedVideo: null,
-  //           videos: [],
-  //         },
-  //         activeTab: "uploadVideo",
-  //         selectedVideoDetails: null,
-  //       }}
-  //       articleContent={{ text: "" }}
-  //       setShowVideoPreview={setShowVideoPreview}
-  //       // lecture={{
-  //       //   ...lecture,
-  //       //   contentType: "quiz",
-  //       // }}
-  //       // FIXED: Pass both enhanced sections AND individual resource arrays
-  //       // This ensures resources are available regardless of how StudentVideoPreview expects them
-  //       uploadedFiles={uploadedFiles}
-  //       sourceCodeFiles={sourceCodeFiles}
-  //       externalResources={externalResources}
-  //       section={{
-  //         id: "all-sections",
-  //         name: "All Sections",
-  //         sections: enhancedSections, // Pass enhanced sections with proper content types and resources
-  //       }}
-  //       quizData={quizData}
-  //     />
-  //   );
-  // };
-
   if (showConfirmModal) {
     return (
       <ConfirmQuizDeleteModal
@@ -864,7 +796,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
   // Expanded view - FIXED: Restructured conditional rendering
   return (
     <div
-      className="mb-3 border border-zinc-400 rounded-md bg-white overflow-hidden"
+      className="mb-3 border border-zinc-400 bg-white overflow-hidden"
       draggable
       onDragStart={(e) => handleDragStart(e, sectionId, lecture.id)}
       onDragOver={handleDragOver}
@@ -875,9 +807,9 @@ const QuizItem: React.FC<QuizItemProps> = ({
         onMouseEnter={() => setIsHovering(true)}
         onMouseLeave={() => setIsHovering(false)}
       >
-        <div className="flex items-center space-x-3" onClick={toggleExpand}>
+        <div className="flex items-center space-x-2.5" onClick={toggleExpand}>
           <div className="w-max shrink-0 flex items-center gap-3">
-            <FaCircleCheck size={16} className="shrink-0" />
+            <FaCircleCheck className="shrink-0 size-3.5" />
             <p className="w-max">Quiz {lectureIndex + 1}:</p>
           </div>
 
@@ -914,7 +846,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
                 onClick={handleEditQuiz}
                 className="text-gray-500 hover:text-gray-700 p-1 transition-opacity cursor-pointer"
               >
-                <Edit3 className="w-4 h-4" />
+                <Edit3 className="size-4" />
               </button>
               <button
                 onClick={handleDeleteQuiz}
@@ -922,7 +854,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
                   quizOperationLoading ? "animate-pulse" : ""
                 }`}
               >
-                <Trash2 className="w-4 h-4" />
+                <Trash2 className="size-4" />
               </button>
             </>
           )}
@@ -946,11 +878,16 @@ const QuizItem: React.FC<QuizItemProps> = ({
                   </div>
                 )}
           </button>
-          <button className="w-7 cursor-move hover:bg-gray-200 p-1 rounded">
+          <div className="w-5">
             {isHovering && (
-              <RxHamburgerMenu size={20} className="text-gray-500" />
+              <button className="cursor-move hover:bg-gray-200 p-1 rounded">
+                <RxHamburgerMenu
+                  size={18}
+                  className="text-zinc-500 font-bold"
+                />
+              </button>
             )}
-          </button>
+          </div>
         </div>
       </div>
 
@@ -1070,7 +1007,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
                       setShowEditForm(true);
                       setEditingQuestionIndex(null);
                     }}
-                    className="inline-flex items-center border border-purple-600 px-2 py-1 text-sm leading-5 rounded text-purple-600 hover:bg-purple-100 transition cursor-pointer font-medium"
+                    className="inline-flex items-center border border-[#6d28d2] px-2 py-1 text-sm leading-5 rounded text-purple-600 hover:bg-[rgba(108,40,210,0.125)] transition cursor-pointer font-medium"
                   >
                     New Question
                   </button>
@@ -1083,7 +1020,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
                 >
                   <button
                     onClick={() => setShowPreviewDropdown(!showPreviewDropdown)}
-                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 transition cursor-pointer disabled:opacity-50"
+                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-[#6d28d2] hover:bg-purple-600 transition cursor-pointer disabled:opacity-50"
                     disabled={questions.length === 0}
                     type="button"
                   >
@@ -1179,9 +1116,6 @@ const QuizItem: React.FC<QuizItemProps> = ({
           )}
         </div>
       )}
-
-      {/* Show preview component when needed */}
-      {/* {showVideoPreview && <QuizPreviewPage />} */}
     </div>
   );
 };

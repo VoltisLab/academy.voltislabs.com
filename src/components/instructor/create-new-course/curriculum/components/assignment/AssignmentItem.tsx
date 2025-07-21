@@ -124,7 +124,7 @@ const AssignmentItem: React.FC<AssignmentItemProps> = ({
   // };
   return (
     <div
-      className={`mb-3 bg-white border border-gray-300 ${
+      className={`mb-3 bg-white border border-zinc-400 ${
         draggedLecture === lecture.id ? "opacity-50" : ""
       } ${
         dragTarget?.lectureId === lecture.id ? "border-2 border-indigo-500" : ""
@@ -142,7 +142,7 @@ const AssignmentItem: React.FC<AssignmentItemProps> = ({
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
     >
-      <div className="flex items-center p-2 w-full">
+      <div className="flex items-center p-2 px-3 w-full">
         <div className="flex-1 flex items-center">
           {editingLectureId === lecture.id ? (
             <input
@@ -157,16 +157,16 @@ const AssignmentItem: React.FC<AssignmentItemProps> = ({
                   setEditingLectureId(null);
                 }
               }}
-              className="border-gray-300 focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border rounded-md px-2 py-1"
+              className="border-gray-300 focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border rounded-md py-1"
               onClick={(e) => e.stopPropagation()}
             />
           ) : (
             <div className="flex flex-row items-center gap-2">
-              <h3 className=" text-xs text-gray-800 whitespace-nowrap overflow-hidden text-ellipsis flex items-center gap-1">
+              <h3 className="text-xs text-gray-800 whitespace-nowrap overflow-hidden text-ellipsis flex items-center gap-1">
                 {lecture?.isPublished ? (
                   <>
                     <div className="w-max shrink-0 flex items-center gap-3">
-                      <FaCircleCheck size={16} className="shrink-0" />
+                      <FaCircleCheck className="shrink-0 size-3.5" />
                       <p className="w-max">Assignment {lectureIndex + 1}:</p>
                     </div>
                   </>

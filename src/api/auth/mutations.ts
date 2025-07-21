@@ -89,19 +89,21 @@ export const GOOGLE_LOGIN_MUTATION = gql`
 `;
 
 export const SOCIAL_AUTH_MUTATION = gql`
-  mutation SocialAuth($accessToken: String!) {
-    socialAuth(accessToken: $accessToken) {
+  mutation SocialAuth($accessToken: String!, $provider: String!) {
+    socialAuth(accessToken: $accessToken, provider: $provider) {
+      errors
       success
       token
       refreshToken
       user {
-        id
-        email
-        firstName
+        username
         lastName
+        isVerified
+        firstName
+        email
         isInstructor
+        id
       }
-      errors
     }
   }
 `;
