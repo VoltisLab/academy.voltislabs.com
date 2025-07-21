@@ -9,6 +9,8 @@ import {
   Trash2,
   ChevronDown,
 } from "lucide-react";
+import LearningReminderCard from "./LearningReminderCard";
+import CourseReminderService from "@/services/courseReminderService";
 
 interface videoNooteType{
   id: string;
@@ -87,6 +89,7 @@ const BottomTabsContainer: React.FC<BottomTabsContainerProps> = ({
 }) => {
   const [allLecturesDropdownOpen, setAllLecturesDropdownOpen] = useState(false);
   const [sortByDropdownOpen, setSortByDropdownOpen] = useState(false);
+  const [lectureReminder, setLectureReminder] = useState<any>(null)
 
   const handleSearchToggle = () => {
     setShowSearch(!showSearch);
@@ -95,7 +98,32 @@ const BottomTabsContainer: React.FC<BottomTabsContainerProps> = ({
     }
   };
 
+  const {getLearningReminders, deleteLearningReminder} = CourseReminderService()
+const fetchReminders = async () => {
+  const result = await getLearningReminders({
+    pageCount: 10,
+    pageNumber: 10,
+    // setLoading: setLoadingFunction,
+    // setError: setErrorFunction,
+  });
+console.log("remind", result)
+  setLectureReminder(result?.reminders)
+};
 
+const handleDelete = async (reminderId: number) => {
+  const res = await deleteLearningReminder({
+    learningReminderId: reminderId,
+  
+  });
+  if (res.success) {
+    // handle success
+   await fetchReminders()
+  }
+};
+
+useEffect(() => {
+fetchReminders()
+}, [])
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Don't trigger if any input or textarea is focused!
@@ -599,6 +627,14 @@ const BottomTabsContainer: React.FC<BottomTabsContainerProps> = ({
 
           {activeTab === "learning-tools" && !showSearch && (
             <div className="p-6">
+                {
+                  lectureReminder?.length > 0 &&  (
+                    lectureReminder?.map((item: any, index: number) => (
+                      <LearningReminderCard key={index} data={item} onDelete={handleDelete}/>
+
+                    ))
+                  )
+                }
               <div className="mb-6">
                 <h3 className="text-xl font-bold mb-2">Learning reminders</h3>
                 <p className="text-gray-600 mb-4">

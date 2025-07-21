@@ -123,6 +123,25 @@ export const GET_COURSES_TOTAL = gql`
   }
 `;
 
+export const GET_USER_LEARNING_REMINDER = gql`
+  query GetUserLearningReminder($pageCount: Int!, $pageNumber: Int!) {
+    userLearningReminder(pageCount: $pageCount, pageNumber: $pageNumber) {
+      calendarService
+      createdAt
+      description
+      icsFile
+      id
+      schedule
+      serviceEventId
+      updatedAt
+      course {
+        id
+        title
+      }
+    }
+  }
+`;
+
 // Root response type
 export interface GetInstructorCoursesResponse {
   instructorCourses: InstructorCourse[];

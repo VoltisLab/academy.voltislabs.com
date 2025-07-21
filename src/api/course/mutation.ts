@@ -262,3 +262,34 @@ export const DELETE_LECTURE_VIDEO_NOTE = gql`
     }
   }
 `;
+
+export const CREATE_LEARNING_REMINDER = gql`
+  mutation CreateLearningReminder(
+    $calendarService: CalenderServiceEnum!
+    $description: String!
+    $schedule: ScheduleInputType!
+    $course: Int
+    $icsFile: String!
+    $serviceEventId: String!
+  ) {
+    createLearningReminder(
+      calendarService: $calendarService
+      description: $description
+      schedule: $schedule
+      course: $course
+      icsFile: $icsFile
+      serviceEventId: $serviceEventId
+    ) {
+      success
+    }
+  }
+`;
+
+export const DELETE_LEARNING_REMINDER = gql`
+  mutation DeleteLearningReminder($learningReminderId: Int!) {
+    deleteReminder(learningReminderId: $learningReminderId) {
+      message
+      success
+    }
+  }
+`;
