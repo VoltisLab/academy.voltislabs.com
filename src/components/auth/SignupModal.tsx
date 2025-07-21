@@ -332,8 +332,6 @@ const handleSendCode = async () => {
 
       const result = await login(credentials);
 
-      console.log("result from perform login", result) 
-
       if (result.login?.success) {
         // onClose();
         // Redirect based on user type
