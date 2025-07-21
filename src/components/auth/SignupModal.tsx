@@ -9,10 +9,6 @@ import { usePageLoading } from "@/hooks/UsePageLoading";
 import toast, { Toaster } from "react-hot-toast";
 import { signIn, useSession } from "next-auth/react";
 import type { Session } from "next-auth";
-
-
-const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "";
-
 // Extend the Session type to include accessToken
 interface SessionWithToken extends Session {
   accessToken?: string;
@@ -119,15 +115,12 @@ const SignupModal: React.FC<SignupModalProps> = ({
           console.log("Google access token:", sessionWithToken.accessToken);
           const backendResponse = await loginWithGoogle(sessionWithToken.accessToken);
           console.log("Backend response:", backendResponse);
-          if (backendResponse.success && backendResponse.user) {
-      
-            const loginResponse = await performLogin(backendResponse.user.email, backendResponse.user.firstName);
-            console.log("Login response after social auth:", loginResponse);
-            // Redirect based on user type (handled in performLogin)
-            toast.success("Google sign-in and backend login successful!");
-          } else {
-            toast.error("Google login failed: " + (backendResponse.errors?.[0] || "Unknown error"));
+          toast.success("Google sign-in and backend login successful!");
+          if (backendResponse.success) {
+            router.push(backendResponse.user?.isInstructor ? "/instructor" : "/dashboard");
+            return { success: true };
           }
+        
         } catch (error: any) {
           console.error("Backend Google login error:", error);
           toast.error(error?.message || "Backend Google login failed.");
@@ -147,11 +140,6 @@ const SignupModal: React.FC<SignupModalProps> = ({
     setShowPassword(!showPassword);
   };
   
-  // Handler for Google login success using access token
-  // Remove the googleLogin definition and related logic
-
-
-  // Handler for Google login error
   const handleGoogleError = () => {
     toast.error("Google sign-in was cancelled or failed.");
   };

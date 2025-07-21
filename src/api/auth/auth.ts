@@ -179,7 +179,12 @@ export const loginWithGoogle = async (accessToken: string) => {
     if (errors || !data?.socialAuth?.success) {
       throw new Error(errors?.[0]?.message || 'Google login failed');
     }
-    // Do not set cookies here; let performLogin handle it for consistency
+    // Set cookies here after successful login
+    if (data.socialAuth.success && typeof window !== 'undefined') {
+      setCookie('auth_token', data.socialAuth.token);
+      setCookie('refresh_token', data.socialAuth.refreshToken || '');
+      setCookie('user', JSON.stringify(data.socialAuth.user));
+    }
     return data.socialAuth;
   } catch (error: any) {
     throw new Error(error?.message || 'Google login failed');

@@ -286,6 +286,13 @@ const handleDeleteConfirm = async () => {
           Delete
         </button>
       </div>
+      <DeleteModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={handleDeleteConfirm}
+        courseTitle={title}
+        id={id}
+      />
     </div>
     <DeleteModal
       isOpen={showDeleteModal}

@@ -145,7 +145,7 @@ export default function AllCoursesPage() {
             variants={itemVariants}
             className="text-3xl md:text-[40px] font-bold text-[#090D2C] leading-snug"
           >
-            All Programmes & Bootcamps
+            All Courses & Bootcamps
           </motion.h2>
         </div>
 
@@ -320,8 +320,8 @@ export default function AllCoursesPage() {
                     title={course.title}
                     date={new Date(course.createdAt).toLocaleDateString()}
                     description={course.description}
-                    image={course.banner?.thumbnail || "/education.jpg"}
-                    students={0}
+                    image={course.banner?.url || "/education.jpg"}
+                    students={0} // You can add this data if available
                   />
                 </motion.div>
               ))}

@@ -93,15 +93,16 @@ export const SOCIAL_AUTH_MUTATION = gql`
     socialAuth(accessToken: $accessToken, provider: $provider) {
       errors
       success
+      token
+      refreshToken
       user {
-        id
-        firstName
-        fullName
-        isInstructor
         username
         lastName
-        profilePictureUrl
+        isVerified
+        firstName
         email
+        isInstructor
+        id
       }
     }
   }
