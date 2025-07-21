@@ -80,7 +80,7 @@ export interface CourseSectionQuiz {
   title: string;
   description: string;
   questions: CourseSectionQuizQuestion[];
-  isContentCompleted: boolean;
+  isContentCompleted?: boolean;
 }
 
 export interface CourseSectionQuizQuestion {
