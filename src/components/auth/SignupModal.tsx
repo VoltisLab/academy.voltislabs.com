@@ -119,12 +119,15 @@ const SignupModal: React.FC<SignupModalProps> = ({
           console.log("Google access token:", sessionWithToken.accessToken);
           const backendResponse = await loginWithGoogle(sessionWithToken.accessToken);
           console.log("Backend response:", backendResponse);
-            
-          const loginResponse = await performLogin(backendResponse.user.email, backendResponse.user.firstName);
-          console.log("Login response after social auth:", loginResponse);
-          // Redirect based on user type (handled in performLogin)
-          toast.success("Google sign-in and backend login successful!");
-        
+          if (backendResponse.success && backendResponse.user) {
+      
+            const loginResponse = await performLogin(backendResponse.user.email, backendResponse.user.firstName);
+            console.log("Login response after social auth:", loginResponse);
+            // Redirect based on user type (handled in performLogin)
+            toast.success("Google sign-in and backend login successful!");
+          } else {
+            toast.error("Google login failed: " + (backendResponse.errors?.[0] || "Unknown error"));
+          }
         } catch (error: any) {
           console.error("Backend Google login error:", error);
           toast.error(error?.message || "Backend Google login failed.");
@@ -329,7 +332,7 @@ const handleSendCode = async () => {
 
       const result = await login(credentials);
 
-      console.log("result from perform login ", result) 
+      console.log("result from perform login", result) 
 
       if (result.login?.success) {
         // onClose();
