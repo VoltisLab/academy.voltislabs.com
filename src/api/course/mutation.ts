@@ -67,6 +67,23 @@ export const UPDATE_COURSE_STATUS = gql`
   }
 `;
 
+export const SET_CONTENT_COMPLETION_STATUS_MUTATION = gql`
+  mutation SetContentCompletionStatus(
+    $completed: Boolean!
+    $contentType: ContentTypeEnum!
+    $contentTypeId: Int!
+  ) {
+    setContentCompletionStatus(
+      completed: $completed
+      contentType: $contentType
+      contentTypeId: $contentTypeId
+    ) {
+      message
+      success
+    }
+  }
+`;
+
 export const UPDATE_COURSE_INFO = gql`
   mutation UpdateCourse(
     $courseId: Int!
@@ -101,7 +118,6 @@ export const UPDATE_COURSE_INFO = gql`
     }
   }
 `;
-
 
 export const UPDATE_COURSE_SECTIONS = gql`
   mutation UpdateCourseSections(
@@ -233,7 +249,11 @@ export const DELETE_COURSE = gql`
 `;
 
 export const SAVE_LECTURE_VIDEO_NOTE = gql`
-  mutation SaveLectureVideoNote($lectureId: Int!, $notes: String!, $time: Time!) {
+  mutation SaveLectureVideoNote(
+    $lectureId: Int!
+    $notes: String!
+    $time: Time!
+  ) {
     saveLectureVideoNote(lectureId: $lectureId, notes: $notes, time: $time) {
       lectureVideoNote {
         createdAt
@@ -248,7 +268,10 @@ export const SAVE_LECTURE_VIDEO_NOTE = gql`
 
 export const UPDATE_LECTURE_VIDEO_NOTE = gql`
   mutation UpdateLectureVideoNote($lectureVideoNoteId: Int!, $notes: String!) {
-    updateLectureVideoNote(lectureVideoNoteId: $lectureVideoNoteId, notes: $notes) {
+    updateLectureVideoNote(
+      lectureVideoNoteId: $lectureVideoNoteId
+      notes: $notes
+    ) {
       success
     }
   }
@@ -293,3 +316,16 @@ export const DELETE_LEARNING_REMINDER = gql`
     }
   }
 `;
+
+export type SetContentCompletionStatusVariables = {
+  completed: boolean;
+  contentType: "LECTURE" | "QUIZ" | "VIDEO"; // Add more if applicable
+  contentTypeId: number;
+};
+
+export type SetContentCompletionStatusResponse = {
+  setContentCompletionStatus: {
+    message: string;
+    success: boolean;
+  };
+};

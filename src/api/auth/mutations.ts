@@ -1,25 +1,25 @@
-import { gql } from '@apollo/client';
+import { gql } from "@apollo/client";
 // GraphQL mutation for user registration
 export const REGISTER_MUTATION = gql`
   mutation Register(
-    $email: String!, 
-    $firstName: String!, 
-    $lastName: String!, 
-    $password1: String!, 
-    $password2: String!, 
-    $username: String!,
+    $email: String!
+    $firstName: String!
+    $lastName: String!
+    $password1: String!
+    $password2: String!
+    $username: String!
     $otpCode: String!
     $isInstructor: Boolean!
   ) {
     register(
-      email: $email,
-      firstName: $firstName,
-      lastName: $lastName,
-      password1: $password1,
-      password2: $password2,
-      username: $username,
-      otpCode: $otpCode,
-      isInstructor: $isInstructor,
+      email: $email
+      firstName: $firstName
+      lastName: $lastName
+      password1: $password1
+      password2: $password2
+      username: $username
+      otpCode: $otpCode
+      isInstructor: $isInstructor
     ) {
       errors
       success
@@ -59,7 +59,6 @@ export const SEND_VERIFICATION_EMAIL_MUTATION = gql`
     }
   }
 `;
-
 
 // Graphql mutation to verify token
 export const VERIFY_TOKEN_MUTATION = gql`
@@ -108,3 +107,21 @@ export const SOCIAL_AUTH_MUTATION = gql`
   }
 `;
 
+export const PASSWORD_CHANGE_MUTATION = gql`
+  mutation PasswordChange(
+    $oldPassword: String!
+    $newPassword1: String!
+    $newPassword2: String!
+  ) {
+    passwordChange(
+      oldPassword: $oldPassword
+      newPassword1: $newPassword1
+      newPassword2: $newPassword2
+    ) {
+      success
+      errors
+      token
+      refreshToken
+    }
+  }
+`;
