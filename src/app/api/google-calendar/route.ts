@@ -1,7 +1,7 @@
 // app/api/calendar/route.ts (or wherever your calendar route is)
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "../auth/[...nextauth]/route";
+import { authOptions } from "../auth/refreshable/[...nextauth]/routes";
 
 export async function POST(req: NextRequest) {
   try {
