@@ -14,7 +14,7 @@ export const GET_COURSE_SECTIONS = gql`
         notes
         duration
         description
-
+        isContentCompleted
         resources {
           id
           type
@@ -24,8 +24,8 @@ export const GET_COURSE_SECTIONS = gql`
         }
       }
       course {
-    title
-        }
+        title
+      }
       assignment {
         title
         id
@@ -43,6 +43,7 @@ export const GET_COURSE_SECTIONS = gql`
         description
         id
         title
+        isContentCompleted
         questions {
           id
           text
@@ -79,6 +80,7 @@ export interface CourseSectionQuiz {
   title: string;
   description: string;
   questions: CourseSectionQuizQuestion[];
+  isContentCompleted: boolean;
 }
 
 export interface CourseSectionQuizQuestion {
@@ -112,6 +114,7 @@ export interface CourseSectionLecture {
   duration: number;
   description: string;
   resources: Resource[];
+  isContentCompleted: boolean;
 }
 
 export interface CourseSection {
@@ -125,8 +128,8 @@ export interface CourseSection {
   codingExercises: CourseSectionAssignnments[];
   practiceSet: CourseSectionAssignnments[];
   course: {
-    title: string
-  }
+    title: string;
+  };
 }
 
 export interface CourseSectionsResponse {
