@@ -8,6 +8,7 @@ import { useCoursesData } from '@/services/useCourseDataService'
 import { Loader } from './LoadingState' // adjust path
 import { EmptyCourses } from './EmprtyState' // adjust path
 import { StatusSegmentedControl } from './StatusSegmentedControl' // adjust path
+import Link from 'next/link'
 
 const MyCourseList = () => {
   const [grid, setGrid] = useState(true)
@@ -63,6 +64,7 @@ const MyCourseList = () => {
             }
           >
             {instructorCourses?.map((course, index) => (
+              <Link href={`/instructor/my-courses/${course?.id}`}>
               <MyCourseCard
                 key={index}
                 id={Number(course?.id)}
@@ -80,6 +82,7 @@ const MyCourseList = () => {
                 }
                 category={course?.category?.name}
               />
+              </Link>
             ))}
           </div>
         </div>

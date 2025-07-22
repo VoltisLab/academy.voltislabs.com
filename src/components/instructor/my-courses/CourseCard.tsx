@@ -198,7 +198,12 @@ const handleDeleteConfirm = async () => {
           </button>
         </Link>
         <button
-          onClick={() => setShowDeleteModal(true)}
+          onClick={(e) => {
+             e.stopPropagation();
+            e.preventDefault();
+            setShowDeleteModal(true)
+          }
+          }
           className="flex-1 w-full py-2 rounded-xl border border-red-200 bg-red-50 text-red-600 font-bold shadow-md hover:bg-red-100 transition-all text-sm"
           type="button"
         >
@@ -280,8 +285,12 @@ const handleDeleteConfirm = async () => {
           </button>
         </Link>
         <button
-          onClick={() => setShowDeleteModal(true)}
-          className="flex-1 py-2 rounded-lg border border-red-300 bg-red-50 text-red-600 font-semibold hover:bg-red-100 transition-colors text-sm"
+        onClick={(e) => {
+             e.stopPropagation();
+            e.preventDefault();
+            setShowDeleteModal(true)
+          }
+          }          className="flex-1 py-2 rounded-lg border border-red-300 bg-red-50 text-red-600 font-semibold hover:bg-red-100 transition-colors text-sm"
         >
           Delete
         </button>
