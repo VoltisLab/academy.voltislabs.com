@@ -310,7 +310,28 @@ export const CREATE_LEARNING_REMINDER = gql`
 
 export const DELETE_LEARNING_REMINDER = gql`
   mutation DeleteLearningReminder($learningReminderId: Int!) {
-    deleteReminder(learningReminderId: $learningReminderId) {
+    deleteLearningReminder(learningReminderId: $learningReminderId) {
+      message
+      success
+    }
+  }
+`;
+
+export const UPDATE_LEARNING_REMINDER = gql`
+  mutation UpdateLearningReminder(
+    $learningReminderId: Int!
+    $description: String
+    $icsFile: String
+    $removeCourse: Boolean
+    $schedule: ScheduleInputType!
+  ) {
+    updateLearningReminder(
+      learningReminderId: $learningReminderId
+      description: $description
+      icsFile: $icsFile
+      removeCourse: $removeCourse
+      schedule: $schedule
+    ) {
       message
       success
     }

@@ -24,6 +24,7 @@ export const GET_ALL_INSTRUCTOR_COURSES = gql`
       description
       instructor {
         id
+        fullName
         thumbnailUrl
       }
       category {

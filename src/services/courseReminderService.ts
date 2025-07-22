@@ -1,4 +1,4 @@
-import { CREATE_LEARNING_REMINDER, DELETE_LEARNING_REMINDER } from "@/api/course/mutation";
+import { CREATE_LEARNING_REMINDER, DELETE_LEARNING_REMINDER, UPDATE_LEARNING_REMINDER } from "@/api/course/mutation";
 import { GET_USER_LEARNING_REMINDER } from "@/api/course/queries";
 import { apolloClient } from "@/lib/apollo-client";
 
@@ -22,7 +22,7 @@ const CourseReminderService = () => {
     frequency: any,
       time: string;
     };
-    course:  number;
+    course:  number | undefined;
     icsFile?: string;
     serviceEventId?: string;
     setLoading?: (v: boolean) => void;
@@ -133,8 +133,8 @@ const CourseReminderService = () => {
         throw new Error(errors[0]?.message || "Failed to delete reminder");
       }
 
-      if (data?.deleteReminder?.success) {
-        return { success: true, message: data.deleteReminder.message };
+      if (data?.deleteLearningReminder?.success) {
+        return { success: true, message: data.deleteLearningReminder.message };
       }
       throw new Error("Reminder not deleted by API");
     } catch (err) {
@@ -147,7 +147,65 @@ const CourseReminderService = () => {
     }
   };
 
-  return { createLearningReminder, getLearningReminders, deleteLearningReminder };
+  const updateLearningReminder = async ({
+  learningReminderId,
+  description,
+  icsFile,
+  removeCourse,
+  schedule,
+  setLoading,
+  setError,
+}: {
+  learningReminderId: number;
+  description?: string | null;
+  icsFile?: string;
+  removeCourse?: boolean;
+  schedule: {
+    date?: string;
+    days?: string[];         // ["MONDAY"]
+    frequency: string;       // "DAILY", "WEEKLY", etc.
+    time?: string;
+  };
+  setLoading?: (v: boolean) => void;
+  setError?: (e: Error | null) => void;
+}) => {
+  try {
+    setLoading?.(true);
+    setError?.(null);
+
+    const { data, errors } = await apolloClient.mutate({
+      mutation: UPDATE_LEARNING_REMINDER,
+      variables: {
+        learningReminderId,
+        description,
+        icsFile,
+        removeCourse,
+        schedule,
+      },
+      context: { includeAuth: true },
+      fetchPolicy: "no-cache",
+    });
+
+    if (errors) {
+      throw new Error(errors[0]?.message || "Failed to update reminder");
+    }
+
+    if (data?.updateLearningReminder?.success) {
+      return { success: true, message: data.updateLearningReminder.message };
+    }
+    throw new Error("Reminder not updated by API");
+  } catch (err) {
+    setError?.(
+      err instanceof Error ? err : new Error("Failed to update learning reminder")
+    );
+    return { success: false, message: err };
+  } finally {
+    setLoading?.(false);
+  }
+};
+
+
+  return { createLearningReminder, getLearningReminders, deleteLearningReminder, updateLearningReminder };
 };
 
 export default CourseReminderService;

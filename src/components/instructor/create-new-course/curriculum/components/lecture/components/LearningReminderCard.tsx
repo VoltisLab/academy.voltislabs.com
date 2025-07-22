@@ -86,6 +86,7 @@ const LearningReminderMenu = ({
   onSync,
   data,
   anchorRef,
+  onOpenLearningModal,
 }: {
   show: boolean;
   onClose: () => void;
@@ -94,6 +95,7 @@ const LearningReminderMenu = ({
     onSync: () => void;
   data: any;
   anchorRef: React.RefObject<HTMLButtonElement> | null;
+  onOpenLearningModal: any
 }) => {
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -105,6 +107,12 @@ const LearningReminderMenu = ({
     document.addEventListener("mousedown", listener);
     return () => document.removeEventListener("mousedown", listener);
   }, [menuRef, onClose]);
+  const handleEditClick = () => {
+    // Set localStorage when edit is clicked
+    localStorage.setItem("remiderEdit", JSON.stringify(data));
+    onOpenLearningModal();
+    // onClose(); // Commented out as in original
+  };
 
   return show ? (
     <div
@@ -115,8 +123,8 @@ const LearningReminderMenu = ({
       <button
         className="w-full text-left px-4 py-2 hover:text-purple-700 hover:bg-purple-50 font-semibold rounded-t-lg "
         onClick={() => {
-          onEdit();
-          onClose();
+          handleEditClick();
+          // onClose();
         }}
       >
         Edit
@@ -129,7 +137,7 @@ const LearningReminderMenu = ({
         }}
       >
         {data?.calendarService === "GOOGLE" && getCalendarIcon("GOOGLE")}
-        <span className="text-gray-900">Delete</span>
+        <span className="">Delete</span>
       </button>
       <button
         className="w-full text-left px-4 py-2 flex items-center hover:text-purple-700 hover:bg-purple-50 rounded-b-lg"
@@ -139,13 +147,13 @@ const LearningReminderMenu = ({
         }}
       >
         {data?.calendarService === "GOOGLE" && getCalendarIcon("GOOGLE")}
-        <span className="text-gray-900"> {data?.calendarService === "GOOGLE" ? "Sync again" : "Download Again" } </span>
+        <span className=""> {data?.calendarService === "GOOGLE" ? "Sync again" : "Download Again" } </span>
       </button>
     </div>
   ) : null;
 };
 
-export default function LearningReminderCard({ data, onDelete }: { data: any, onDelete: (reminderId: number) => void | Promise<void> }) {
+export default function LearningReminderCard({ data, onDelete, onOpenLearningModal }: { data: any, onDelete: (reminderId: number) => void | Promise<void>, onOpenLearningModal: any }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuButtonRef = useRef<any>(null);
 
@@ -196,6 +204,7 @@ export default function LearningReminderCard({ data, onDelete }: { data: any, on
           anchorRef={menuButtonRef}
           data={data}
           onDelete={onDelete}
+          onOpenLearningModal={onOpenLearningModal}
         />
       </div>
       <div className="text-gray-900 font-semibold text-base mt-1">
