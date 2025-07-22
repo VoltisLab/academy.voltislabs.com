@@ -345,10 +345,17 @@ const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose }) => {
       if (result.login?.success) {
         // onClose();
         // Redirect based on user type
+        // router.push(
+        //   result?.login?.user?.isInstructor ? "/instructor" : "/dashboard"
+        // );
         setSuccess(true);
-        router.push(
-          result?.login?.user?.isInstructor ? "/instructor" : "/dashboard"
-        );
+        // await new Promise((resolve) => setTimeout(resolve, 500));
+
+        // Force a hard refresh to ensure all session data is loaded
+        window.location.href = result?.login?.user?.isInstructor
+          ? "/instructor"
+          : "/dashboard";
+
         return { success: true };
       } else {
         // Handle specific login errors
