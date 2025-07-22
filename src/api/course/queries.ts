@@ -41,6 +41,12 @@ export const GET_ALL_INSTRUCTOR_COURSES = gql`
       level
       duration
       sections {
+      title
+      lectures {
+        id
+        duration
+        title
+      }
         assignment {
           description
           instructionDownloadableResource
