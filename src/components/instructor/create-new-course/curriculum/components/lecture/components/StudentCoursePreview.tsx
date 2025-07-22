@@ -1232,7 +1232,7 @@ const StudentCoursePreview = ({
           expandedView ? "h-[80vh]" : "h-[70vh]"
         }`}
       >
-        <div className="px-8 py-6">
+        <div className="px-8 py-6 flex-1 overflow-y-auto">
           <h1 className="text-2xl  font-bold mb-4">{lecture.title}</h1>
           <div
             className="article-content prose w-full"
