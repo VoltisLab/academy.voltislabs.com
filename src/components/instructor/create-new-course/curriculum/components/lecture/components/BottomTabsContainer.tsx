@@ -11,6 +11,8 @@ import {
 } from "lucide-react";
 import LearningReminderCard from "./LearningReminderCard";
 import CourseReminderService from "@/services/courseReminderService";
+import { useParams } from "next/navigation";
+import { useCoursesData } from "@/services/useCourseDataService";
 
 interface videoNooteType{
   id: string;
@@ -90,7 +92,16 @@ const BottomTabsContainer: React.FC<BottomTabsContainerProps> = ({
   const [allLecturesDropdownOpen, setAllLecturesDropdownOpen] = useState(false);
   const [sortByDropdownOpen, setSortByDropdownOpen] = useState(false);
   const [lectureReminder, setLectureReminder] = useState<any>(null)
+  const params = useParams();
+  const courseId = params?.courseId; 
 
+  const { instructorCourses} = useCoursesData()
+
+  const matchingCourses = instructorCourses.filter(course => 
+  course.id.toString() === courseId
+);
+
+console.log("person", matchingCourses)
   const handleSearchToggle = () => {
     setShowSearch(!showSearch);
     if (!showSearch) {
@@ -179,14 +190,13 @@ fetchReminders()
   };
 
   // Get cleaned description for display
-  const getDisplayDescription = () => {
-    const description = selectedItemData?.description;
-    if (!description) return `This is a ${activeItemType} content item.`;
+  const getDisplayDescription = (description: string) => {
+    
 
     // First clean the HTML, then strip remaining tags for plain text display
     const cleaned = cleanHtmlContent(description);
     return (
-      stripHtmlTags(cleaned) || `This is a ${activeItemType} content item.`
+      stripHtmlTags(cleaned) 
     );
   };
 
@@ -377,7 +387,7 @@ fetchReminders()
                     <h4 className="font-medium text-sm mb-2">
                       Content Details
                     </h4>
-                    <p className="mb-4">{getDisplayDescription()}</p>
+                    <p className="mb-4">{getDisplayDescription(matchingCourses[0]?.description)}</p>
                   </div>
                 </div>
               </div>
@@ -386,10 +396,10 @@ fetchReminders()
                 <h3 className="text-sm text-gray-700">Instructor</h3>
                 <div className="flex items-center">
                   <div className="w-12 h-12 bg-gray-800 rounded-full flex items-center justify-center text-white font-medium">
-                    SS
+                    { matchingCourses[0]?.instructor?.fullName?.charAt(0)}
                   </div>
                   <div className="ml-3">
-                    <h4 className="font-medium">Stanley Samuel</h4>
+                    <h4 className="font-medium"> {matchingCourses[0]?.instructor?.fullName}</h4>
                   </div>
                 </div>
               </div>
@@ -630,7 +640,7 @@ fetchReminders()
                 {
                   lectureReminder?.length > 0 &&  (
                     lectureReminder?.map((item: any, index: number) => (
-                      <LearningReminderCard key={index} data={item} onDelete={handleDelete}/>
+                      <LearningReminderCard key={index} data={item} onDelete={handleDelete} onOpenLearningModal={onOpenLearningModal}/>
 
                     ))
                   )
