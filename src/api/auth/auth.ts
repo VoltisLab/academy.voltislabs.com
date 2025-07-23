@@ -1,24 +1,37 @@
-import { LoginData, LoginResponse, SignUpData, SignUpResponse } from '@/lib/types';
-import { apolloClient } from '@/lib/apollo-client';
-import { LOGIN_MUTATION, REGISTER_MUTATION, SEND_VERIFICATION_EMAIL_MUTATION, VERIFY_TOKEN_MUTATION, GOOGLE_LOGIN_MUTATION, SOCIAL_AUTH_MUTATION } from './mutations';
-import Cookies from 'js-cookie'
+import {
+  LoginData,
+  LoginResponse,
+  SignUpData,
+  SignUpResponse,
+} from "@/lib/types";
+import { apolloClient } from "@/lib/apollo-client";
+import {
+  LOGIN_MUTATION,
+  REGISTER_MUTATION,
+  SEND_VERIFICATION_EMAIL_MUTATION,
+  VERIFY_TOKEN_MUTATION,
+  GOOGLE_LOGIN_MUTATION,
+  SOCIAL_AUTH_MUTATION,
+  PASSWORD_CHANGE_MUTATION,
+} from "./mutations";
+import Cookies from "js-cookie";
 
 // Helper function to set cookies with a default expiration of 7 days
 const setCookie = (name: string, value: string, days = 7) => {
-  Cookies.set(name, value, { 
-    expires: days, 
-    path: '/',
-    secure: process.env.NODE_ENV === 'production', // Secure in production
-    sameSite: 'strict'
+  Cookies.set(name, value, {
+    expires: days,
+    path: "/",
+    secure: process.env.NODE_ENV === "production", // Secure in production
+    sameSite: "strict",
   });
 };
 
 export const signUp = async (userData: SignUpData): Promise<SignUpResponse> => {
   // Split full name into first and last name for backend requirements
-  const nameParts = userData.fullName.trim().split(' ');
-  const firstName = nameParts[0] || '';
-  const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
-  
+  const nameParts = userData.fullName.trim().split(" ");
+  const firstName = nameParts[0] || "";
+  const lastName = nameParts.length > 1 ? nameParts.slice(1).join(" ") : "";
+
   // Generate username by joining firstName and lastName with underscore
   const username = lastName ? `${firstName}_${lastName}` : firstName;
 
@@ -42,15 +55,15 @@ export const signUp = async (userData: SignUpData): Promise<SignUpResponse> => {
     }
 
     // Store tokens on successful registration
-    if (data.register.success && typeof window !== 'undefined') {
+    if (data.register.success && typeof window !== "undefined") {
       // Set auth cookies instead of using localStorage
-      setCookie('auth_token', data.register.token);
-      setCookie('refresh_token', data.register.refreshToken);
+      setCookie("auth_token", data.register.token);
+      setCookie("refresh_token", data.register.refreshToken);
     }
 
     return data;
   } catch (error) {
-    console.error('Registration error:', error);
+    console.error("Registration error:", error);
     throw error;
   }
 };
@@ -70,31 +83,31 @@ export const login = async (credentials: LoginData): Promise<LoginResponse> => {
     }
 
     // Store tokens on successful login
-    if (data.login.success && typeof window !== 'undefined') {
+    if (data.login.success && typeof window !== "undefined") {
       // Set auth cookies instead of using localStorage
-      setCookie('auth_token', data.login.token);
-      setCookie('refresh_token', data.login.refreshToken || '');
-      setCookie('user', JSON.stringify(data.login.user));
+      setCookie("auth_token", data.login.token);
+      setCookie("refresh_token", data.login.refreshToken || "");
+      setCookie("user", JSON.stringify(data.login.user));
     }
 
     return data;
   } catch (error) {
-    console.error('Login error:', error);
+    console.error("Login error:", error);
     throw error;
   }
 };
 
 export const logout = () => {
   // Remove all auth cookies
-  Cookies.remove('auth_token');
-  Cookies.remove('refresh_token');
-  Cookies.remove('user');
+  Cookies.remove("auth_token");
+  Cookies.remove("refresh_token");
+  Cookies.remove("user");
 };
 
 export const sendVerificationCode = async (email: string) => {
   try {
     if (!email) {
-      throw new Error('Email address not found');
+      throw new Error("Email address not found");
     }
 
     const { data, errors } = await apolloClient.mutate({
@@ -110,7 +123,7 @@ export const sendVerificationCode = async (email: string) => {
 
     return data.sendVerificationEmail;
   } catch (error) {
-    console.error('Send verification email error:', error);
+    console.error("Send verification email error:", error);
     throw error;
   }
 };
@@ -121,7 +134,7 @@ export const sendVerificationCode = async (email: string) => {
 export const verifyOtp = async (token: string) => {
   try {
     if (!token) {
-      throw new Error('Verification code is required');
+      throw new Error("Verification code is required");
     }
 
     const { data, errors } = await apolloClient.mutate({
@@ -137,14 +150,14 @@ export const verifyOtp = async (token: string) => {
 
     return data.verifyToken;
   } catch (error) {
-    console.error('Verify OTP error:', error);
+    console.error("Verify OTP error:", error);
     throw error;
   }
 };
 
 // Helper function to get user data from cookie
 export const getCurrentUser = () => {
-  const userCookie = Cookies.get('user');
+  const userCookie = Cookies.get("user");
   if (userCookie) {
     try {
       return JSON.parse(userCookie);
@@ -157,7 +170,7 @@ export const getCurrentUser = () => {
 
 // Helper function to check if user is authenticated
 export const isAuthenticated = () => {
-  return !!Cookies.get('auth_token');
+  return !!Cookies.get("auth_token");
 };
 
 // Type for Google login response (customize as needed)
@@ -177,16 +190,57 @@ export const loginWithGoogle = async (accessToken: string) => {
       variables: { accessToken, provider: "google-oauth2" },
     });
     if (errors || !data?.socialAuth?.success) {
-      throw new Error(errors?.[0]?.message || 'Google login failed');
+      throw new Error(errors?.[0]?.message || "Google login failed");
     }
     // Set cookies here after successful login
-    if (data.socialAuth.success && typeof window !== 'undefined') {
-      setCookie('auth_token', data.socialAuth.token);
-      setCookie('refresh_token', data.socialAuth.refreshToken || '');
-      setCookie('user', JSON.stringify(data.socialAuth.user));
+    if (data.socialAuth.success && typeof window !== "undefined") {
+      setCookie("auth_token", data.socialAuth.token);
+      setCookie("refresh_token", data.socialAuth.refreshToken || "");
+      setCookie("user", JSON.stringify(data.socialAuth.user));
     }
     return data.socialAuth;
   } catch (error: any) {
-    throw new Error(error?.message || 'Google login failed');
+    throw new Error(error?.message || "Google login failed");
+  }
+};
+
+export const changePassword = async ({
+  oldPassword,
+  newPassword1,
+  newPassword2,
+}: {
+  oldPassword: string;
+  newPassword1: string;
+  newPassword2: string;
+}): Promise<{
+  success: boolean;
+  errors?: Record<string, any>;
+  token?: string;
+  refreshToken?: string;
+}> => {
+  try {
+    const { data, errors } = await apolloClient.mutate({
+      mutation: PASSWORD_CHANGE_MUTATION,
+      variables: {
+        oldPassword,
+        newPassword1,
+        newPassword2,
+      },
+    });
+
+    if (errors) {
+      throw new Error(errors[0].message);
+    }
+
+    // Update tokens if successful
+    if (data.passwordChange.success && typeof window !== "undefined") {
+      setCookie("auth_token", data.passwordChange.token);
+      setCookie("refresh_token", data.passwordChange.refreshToken || "");
+    }
+
+    return data.passwordChange;
+  } catch (error) {
+    console.error("Password change error:", error);
+    throw error;
   }
 };

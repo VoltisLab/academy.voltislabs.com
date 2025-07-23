@@ -23,16 +23,17 @@ export const ProgressRing: React.FC<ProgressRingProps> = ({ progress = 0 }) => {
         cx={size / 2}
         cy={size / 2}
         r={radius}
-        stroke="#b9b6f3"
+        stroke="#3c3c44"
         strokeWidth={stroke}
         fill="none"
       />
+
       {/* Progress ring */}
       <circle
         cx={size / 2}
         cy={size / 2}
         r={radius}
-        stroke="white"
+        stroke="#b9b6f3"
         strokeWidth={stroke}
         fill="none"
         strokeDasharray={circumference}

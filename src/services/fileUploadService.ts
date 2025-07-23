@@ -80,3 +80,64 @@ export const uploadFile = async (
     return null;
   }
 };
+
+
+export async function uploadAndDownloadIcsFile({
+  title,
+  description,
+  startDate,
+  endDate,
+}: {
+  title: string;
+  description: string;
+  startDate: string;
+  endDate: string;
+}): Promise<{ fileUrl: string | null, eventId: string }> {
+  function toUTC(dateString: string) {
+    const pad = (n: number) => n.toString().padStart(2, "0");
+    const date = new Date(dateString);
+    return (
+      date.getUTCFullYear() +
+      pad(date.getUTCMonth() + 1) +
+      pad(date.getUTCDate()) +
+      "T" +
+      pad(date.getUTCHours()) +
+      pad(date.getUTCMinutes()) +
+      pad(date.getUTCSeconds()) +
+      "Z"
+    );
+  }
+  
+  // 1. Generate unique ID for the event
+  const eventId = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}@academy.voltislabs.com`;
+
+  // 2. ICS content with UID
+  const icsContent =
+    `BEGIN:VCALENDAR\r\n` +
+    `VERSION:2.0\r\n` +
+    `CALSCALE:GREGORIAN\r\n` +
+    `BEGIN:VEVENT\r\n` +
+    `UID:${eventId}\r\n` +
+    `SUMMARY:${title}\r\n` +
+    `DESCRIPTION:${description}\r\n` +
+    `DTSTART:${toUTC(startDate)}\r\n` +
+    `DTEND:${toUTC(endDate)}\r\n` +
+    `END:VEVENT\r\n` +
+    `END:VCALENDAR`;
+
+  const fileName = `${title.replace(/\s+/g, "_")}.ics`;
+  const icsFile = new File([icsContent], fileName, { type: "text/calendar" });
+  const fileUrl = await uploadFile(icsFile, "RESOURCE");
+
+  // Download to user
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(icsFile);
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(link.href);
+
+  // 3. Return BOTH the fileUrl and the eventId
+  return { fileUrl, eventId };
+}

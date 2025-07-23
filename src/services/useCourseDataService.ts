@@ -23,6 +23,7 @@ type Course = {
     name: string;
   };
   instructor: {
+    fullName: string;
     id: string;
     thumbnailUrl: string;
   };

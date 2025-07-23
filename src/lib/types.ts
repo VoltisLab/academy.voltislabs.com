@@ -347,6 +347,7 @@ export interface Lecture {
   isExpanded?: boolean;
   questions?: Question[];
   isCompleted?: boolean;
+  isContentCompleted?: boolean;
   hasResources?: boolean;
   duration?: string;
   language?: string;

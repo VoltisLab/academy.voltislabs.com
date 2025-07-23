@@ -23,6 +23,16 @@ import {
   ContentTypeDetector,
 } from "@/lib/types";
 import { useParams } from "next/navigation";
+import { useProgress } from "@/context/ProgressContext";
+import { useContentCompletionStatus } from "@/services/contentCompletionService";
+import toast from "react-hot-toast";
+
+interface ProgressData {
+  completedItems: number;
+  totalItems: number;
+  completedMinutes: number;
+  totalMinutes: number;
+}
 
 // Define the ContentItemType properly
 type ContentItemType =
@@ -49,6 +59,7 @@ interface ContentItem {
   actualContentType?: string;
   hasVideoContent?: boolean;
   hasArticleContent?: boolean;
+  isContentCompleted?: boolean;
 }
 
 interface SectionWithItems {
@@ -59,6 +70,8 @@ interface SectionWithItems {
   totalDuration: string;
   completedItems: number;
   totalItems: number;
+  completedMinutes: number; // Add this
+  totalMinutes: number; // Add this
 }
 
 interface StudentPreviewSidebarProps {
@@ -82,6 +95,7 @@ interface StudentPreviewSidebarProps {
       questions?: any[];
       duration?: string;
       contentType?: string;
+      isContentCompleted?: boolean;
     }>;
     assignments?: Array<{
       title: string;
@@ -127,6 +141,19 @@ const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
   const [processedSections, setProcessedSections] = useState<
     SectionWithItems[]
   >([]);
+
+  const { setContentCompletionStatus, loading: mutationLoading } =
+    useContentCompletionStatus();
+
+  const { updateProgress } = useProgress();
+
+  // Tooltip component for disabled checkboxes
+  const DisabledCheckboxTooltip = () => (
+    <div className="absolute left-full ml-2 px-2 py-1 bg-black text-white text-xs rounded whitespace-nowrap z-50">
+      Progress cannot be changed for this item
+      <div className="absolute right-full top-1/2 transform -translate-y-1/2 w-0 h-0 border-t-4 border-b-4 border-l-4 border-t-transparent border-b-transparent border-l-black" />
+    </div>
+  );
 
   // Helper to convert ExternalResource to ExternalResourceItem
   const convertExternalResource = (
@@ -191,12 +218,12 @@ const StudentPreviewSidebar: React.FC<StudentPreviewSidebarProps> = ({
     }
     return "video";
   };
-  
+
   const params = useParams();
   const courseId = Array.isArray(params?.courseId)
     ? params?.courseId[0]
     : params?.courseId;
-const type = params?.type;       
+  const type = params?.type;
 
   // const createResourceMap = () => {
   //   const resourcesByLectureId: Record<
@@ -257,7 +284,6 @@ const type = params?.type;
   //   return resourcesByLectureId;
   // };
 
-
   useEffect(() => {
     if (!sections || sections.length === 0) {
       setProcessedSections([]);
@@ -272,11 +298,11 @@ const type = params?.type;
     //   });
 
     // }else{
-      
+
     // }
     sections.forEach((section) => {
-     initialExpandedState[section.id] = section.isExpanded !== false;
-   });
+      initialExpandedState[section.id] = section.isExpanded !== false;
+    });
     setExpandedSections(initialExpandedState);
 
     const formatted = sections.map((section, sectionIndex) => {
@@ -322,10 +348,11 @@ const type = params?.type;
             type: detectedContentType as ContentItemType,
             duration: lecture.duration || "2min",
             hasResources: hasResources,
-            isCompleted: lecture.isCompleted || false,
+            isCompleted: lecture.isContentCompleted || false,
             isActive: lecture.id === currentLectureId,
             lectureResources: lectureResources,
             description: lecture.description,
+            // isCompleted: lecture.isContentCompleted,
             actualContentType: detectedContentType,
             hasVideoContent: detectedContentType === "video",
             hasArticleContent: detectedContentType === "article",
@@ -341,7 +368,8 @@ const type = params?.type;
             name: quiz?.title || `Quiz ${index + 1}`,
             type: "quiz",
             duration: quiz.duration || "10min",
-            isCompleted: false,
+            isCompleted: quiz.isContentCompleted || false, // Map backend field
+            // isContentCompleted: quiz.isContentCompleted,
             isActive: quiz.id === currentLectureId,
             hasResources: false,
             lectureResources: {
@@ -410,14 +438,41 @@ const type = params?.type;
         return total + 2;
       }, 0);
 
+      // Calculate minutes
+      let completedMinutes = 0;
+      let totalMinutes = 0;
+
+      contentItems
+        .filter(
+          (item) =>
+            item.type === "video" ||
+            item.type === "article" ||
+            item.type === "quiz"
+        )
+        .forEach((item) => {
+          const durationMatch = item.duration?.match(/(\d+)/);
+          const duration = durationMatch ? parseInt(durationMatch[1], 10) : 0;
+          totalMinutes += duration;
+          if (item.isCompleted) {
+            completedMinutes += duration;
+          }
+        });
+
       const processedSection = {
         id: section.id,
         name: section.name || "Untitled Section",
         contentItems,
         isExpanded: initialExpandedState[section.id],
-        totalDuration: `${totalDurationMinutes}min`,
-        completedItems,
-        totalItems,
+        totalDuration: `${totalMinutes}min`,
+        completedItems: contentItems.filter((item) => item.isCompleted).length,
+        totalItems: contentItems.filter(
+          (item) =>
+            item.type === "video" ||
+            item.type === "article" ||
+            item.type === "quiz"
+        ).length,
+        completedMinutes,
+        totalMinutes,
       };
 
       return processedSection;
@@ -447,26 +502,152 @@ const type = params?.type;
     });
   };
 
-  // --- THE FIX: Toggle completed status for a content item ---
-  const handleToggleCompleted = (sectionId: string, itemId: string) => {
-    setProcessedSections((prevSections) =>
-      prevSections.map((section) =>
-        section.id === sectionId
-          ? {
-              ...section,
-              contentItems: section.contentItems.map((item) =>
-                item.id === itemId
-                  ? { ...item, isCompleted: !item.isCompleted }
-                  : item
-              ),
-            }
-          : section
-      )
-    );
+  const [updatingItems, setUpdatingItems] = useState<Record<string, boolean>>(
+    {}
+  );
+
+  // Step 2: Compute and update processedSections as you're doing now
+  const handleToggleCompleted = async (
+    sectionId: string,
+    itemId: string,
+    itemType: string,
+    isCurrentlyCompleted: boolean
+  ) => {
+    if (itemType !== "video" && itemType !== "article" && itemType !== "quiz") {
+      return;
+    }
+
+    setUpdatingItems((prev) => ({ ...prev, [itemId]: true }));
+
+    try {
+      // Optimistically update UI
+      setProcessedSections((prevSections) => {
+        const updatedSections = prevSections.map((section) => {
+          if (section.id !== sectionId) return section;
+
+          const updatedItems = section.contentItems.map((item) =>
+            item.id === itemId
+              ? { ...item, isCompleted: !isCurrentlyCompleted }
+              : item
+          );
+
+          // Recalculate progress for this section
+          let completedItems = 0;
+          let completedMinutes = 0;
+          let totalMinutes = 0;
+
+          updatedItems
+            .filter(
+              (item) =>
+                item.type === "video" ||
+                item.type === "article" ||
+                item.type === "quiz"
+            )
+            .forEach((item) => {
+              const durationMatch = item.duration?.match(/(\d+)/);
+              const duration = durationMatch
+                ? parseInt(durationMatch[1], 10)
+                : 0;
+              totalMinutes += duration;
+              if (item.isCompleted) {
+                completedItems++;
+                completedMinutes += duration;
+              }
+            });
+
+          return {
+            ...section,
+            contentItems: updatedItems,
+            completedItems,
+            totalItems: updatedItems.filter(
+              (item) =>
+                item.type === "video" ||
+                item.type === "article" ||
+                item.type === "quiz"
+            ).length,
+            completedMinutes,
+            totalMinutes,
+            totalDuration: `${totalMinutes}min`,
+          };
+        });
+
+        return updatedSections;
+      });
+
+      // Update backend
+      await setContentCompletionStatus({
+        completed: !isCurrentlyCompleted,
+        contentType: itemType === "quiz" ? "QUIZ" : "LECTURE",
+        contentTypeId: parseInt(itemId),
+      });
+    } catch (error) {
+      // Revert UI if mutation fails
+      setProcessedSections((prevSections) => {
+        const revertedSections = prevSections.map((section) => {
+          if (section.id !== sectionId) return section;
+
+          const revertedItems = section.contentItems.map((item) =>
+            item.id === itemId
+              ? { ...item, isCompleted: isCurrentlyCompleted } // Revert to previous state
+              : item
+          );
+
+          // Recalculate progress with reverted state
+          let completedItems = 0;
+          let completedMinutes = 0;
+          let totalMinutes = 0;
+
+          revertedItems
+            .filter(
+              (item) =>
+                item.type === "video" ||
+                item.type === "article" ||
+                item.type === "quiz"
+            )
+            .forEach((item) => {
+              const durationMatch = item.duration?.match(/(\d+)/);
+              const duration = durationMatch
+                ? parseInt(durationMatch[1], 10)
+                : 0;
+              totalMinutes += duration;
+              if (item.isCompleted) {
+                completedItems++;
+                completedMinutes += duration;
+              }
+            });
+
+          return {
+            ...section,
+            contentItems: revertedItems,
+            completedItems,
+            totalItems: revertedItems.filter(
+              (item) =>
+                item.type === "video" ||
+                item.type === "article" ||
+                item.type === "quiz"
+            ).length,
+            completedMinutes,
+            totalMinutes,
+            totalDuration: `${totalMinutes}min`,
+          };
+        });
+
+        return revertedSections;
+      });
+
+      // Show error to user
+      console.error("Failed to update completion status:", error);
+      toast.error("Something went wrong! Failed to update completion status");
+      // You might want to show a toast notification here
+    } finally {
+      setUpdatingItems((prev) => ({ ...prev, [itemId]: false }));
+    }
   };
 
-  
-
+  // Step 3: useEffect to run updateProgress *after* render
+  useEffect(() => {
+    updateProgress(processedSections);
+  }, [processedSections]);
 
   const handleSelectItem = (
     itemId: string,
@@ -474,9 +655,7 @@ const type = params?.type;
     sectionId: string
   ) => {
     const typeToSend =
-      itemType === "video" || itemType === "article"
-        ? "lecture"
-        : itemType;
+      itemType === "video" || itemType === "article" ? "lecture" : itemType;
     window.location.href = `/preview/${typeToSend}/${courseId}/${sectionId}/${itemId}`;
   };
 
@@ -615,9 +794,8 @@ const type = params?.type;
     );
   };
 
-  console.log("pooooo", processedSections)
-    console.log("pooooo2", sections)
-
+  console.log("pooooo", processedSections);
+  console.log("pooooo2", sections);
 
   return (
     <div className="w-[24vw] bg-white border-l border-gray-200 flex flex-col h-full text-gray-700">
@@ -676,16 +854,45 @@ const type = params?.type;
                       }
                     >
                       <div className="flex items-start">
-                        <input
-                          type="checkbox"
-                          className="mt-1 mr-3"
-                          checked={item.isCompleted}
-                          onChange={e =>
-                            handleToggleCompleted(section.id, item.id)
-                          }
-                          aria-label="Mark as complete"
-                          onClick={e => e.stopPropagation()} // prevent checkbox click from triggering lecture selection
-                        />
+                        {item.type === "video" ||
+                        item.type === "article" ||
+                        item.type === "quiz" ? (
+                          <input
+                            type="checkbox"
+                            className="mt-1 mr-3"
+                            checked={item.isCompleted}
+                            disabled={updatingItems[item.id]}
+                            onChange={() => {
+                              handleToggleCompleted(
+                                section.id,
+                                item.id,
+                                item.type,
+                                item.isCompleted as boolean
+                              );
+                            }}
+                            aria-label={
+                              updatingItems[item.id]
+                                ? "Updating..."
+                                : "Mark as complete"
+                            }
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        ) : (
+                          <div className="relative group">
+                            <input
+                              type="checkbox"
+                              className="mt-1 mr-3"
+                              checked={item.isContentCompleted}
+                              disabled
+                              aria-label="Progress cannot be changed for this item"
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                            <div className="hidden group-hover:block">
+                              <DisabledCheckboxTooltip />
+                            </div>
+                          </div>
+                        )}
+
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between">
                             <p className="font-medium text-sm truncate">
@@ -705,7 +912,7 @@ const type = params?.type;
                                 <ResourcesDropdown
                                   item={item}
                                   isOpen={!!openResourcesDropdowns[item.id]}
-                                  toggleOpen={e =>
+                                  toggleOpen={(e) =>
                                     toggleResourcesDropdown(item.id, e)
                                   }
                                 />
