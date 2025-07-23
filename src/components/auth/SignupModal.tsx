@@ -38,8 +38,6 @@ const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose }) => {
   const [codeExpiry, setCodeExpiry] = useState<Date | null>(null);
   const [timeLeft, setTimeLeft] = useState<number>(0);
   const [showPassword, setShowPassword] = useState<boolean>(false);
-  const { withLoading } = usePageLoading();
-  // New state to track if user is in instructor or student mode
   const [isInstructor, setIsInstructor] = useState<boolean>(false);
   const [success, setSuccess] = useState(false);
 
