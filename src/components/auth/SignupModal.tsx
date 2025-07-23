@@ -5,7 +5,6 @@ import { signUp, login, sendVerificationCode, loginWithGoogle } from "@/api/auth
 import { SignUpData, LoginData, FormErrors } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import { isAllowedDomain, isValidEmail, SignupModalProps, validatePassword } from "@/lib/utils";
-import { usePageLoading } from "@/hooks/UsePageLoading";
 import toast, { Toaster } from "react-hot-toast";
 import { signIn, useSession } from "next-auth/react";
 import type { Session } from "next-auth";
@@ -30,11 +29,7 @@ const SignupModal: React.FC<SignupModalProps> = ({
   const [codeExpiry, setCodeExpiry] = useState<Date | null>(null);
   const [timeLeft, setTimeLeft] = useState<number>(0);
   const [showPassword, setShowPassword] = useState<boolean>(false);
-  const { withLoading } = usePageLoading();
-  // New state to track if user is in instructor or student mode
   const [isInstructor, setIsInstructor] = useState<boolean>(false);
-  
-  // Replace single error with more specific errors
   const [errors, setErrors] = useState<FormErrors>({});
   
   // Track touched fields for better UX
