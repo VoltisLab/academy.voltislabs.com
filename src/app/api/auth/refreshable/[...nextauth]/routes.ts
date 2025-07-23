@@ -1,9 +1,33 @@
+// File: app/api/auth/refreshable/[...nextauth]/route.ts
+
 import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import type { NextAuthOptions } from "next-auth";
+import type { JWT } from "next-auth/jwt";
+
+// Extend NextAuth types
+declare module "next-auth" {
+  interface Session {
+    error?: "RefreshAccessTokenError";
+  }
+}
+
+declare module "next-auth/jwt" {
+  interface JWT {
+    accessToken?: string;
+    refreshToken?: string;
+    accessTokenExpires?: number;
+    error?: "RefreshAccessTokenError";
+  }
+}
+
+// Validate environment variables
+if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET || !process.env.NEXTAUTH_SECRET) {
+  throw new Error("Missing required environment variables");
+}
 
 // Function to refresh the access token
-async function refreshAccessToken(token: any) {
+async function refreshAccessToken(token: JWT): Promise<JWT> {
   try {
     const url = "https://oauth2.googleapis.com/token";
     
@@ -16,14 +40,15 @@ async function refreshAccessToken(token: any) {
         client_id: process.env.GOOGLE_CLIENT_ID!,
         client_secret: process.env.GOOGLE_CLIENT_SECRET!,
         grant_type: "refresh_token",
-        refresh_token: token.refreshToken,
+        refresh_token: token.refreshToken!,
       }),
     });
 
     const refreshedTokens = await response.json();
 
     if (!response.ok) {
-      throw refreshedTokens;
+      console.error("Token refresh failed:", refreshedTokens);
+      throw new Error(`Token refresh failed: ${response.status}`);
     }
 
     return {
@@ -31,6 +56,7 @@ async function refreshAccessToken(token: any) {
       accessToken: refreshedTokens.access_token,
       accessTokenExpires: Date.now() + refreshedTokens.expires_in * 1000,
       refreshToken: refreshedTokens.refresh_token ?? token.refreshToken,
+      error: undefined,
     };
   } catch (error) {
     console.error("Error refreshing access token:", error);
@@ -56,37 +82,60 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   session: {
-    strategy: "jwt", // 👈 This is crucial for App Router!
+    strategy: "jwt",
   },
   callbacks: {
-    async jwt({ token, account }) {
+    async jwt({ token, account }): Promise<JWT> {
       // Initial sign in
       if (account) {
-        token.accessToken = account.access_token;
-        token.refreshToken = account.refresh_token;
-        token.accessTokenExpires = account.expires_at! * 1000; // Convert to milliseconds
-        return token;
+        console.log("✅ New sign in - account data:", {
+          hasAccessToken: !!account.access_token,
+          hasRefreshToken: !!account.refresh_token,
+          expiresAt: account.expires_at
+        });
+        
+        return {
+          ...token,
+          accessToken: account.access_token,
+          refreshToken: account.refresh_token,
+          accessTokenExpires: account.expires_at ? account.expires_at * 1000 : undefined,
+        };
       }
 
       // Return previous token if the access token has not expired yet
-      if (Date.now() < (token.accessTokenExpires as number)) {
+      if (
+        token.accessTokenExpires && 
+        Date.now() < token.accessTokenExpires
+      ) {
         return token;
       }
 
       // Access token has expired, try to refresh it
-      return refreshAccessToken(token);
+      if (token.refreshToken) {
+        console.log("🔄 Refreshing expired token");
+        return refreshAccessToken(token);
+      }
+
+      // No refresh token available, return error
+      console.log("❌ No refresh token available");
+      return {
+        ...token,
+        error: "RefreshAccessTokenError",
+      };
     },
     async session({ session, token }) {
-      // Send properties to the client
-      (session as any).accessToken = token.accessToken;
-      (session as any).refreshToken = token.refreshToken;
-      (session as any).error = token.error;
+      // Only send error status to client, not the actual tokens
+      if (token.error) {
+        session.error = token.error;
+      }
       
       return session;
     },
   },
 };
 
+// Create the NextAuth handler
 const handler = NextAuth(authOptions);
 
+// CRITICAL: Export both GET and POST for App Router
 export { handler as GET, handler as POST };

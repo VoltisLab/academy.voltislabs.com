@@ -1,7 +1,7 @@
 "use client"
 import React, { useState, useEffect } from 'react';
 import { X, Search, Clock, Plus, CheckCircle } from 'lucide-react';
-import { signIn, useSession } from 'next-auth/react';
+import { signIn, signOut, useSession } from 'next-auth/react';
 import { useCoursesData } from '@/services/useCourseDataService';
 import { uploadAndDownloadIcsFile } from '@/services/fileUploadService';
 import CourseReminderService from '@/services/courseReminderService';
@@ -65,7 +65,7 @@ useEffect(() => {
         // Populate the form with the loaded data
         if (parsedData.description) {
           setReminderName(parsedData.description);
-          setSelectedCourse(parsedData.course?.title || parsedData.description);
+          setSelectedCourse(parsedData.course?.title || "");
         }
         if (parsedData.course?.id) {
           setCourseId(parsedData.course.id.toString());
@@ -159,17 +159,25 @@ function resetModalState() {
   return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
 }
 
- const handleAddToGoogleCalendar = async () => {
+ // Replace your existing handleAddToGoogleCalendar function with this:
+
+// Add this function to your LearningReminderModal component
+
+// Replace your handleAddToGoogleCalendar function with this safer version:
+
+// Temporary simplified version for testing
+const handleAddToGoogleCalendar = async () => {
+  console.log("🔍 Starting calendar function");
+  console.log("Session state:", { exists: !!session, user: session?.user?.email });
+
   if (!session) {
-    await signIn("google", {
-      callbackUrl: window.location.href,
-      redirect: false,
-    });
-    setTimeout(() => {
-      updateSession();
-    }, 2000);
+    console.log("❌ No session, redirecting to sign in");
+    // Simple redirect without pre-checks
+    window.location.href = "/api/auth/signin/google";
     return;
   }
+  
+  console.log("✅ Session exists, proceeding with calendar API");
   setLoading(true);
 
   const startDate = selectedDate
@@ -181,51 +189,93 @@ function resetModalState() {
   if (frequency === "Daily") recurrence = "RRULE:FREQ=DAILY";
   if (frequency === "Weekly" && selectedDays.length > 0) {
     const map: any = {
-      Su: "SU",
-      Mo: "MO",
-      Tu: "TU",
-      We: "WE",
-      Th: "TH",
-      Fr: "FR",
-      Sa: "SA",
+      Su: "SU", Mo: "MO", Tu: "TU", We: "WE", Th: "TH", Fr: "FR", Sa: "SA",
     };
-    recurrence = `RRULE:FREQ=WEEKLY;BYDAY=${selectedDays
-      .map((d) => map[d])
-      .join(",")}`;
+    recurrence = `RRULE:FREQ=WEEKLY;BYDAY=${selectedDays.map((d) => map[d]).join(",")}`;
   }
 
-  const res = await fetch("/api/google-calendar", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    credentials: "same-origin",
-    body: JSON.stringify({
-      summary: reminderName,
-      description:
-        selectedCourse && selectedCourse !== "none"
-          ? `Course: ${selectedCourse}`
-          : "Learning Reminder",
-      start: startDate,
-      end: endDate,
-      recurrence: recurrence || undefined,
-    }),
+  console.log("📅 Making calendar API request with:", {
+    summary: reminderName,
+    start: startDate,
+    end: endDate,
+    recurrence: recurrence || "none"
   });
 
-  const data = await res.json();
-  setLoading(false);
-  
-  if (res.ok) {
-    console.log("Google Calendar response:", data);
+  try {
+    const res = await fetch("/api/google-calendar", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "same-origin",
+      body: JSON.stringify({
+        summary: reminderName,
+        description: selectedCourse && selectedCourse !== "none"
+          ? `Course: ${selectedCourse}`
+          : "Learning Reminder",
+        start: startDate,
+        end: endDate,
+        recurrence: recurrence || undefined,
+      }),
+    });
+
+    console.log("📡 Calendar API response status:", res.status);
+    const data = await res.json();
+    console.log("📡 Calendar API response data:", data);
     
-    // Store the Google Calendar event ID
-    setGoogleCalendarEventId(data.id); // 👈 This is the key addition
-    
-    setSuccess((prev) => ({ ...prev, google: true }));
-  } else {
-    alert(
-      "Failed to add event: " + (data.error?.message || JSON.stringify(data))
-    );
+    if (res.ok) {
+      console.log("✅ Calendar event created successfully!");
+      setGoogleCalendarEventId(data.id);
+      setSuccess((prev) => ({ ...prev, google: true }));
+      alert("Calendar event created successfully!");
+    } else {
+      console.error("❌ Calendar API failed:", data);
+      
+      if (res.status === 401) {
+        alert("Authentication failed. Redirecting to sign in...");
+        window.location.href = "/api/auth/signin/google";
+        return;
+      }
+      
+      alert(`Failed to create calendar event: ${data.error || 'Unknown error'}`);
+    }
+  } catch (error) {
+    console.error("❌ Network error:", error);
+    alert("Network error. Please check your connection and try again.");
+  } finally {
+    setLoading(false);
   }
 };
+
+// Also add this helper function to check your session status
+const debugSession = () => {
+  console.log("🔍 Debug Session Info:", {
+    sessionExists: !!session,
+    userEmail: session?.user?.email,
+    sessionData: session,
+  });
+};
+
+
+useEffect(() => {
+  debugSession()
+}, [session])
+// You can call debugSession() in your component to check session state
+
+
+// Helper function to check if re-authentication is needed
+const checkIfReauthNeeded = async (): Promise<boolean> => {
+  try {
+    const response = await fetch("/api/auth/test-auth");
+    const data = await response.json();
+    
+    // Check if token is missing refresh token or expiration
+    return !data.token.hasRefreshToken || !data.token.expiresAt;
+  } catch {
+    return true; // If we can't check, assume re-auth is needed
+  }
+};
+
+// Don't forget to import signOut at the top of your component
+// import { signIn, signOut, useSession } from 'next-auth/react';
 
 
 const downloadICS = async({
@@ -458,7 +508,7 @@ const isStep2Valid = () => {
                       type="radio"
                       name="course"
                       value="none"
-                      checked={selectedCourse === "none"}
+                      checked={selectedCourse === "none" || !selectedCourse?.trim()}
                       onChange={() => setSelectedCourse("none")}
                       className="text-purple-600"
                     />
