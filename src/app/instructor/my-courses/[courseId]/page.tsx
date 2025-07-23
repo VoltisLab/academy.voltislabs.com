@@ -103,7 +103,7 @@ function cleanHtmlContent(htmlString: string): string {
   }
 }
 
-const InstructorCourseDetailPage: React.FC = () => {
+const InstructorCourseDetailPage = () => {
   const [activeTab, setActiveTab] = useState('analytics');
   const [expandedSections, setExpandedSections] = useState<number[]>([0]);
   const { instructorCourses } = useCoursesData();
@@ -387,4 +387,6 @@ const InstructorCourseDetailPage: React.FC = () => {
 </div>
     </div>
   );
-}
+};
+
+export default InstructorCourseDetailPage;
