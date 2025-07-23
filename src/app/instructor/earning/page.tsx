@@ -124,12 +124,15 @@ export default function EarningsPage() {
   const [currency, setCurrency] = useState("USD");
   const [payoutThreshold, setPayoutThreshold] = useState(100);
   const [schedule, setSchedule] = useState("Monthly");
+  const [showPayoutMethods, setShowPayoutMethods] = useState(false);
+  const [selectedMethod, setSelectedMethod] = useState(payoutMethods[0]);
 
   // Refs for click outside detection
   const datePickerRef = useRef<HTMLDivElement>(null);
   const filterSelectRef = useRef<HTMLDivElement>(null);
   const currencySelectRef = useRef<HTMLDivElement>(null);
   const scheduleSelectRef = useRef<HTMLDivElement>(null);
+  const payoutMethodsRef = useRef<HTMLDivElement>(null);
 
   // Calculate summary metrics
   const totalEarnings = earningsData.reduce(
@@ -183,6 +186,13 @@ export default function EarningsPage() {
       ) {
         setShowScheduleSelect(false);
       }
+
+      if (
+        payoutMethodsRef.current &&
+        !payoutMethodsRef.current.contains(event.target as Node)
+      ) {
+        setShowPayoutMethods(false);
+      }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
@@ -229,7 +239,7 @@ export default function EarningsPage() {
   };
 
   return (
-    <div className="space-y-8 p-6">
+    <div className="space-y-8 p-4">
       {/* Page Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
@@ -252,13 +262,48 @@ export default function EarningsPage() {
                 "Select a date range"
               )}
             </button>
+
             {showDatePicker && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-0 bg-black bg-opacity-50 lg:absolute lg:inset-auto lg:mt-2 lg:bg-transparent">
+                <div
+                  ref={datePickerRef}
+                  className="w-full max-w-md bg-white p-4 rounded-lg shadow-lg overflow-auto"
+                >
+                  <DateRange
+                    editableDateInputs={true}
+                    onChange={(item) => setDateRange([item.selection])}
+                    moveRangeOnFirstSelection={false}
+                    ranges={dateRange}
+                    rangeColors={["#4F46E5"]}
+                    maxDate={new Date()}
+                    className="w-full" // Ensure DateRange fills its container
+                  />
+                  <div className="flex justify-end gap-2 mt-2">
+                    <button
+                      onClick={() => setShowDatePicker(false)}
+                      className="px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors text-sm"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleDateApply}
+                      className="px-3 py-1 bg-[#4F46E5] text-white rounded-md hover:bg-blue-700 transition-colors text-sm"
+                    >
+                      Apply
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* {showDatePicker && (
               <div className="absolute z-10 mt-2 bg-white p-4 border rounded-lg shadow-lg">
                 <DateRange
                   editableDateInputs={true}
                   onChange={(item) => setDateRange([item.selection])}
                   moveRangeOnFirstSelection={false}
                   ranges={dateRange}
+                  rangeColors={["#4F46E5"]}
                   maxDate={new Date()}
                 />
                 <div className="flex justify-end gap-2 mt-2">
@@ -270,18 +315,18 @@ export default function EarningsPage() {
                   </button>
                   <button
                     onClick={handleDateApply}
-                    className="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm"
+                    className="px-3 py-1 bg-[#4F46E5] text-white rounded-md hover:bg-blue-700 transition-colors text-sm"
                   >
                     Apply
                   </button>
                 </div>
               </div>
-            )}
+            )} */}
           </div>
           <button
             onClick={handleExport}
             disabled={loading}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm font-medium disabled:opacity-70"
+            className="flex items-center gap-2 px-4 py-2 bg-[#4F46E5] text-white rounded-md hover:bg-blue-700 transition-colors text-sm font-medium disabled:opacity-70"
           >
             {loading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -326,7 +371,7 @@ export default function EarningsPage() {
                 ? "£"
                 : "CA$"
             }${avgMonthlyEarnings.toLocaleString()}`,
-            icon: <DollarSign className="h-6 w-6 text-blue-600" />,
+            icon: <DollarSign className="h-6 w-6 text-[#4F46E5]" />,
             bg: "bg-blue-100",
             change: "+8% from last period",
           },
@@ -404,7 +449,7 @@ export default function EarningsPage() {
                 onClick={() => setActiveChart(type)}
                 className={`px-3 py-1 rounded-md text-sm font-medium ${
                   activeChart === type
-                    ? "bg-blue-600 text-white"
+                    ? "bg-[#4F46E5] text-white"
                     : "border border-gray-300 text-gray-700 hover:bg-gray-50"
                 }`}
               >
@@ -639,55 +684,103 @@ export default function EarningsPage() {
         <div className="space-y-6">
           <div>
             <h3 className="text-md font-medium mb-4">Payout Methods</h3>
-            <div className="space-y-4">
-              {payoutMethods.map((method) => (
-                <div
-                  key={method.id}
-                  className="flex items-center justify-between p-4 border border-gray-200 rounded-lg"
+            <div className="relative" ref={payoutMethodsRef}>
+              <button
+                onClick={() => setShowPayoutMethods(!showPayoutMethods)}
+                className="flex items-center justify-between w-full px-4 py-3 border border-gray-300 rounded-md hover:bg-gray-50"
+              >
+                <div>
+                  <p className="font-medium text-left">{selectedMethod.name}</p>
+                  <p className="text-sm text-gray-500 text-left">
+                    {selectedMethod.details}
+                  </p>
+                </div>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className={`h-5 w-5 text-gray-400 transition-transform ${
+                    showPayoutMethods ? "rotate-180" : ""
+                  }`}
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
                 >
-                  <div>
-                    <p className="font-medium">{method.name}</p>
-                    {editingMethod === method.id ? (
-                      <input
-                        type="text"
-                        defaultValue={method.details}
-                        className="mt-1 px-2 py-1 border border-gray-300 rounded-md w-full"
-                      />
-                    ) : (
+                  <path
+                    fillRule="evenodd"
+                    d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </button>
+
+              {showPayoutMethods && (
+                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg">
+                  {payoutMethods.map((method) => (
+                    <div
+                      key={method.id}
+                      onClick={() => {
+                        setSelectedMethod(method);
+                        setShowPayoutMethods(false);
+                      }}
+                      className={`px-4 py-3 cursor-pointer hover:bg-gray-50 ${
+                        selectedMethod.id === method.id ? "bg-blue-50" : ""
+                      }`}
+                    >
+                      <p className="font-medium">{method.name}</p>
                       <p className="text-sm text-gray-500">{method.details}</p>
-                    )}
-                  </div>
-                  <div className="flex gap-2">
-                    {editingMethod === method.id ? (
-                      <>
-                        <button
-                          onClick={() => setEditingMethod(null)}
-                          className="px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-50 text-sm"
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          onClick={() => {
-                            setEditingMethod(null);
-                            toast.success("Payment method updated");
-                          }}
-                          className="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm"
-                        >
-                          Save
-                        </button>
-                      </>
-                    ) : (
-                      <button
-                        onClick={() => handleEditMethod(method.id)}
-                        className="px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-50 text-sm"
-                      >
-                        Edit
-                      </button>
-                    )}
+                    </div>
+                  ))}
+                  <div className="border-t border-gray-200">
+                    <button
+                      onClick={() => {
+                        setEditingMethod(selectedMethod.id);
+                        setShowPayoutMethods(false);
+                      }}
+                      className="w-full px-4 py-2 text-left text-[#4F46E5] hover:bg-blue-50 rounded-b-md"
+                    >
+                      Edit Selected Method
+                    </button>
                   </div>
                 </div>
-              ))}
+              )}
             </div>
+
+            {/* Edit Form (shown when editing) */}
+            {editingMethod && (
+              <div className="mt-4 p-4 border border-gray-200 rounded-md bg-gray-50">
+                <h4 className="font-medium mb-3">
+                  Edit {selectedMethod.name} Details
+                </h4>
+                <input
+                  type="text"
+                  defaultValue={selectedMethod.details}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder={
+                    selectedMethod.id === "bank"
+                      ? "Enter bank account details"
+                      : "Enter PayPal email"
+                  }
+                />
+                <div className="flex justify-end gap-2 mt-3">
+                  <button
+                    onClick={() => setEditingMethod(null)}
+                    className="px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-100"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => {
+                      // Here you would typically save to your backend
+                      toast.success(
+                        `${selectedMethod.name} details updated successfully`
+                      );
+                      setEditingMethod(null);
+                    }}
+                    className="px-3 py-1 bg-[#4F46E5] text-white rounded-md hover:bg-blue-700"
+                  >
+                    Save Changes
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           <div>
@@ -747,7 +840,7 @@ export default function EarningsPage() {
               <button
                 onClick={handleSavePayoutThreshold}
                 disabled={loading}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm disabled:opacity-70"
+                className="px-4 py-2 bg-[#4F46E5] text-white rounded-md hover:bg-blue-700 text-sm disabled:opacity-70"
               >
                 {loading ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -810,7 +903,7 @@ export default function EarningsPage() {
               <button
                 onClick={handleSavePayoutSchedule}
                 disabled={loadingSched}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm disabled:opacity-70"
+                className="px-4 py-2 bg-[#4F46E5] text-white rounded-md hover:bg-blue-700 text-sm disabled:opacity-70"
               >
                 {loadingSched ? (
                   <Loader2 className="h-4 w-4 animate-spin" />

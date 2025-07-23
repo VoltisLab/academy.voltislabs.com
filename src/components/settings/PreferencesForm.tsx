@@ -124,6 +124,8 @@ export default function PreferencesForm() {
         timeZone: preferences.timezone,
       };
 
+      console.log(input, "Jajajajajajajajjaja");
+
       const result = await updatePreferences(input);
       console.log(result);
       toast.success("Preferences updated successfully");

@@ -28,7 +28,7 @@ export default function CourseCard({
       {/* Content */}
       <div className="p-4 space-y-2">
         <p className="text-xs text-gray-500">{date}</p>
-        <h3 className="font-semibold text-[24px] h-[59px] text-black leading-tight line-clamp-2">
+        <h3 className="font-semibold text-[24px] h-[60px] text-black leading-tight line-clamp-2">
           {title}
         </h3>
         <p
