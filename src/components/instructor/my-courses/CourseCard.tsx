@@ -278,9 +278,9 @@ const handleDeleteConfirm = async () => {
           style={{ width: `${progressPercent}%` }}
         />
       </div>
-      <div className="flex gap-2 lg:gap-6 mt-2">
-        <Link href={editUrl} className="flex-1">
-          <button className="w-full py-2 rounded-lg bg-[#786AED] text-white font-semibold shadow-sm hover:bg-[#5f56d7] transition-colors text-sm">
+      <div className="flex gap-2 lg:gap-6 mt-2 justify-end">
+        <Link href={editUrl} className="">
+          <button className="w-fit px-4 py-2 rounded-lg bg-[#786AED] text-white font-semibold shadow-sm hover:bg-[#5f56d7] transition-colors text-sm">
             Edit
           </button>
         </Link>
@@ -290,7 +290,7 @@ const handleDeleteConfirm = async () => {
             e.preventDefault();
             setShowDeleteModal(true)
           }
-          }          className="flex-1 py-2 rounded-lg border border-red-300 bg-red-50 text-red-600 font-semibold hover:bg-red-100 transition-colors text-sm"
+          }          className="w-fit px-4 py-2 rounded-lg border border-red-300 bg-red-50 text-red-600 font-semibold hover:bg-red-100 transition-colors text-sm"
         >
           Delete
         </button>
