@@ -170,13 +170,23 @@ const InstructorCourseDetailPage = () => {
   }
 
   // Status badge style
-  const isDraft = myCourse?.status?.toLowerCase() === 'draft';
+  const status = myCourse?.status?.toUpperCase();
   const statusBadge = (
-    <span className={`absolute top-0 left-0 z-40 px-3 py-1 rounded-b text-xs font-semibold shadow-lg ${isDraft ? 'bg-white text-purple-700 border border-purple-200' : 'bg-green-500 text-white'}`}>{myCourse?.status?.toUpperCase()}</span>
+    <span
+      className={`absolute top-1 left-3 z-40 px-3 py-1 text-xs font-bold rounded-full shadow-lg backdrop-blur-sm
+        ${status === 'PUBLISHED'
+          ? 'bg-green-100 text-green-700'
+          : status === 'PENDING'
+          ? 'bg-yellow-100 text-yellow-700'
+          : 'bg-red-100 text-red-700'}
+      `}
+    >
+      {status}
+    </span>
   );
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 md:px-0 px-4 ">
       {/* Hero Banner */}
       <div className="relative w-full h-[200px] flex items-end justify-center overflow-hidden rounded-b-3xl shadow-lg">
         <Image
@@ -190,8 +200,8 @@ const InstructorCourseDetailPage = () => {
         {/* Status badge top left */}
         {statusBadge}
         {/* Hero Overlay */}
-        <div className="absolute z-20 top-4 left-0 right-0 bottom-0 px-2 sm:px-4 md:px-8 pb-6 flex flex-col items-start gap-2">
-          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white drop-shadow-lg mb-1 border-b border-white/40 pb-2 break-words max-w-full">{myCourse?.title}</h1>
+        <div className="absolute z-20 top-8 left-0 right-0 bottom-0 px-2 sm:px-4  pb-6 flex flex-col items-start gap-2">
+          <h1 className="text-xl  font-bold text-white drop-shadow-lg mb-1 border-b border-white/40 pb-2 break-words max-w-full">{myCourse?.title}</h1>
          
           <div className="flex flex-wrap items-center gap-2 border-b border-white/40 pb-2 w-full">
             <div className='flex flex-col text-xs text-white gap-1 font-bold'>
@@ -210,11 +220,11 @@ const InstructorCourseDetailPage = () => {
           </div>
         </div>
         {/* Floating Stats Card - top right remains */}
-        <div className="absolute top-0 right-0 z-30 max-w-[98vw] w-auto">
-          <div className="backdrop-blur-md bg-white/80 rounded-b-2xl shadow-lg flex flex-wrap justify-between items-center px-2 sm:px-3 py-2 gap-0 min-h-[40px]">
+        <div className=" hidden xl:block absolute top-0 right-0 z-30 max-w-[98vw] w-auto">
+          <div className="backdrop-blur-md bg-white/80 rounded-b-2xl shadow-lg flex flex-wrap justify-between items-center px-2 py-2 gap-0 min-h-[30px]">
             {stats.map((stat, idx) => (
               <React.Fragment key={stat.label}>
-                <div className="flex-1 min-w-[60px] text-center flex flex-col items-center justify-center px-2">
+                <div className="flex-1 min-w-[40px] text-center flex flex-col items-center justify-center px-2">
                   <div className="mb-0.5">{stat.icon}</div>
                   <div className="text-sm font-semibold text-gray-900 leading-tight">{stat.value}</div>
                   <div className="text-[10px] text-gray-600 leading-tight">{stat.label}</div>
@@ -240,7 +250,7 @@ const InstructorCourseDetailPage = () => {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`px-4 sm:px-6 py-2 font-medium capitalize transition-all whitespace-nowrap ${
+              className={`xl:px-4 px-2 py-2 font-medium capitalize transition-all whitespace-nowrap ${
                 activeTab === tab
                   ? 'text-[#313273] border-b-2 border-[#313273] bg-blue-50'
                   : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
