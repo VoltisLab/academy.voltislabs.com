@@ -18,6 +18,7 @@ import { toast } from "react-hot-toast";
 
 import { useUserService } from "@/services/userService";
 import { logout } from "@/api/auth/auth";
+import { usePathname } from "next/navigation";
 
 export default function DashboardNavbar() {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -31,6 +32,10 @@ export default function DashboardNavbar() {
   const [loading, setLoading] = useState(true);
   const [userError, setUserError] = useState<string | null>(null);
   const { getUserProfile } = useUserService();
+
+  const pathname = usePathname();
+  const role = pathname?.split("/")[1]; // gets 'instructor' or 'dashboard'
+  const basePath = `/${role}`;
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -164,7 +169,7 @@ export default function DashboardNavbar() {
                 </div>
 
                 <Link
-                  href="/instructor/profile"
+                  href={`${basePath}/profile`}
                   className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
                   onClick={() => setIsProfileOpen(false)}
                 >
@@ -173,7 +178,7 @@ export default function DashboardNavbar() {
                 </Link>
 
                 <Link
-                  href="/instructor/settings"
+                  href={`${basePath}/settings`}
                   className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
                   onClick={() => setIsProfileOpen(false)}
                 >
