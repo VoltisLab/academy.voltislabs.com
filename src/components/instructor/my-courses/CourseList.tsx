@@ -59,7 +59,7 @@ const MyCourseList = () => {
           <div
             className={
               grid
-                ? 'grid lg:grid-cols-3 grid-cols-1 gap-4 items-center'
+                ? ' flex flex-wrap gap-4  '
                 : 'flex flex-col gap-4'
             }
           >

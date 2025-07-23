@@ -387,6 +387,4 @@ const InstructorCourseDetailPage: React.FC = () => {
 </div>
     </div>
   );
-};
-
-export default InstructorCourseDetailPage;
+}

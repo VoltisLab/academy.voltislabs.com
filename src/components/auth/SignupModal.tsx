@@ -63,6 +63,18 @@ const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose }) => {
   }, [router]);
 
   useEffect(() => {
+    const handlePopState = () => {
+      window.location.reload();
+    };
+
+    window.addEventListener("popstate", handlePopState);
+
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, []);
+
+  useEffect(() => {
     // Function to handle outside clicks
     const handleOutsideClick = (event: MouseEvent) => {
       if (
@@ -132,9 +144,13 @@ const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose }) => {
           console.log("Backend response:", backendResponse);
           toast.success("Google sign-in and backend login successful!");
           if (backendResponse.success) {
-            router.push(
-              backendResponse.user?.isInstructor ? "/instructor" : "/dashboard"
-            );
+            // router.push(
+            //   backendResponse.user?.isInstructor ? "/instructor" : "/dashboard"
+            // );
+
+            window.location.href = backendResponse.user?.isInstructor
+              ? "/instructor"
+              : "/dashboard";
             return { success: true };
           }
         } catch (error: any) {
