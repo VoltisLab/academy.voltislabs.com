@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Geist_Mono, Maven_Pro, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import ClientProviders from "./ClientProviders";
+import Head from 'next/head';
+import Script from 'next/script';
 
 // Fonts
 const mavenPro = Maven_Pro({
@@ -59,6 +61,21 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <Head>
+        {/* Google Analytics */}
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-HJR9KYF4KR"
+          strategy="afterInteractive"
+        />
+        <Script id="gtag-init" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-HJR9KYF4KR');
+          `}
+        </Script>
+      </Head>
       <body
         className={`${mavenPro.variable} ${geistMono.variable} ${plusJakarta.variable} font-sans antialiased`}
       >

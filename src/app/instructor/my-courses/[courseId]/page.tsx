@@ -104,7 +104,7 @@ function cleanHtmlContent(htmlString: string): string {
 }
 
 const InstructorCourseDetailPage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState('analytics');
   const [expandedSections, setExpandedSections] = useState<number[]>([0]);
   const { instructorCourses } = useCoursesData();
   const params = useParams();
@@ -190,28 +190,28 @@ const InstructorCourseDetailPage: React.FC = () => {
         {/* Status badge top left */}
         {statusBadge}
         {/* Hero Overlay */}
-        <div className="absolute z-20 top-5 left-0 right-0 bottom-0 px-2 pb-8 flex flex-col items-start gap-2">
-          <h1 className="text-2xl md:text-3xl font-bold text-white drop-shadow-lg mb-1 ">{myCourse?.title}</h1>
-          <div className="w-xs mb-1" style={{height: '1px', background: 'linear-gradient(90deg, transparent 0%, #fff 30%, #fff 70%, transparent 100%)'}} />
-          <div className="flex flex-wrap items-center gap-2 mb-1">
+        <div className="absolute z-20 top-4 left-0 right-0 bottom-0 px-2 sm:px-4 md:px-8 pb-6 flex flex-col items-start gap-2">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white drop-shadow-lg mb-1 border-b border-white/40 pb-2 break-words max-w-full">{myCourse?.title}</h1>
+         
+          <div className="flex flex-wrap items-center gap-2 border-b border-white/40 pb-2 w-full">
             <div className='flex flex-col text-xs text-white gap-1 font-bold'>
               <p>Category:</p>
-            <span className="bg-[#313273] text-white text-xs px-3 py-1 rounded-lg font-semibold">{myCourse?.category?.name}</span>
+              <span className="bg-[#313273] text-white text-xs px-2 py-1 rounded-lg font-semibold max-w-[120px] truncate">{myCourse?.category?.name}</span>
             </div>
             <div className='flex flex-col text-xs text-white gap-1 font-bold'>
               <p>Sub-Category:</p>
-              {myCourse?.subCategory?.name && <span className="bg-white text-[#313273] text-xs px-3 py-1 rounded-lg font-semibold">{myCourse?.subCategory?.name}</span>}
+              {myCourse?.subCategory?.name && <span className="bg-white text-[#313273] text-xs px-2 py-1 rounded-lg font-semibold max-w-[120px] truncate">{myCourse?.subCategory?.name}</span>}
             </div>
           </div>
-          <div className="w-xs mb-1" style={{height: '1px', background: 'linear-gradient(90deg, transparent 0%, #fff 30%, #fff 70%, transparent 100%)'}} />
-          <div className='flex flex-col text-xs text-white gap-1 font-bold'>
+          <div className="w-full h-1 mb-1" style={{background: 'linear-gradient(90deg, transparent 0%, #fff 30%, #fff 70%, transparent 100%)'}} />
+          <div className='flex flex-col text-xs text-white gap-1 font-bold w-full max-w-full'>
             <p>Description</p>
-            <div className="text-white/90 text-xs md:text-sm max-w-xl truncate" title={cleanHtmlContent(myCourse?.description)}>{truncateText(cleanHtmlContent(myCourse?.description), 120)}</div>
+            <div className="text-white text-xs max-w-full truncate" title={cleanHtmlContent(myCourse?.description)}>{truncateText(cleanHtmlContent(myCourse?.description), 120)}</div>
           </div>
         </div>
         {/* Floating Stats Card - top right remains */}
-        <div className="absolute top-0 right-0 z-30 max-w-[90vw] w-auto">
-          <div className="backdrop-blur-md bg-white/80 rounded-b-2xl shadow-lg flex flex-wrap justify-between items-center px-3 py-2 gap-0 min-h-[56px]">
+        <div className="absolute top-0 right-0 z-30 max-w-[98vw] w-auto">
+          <div className="backdrop-blur-md bg-white/80 rounded-b-2xl shadow-lg flex flex-wrap justify-between items-center px-2 sm:px-3 py-2 gap-0 min-h-[40px]">
             {stats.map((stat, idx) => (
               <React.Fragment key={stat.label}>
                 <div className="flex-1 min-w-[60px] text-center flex flex-col items-center justify-center px-2">
@@ -230,20 +230,20 @@ const InstructorCourseDetailPage: React.FC = () => {
       </div>
 
       {/* Main Content Layout: Tabs 2/3, Performance 1/3 */}
-      <div className="mt-5 flex flex-col lg:flex-row gap-5 items-stretch">
+      <div className="mt-5 flex flex-col lg:flex-row gap-3 md:gap-5 items-stretch">
   {/* Tabs Section (2/3) */}
   <div className="w-full lg:w-2/3 flex flex-col">
     <div className="bg-white rounded-2xl shadow flex flex-col h-full">
-      <div className="border-b border-gray-200 flex-shrink-0">
-        <div className="flex">
-          {['overview', 'curriculum', 'reviews', 'analytics'].map((tab) => (
+      <div className="border-b border-gray-200 flex-shrink-0 overflow-x-auto">
+        <div className="flex flex-wrap">
+          {[ 'analytics', 'overview', 'curriculum', 'reviews'].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`px-6 py-2 font-medium capitalize transition-all ${
+              className={`px-4 sm:px-6 py-2 font-medium capitalize transition-all whitespace-nowrap ${
                 activeTab === tab
                   ? 'text-[#313273] border-b-2 border-[#313273] bg-blue-50'
-                  : 'text-gray-500 hover:text-[#313273] hover:bg-gray-50'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
               }`}
             >
               {tab}
@@ -251,7 +251,7 @@ const InstructorCourseDetailPage: React.FC = () => {
           ))}
         </div>
       </div>
-      <div className="flex-1 overflow-auto p-5">
+      <div className="flex-1 overflow-auto p-2 sm:p-5">
         {activeTab === 'overview' && (
           <div className="space-y-6 lg:space-y-8 h-full">
             <div>
@@ -337,7 +337,7 @@ const InstructorCourseDetailPage: React.FC = () => {
                     <div className="flex items-center gap-2 mb-1">
                       <span className="font-medium text-[#313273]">{review.student}</span>
                       <span className="text-xs text-gray-500">{formatReviewDate(review.date)}</span>
-                      <span className="flex items-center gap-0.5 ml-2">
+                      <span className="flex items-center text-xs gap-0.5 ml-2">
                         {renderStars(review.rating)}
                       </span>
                     </div>
