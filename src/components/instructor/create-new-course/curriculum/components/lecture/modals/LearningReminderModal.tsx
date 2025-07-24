@@ -140,6 +140,7 @@ const LearningReminderModal: React.FC<LearningReminderModalProps> = ({ isOpen, o
     setIcId("");
     setGoogleCalendarEventId(null);
     setLoading(false);
+    setFullData(null)
   }
 
   const { instructorCourses, setSearch } = useCoursesData()
@@ -556,7 +557,11 @@ const LearningReminderModal: React.FC<LearningReminderModalProps> = ({ isOpen, o
           <div className="p-4 flex justify-between items-center border-b border-gray-200">
             <h2 className="text-lg font-medium">Learning reminders</h2>
             <button
-              onClick={onClose}
+              onClick={() => {
+                localStorage.removeItem("remiderEdit");
+                resetModalState()
+                onClose()
+              }}
               className="text-gray-500 hover:text-gray-700"
               aria-label="Close modal"
             >

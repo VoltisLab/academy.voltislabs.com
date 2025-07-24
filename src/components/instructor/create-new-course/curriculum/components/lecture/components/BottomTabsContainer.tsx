@@ -13,6 +13,7 @@ import LearningReminderCard from "./LearningReminderCard";
 import CourseReminderService from "@/services/courseReminderService";
 import { useParams } from "next/navigation";
 import { useCoursesData } from "@/services/useCourseDataService";
+import { useVideoProgress } from "@/app/preview/VideoProgressContext";
 
 interface videoNooteType{
   id: string;
@@ -100,7 +101,14 @@ const BottomTabsContainer: React.FC<BottomTabsContainerProps> = ({
   const matchingCourses = instructorCourses.filter(course => 
   course.id.toString() === courseId
 );
+const { videoState } = useVideoProgress();
 
+// const isProbablyVideo =
+//   !!videoState.currentVideoUrl && // must exist
+//   /\.(mp4|mov|webm|avi|mkv|m3u8)(\?|$)/i.test(videoState.currentVideoUrl); // matches common video file types including m3u8
+// console.log("dfbjnvjvnvjbnjvb", videoState)
+// or less strictly:
+// const isProbablyVideo = !!videoState.currentVideoUrl;
 console.log("person", matchingCourses)
   const handleSearchToggle = () => {
     setShowSearch(!showSearch);
@@ -138,15 +146,18 @@ fetchReminders()
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Don't trigger if any input or textarea is focused!
-      if (
-        activeTab === "notes" &&
-        (e.key === "b" || e.key === "B") &&
-        document.activeElement &&
-        // If not on a textarea or input
-        !["INPUT", "TEXTAREA"].includes(document.activeElement.tagName)
-      ) {
-        e.preventDefault();
-        onCreateNote();
+      if(videoState.duration > 0) {
+        if (
+          activeTab === "notes" &&
+          (e.key === "b" || e.key === "B") &&
+          document.activeElement &&
+          // If not on a textarea or input
+          !["INPUT", "TEXTAREA"].includes(document.activeElement.tagName)
+        ) {
+          e.preventDefault();
+          onCreateNote();
+        }
+
       }
     };
     window.addEventListener("keydown", handleKeyDown);
@@ -417,7 +428,7 @@ fetchReminders()
                         progress
                       )}`}
                       className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500"
-                      onClick={onCreateNote}
+                      onClick={ () => videoState.duration > 0 && onCreateNote()}
                       readOnly
                     />
                     <button
@@ -425,6 +436,7 @@ fetchReminders()
                       aria-label="Add note"
                       onClick={onCreateNote}
                       type="button"
+                      disabled={videoState.duration < 1}
                     >
                       <Plus className="w-5 h-5" />
                     </button>

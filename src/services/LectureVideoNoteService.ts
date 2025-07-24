@@ -138,11 +138,13 @@ const deleteLectureVideoNote = async ({
 const fetchLectureNotes = async ({
   lectureId,
 //   sortBy = "MOST_RECENT",
+pageCount = 15,
   setLoading,
   setError,
 }: {
   lectureId: number;
 //   sortBy?: string;
+pageCount?: number
   setLoading?: (v: boolean) => void;
   setError?: (e: Error | null) => void;
 }) => {
@@ -152,7 +154,7 @@ const fetchLectureNotes = async ({
 
     const { data, errors } = await apolloClient.query({
       query: GET_LECTURE_NOTES,
-      variables: { lectureId },
+      variables: { lectureId, pageCount},
        context: { includeAuth: true }, // Uncomment if needed
       fetchPolicy: "network-only",
     });

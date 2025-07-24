@@ -1035,6 +1035,8 @@ const QuizItem: React.FC<QuizItemProps> = ({
                           {/* <Link> */}
                           <Link
                             href={`/preview/quiz/${courseId}/${sectionId}/${lecture.id}`}
+                            target="_blank"
+                              rel="noopener noreferrer"
                             className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                             type="button"
                           >
@@ -1044,6 +1046,8 @@ const QuizItem: React.FC<QuizItemProps> = ({
                         <li>
                           <Link
                             href={`/preview/quiz/${courseId}/${sectionId}/${lecture.id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
                             className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                             type="button"
                           >

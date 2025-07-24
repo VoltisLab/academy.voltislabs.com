@@ -107,8 +107,8 @@ export const GET_INSTRUCTOR_COURSES_TOTAL = gql`
   }
 `;
 export const GET_LECTURE_NOTES = gql`
-  query UserLectureVideoNotes($lectureId: Int!) {
-    userLectureVideoNotes(lectureId: $lectureId ) {
+  query UserLectureVideoNotes($lectureId: Int! $pageCount: Int ) {
+    userLectureVideoNotes(lectureId: $lectureId pageCount: $pageCount ) {
       createdAt
       id
       notes
