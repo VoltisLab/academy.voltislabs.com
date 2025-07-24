@@ -21,7 +21,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         {/* Main Content with proper margin to account for sidebar */}
         <div className="md:ml-64 min-h-screen flex flex-col">
           {/* Navbar - only visible on desktop */}
-          <div className="sticky top-0 z-20 w-full hidden md:block">
+          <div className="sticky top-0 z-100 w-full hidden md:block">
             <DashboardNavbar />
           </div>
           

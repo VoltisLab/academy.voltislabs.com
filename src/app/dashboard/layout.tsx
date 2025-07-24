@@ -2,11 +2,8 @@
 
 import Sidebar from "@/components/dashboard/Sidebar";
 import { AsideProvider } from "@/context/showAsideContext";
-import { ReactNode, Suspense } from "react";
+import { ReactNode } from "react";
 import { LoadingProvider } from "@/context/LoadingContext";
-import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
