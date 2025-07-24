@@ -26,9 +26,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           </div>
           
           {/* Page Content */}
-          <main className="flex-1 overflow-x-hidden md:p-6">
-              {children}
-          </main>
+          <main className="flex-1 overflow-x-hidden md:m-6 shadow-lg shadow-gray-400 bg-[#EFEFF2] overflow-y-auto rounded-2xl">
+  {children}
+</main>
         </div>
       </div>
      </LoadingProvider>
