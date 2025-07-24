@@ -17,7 +17,7 @@ const page = () => {
 
   console.log("instructorData===", instructorCourses)
   return (
-    <div>
+    <div className='p-4'>
      <MyCourseList/>
     </div>
   )

@@ -10,7 +10,7 @@ interface FormHeaderProps {
 
 export default function FormHeader({ loading, handleCourseCreation, title}: FormHeaderProps) {
   return (
-    <div className="flex items-center justify-between border-b border-gray-200 py-3 bg-white">
+    <div className="flex items-center justify-between border-b border-gray-200 py-3 ">
       <h2 className="xl:text-lg text-[15px] font-semibold text-gray-900">{title}</h2>
 
       <div className="flex items-center xl:gap-4 gap-2">

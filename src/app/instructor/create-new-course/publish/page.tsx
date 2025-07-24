@@ -61,7 +61,7 @@ export default function PublishCoursePage() {
   // }, [courseId]);
 
   return (
-    <div className="bg-white w-full xl:max-w-[90rem] mx-auto ">
+    <div className=" w-full xl:max-w-[90rem]  ">
       <CourseCreationTabs />
 
       <div className="p-6  border-x border-b border-gray-200 w-full h-[calc(100vh-180px)] rounded-b-md">

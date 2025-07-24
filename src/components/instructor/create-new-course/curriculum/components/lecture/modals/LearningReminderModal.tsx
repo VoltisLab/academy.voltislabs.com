@@ -507,7 +507,7 @@ const isStep2Valid = () => {
                     <input
                       type="radio"
                       name="course"
-                      value="none"
+                      value=""
                       checked={selectedCourse === "none" || !selectedCourse?.trim()}
                       onChange={() => setSelectedCourse("none")}
                       className="text-purple-600"

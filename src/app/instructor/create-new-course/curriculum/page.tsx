@@ -21,7 +21,7 @@ export default function CurriculumPage() {
   }, [router, courseId]);
 
   return (
-    <div className="bg-white w-full xl:max-w-[90rem] mx-auto min-h-screen">
+    <div className=" w-full xl:max-w-[90rem]  min-h-screen">
       <CourseCreationTabs />
 
       <div className="px-4">
