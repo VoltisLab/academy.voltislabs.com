@@ -49,6 +49,7 @@ import CodingExercisePreview from "../../code/CodingExercisePreview";
 import PreviewHeader from "./PreviewHeader";
 import { ControlButtons } from "@/components/preview/ControlsButton";
 import { usePreviewContext } from "@/context/PreviewContext";
+import { useVideoProgress } from "@/app/preview/VideoProgressContext";
 
 // Add QuizData interface
 export interface Answer {
@@ -177,14 +178,32 @@ const StudentCoursePreview = ({
     };
   }, []);
 
+   const {
+    videoState,
+    setProgress,
+    setDuration,
+    setPlaying,
+    togglePlayPause,
+    setVolume,
+    setMuted,
+    toggleMute,
+    setPlaybackRate,
+    setCurrentVideo,
+    resetProgress,
+    getFormattedProgress,
+    getFormattedDuration,
+    getProgressPercentage,
+  } = useVideoProgress();
+
+  
   // State management
-  const [playing, setPlaying] = useState<boolean>(false);
-  const [progress, setProgress] = useState<number>(0);
-  const [duration, setDuration] = useState<number>(0);
-  const [showControls, setShowControls] = useState<boolean>(false);
-  const [volume, setVolume] = useState<number>(0.8);
-  const [muted, setMuted] = useState<boolean>(false);
-  const [playbackRate, setPlaybackRate] = useState<number>(1);
+  // const [playing, setPlaying] = useState<boolean>(false);
+  // const [progress, setProgress] = useState<number>(0);
+  // const [duration, setDuration] = useState<number>(0);
+  // const [showControls, setShowControls] = useState<boolean>(false);
+  // const [volume, setVolume] = useState<number>(0.8);
+  // const [muted, setMuted] = useState<boolean>(false);
+  // const [playbackRate, setPlaybackRate] = useState<number>(1);
   const [videoQuality, setVideoQuality] = useState<string>("Auto");
   const [showSearch, setShowSearch] = useState<boolean>(false);
   const [showLearningModal, setShowLearningModal] = useState<boolean>(false);
@@ -245,13 +264,13 @@ const StudentCoursePreview = ({
 
   // Video control handlers for keyboard shortcuts
   const handlePlayPause = (): void => {
-    setPlaying(!playing);
+    setPlaying(!videoState.playing);
   };
 
   const handleMute = (): void => {
-    const newMuted = !muted;
+    const newMuted = !videoState.muted;
     setMuted(newMuted);
-    console.log("Mute toggled:", newMuted, "Current volume:", volume);
+    console.log("Mute toggled:", newMuted, "Current volume:", videoState.volume);
 
     // Force update ReactPlayer mute state
     if (playerRef.current) {
@@ -263,7 +282,7 @@ const StudentCoursePreview = ({
             player.setVolume?.(0);
           } else {
             player.unMute?.();
-            player.setVolume?.(volume * 100);
+            player.setVolume?.(videoState.volume * 100);
           }
         }
       }, 100);
@@ -271,7 +290,7 @@ const StudentCoursePreview = ({
   };
 
   const handleVolumeUp = (): void => {
-    if (muted) {
+    if (videoState.muted) {
       setMuted(false); // Unmute if muted when increasing volume
     }
     setVolume((prevVolume) => {
@@ -282,7 +301,7 @@ const StudentCoursePreview = ({
         "New:",
         newVolume,
         "Muted:",
-        muted
+        videoState.muted
       );
 
       // Multiple approaches to ensure volume change works
@@ -331,7 +350,7 @@ const StudentCoursePreview = ({
   };
 
   const handleVolumeDown = (): void => {
-    setVolume((prevVolume) => {
+    setVolume((prevVolume: number) => {
       const newVolume = Math.max(0, prevVolume - 0.1);
       console.log(
         "Volume down - Previous:",
@@ -339,7 +358,7 @@ const StudentCoursePreview = ({
         "New:",
         newVolume,
         "Muted:",
-        muted
+        videoState.muted
       );
 
       // Auto-mute if volume reaches 0
@@ -415,7 +434,7 @@ const StudentCoursePreview = ({
 
   const handleSeekBackward = (): void => {
     if (playerRef.current) {
-      const newTime = Math.max(0, progress - 5);
+      const newTime = Math.max(0, videoState.progress - 5);
       console.log("Seeking backward to:", newTime);
       playerRef.current.seekTo(newTime, "seconds");
     }
@@ -423,7 +442,7 @@ const StudentCoursePreview = ({
 
   const handleSeekForward = (): void => {
     if (playerRef.current) {
-      const newTime = Math.min(duration, progress + 5);
+      const newTime = Math.min(videoState.duration, videoState.progress + 5);
       console.log("Seeking forward to:", newTime);
       playerRef.current.seekTo(newTime, "seconds");
     }
@@ -758,15 +777,15 @@ const StudentCoursePreview = ({
 
   const handleForward = () => {
     if (playerRef.current) {
-      const newTime = Math.min(duration, progress + 5);
-      playerRef.current.seekTo(newTime / duration);
+      const newTime = Math.min(videoState.duration, videoState.progress + 5);
+      playerRef.current.seekTo(newTime / videoState.duration);
     }
   };
 
   const handleRewind = () => {
     if (playerRef.current) {
-      const newTime = Math.max(0, progress - 5);
-      playerRef.current.seekTo(newTime / duration);
+      const newTime = Math.max(0, videoState.progress - 5);
+      playerRef.current.seekTo(newTime / videoState.duration);
     }
   };
 
@@ -950,8 +969,8 @@ const StudentCoursePreview = ({
     } else {
       const newNote: VideoNote = {
         id: Date.now().toString(),
-        timestamp: progress,
-        formattedTime: formatTime(progress),
+        timestamp: videoState.progress,
+        formattedTime: formatTime(videoState.progress),
         content: currentNoteContent,
         lectureId: activeItemId || "default-lecture",
         lectureName: selectedItemData?.name || "Current Item",
@@ -1048,10 +1067,10 @@ const StudentCoursePreview = ({
     if (playerRef.current) {
       const player = playerRef.current.getInternalPlayer();
       if (player) {
-        console.log("Applying volume change:", volume, "Muted:", muted);
+        console.log("Applying volume change:", videoState.volume, "Muted:", videoState.muted);
 
         // Handle different player types
-        if (muted) {
+        if (videoState.muted) {
           player.mute?.();
           player.setVolume?.(0);
         } else {
@@ -1060,14 +1079,14 @@ const StudentCoursePreview = ({
           if (player.setVolume) {
             // YouTube uses 0-100, others might use 0-1
             const volumeValue = player.getVideoUrl?.()?.includes("youtube")
-              ? volume * 100
-              : volume;
+              ? videoState.volume * 100
+              : videoState.volume;
             player.setVolume(volumeValue);
           }
         }
       }
     }
-  }, [volume, muted]);
+  }, [videoState.volume, videoState.muted]);
 
   // Comprehensive keyboard shortcuts implementation
   useEffect(() => {
@@ -1191,18 +1210,18 @@ const StudentCoursePreview = ({
       document.removeEventListener("fullscreenchange", handleFullscreenChange);
     };
   }, [
-    playing,
+    videoState.playing,
     activeTab,
     isAddingNote,
     activeItemType,
-    volume,
-    muted,
-    playbackRate,
+    videoState.volume,
+    videoState.muted,
+    videoState.playbackRate,
     showCaptions,
     showContentInformation,
     isContentFullscreen,
-    progress,
-    duration,
+    videoState.progress,
+    videoState.duration,
   ]);
 
   const shouldShowPreview =
@@ -1376,10 +1395,10 @@ const StudentCoursePreview = ({
                 url={lecture.videoUrl}
                 width="100%"
                 height="91%"
-                playing={playing}
-                volume={muted ? 0 : volume}
-                muted={muted}
-                playbackRate={playbackRate}
+                playing={videoState.playing}
+                volume={videoState.muted ? 0 : videoState.volume}
+                muted={videoState.muted}
+                playbackRate={videoState.playbackRate}
                 onProgress={handleProgress}
                 onDuration={handleDuration}
                 progressInterval={100}
@@ -1411,20 +1430,20 @@ const StudentCoursePreview = ({
                   if (playerRef.current) {
                     const player = playerRef.current.getInternalPlayer();
                     if (player && player.setVolume) {
-                      player.setVolume(volume * 100);
+                      player.setVolume(videoState.volume * 100);
                     }
                   }
                 }}
               />
               {/* Always render controls */}
               <VideoControls
-                playing={playing}
-                progress={progress}
-                duration={duration}
-                volume={volume}
-                playbackRate={playbackRate}
+                playing={videoState.playing}
+                progress={videoState.progress}
+                duration={videoState.duration}
+                volume={videoState.volume}
+                playbackRate={videoState.playbackRate}
                 videoQuality={videoQuality}
-                onPlayPause={() => setPlaying(!playing)}
+                onPlayPause={() => setPlaying(!videoState.playing)}
                 onRewind={handleRewind}
                 onForward={handleForward}
                 onVolumeChange={(newVolume: number) => {

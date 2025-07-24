@@ -224,87 +224,111 @@ export const useLectureService = () => {
   };
 
   // NEW: Upload video and update lecture
-  const uploadVideoToLecture = async (
-    lectureId: number,
-    videoFile: File,
-    onProgress?: (progress: number) => void
-  ): Promise<string | null> => {
-    try {
-      setVideoUploading(true);
-      setVideoUploadProgress(0);
-      setError(null);
+  // NEW: Upload video and update lecture
+const uploadVideoToLecture = async (
+  lectureId: number,
+  videoFile: File,
+  onProgress?: (progress: number) => void
+): Promise<string | null> => {
+  let progressInterval: NodeJS.Timeout | null = null;
+  
+  try {
+    setVideoUploading(true);
+    setVideoUploadProgress(0);
+    setError(null);
 
-      // Simulate progress for UI
-      const progressInterval = setInterval(() => {
-        setVideoUploadProgress(prev => {
-          const newProgress = prev + Math.random() * 15;
-          const clampedProgress = Math.min(newProgress, 100); // Stop at 90% until actual upload completes
-          if (onProgress) onProgress(clampedProgress);
-          return clampedProgress;
-        });
-      }, 200);
-
-      // Upload file to backend
-      const videoUrl = await uploadFile(videoFile, 'VIDEO');
-      
-      // Clear progress simulation
-      clearInterval(progressInterval);
-      setVideoUploadProgress(95);
-      if (onProgress) onProgress(95);
-
-      if (!videoUrl) {
-        throw new Error("Failed to upload video file");
-      }
-
-      // Update lecture with video URL
-      const { data, errors } = await apolloClient.mutate<UpdateLectureContentResponse>({
-        mutation: UPDATE_LECTURE_CONTENT,
-        variables: {
-          lectureId,
-          videoUrl
-        },
-        context: {
-          includeAuth: true
-        },
-        fetchPolicy: 'no-cache'
+    // Simulate progress for UI (but cap at 80% until upload completes)
+    progressInterval = setInterval(() => {
+      setVideoUploadProgress(prev => {
+        const newProgress = prev + Math.random() * 10;
+        const clampedProgress = Math.min(newProgress, 80); // Stop at 80% until actual upload completes
+        if (onProgress) onProgress(clampedProgress);
+        return clampedProgress;
       });
+    }, 500);
 
-      if (errors) {
-        console.error("GraphQL errors:", errors);
-        throw new Error(errors[0]?.message || "An error occurred during video update");
-      }
-
-      if (!data?.updateLecture.success) {
-        throw new Error("Failed to update lecture with video");
-      }
-
-      // Complete progress
-      setVideoUploadProgress(100);
-      if (onProgress) onProgress(100);      
-      return videoUrl;
-    } catch (err) {
-      console.error("Video upload error:", err);
-      
-      if (err instanceof ApolloError) {
-        const errorMessage = err.message || "Network error. Please check your connection and try again.";
-        setError(new Error(errorMessage));
-        toast.error(errorMessage);
-      } else if (err instanceof Error) {
-        setError(err);
-        toast.error(err.message);
-      } else {
-        const genericError = new Error("An unexpected error occurred");
-        setError(genericError);
-        toast.error(genericError.message);
-      }
-      
-      throw err;
-    } finally {
-      setVideoUploading(false);
-      setVideoUploadProgress(0);
+    // Upload file to backend
+    const videoUrl = await uploadFile(videoFile, 'VIDEO');
+    
+    // Clear progress simulation
+    if (progressInterval) {
+      clearInterval(progressInterval);
+      progressInterval = null;
     }
-  };
 
+    if (!videoUrl) {
+      throw new Error("Failed to upload video file");
+    }
+
+    // Set progress to 90% after successful file upload
+    setVideoUploadProgress(90);
+    if (onProgress) onProgress(90);
+
+    // Update lecture with video URL
+    const { data, errors } = await apolloClient.mutate<UpdateLectureContentResponse>({
+      mutation: UPDATE_LECTURE_CONTENT,
+      variables: {
+        lectureId,
+        videoUrl
+      },
+      context: {
+        includeAuth: true
+      },
+      fetchPolicy: 'no-cache'
+    });
+
+    if (errors) {
+      console.error("GraphQL errors:", errors);
+      throw new Error(errors[0]?.message || "An error occurred during video update");
+    }
+
+    if (!data?.updateLecture.success) {
+      throw new Error("Failed to update lecture with video");
+    }
+
+    // Only set to 100% after BOTH upload AND database update are successful
+    setVideoUploadProgress(100);
+    if (onProgress) onProgress(100);
+    
+    // toast.success("Video uploaded and linked successfully!");
+    return videoUrl;
+    
+  } catch (err) {
+    console.error("Video upload error:", err);
+    
+    // Clear progress simulation on error
+    if (progressInterval) {
+      clearInterval(progressInterval);
+      progressInterval = null;
+    }
+    
+    // Reset progress on error
+    setVideoUploadProgress(0);
+    if (onProgress) onProgress(0);
+    
+    if (err instanceof ApolloError) {
+      const errorMessage = err.message || "Network error. Please check your connection and try again.";
+      setError(new Error(errorMessage));
+      toast.error(errorMessage);
+    } else if (err instanceof Error) {
+      setError(err);
+      toast.error(err.message);
+    } else {
+      const genericError = new Error("An unexpected error occurred");
+      setError(genericError);
+      toast.error(genericError.message);
+    }
+    
+    throw err;
+  } finally {
+    // Ensure progress simulation is cleared
+    if (progressInterval) {
+      clearInterval(progressInterval);
+    }
+    setVideoUploading(false);
+    // Don't reset progress to 0 here - let it stay at 100% if successful, or 0 if failed
+  }
+};
   // NEW: Save article content as notes
   const saveArticleToLecture = async (lectureId: number, articleContent: string) => {
     try {

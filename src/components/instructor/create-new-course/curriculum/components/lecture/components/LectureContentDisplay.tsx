@@ -432,6 +432,8 @@ const LectureContentDisplay: React.FC<LectureContentDisplayProps> = ({
                     <ul>
                       <Link
                         href={`/preview/lecture/${courseId}/${sectionId}/${lecture.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
                       >
                         <li>
                           <button
@@ -446,6 +448,8 @@ const LectureContentDisplay: React.FC<LectureContentDisplayProps> = ({
 
                       <Link
                         href={`/preview/lecture/${courseId}/${sectionId}/${lecture.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
                       >
                         <li>
                           <button
