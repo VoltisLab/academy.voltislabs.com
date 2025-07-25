@@ -20,12 +20,19 @@ import { toast } from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import { useUserService } from "@/services/userService";
 import { logout } from "@/api/auth/auth";
+import { useSearchParams } from "next/navigation";
+// import { useRouter } from "next/router";
 
 export default function DashboardNavbar() {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const profileDropdownRef = useRef<HTMLDivElement>(null);
   const notificationDropdownRef = useRef<HTMLDivElement>(null);
+  const currentPath = window.location.pathname
+    const parentPath = currentPath.split('/')
+    const coursePath = parentPath[2].split('-')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ')
 
   const [userData, setUserData] = useState<{
     fullName: string;
@@ -214,14 +221,42 @@ export default function DashboardNavbar() {
       toast.dismiss();
     }
   };
+const searchParams = useSearchParams()
 
+    const title = searchParams!.get("edit");
+
+const [greeting, setGreeting] = useState('')
+
+  const getGreeting = () => {
+    const hour = new Date().getHours()
+    
+    if (hour < 12) {
+      return "Good Morning"
+    } else if (hour < 17) {
+      return "Good Afternoon"
+    } else {
+      return "Good Evening"
+    }
+  }
+
+  useEffect(() => {
+    setGreeting(getGreeting())
+    
+    // Optional: Update greeting every minute
+    const interval = setInterval(() => {
+      setGreeting(getGreeting())
+    }, 60000)
+
+    return () => clearInterval(interval)
+  }, [])
   return (
     <div className="flex items-center justify-between px-6 py-4 bg-white border-b border-gray-200">
       {/* Greeting */}
       <div>
-        <p className="text-sm text-gray-500">Good Morning</p>
+        <p className="text-sm text-gray-500">{greeting}</p>
         <h1 className="text-lg font-semibold text-gray-900">
-          Create a new course
+
+          { title ? "Edit Course" :coursePath}
         </h1>
       </div>
 

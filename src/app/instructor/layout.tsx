@@ -8,7 +8,11 @@ import { ReactNode } from "react";
 import { Toaster } from 'react-hot-toast';
 
 
+
 export default function RootLayout({ children }: { children: ReactNode }) {
+
+  
+
   return (
     <AsideProvider>
      <LoadingProvider>
