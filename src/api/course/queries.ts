@@ -18,6 +18,7 @@ export const GET_ALL_INSTRUCTOR_COURSES = gql`
       subtitle
       banner
       status
+      publishedAt
       requirements
     targetAudience
     teachingPoints
@@ -107,8 +108,8 @@ export const GET_INSTRUCTOR_COURSES_TOTAL = gql`
   }
 `;
 export const GET_LECTURE_NOTES = gql`
-  query UserLectureVideoNotes($lectureId: Int! $pageCount: Int ) {
-    userLectureVideoNotes(lectureId: $lectureId pageCount: $pageCount ) {
+  query UserLectureVideoNotes($lectureId: Int! $pageCount: Int $sortBy: SortByEnum ) {
+    userLectureVideoNotes(lectureId: $lectureId pageCount: $pageCount sortBy: $sortBy) {
       createdAt
       id
       notes

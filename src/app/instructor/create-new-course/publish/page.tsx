@@ -15,7 +15,7 @@ export default function PublishCoursePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const courseId = searchParams!.get("courseId");
-  const {instructorCourses} =useCoursesData()
+  const {instructorCourses, fetchInstructorCourses} =useCoursesData()
 
   const course2 = instructorCourses.find(course => course.id === courseId)
 
@@ -44,6 +44,8 @@ export default function PublishCoursePage() {
       });
 
       await publishPromise;
+      await fetchInstructorCourses()
+      
     } catch (err) {
       console.error("Error publishing course:", err);
       // toast is already handled by toast.promise

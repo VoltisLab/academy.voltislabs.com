@@ -171,9 +171,20 @@ const LearningReminderModal: React.FC<LearningReminderModalProps> = ({ isOpen, o
       });
       
       // Delay redirect to show toast
-      setTimeout(() => {
-        window.location.href = "/api/auth/signin/google";
-      }, 1500);
+      setTimeout(async () => {
+  try {
+    await signIn('google', { 
+      callbackUrl: window.location.href,
+      redirect: true 
+    });
+  } catch (error) {
+    console.error("Authentication error:", error);
+    toast.error("Authentication failed. Please try again.", {
+      duration: 4000,
+      icon: '❌',
+    });
+  }
+}, 1500);
       return;
     }
 
@@ -247,9 +258,20 @@ const LearningReminderModal: React.FC<LearningReminderModalProps> = ({ isOpen, o
             icon: '🔐',
           });
           
-          setTimeout(() => {
-            window.location.href = "/api/auth/signin/google";
-          }, 2000);
+          setTimeout(async () => {
+  try {
+    await signIn('google', { 
+      callbackUrl: window.location.href,
+      redirect: true 
+    });
+  } catch (error) {
+    console.error("Authentication error:", error);
+    toast.error("Authentication failed. Please try again.", {
+      duration: 4000,
+      icon: '❌',
+    });
+  }
+}, 1500);
           return;
         }
 
@@ -397,9 +419,10 @@ const LearningReminderModal: React.FC<LearningReminderModalProps> = ({ isOpen, o
         // Update existing reminder
         result = await updateLearningReminder({
           learningReminderId: Number(fullData.id),
+          courseId: selectedCourse === "none" ? undefined : Number(courseId),
           description: selectedCourse === "none" ? reminderName : selectedCourse,
           icsFile: icUrl,
-          removeCourse: selectedCourse === "",
+          removeCourse: selectedCourse === "none",
           schedule: {
             ...(selectedDate && { date: selectedDate }),
             days: frequency === "Weekly" ? selectedDays.map((d) => dayMap[d]) : undefined,

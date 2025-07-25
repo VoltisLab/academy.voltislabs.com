@@ -150,12 +150,14 @@ const CourseReminderService = () => {
   const updateLearningReminder = async ({
   learningReminderId,
   description,
+  courseId,
   icsFile,
   removeCourse,
   schedule,
   setLoading,
   setError,
 }: {
+  courseId: number | undefined
   learningReminderId: number;
   description?: string | null;
   icsFile?: string;
@@ -181,6 +183,7 @@ const CourseReminderService = () => {
         icsFile,
         removeCourse,
         schedule,
+        courseId,
       },
       context: { includeAuth: true },
       fetchPolicy: "no-cache",

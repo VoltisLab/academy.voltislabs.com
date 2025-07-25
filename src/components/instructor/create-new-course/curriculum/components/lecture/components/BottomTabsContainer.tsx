@@ -211,6 +211,10 @@ fetchReminders()
     );
   };
 
+  function formatToMonthYear(dateString: string): string {
+  const date = new Date(dateString);
+  return date.toLocaleString("en-US", { month: "long", year: "numeric" });
+}
   return (
     <div className="border-t border-gray-200 flex-shrink-0">
       <div className="" >
@@ -309,7 +313,7 @@ fetchReminders()
               <div className="mb-6 space-y-3">
                 <div className="flex items-center text-gray-600">
                   <Clock className="w-4 h-4 mr-2" />
-                  <span className="text-sm">Published May 2025</span>
+                  <span className="text-sm">Published {formatToMonthYear(matchingCourses[0]?.publishedAt)}</span>
                 </div>
                 <div className="flex items-center text-gray-600">
                   <Globe className="w-4 h-4 mr-2" />

@@ -13,6 +13,7 @@ type Course = {
   status: "DRAFT" | "PUBLISHED" | undefined;
   id: string;
   title: string;
+  publishedAt: string;
   banner: {
     thumbnail: string;
     url: string;
