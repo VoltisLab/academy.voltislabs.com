@@ -1107,7 +1107,7 @@ export default function LectureItem(props: UpdatedLectureItemProps) {
         selectedVideoDetails: {
           id: lecture.id,
           url: lecture.videoUrl,
-          filename: lecture.title || "Lecture Video",
+          filename: lecture.videoFileName || "Lecture Video",
           thumbnailUrl: "", // Set if you have it
           isDownloadable: false,
           duration: lecture.duration ? String(lecture.duration) : "", // Always a string

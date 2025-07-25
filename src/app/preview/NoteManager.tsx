@@ -56,13 +56,16 @@ export default function NotesManager({
   };
 
   const fetchNotes = async () => {
-    const note = await fetchLectureNotes({ lectureId: Number(itemId) });
+    const note = await fetchLectureNotes({ lectureId: Number(itemId), sortBy: selectedSortOption !== "Sort by most recent"? "OLDEST" : "MOST_RECENT" });
     setNotes(note);
   };
+
+  console.log("notee===", notes)
+
   useEffect(() => {
     fetchNotes();
     // eslint-disable-next-line
-  }, [itemId]);
+  }, [itemId, selectedSortOption]);
 
   const onSaveNote = async () => {
     if (!currentNoteContent?.trim()) return;
@@ -122,7 +125,7 @@ export default function NotesManager({
   };
 
   const getSortedNotes = () => {
-    return [...notes].sort((a, b) => Number(b.id) - Number(a.id));
+    return notes;
   };
 
   return (

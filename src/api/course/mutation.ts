@@ -323,12 +323,14 @@ export const UPDATE_LEARNING_REMINDER = gql`
     $description: String
     $icsFile: String
     $removeCourse: Boolean
+    $courseId: Int
     $schedule: ScheduleInputType!
   ) {
     updateLearningReminder(
       learningReminderId: $learningReminderId
       description: $description
       icsFile: $icsFile
+      courseId: $courseId
       removeCourse: $removeCourse
       schedule: $schedule
     ) {

@@ -55,7 +55,7 @@ const MyCourseList = () => {
         <EmptyCourses status={filters?.status ?? "ALL"} />
 
       ) : (
-        <div className={`${grid && 'w-full flex items-center justify-center'}`}>
+        <div className={`${grid && 'w-full flex '}`}>
           <div
             className={
               grid

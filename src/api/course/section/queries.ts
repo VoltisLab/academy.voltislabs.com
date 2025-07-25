@@ -10,6 +10,7 @@ export const GET_COURSE_SECTIONS = gql`
       lectures {
         id
         videoUrl
+        videoFileName
         title
         notes
         duration
@@ -109,6 +110,7 @@ export interface Resource {
 export interface CourseSectionLecture {
   id: string;
   videoUrl: string;
+  videoFileName: string;
   title: string;
   notes: string;
   duration: number;
