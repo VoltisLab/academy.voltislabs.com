@@ -15,6 +15,7 @@ interface LearningReminderModalProps {
   onClose: () => void;
 }
 
+
 const dayMap: Record<string, string> = {
   Su: "SUNDAY",
   Mo: "MONDAY",
@@ -23,6 +24,14 @@ const dayMap: Record<string, string> = {
   Th: "THURSDAY",
   Fr: "FRIDAY",
   Sa: "SATURDAY",
+};
+
+const getTodayDate = () => {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 };
 
 const LearningReminderModal: React.FC<LearningReminderModalProps> = ({ isOpen, onClose }) => {
@@ -754,6 +763,7 @@ const LearningReminderModal: React.FC<LearningReminderModalProps> = ({ isOpen, o
                         type="date"
                         value={selectedDate}
                         onChange={(e) => setSelectedDate(e.target.value)}
+                        min={getTodayDate()} // This disables past dates
                         placeholder="MM/DD/YYYY"
                         className="w-full p-3 border border-gray-300 rounded-md"
                       />

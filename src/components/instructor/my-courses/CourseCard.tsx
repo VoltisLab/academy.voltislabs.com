@@ -113,7 +113,8 @@ export default function MyCourseCard({
   status = 'DRAFT',
   isPublic = false,
   editUrl = '#',
-  id
+  id,
+  
 }: CourseCardProps) {
 
 const [showDeleteModal, setShowDeleteModal] = useState(false);

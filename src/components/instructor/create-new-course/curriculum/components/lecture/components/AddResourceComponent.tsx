@@ -8,6 +8,7 @@ import { useLectureService } from '@/services/useLectureService';
 import { toast } from 'react-hot-toast';
 import { apolloClient } from '@/lib/apollo-client';
 import { UPDATE_LECTURE_CONTENT, UpdateLectureContentResponse, UpdateLectureVariables } from '@/api/course/lecture/mutation';
+import { useUserService } from '@/services/userMediaService';
 
 interface LibraryFileWithSize extends StoredVideo {
   size?: string;
@@ -89,29 +90,29 @@ export default function ResourceComponent({
   // Custom resource update functions using the working pattern
   const [resources, setResources] = useState<any>()
   
-  useEffect(() => {
-  const fetchResources = async () => {
-   const numericId = parseInt(lectureId ?? "0");
-   if (!isNaN(numericId)) {
+
+const { getUserMedia, loading: lol, error: err } = useUserService();
+
+ useEffect(() => {
+   const fetchMedia = async () => {
      try {
-       const data = await getLectureResourcesList({ id: numericId }, setResources);
-
-       // ✅ Safely access the resource array
-       const fetchedResources = data ?? [];
-      //  setResources(fetchedResources);
-     } catch (error) {
-       console.error("Failed to fetch resources:", error);
+       const media = await getUserMedia({
+         pageCount: 10,
+         pageNumber: 1,
+         mediaType: "DOCUMENT", // or "VIDEO"
+       });
+       console.log("Fetched media:", media);
+       setResources(media)
+     } catch (err) {
+       console.error("Error loading media:", err);
      }
-   }
- };
-  
+   };
 
-  if (lectureId) {
-    fetchResources();
-  }
-}, [lectureId]);
+   fetchMedia();
+ }, []);
+ 
 
-console.log("recources===", resources?.getLecture?.resources)
+console.log("recources===", resources)
   // Fixed ref types - the issue is resolved by making sure they're correctly typed
   const fileInputRef = useRef<HTMLInputElement>(null);
   const sourceFileInputRef = useRef<HTMLInputElement>(null);
@@ -131,7 +132,7 @@ console.log("recources===", resources?.getLecture?.resources)
   ];
 
   // Filter library files based on search query
-  const filteredFiles = resources?.getLecture?.resources?.filter((file: any) => 
+  const filteredFiles = resources?.filter((file: any) => 
     file.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -666,10 +667,10 @@ console.log("recources===", resources?.getLecture?.resources)
               {currentFiles?.length > 0 ? (
                 currentFiles?.map((file: any) => (
                   <div key={file?.id} className="grid grid-cols-4 gap-2 md:gap-4 p-3 border-b border-gray-200 hover:bg-gray-50 items-center">
-                    <div className="truncate">{file?.title?.replace('DOWNLOADABLE_FILE:', '')?.trim()}</div>
-                    <div>{file?.type}</div>
+                    <div className="truncate">{file?.fileName?.replace('DOWNLOADABLE_FILE:', '')?.trim()}</div>
+                    <div>{file?.extension}</div>
                     <div className="text-sm font-medium text-green-800">
-                      {file.status}
+                      success
                     </div>
                     <div className="flex items-center justify-between">
                       <div>{file?.createdAt?.split('T')[0]}</div>
