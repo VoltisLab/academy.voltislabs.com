@@ -20,7 +20,7 @@ import { toast } from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import { useUserService } from "@/services/userService";
 import { logout } from "@/api/auth/auth";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, usePathname } from "next/navigation";
 // import { useRouter } from "next/router";
 
 export default function DashboardNavbar() {
@@ -28,11 +28,43 @@ export default function DashboardNavbar() {
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const profileDropdownRef = useRef<HTMLDivElement>(null);
   const notificationDropdownRef = useRef<HTMLDivElement>(null);
-  const currentPath = window?.location?.pathname
-    const parentPath = currentPath?.split('/')
-    const coursePath = parentPath[2]?.split('-')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ')
+  const pathname = usePathname();
+  
+  // Function to get the correct page title based on current path
+  const getPageTitle = () => {
+    if (title) return "Edit Course"
+    
+    // Map paths to sidebar item names
+    const pathToTitle: { [key: string]: string } = {
+      '/instructor': 'Dashboard',
+      '/instructor/create-new-course': 'Create New Course',
+      '/instructor/my-courses': 'My Courses',
+      '/instructor/earning': 'Earnings',
+      '/instructor/messages': 'Messages',
+      '/instructor/settings': 'Settings',
+      '/instructor/profile': 'Profile'
+    }
+    
+    // Check for exact matches first
+    if (pathname && pathToTitle[pathname]) {
+      return pathToTitle[pathname]
+    }
+    
+    // Check for partial matches (for sub-pages)
+    for (const [path, pageTitle] of Object.entries(pathToTitle)) {
+      if (pathname?.startsWith(path) && path !== '/instructor') {
+        return pageTitle
+      }
+    }
+    
+    // Fallback: convert path to title case
+    const parentPath = pathname?.split('/')
+    const coursePath = parentPath?.[2]?.split('-')
+      ?.map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      ?.join(' ')
+    
+    return coursePath || 'Dashboard'
+  }
 
   const [userData, setUserData] = useState<{
     fullName: string;
@@ -254,9 +286,8 @@ const [greeting, setGreeting] = useState('')
       <div>
         <p className="text-sm text-gray-500">{greeting}</p>
         <h1 className="text-lg font-semibold text-gray-900">
-
-          { title ? "Edit Course" :coursePath}
-        </h1>
+            {getPageTitle()}
+          </h1>
       </div>
 
       {/* Right Side */}

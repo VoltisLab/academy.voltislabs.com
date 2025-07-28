@@ -49,7 +49,7 @@ export default function ChatUI() {
   return (
     <>
 
-      <div className="min-h-[80vh]block md:flex bg-white text-black">
+      <div className="min-h-[80vh] block md:flex bg-white text-black shadow-md">
         <aside className="max-w-[330px] bg-gray-100 border-r border-gray-200 text-black flex flex-col">
           <input
             type="text"
