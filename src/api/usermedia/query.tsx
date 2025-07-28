@@ -32,5 +32,5 @@ export interface GetUserMediaResponse {
 export interface GetUserMediaVariables {
   pageCount?: number;
   pageNumber?: number;
-  mediaType: "VIDEO" | "IMAGE" | "AUDIO"; // Adjust enum values as needed
+  mediaType: "VIDEO" | "DOCUMENT"; // Adjust enum values as needed
 }
