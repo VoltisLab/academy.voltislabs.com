@@ -28,9 +28,9 @@ export default function DashboardNavbar() {
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const profileDropdownRef = useRef<HTMLDivElement>(null);
   const notificationDropdownRef = useRef<HTMLDivElement>(null);
-  const currentPath = window.location.pathname
-    const parentPath = currentPath.split('/')
-    const coursePath = parentPath[2].split('-')
+  const currentPath = window?.location?.pathname
+    const parentPath = currentPath?.split('/')
+    const coursePath = parentPath[2]?.split('-')
     .map(word => word.charAt(0).toUpperCase() + word.slice(1))
     .join(' ')
 
@@ -50,7 +50,6 @@ export default function DashboardNavbar() {
         setUserError(null);
         const data = await getUserProfile();
         setUserData(data);
-        console.log(data);
       } catch (error: any) {
         console.error("Failed to fetch user data:", error);
         setUserError(error?.message || "Failed to fetch user data");
