@@ -20,6 +20,7 @@ import LogoutModal from "../../modals/LogoutModal";
 import { logout } from "@/api/auth/auth";
 import toast from "react-hot-toast";
 import { signOut } from "next-auth/react";
+import Cookies from "js-cookie";
 // Add custom styles for mobile sidebar transitions with enhanced modern styling
 const customStyles = `
   @media (max-width: 767px) {
@@ -91,6 +92,7 @@ export default function InstructorSidebar() {
     try {
       // Replace with your actual auth logic
       const userData = getCurrentUser();
+      console.log(userData, "userData")
       if (userData) {
         setUser(userData);
       }
@@ -121,7 +123,7 @@ export default function InstructorSidebar() {
   const getCurrentUser = (): UserData | null => {
     // This is a placeholder - replace with your actual auth implementation
     // For example, you might use a token from localStorage
-    const userString = localStorage.getItem('currentUser');
+    const userString = Cookies.get('user');
     return userString ? JSON.parse(userString) : null;
   };
 
