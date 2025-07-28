@@ -681,9 +681,9 @@ export default function EarningsPage() {
       <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
         <h2 className="text-lg font-semibold mb-6">Payout Settings</h2>
 
-        <div className="space-y-6">
-          <div>
-            <h3 className="text-md font-medium mb-4">Payout Methods</h3>
+        <div className="flex flex-row gap-6 justify-between w-full">
+          <div className="w-1/2">
+            <h3 className="text-md font-medium mb-4 ">Payout Methods</h3>
             <div className="relative" ref={payoutMethodsRef}>
               <button
                 onClick={() => setShowPayoutMethods(!showPayoutMethods)}
@@ -783,6 +783,7 @@ export default function EarningsPage() {
             )}
           </div>
 
+          <div className="flex flex-col gap-6">
           <div>
             <h3 className="text-md font-medium mb-4">Payout Threshold</h3>
             <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
@@ -912,6 +913,7 @@ export default function EarningsPage() {
                 )}
               </button>
             </div>
+          </div>
           </div>
         </div>
       </div>
