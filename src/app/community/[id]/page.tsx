@@ -143,7 +143,7 @@ const videos = [
 export default function CommunityDetailPage() {
   const params = useParams()
   const router = useRouter()
-  const communityId = parseInt(params.id as string)
+  const communityId = parseInt(params?.id as string || '0')
 
   const [currentVideo, setCurrentVideo] = useState(videos[0])
   const [isPlaying, setIsPlaying] = useState(false)

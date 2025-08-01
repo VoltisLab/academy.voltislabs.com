@@ -4,15 +4,15 @@ import { useState } from "react"
 import { MapPin, Play, Brain } from "lucide-react"
 
 // Import all components
-import PostInput from "@/components/community/PostInput"
-import EventBanner from "@/components/community/EventBanner"
-import FilterTabs, { defaultTabs } from "@/components/community/FilterTabs"
-import LoadNewPosts from "@/components/community/LoadNewPosts"
-import WelcomeChecklist, { defaultWelcomeItems } from "@/components/community/WelcomeChecklist"
-import PostCard from "@/components/community/PostCard"
-import CommunityInfo from "@/components/community/CommunityInfo"
-import Leaderboard, { defaultLeaderboardEntries } from "@/components/community/Leaderboard"
-import Pagination from "@/components/community/Pagination"
+import PostInput from "@/components/skool/community/PostInput"
+import EventBanner from "@/components/skool/community/EventBanner"
+import FilterTabs, { defaultTabs } from "@/components/skool/community/FilterTabs"
+import LoadNewPosts from "@/components/skool/community/LoadNewPosts"
+import WelcomeChecklist, { defaultWelcomeItems } from "@/components/skool/community/WelcomeChecklist"
+import PostCard from "@/components/skool/community/PostCard"
+import CommunityInfo from "@/components/skool/community/CommunityInfo"
+import Leaderboard, { defaultLeaderboardEntries } from "@/components/skool/community/Leaderboard"
+import Pagination from "@/components/skool/community/Pagination"
 
 // Sample posts data
 const samplePosts = [
