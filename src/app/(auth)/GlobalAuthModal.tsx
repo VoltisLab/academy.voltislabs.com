@@ -1,8 +1,8 @@
 'use client';
 
 import { useAuthModal } from '@/lib/AuthModalContext';
-import Modal from '@/components/Modal';
-import AuthForm from '@/components/auth/authForm';
+import Modal from '@/components/skool/Modal';
+import AuthForm from '@/components/skool/auth/authForm';
 
 export default function GlobalAuthModal() {
   const { isOpen, mode, email, closeModal } = useAuthModal();

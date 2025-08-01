@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import AuthForm from "@/components/auth/authForm";
+import AuthForm from "@/components/skool/auth/authForm";
 
 const AuthPage: React.FC = () => {
   return (

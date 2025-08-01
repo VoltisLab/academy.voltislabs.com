@@ -146,13 +146,13 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 ">
       {/* Main Content */}
       <main className="max-w-[1085px] mx-auto py-8">
         {/* Hero Section */}
         <div className="text-center mb-8">
           <h1 className="text-5xl font-bold text-gray-900 mb-2">
-            Discover communities
+            Discover Courses
           </h1>
           <Link href="/create-account">
           <p className="text-[#909090] mb-8">
