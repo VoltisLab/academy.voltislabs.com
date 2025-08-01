@@ -73,7 +73,13 @@ const MyCourseList = () => {
                 isPublic={false}
                 progressPercent={course?.status === "PUBLISHED" ? 100 : course?.status === "DRAFT" ? 65 : 50}
                 description={course?.description}
-                editUrl={`/instructor/create-new-course/basic?edit=${course?.title}&id=${course?.id}`}
+                editUrl={`/instructor/create-new-course/${
+                  course?.creationStage === "BASIC_INFORMATION" ? "basic" :
+                  course?.creationStage === "ADVANCE_INFORMATION" ? "advanced" :
+                  course?.creationStage === "CURRICULUM" ? "curriculum" :
+                  course?.creationStage === "PUBLISHED" ? "publish" :
+                  "basic" // default
+                }?edit=${course?.title}&id=${course?.id}&courseId=${course?.id}`}
                 isGrid={grid}
                 imageUrl={
                   course?.banner?.thumbnail === "https://prelura.s3.eu-west-2.amazonaws.com/"

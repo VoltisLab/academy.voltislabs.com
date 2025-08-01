@@ -18,6 +18,7 @@ export const GET_ALL_INSTRUCTOR_COURSES = gql`
       subtitle
       banner
       status
+      creationStage
       publishedAt
       requirements
     targetAudience
@@ -160,6 +161,7 @@ export interface InstructorCourse {
   id: string;
   title: string;
   subtitle: string;
+  creationStage: string;
   banner: {
     thumbnail: string;
     url: string;

@@ -10,6 +10,7 @@ import Cookies from "js-cookie";
 import { toast } from "react-hot-toast";
 
 type Course = {
+  [x: string]: any;
   status: "DRAFT" | "PUBLISHED" | undefined;
   id: string;
   title: string;
