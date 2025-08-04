@@ -17,6 +17,7 @@ import {
   X,
 } from "lucide-react";
 import Image from "next/image";
+import { useUpdateUser } from "@/services/updateUserService";
 
 export default function InstructorProfile() {
   const router = useRouter();
@@ -74,28 +75,109 @@ export default function InstructorProfile() {
       }, 1000); // 1 second delay
     });
   };
+  const { updateUser, loading: updateLoading, error: updateError } = useUpdateUser();
 
-  const handleSave = async () => {
-    try {
-      await fakeUpdateUserProfile({
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        bio: formData.bio,
-        displayName: formData.displayName,
-        dob: formData.dob,
-        gender: formData.gender,
-        location: { locationName: formData.location },
-        phone: { number: formData.phone },
-      });
-      setEditing(false);
-      // Refresh profile data
-      const updatedProfile = await getUserProfile();
-      if (updatedProfile) setProfile(updatedProfile);
-    } catch (error) {
-      toast.error("Failed to update profile");
+
+const handleSave = async () => {
+  try {
+    // Validate required fields
+    if (!formData.firstName || !formData.lastName) {
+      toast.error("First name and last name are required");
+      return;
     }
-  };
 
+    // Normalize phone number (remove leading zero if present)
+    const normalizedPhone = formData.phone?.replace(/^0/, "") || "";
+    
+    // Prepare variables WITHOUT username to avoid backend error
+    const updateVariables = {
+      bio: formData.bio || null,
+      country: "NG",
+      displayName: formData.displayName || `${formData.firstName} ${formData.lastName}`,
+      dob: formData.dob || null,
+      firstName: formData.firstName,
+      gender: formData.gender ? formData.gender.toUpperCase() : null,
+      lastName: formData.lastName,
+      // REMOVED: username: profile.username, // This was causing the backend error
+      // Only include phone if provided
+      ...(normalizedPhone && {
+        phoneNumber: {
+          countryCode: "+234",
+          number: normalizedPhone,
+          completed: `+234${normalizedPhone}`,
+        },
+      }),
+      // Only include profile picture if it exists
+      ...(profile.profilePictureUrl && {
+        profilePicture: {
+          profilePictureUrl: profile.profilePictureUrl,
+          thumbnailUrl: profile.profilePictureUrl,
+        },
+      }),
+      // Remove OTP as well since it might not be needed
+      // otp: null,
+    };
+
+    console.log("Sending update variables:", updateVariables);
+
+    const result = await updateUser(updateVariables);
+    
+    if (result?.user) {
+      // Update local state immediately with returned data
+      setProfile(result.user);
+      
+      // Update form data to reflect the saved changes
+      setFormData({
+        firstName: result.user.firstName || "",
+        lastName: result.user.lastName || "",
+        bio: result.user.bio || "",
+        displayName: result.user.displayName || "",
+        dob: result.user.dob || "",
+        gender: result.user.gender || "",
+        location: result.user.location?.locationName || formData.location,
+        phone: result.user.phone?.number || formData.phone,
+      });
+      
+      toast.success("Profile updated successfully");
+      setEditing(false);
+      
+      console.log("Profile state updated with:", result.user);
+    } else {
+      // Fallback: force cache refresh
+      toast.success("Profile updated successfully");
+      setEditing(false);
+      
+      // Clear cache and refetch
+      setTimeout(async () => {
+        try {
+          const updatedProfile = await getUserProfile();
+          if (updatedProfile) {
+            setProfile(updatedProfile);
+            setFormData({
+              firstName: updatedProfile.firstName || "",
+              lastName: updatedProfile.lastName || "",
+              bio: updatedProfile.bio || "",
+              displayName: updatedProfile.displayName || "",
+              dob: updatedProfile.dob || "",
+              gender: updatedProfile.gender || "",
+              location: updatedProfile.location?.locationName || "",
+              phone: updatedProfile.phone?.number || "",
+            });
+          }
+        } catch (refetchError) {
+          console.error("Failed to refetch profile:", refetchError);
+        }
+      }, 100);
+    }
+  } catch (error) {
+    console.error("Profile update error:", error);
+    
+    const errorMessage = updateError?.message || 
+                        (error instanceof Error ? error.message : "Failed to update profile");
+    
+    toast.error(errorMessage);
+  }
+};
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 p-6">
@@ -154,12 +236,13 @@ export default function InstructorProfile() {
               >
                 <X size={18} /> Cancel
               </button>
-              <button
-                onClick={handleSave}
-                className="flex items-center gap-2 px-4 py-2 bg-[#4F46E5] text-white rounded-lg hover:bg-indigo-700 transition-colors"
-              >
-                <Save size={18} /> Save Changes
-              </button>
+<button
+  onClick={handleSave}
+  disabled={updateLoading}
+  className="flex items-center gap-2 px-4 py-2 bg-[#4F46E5] text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50"
+>
+  <Save size={18} /> {updateLoading ? "Saving..." : "Save Changes"}
+</button>
             </div>
           ) : (
             <button

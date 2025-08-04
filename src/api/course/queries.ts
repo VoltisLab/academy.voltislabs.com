@@ -151,6 +151,7 @@ export const GET_USER_LEARNING_REMINDER = gql`
   }
 `;
 
+
 // Root response type
 export interface GetInstructorCoursesResponse {
   instructorCourses: InstructorCourse[];
