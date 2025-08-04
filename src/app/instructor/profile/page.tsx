@@ -355,72 +355,74 @@ export default function InstructorProfile() {
           {/* Left Side - Profile Card */}
           <div className="w-full md:w-1/3">
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-              <div className="relative h-48 bg-gradient-to-r from-purple-600 to-[#4F46E5]">
-                <div className="absolute -bottom-16 left-1/2 transform -translate-x-1/2">
-                  <div className="relative h-32 w-32 rounded-full border-4 border-white bg-white group cursor-pointer">
-                    {currentProfileImage ? (
-                      <Image
-                        src={currentProfileImage}
-                        alt="Profile"
-                        fill
-                        className="rounded-full object-cover"
-                        onError={(e) => {
-                          console.error("Image failed to load:", currentProfileImage);
-                          // Fallback to default avatar
-                          e.currentTarget.style.display = 'none';
-                        }}
-                      />
-                    ) : (
-                      <div className="w-full h-full rounded-full bg-gray-200 flex items-center justify-center">
-                        <UserIcon className="h-16 w-16 text-gray-400" />
-                      </div>
-                    )}
-                    
-                    {/* Overlay for editing */}
-                    {editing && (
-                      <div className="absolute inset-0 bg-black bg-opacity-50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => fileInputRef.current?.click()}
-                            disabled={uploadingImage}
-                            className="bg-white bg-opacity-20 hover:bg-opacity-30 rounded-full p-2 transition-all disabled:opacity-50"
-                            title="Change photo"
-                          >
-                            <Camera className="h-4 w-4 text-white" />
-                          </button>
-                          {(currentProfileImage || selectedImage) && (
-                            <button
-                              onClick={handleRemoveImage}
-                              disabled={uploadingImage}
-                              className="bg-red-500 bg-opacity-80 hover:bg-opacity-100 rounded-full p-2 transition-all disabled:opacity-50"
-                              title="Remove photo"
-                            >
-                              <Trash2 className="h-4 w-4 text-white" />
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                    
-                    {/* Loading indicator */}
-                    {uploadingImage && (
-                      <div className="absolute inset-0 bg-black bg-opacity-50 rounded-full flex items-center justify-center">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-                
-                {/* Hidden file input */}
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageSelect}
-                  className="hidden"
-                />
-              </div>
-
+             <div 
+  className="relative h-48 bg-cover bg-center bg-repeat"
+  style={{ backgroundImage: 'url(/banner.png)' }}
+>
+  <div className="absolute -bottom-16 left-1/2 transform -translate-x-1/2">
+    <div className="relative h-32 w-32 rounded-full border-4 border-white bg-white group cursor-pointer">
+      {currentProfileImage ? (
+        <Image
+          src={currentProfileImage}
+          alt="Profile"
+          fill
+          className="rounded-full object-cover"
+          onError={(e) => {
+            console.error("Image failed to load:", currentProfileImage);
+            // Fallback to default avatar
+            e.currentTarget.style.display = 'none';
+          }}
+        />
+      ) : (
+        <div className="w-full h-full rounded-full bg-gray-200 flex items-center justify-center">
+          <UserIcon className="h-16 w-16 text-gray-400" />
+        </div>
+      )}
+      
+      {/* Overlay for editing */}
+      {editing && (
+        <div className="absolute inset-0 bg-black bg-opacity-50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+          <div className="flex gap-2">
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploadingImage}
+              className="bg-white bg-opacity-20 hover:bg-opacity-30 rounded-full p-2 transition-all disabled:opacity-50"
+              title="Change photo"
+            >
+              <Camera className="h-4 w-4 text-white" />
+            </button>
+            {(currentProfileImage || selectedImage) && (
+              <button
+                onClick={handleRemoveImage}
+                disabled={uploadingImage}
+                className="bg-red-500 bg-opacity-80 hover:bg-opacity-100 rounded-full p-2 transition-all disabled:opacity-50"
+                title="Remove photo"
+              >
+                <Trash2 className="h-4 w-4 text-white" />
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+      
+      {/* Loading indicator */}
+      {uploadingImage && (
+        <div className="absolute inset-0 bg-black bg-opacity-50 rounded-full flex items-center justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+        </div>
+      )}
+    </div>
+  </div>
+  
+  {/* Hidden file input */}
+  <input
+    ref={fileInputRef}
+    type="file"
+    accept="image/*"
+    onChange={handleImageSelect}
+    className="hidden"
+  />
+</div>
               <div className="pt-20 pb-6 px-6 text-center">
                 <h2 className="text-xl font-bold text-gray-900">
                   {editing ? (
