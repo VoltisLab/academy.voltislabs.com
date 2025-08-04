@@ -69,13 +69,14 @@ export default function DashboardNavbar() {
   const [userData, setUserData] = useState<{
     fullName: string;
     email: string;
-    avatarUrl?: string;
+    profilePictureUrl?: string;
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const [userError, setUserError] = useState<string | null>(null);
   const { getUserProfile } = useUserService();
 
   useEffect(() => {
+
     const fetchUserData = async () => {
       try {
         setLoading(true);
@@ -464,13 +465,15 @@ const [greeting, setGreeting] = useState('')
             aria-label="Profile menu"
             aria-expanded={isProfileOpen}
           >
-            <Image
-              src={userData?.avatarUrl || "/mycourse/avatar.png"}
-              alt="User Avatar"
-              width={40}
-              height={40}
-              className="rounded-full"
-            />
+            <div className="relative w-[40px] h-[40px]">
+              <Image
+                src={userData?.profilePictureUrl || "/mycourse/avatar.png"}
+                alt="User Avatar"
+                fill
+                className="rounded-full object-center"
+              />
+
+            </div>
             <ChevronDown
               className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${
                 isProfileOpen ? "transform rotate-180" : ""
@@ -501,7 +504,7 @@ const [greeting, setGreeting] = useState('')
                       <p className="text-sm font-medium text-gray-900">
                         {userData?.fullName || "User"}
                       </p>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-gray-500 truncate">
                         {userData?.email || "email@example.com"}
                       </p>
                     </>
