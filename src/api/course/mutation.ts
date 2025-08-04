@@ -339,6 +339,87 @@ export const UPDATE_LEARNING_REMINDER = gql`
     }
   }
 `;
+export const UPDATE_USER_MUTATION = gql`
+  mutation UpdateUser(
+    $bio: String
+    $country: String
+    $displayName: String
+    $dob: Date
+    $firstName: String
+    $gender: GenderEnum
+    $lastName: String
+    $otp: String
+    $phoneNumber: PhoneInputType
+    $profilePicture: ProfilePictureInputType
+    $username: String
+  ) {
+    updateUser(
+      bio: $bio
+      country: $country
+      displayName: $displayName
+      dob: $dob
+      firstName: $firstName
+      gender: $gender
+      lastName: $lastName
+      otp: $otp
+      phoneNumber: $phoneNumber
+      profilePicture: $profilePicture
+      username: $username
+    ) {
+      message
+      restToken
+      token
+       user {
+      bio
+      dateJoined
+      displayName
+      dob
+      email
+      firstName
+      fullName
+      gender
+      id
+      lastName
+      profilePictureUrl
+      thumbnailUrl
+      username
+    }
+    }
+  }
+`;
+
+
+export interface UpdateUserVariables {
+  input: {
+    bio: string;
+    country: string;
+    displayName: string;
+    dob: string;
+    firstName: string;
+    gender: "MALE" | "FEMALE" | "OTHER";
+    lastName: string;
+    otp: string;
+    phoneNumber: {
+      countryCode: string;
+      number: string;
+      completed: string;
+    };
+    profilePicture: {
+      profilePictureUrl: string;
+      thumbnailUrl: string;
+    };
+    username: string;
+  };
+}
+
+export interface UpdateUserResponse {
+  updateUser: {
+    message: string;
+    restToken: string;
+    token: string;
+    user:any
+  };
+}
 
 export type SetContentCompletionStatusVariables = {
   completed: boolean;
