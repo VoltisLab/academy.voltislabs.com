@@ -152,6 +152,7 @@ export default function CourseSection() {
                   description={course.description}
                   image={course.banner?.thumbnail || "/education.jpg"}
                   students={0}
+                  id={course.id}
                 />
               </motion.div>
             ))}

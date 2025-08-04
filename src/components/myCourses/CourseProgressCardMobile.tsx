@@ -34,7 +34,7 @@ export default function CourseProgressCardMobile({
   const progress = Math.floor((completedModules / totalModules) * 100);
 
   return (
-    <div className="bg-white block md:hidden rounded-t-2xl md:rounded-2xl p-6 md:p-8 w-full md:max-w-96 text-gray-900 font-sans md:relative md:bottom-auto fixed bottom-0 left-0 right-0 z-50 md:z-auto shadow-t md:shadow-none md:translate-y-0 transition-transform duration-300 ease-in-out">
+    <div className="shadow-md bg-white block md:hidden rounded-t-2xl md:rounded-2xl p-6 md:p-8 w-full md:max-w-96 text-gray-900 font-sans md:relative md:bottom-auto fixed bottom-0 left-0 right-0 z-50 md:z-auto shadow-t md:shadow-none md:translate-y-0 transition-transform duration-300 ease-in-out">
       <div onClick={() => setExpanded(!expanded)}>
         <div className="text-sm  font-medium mb-2 cursor-pointer">
           {totalModules} Modul
