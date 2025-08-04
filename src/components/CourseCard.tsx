@@ -1,20 +1,33 @@
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 export default function CourseCard({
   title,
   date,
   description,
   image,
-}: // students,
-{
+  id,
+}: {
   title: string;
   date: string;
   description: string;
   image: string;
   students: number;
+  id?: string;
 }) {
+  const router = useRouter();
+
+  const handleCardClick = () => {
+    if (id) {
+      router.push(`/programmes/${id}`);
+    }
+  };
+
   return (
-    <div className="bg-white rounded-xl overflow-hidden shadow-md">
+    <div 
+      className="bg-white rounded-xl overflow-hidden shadow-md cursor-pointer hover:shadow-lg transition-shadow duration-300"
+      onClick={handleCardClick}
+    >
       {/* Image */}
       <div className="relative h-[193px] w-full">
         <Image
@@ -38,7 +51,15 @@ export default function CourseCard({
 
         <div className="flex items-center justify-between pt-4">
           <span className="text-[#DC4298] font-bold text-sm">FREE</span>
-          <button className="text-[#DC4298] border border-[#DC4298] rounded-full px-3 py-1 text-sm hover:bg-pink-50 transition">
+          <button 
+            className="text-[#DC4298] border border-[#DC4298] rounded-full px-3 py-1 text-sm hover:bg-pink-50 transition"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (id) {
+                router.push(`/programmes/${id}`);
+              }
+            }}
+          >
             Read more
           </button>
         </div>

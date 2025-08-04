@@ -32,7 +32,7 @@ export default function CourseProgressCard({
   const progress = Math.floor((completedModules / totalModules) * 100);
 
   return (
-    <div className="bg-white hidden md:block rounded-2xl  p-8 max-w-96 text-gray-900 font-sans">
+    <div className="shadow-md bg-white hidden md:block rounded-2xl  p-8 max-w-96 text-gray-900 font-sans">
       <h2 className="text-xl font-bold leading-snug mb-3">{title}</h2>
       <div className="flex items-center gap-3 mb-4">
         <Image
