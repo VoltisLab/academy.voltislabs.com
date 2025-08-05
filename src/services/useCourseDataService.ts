@@ -1,3 +1,4 @@
+"use client"
 import { useState, useEffect, useCallback, useRef } from "react";
 import {
   GET_ALL_COURSES,
@@ -138,20 +139,23 @@ export const usePublishedCoursesData = () => {
   const [pageCount] = useState(10);
   const [total, setTotal] = useState(0);
 
-  const fetchData = useCallback(async () => {
+  // Track previous values to detect changes
+  const prevSearch = useRef("");
+  const prevFilters = useRef<Filters>({});
+
+  const fetchData = useCallback(async (currentPageNumber: number = pageNumber) => {
     try {
       setLoading(true);
       setError(null);
 
-      // Reset page number to 1 when filters or search change
-      if (filtersChanged.current) {
-        setPageNumber(1);
-        filtersChanged.current = false;
-      }
-
       const response = await apolloClient.query({
         query: GET_ALL_COURSES,
-        variables: { search, pageNumber, pageCount, filters },
+        variables: { 
+          search, 
+          pageNumber: currentPageNumber, 
+          pageCount, 
+          filters 
+        },
         fetchPolicy: "network-only",
       });
 
@@ -161,10 +165,11 @@ export const usePublishedCoursesData = () => {
         fetchPolicy: "network-only",
       });
 
-      setPublishedCourse(response.data.courses);
-      setTotal(totalResponse.data.coursesTotalNumber);
+      // Simplified state update - always update to ensure re-render
+      setPublishedCourse(response.data.courses || []);
+      setTotal(totalResponse.data.coursesTotalNumber || 0);
 
-      console.log(totalResponse, response);
+      console.log('Fetched courses:', response.data.courses);
     } catch (err: any) {
       console.error("Fetch failed", err);
       setError(err.message || "Failed to fetch data");
@@ -174,21 +179,24 @@ export const usePublishedCoursesData = () => {
     }
   }, [search, filters, pageNumber, pageCount]);
 
-  // Track filter changes
-  const filtersChanged = useRef(false);
-  const prevFilters = useRef<Filters>({});
-
+  // Effect to handle search/filter changes and reset pagination
   useEffect(() => {
-    // Compare current filters with previous filters
-    if (JSON.stringify(filters) !== JSON.stringify(prevFilters.current)) {
-      filtersChanged.current = true;
+    const searchChanged = search !== prevSearch.current;
+    const filtersChanged = JSON.stringify(filters) !== JSON.stringify(prevFilters.current);
+    
+    if (searchChanged || filtersChanged) {
+      // Reset to page 1 and fetch
+      setPageNumber(1);
+      fetchData(1); // Pass 1 directly to ensure immediate fetch with correct page
+      
+      // Update refs
+      prevSearch.current = search;
       prevFilters.current = filters;
+    } else {
+      // Only page changed, fetch with current page
+      fetchData();
     }
-  }, [filters]);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  }, [search, filters, pageNumber]);
 
   const handleSetFilters = useCallback((newFilters: Filters) => {
     setFilters(newFilters);
@@ -196,7 +204,7 @@ export const usePublishedCoursesData = () => {
 
   const handleSetSearch = useCallback((newSearch: string) => {
     setSearch(newSearch);
-    setPageNumber(1); // Reset to first page when search changes
+    // Page reset will be handled in useEffect
   }, []);
 
   return {

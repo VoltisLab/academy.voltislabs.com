@@ -10,7 +10,7 @@ const keyPointseg = [
 const DescriptionComponent = ({
   title = "Description",
   description = "",
-  keyPoints = keyPointseg,
+  keyPoints,
 }: {
   title?: string;
   description?: string;
@@ -33,7 +33,7 @@ const DescriptionComponent = ({
 
       <h3 className="text-xl font-semibold mt-8 mb-4">Key Point</h3>
       <ul className="space-y-3">
-        {keyPoints.map((point, index) => (
+        {keyPoints?.map((point, index) => (
           <li key={index} className="flex items-center gap-2">
             <div
               className={`w-6 h-6 bg-[#ABABAB] text-[white] rounded-full
