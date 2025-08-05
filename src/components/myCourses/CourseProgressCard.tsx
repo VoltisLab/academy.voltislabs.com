@@ -35,13 +35,15 @@ export default function CourseProgressCard({
     <div className="shadow-md bg-white hidden md:block rounded-2xl  p-8 max-w-96 text-gray-900 font-sans">
       <h2 className="text-xl font-bold leading-snug mb-3">{title}</h2>
       <div className="flex items-center gap-3 mb-4">
-        <Image
-          src={avatarUrl}
-          alt={author}
-          width={36}
-          height={36}
-          className="rounded-full"
-        />
+        <div className="relative h-[36px] w-[36px]">
+          <Image
+            src={avatarUrl}
+            alt={author}
+            fill
+            className="rounded-full object-cover"
+          />
+
+        </div>
         <span className="text-sm font-medium">{author}</span>
         <div className="flex items-center gap-1 ml-auto text-sm text-yellow-500">
           <Star size={16} fill="currentColor" />
@@ -70,25 +72,25 @@ export default function CourseProgressCard({
       </div>
 
       <div className="space-y-3">
-        {modules.map((module, index) => (
+        {modules?.map((module, index) => (
           <div key={index} className={`flex items-center text-sm `}>
             <div
               className={`w-6 h-6 ${
-                module.completed
+                module?.completed
                   ? "bg-[#25C78B] rounded-full    ` text-white"
                   : "bg-gray-100 text-gray-800 rounded-[8px]"
               }  flex items-center justify-center text-xs mr-3`}
             >
-              {module.completed ? "✓" : index + 1}
+              {module?.completed ? "✓" : index + 1}
             </div>
             <span
               className={`${
-                module.completed ? "text-gray-400 line-through" : ""
+                module?.completed ? "text-gray-400 line-through" : ""
               } flex-1`}
             >
-              {module.title}
+              {module?.title}
             </span>
-            <span className="text-gray-400">{module.duration}</span>
+            <span className="text-gray-400">{module.duration ?? "10:00"}</span>
           </div>
         ))}
       </div>

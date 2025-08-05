@@ -21,6 +21,7 @@ import {
 import Image from "next/image";
 import { useUpdateUser } from "@/services/updateUserService";
 import { uploadFile } from "@/services/fileUploadService";
+import { MdStar } from "react-icons/md";
 
 export default function InstructorProfile() {
   const router = useRouter();
@@ -355,10 +356,19 @@ export default function InstructorProfile() {
           {/* Left Side - Profile Card */}
           <div className="w-full md:w-1/3">
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-             <div 
-  className="relative h-48 bg-cover bg-center bg-repeat"
-  style={{ backgroundImage: 'url(/banner.png)' }}
->
+             <div className="relative h-48 bg-[#313273]">
+  {/* Decorative Stars Pattern */}
+  <MdStar className="absolute text-white/10 size-14 top-5 right-[157px]" />
+  <MdStar className="absolute text-white/10 h-28 w-20 top-28 right-[148px]" />
+  <MdStar className="absolute text-white/25 w-[80px] h-[80px] top-[45px] right-[77px]" />
+  <MdStar className="absolute text-white/10 w-[61px] h-[118px] -top-[59px] right-[26px]" />
+  <MdStar className="absolute text-white/10 w-[80px] h-[80px] top-[93px] right-[7px]" />
+  
+  {/* Additional stars for left side balance */}
+  <MdStar className="absolute text-white/10 size-12 top-8 left-[120px]" />
+  <MdStar className="absolute text-white/15 w-[60px] h-[60px] top-[70px] left-[40px]" />
+  <MdStar className="absolute text-white/10 w-[45px] h-[90px] -top-[45px] left-[80px]" />
+
   <div className="absolute -bottom-16 left-1/2 transform -translate-x-1/2">
     <div className="relative h-32 w-32 rounded-full border-4 border-white bg-white group cursor-pointer">
       {currentProfileImage ? (
@@ -369,7 +379,6 @@ export default function InstructorProfile() {
           className="rounded-full object-cover"
           onError={(e) => {
             console.error("Image failed to load:", currentProfileImage);
-            // Fallback to default avatar
             e.currentTarget.style.display = 'none';
           }}
         />
@@ -378,7 +387,7 @@ export default function InstructorProfile() {
           <UserIcon className="h-16 w-16 text-gray-400" />
         </div>
       )}
-      
+     
       {/* Overlay for editing */}
       {editing && (
         <div className="absolute inset-0 bg-black bg-opacity-50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -404,7 +413,7 @@ export default function InstructorProfile() {
           </div>
         </div>
       )}
-      
+     
       {/* Loading indicator */}
       {uploadingImage && (
         <div className="absolute inset-0 bg-black bg-opacity-50 rounded-full flex items-center justify-center">
@@ -413,7 +422,7 @@ export default function InstructorProfile() {
       )}
     </div>
   </div>
-  
+ 
   {/* Hidden file input */}
   <input
     ref={fileInputRef}
@@ -423,6 +432,7 @@ export default function InstructorProfile() {
     className="hidden"
   />
 </div>
+
               <div className="pt-20 pb-6 px-6 text-center">
                 <h2 className="text-xl font-bold text-gray-900">
                   {editing ? (

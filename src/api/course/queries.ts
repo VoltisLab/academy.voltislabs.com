@@ -78,10 +78,29 @@ export const GET_ALL_COURSES = gql`
     ) {
       id
       title
+      subtitle
+      subtitleLanguage
       banner
       description
+      duration
+      language
+      level
+      status
+      topic
+      trailer
+      requirements
+      targetAudience
+      teachingPoints
+      creationStage
+      createdAt
+      updatedAt
+      publishedAt
       instructor {
         id
+        displayName
+        firstName
+        fullName
+        profilePictureUrl
         thumbnailUrl
       }
       category {
@@ -89,19 +108,25 @@ export const GET_ALL_COURSES = gql`
         name
       }
       sections {
+        id
+        title
         assignment {
+          id
           description
           instructionDownloadableResource
           dueDate
-          id
         }
-        id
+        lectures {
+          id
+          title
+          duration
+          videoUrl
+        }
       }
-      createdAt
-      updatedAt
     }
   }
 `;
+
 
 export const GET_INSTRUCTOR_COURSES_TOTAL = gql`
   query GetInstructorCoursesTotal {
